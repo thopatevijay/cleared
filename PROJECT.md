@@ -102,7 +102,7 @@ See [docs/architecture.md](docs/architecture.md).
 
 ## 4. Tech stack
 
-Versions verified on npm 2026-10-28; re-verified in M0-02.
+Versions verified on npm 2026-10-28; re-verified in M0-02 on 2026-10-28 (change: `@sentry/*` 11.9.0 → 11.10.0; Bryntum is on its private registry and is checked in M0-09).
 
 | Component | Version | Why |
 |---|---|---|
@@ -129,10 +129,11 @@ Versions verified on npm 2026-10-28; re-verified in M0-02.
 | @fullcalendar/react + core | 7.1.3 | MIT fallback behind `CashCalendar` (plugin majors verified in M0-09) |
 | Noto Sans / Noto Sans Devanagari | OFL font assets | EN/HI in PDFs |
 | pino | 10.4.0 | JSON logs |
-| @sentry/nextjs / @sentry/node | 11.9.0 | error tracking (web / worker) |
+| @sentry/nextjs / @sentry/node | 11.10.0 | error tracking (web / worker) |
 | resend | 6.35.0 | email (magic links, alerts) |
 | vitest / @playwright/test / msw | 5.0.5 / 1.64.1 / 3.0.3 | unit + integration (fixture replay) + e2e |
 | eslint / prettier | 10.13.0 / 3.9.10 | lint, format |
+| @eslint/js / @types/node / @types/react / @types/react-dom | 10.0.1 / 24.19.2 / 19.3.0 / 19.3.0 | lint base config; Node 24 and React 19 types (pinned in M0-02) |
 | gitleaks | 8.30.1 (local) | secret scan |
 
 ## 5. Services and spend
