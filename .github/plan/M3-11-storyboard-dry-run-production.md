@@ -5,7 +5,7 @@ labels: [critical, owner]
 blocked_by: [M3-01, M3-02, M3-03, M3-04, M3-05, M3-06, M3-07, M3-08, M3-09, M3-10]
 estimate: "2h"
 resources: [DEPLOY, PAYPAL_SANDBOX, OPENAI]
-needs: []
+needs: [P-01, P-02, P-03, P-05, P-12, P-21, P-24, P-28, P-29, P-35, P-46, P-52]
 ---
 
 ## Context

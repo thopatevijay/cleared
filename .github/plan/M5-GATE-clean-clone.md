@@ -5,7 +5,7 @@ labels: ["gate"]
 blocked_by: ["M5-CLEANUP", "M5-01", "M5-02", "M5-03"]
 estimate: "1h"
 resources: ["PAYPAL_SANDBOX"]
-needs: []
+needs: [P-01, P-02, P-03, P-04, P-05, P-06, P-07, P-08, P-12, P-14, P-35]
 ---
 
 ## Context
