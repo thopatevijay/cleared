@@ -56,7 +56,13 @@ Build to `docs/design/` (from the `ux-designer` agent, M1-06). Every `frontend` 
 Only claim what a test, fixture or measured run proves. Accuracy claims cite the eval report with *n*. Name the PayPal APIs actually exercised; the sandbox decision step is always labelled.
 
 ## Standing approvals
-_Filled by M0-00 after the owner confirms. Until then, ask before merging PRs, deploying, or making live sandbox calls beyond a ticket's spike._
+Approved by the owner on 2026-10-28 (M0-00, issue #2). Allow rules live in `.claude/settings.json`. The build does these without asking:
+- **GitHub:** create, update and squash-merge PRs to `main` once CI is green (never red, never `--admin`); issue, label and comment updates
+- **Render:** deploys from `main` (auto-deploy), manual redeploys and rollbacks of the Blueprint services
+- **PayPal sandbox** calls with the project sandbox app (orders, captures, chargebacks, evidence, adjudicate, webhooks), and **live OpenAI** calls and eval runs within `LLM_DAILY_CAP_USD` / `EVAL_MAX_USD` and the $80 ceiling in `docs/budget.md`
+- **Dev tools:** `brew install cloudflared` and `brew install actionlint`
+
+Still the owner's, every time: making the repo public, purchases or plan upgrades, live (non-sandbox) PayPal, emailing anyone but `EMAIL_RECIPIENT_ALLOWLIST`, raising a spend cap, and every `who: owner` item in `docs/PREREQS.md`.
 
 ## .env: STRICT RULE
 Never read, print, cat, grep or echo `.env` or any secret. Check presence only via `python3 scripts/check-prereqs.py`. Never put a value in code, tickets, issues, commits, logs or chat. Only `.env.example` (names, no values) is tracked.
