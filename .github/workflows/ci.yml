@@ -4,8 +4,15 @@ name: ci
 
 on:
   pull_request:
+    # Markdown-only PRs skip CI (Actions minutes on a private repo, BL-01); ticket files stay checked.
+    paths: ["**", "!**/*.md", ".github/plan/**"]
   push:
     branches: [main]
+
+# A new push to a PR cancels its older run; runs on main always finish.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
