@@ -87,19 +87,31 @@ ProposedAction: proposed ─► approved | rejected ;  approved ─► executing
 
 ## 4. System diagram
 
+```mermaid
+flowchart TB
+  user["Seller / judge<br/>(browser)"]
+
+  subgraph render["Render · Oregon · secrets only in the Render env"]
+    direction TB
+    web["web: Next.js<br/>UI · REST API · /api/webhooks/paypal"]
+    db[("Postgres<br/>tables · outbox · jobs · blobs")]
+    worker["worker: pg-boss<br/>+ 15-min reconcile · SLO · synthetic check"]
+    web -- "verify → raw insert + enqueue (1 tx)" --> db
+    db <--> worker
+  end
+
+  paypal["PayPal sandbox<br/>Orders · Captures · Disputes · Tracking"]
+  openai["OpenAI<br/>evidence = untrusted data"]
+  resend["Resend<br/>email"]
+
+  user -- HTTPS --> web
+  paypal -- webhooks --> web
+  worker -- approved actions --> paypal
+  worker -- AI workflows --> openai
+  worker -- alerts · magic links --> resend
 ```
- Seller / judge (browser) ──HTTPS──► [web: Next.js]  ──────────►  Postgres (Render, Oregon)
-        │  magic link                  │ UI + REST API              ▲ tables · outbox · pg-boss jobs
-        │                              │ /api/webhooks/paypal ──────┤ evidence blobs (bytea)
-        ▼                              ▼  (verify → raw insert + enqueue, one transaction)
-   Email (Resend) ◄────────────── [worker: pg-boss] ───────────────┘
-                                    ├─ AI workflows ──► OpenAI        (evidence = untrusted data)
-                                    ├─ actions ───────► PayPal sandbox REST: Orders, Captures,
-                                    │                   Disputes, Order Tracking, legacy Tracking
-                                    └─ every 15 min: reconcile poll · SLO checks · synthetic judge-path check
- PayPal ──webhooks──► web
- Trust boundaries: browser | web | worker + DB | PayPal | OpenAI | Resend   (secrets only in the Render env)
-```
+
+Trust boundaries: browser | web | worker + DB | PayPal | OpenAI | Resend.
 
 ## 5. Data model
 
