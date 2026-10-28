@@ -5,7 +5,7 @@ labels: [backend, owner]
 blocked_by: [M3-01]
 estimate: "2h"
 resources: [PAYPAL_SANDBOX]
-needs: []
+needs: [P-01, P-02, P-03, P-04, P-05, P-07, P-14, P-20, P-21, P-46, P-52]
 ---
 
 ## Context

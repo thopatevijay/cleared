@@ -5,7 +5,7 @@ labels: ["docs", "owner"]
 blocked_by: ["M5-01"]
 estimate: "6h"
 resources: ["PAYPAL_SANDBOX", "DEPLOY"]
-needs: []
+needs: [P-01, P-02, P-03, P-05, P-09, P-35, P-41, P-52, P-55]
 ---
 
 ## Context

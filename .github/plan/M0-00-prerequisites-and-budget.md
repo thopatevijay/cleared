@@ -5,7 +5,7 @@ labels: ["recon", "meta", "owner", "blocker-risk", "critical"]
 blocked_by: []
 estimate: "2h"
 resources: []
-needs: []
+needs: [P-03, P-05]
 ---
 
 ## Context

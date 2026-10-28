@@ -27,7 +27,40 @@
       "Bash(tail .env)",
       "Bash(grep * .env)",
       "Bash(printenv)",
-      "Bash(env)"
+      "Bash(env)",
+      "Bash(gh repo edit *)",
+      "Bash(gh pr merge * --admin*)",
+      "Bash(curl * https://api-m.paypal.com/*)",
+      "Bash(curl * https://api.paypal.com/*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)"
+    ],
+    "allow": [
+      "Bash(gh pr create *)",
+      "Bash(gh pr edit *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr view *)",
+      "Bash(gh pr merge * --squash --delete-branch)",
+      "Bash(gh issue *)",
+      "Bash(gh label *)",
+      "Bash(gh api repos/thopatevijay/cleared/issues/*)",
+      "Bash(gh run list *)",
+      "Bash(gh run view *)",
+      "Bash(gh variable set OPENAI_MODEL_* -R thopatevijay/cleared *)",
+      "Bash(git push -u origin feat/*)",
+      "Bash(git push origin feat/*)",
+      "Bash(render deploys *)",
+      "Bash(render services *)",
+      "Bash(render logs *)",
+      "Bash(pnpm tsx scripts/spikes/*)",
+      "Bash(pnpm tsx scripts/setup.ts *)",
+      "Bash(pnpm --filter @cleared/worker sandbox:pay *)",
+      "Bash(pnpm --filter ./apps/worker run pool:*)",
+      "Bash(pnpm --filter ./apps/worker run synthetic*)",
+      "Bash(pnpm eval *)",
+      "Bash(curl * https://api-m.sandbox.paypal.com/*)",
+      "Bash(brew install cloudflared)",
+      "Bash(brew install actionlint)"
     ]
   }
 }

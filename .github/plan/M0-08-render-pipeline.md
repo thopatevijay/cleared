@@ -5,7 +5,7 @@ labels: ["infra"]
 blocked_by: ["M0-02"]
 estimate: "3h"
 resources: ["DEPLOY"]
-needs: []
+needs: [P-01, P-02, P-03, P-05, P-08, P-21, P-24, P-28, P-29, P-30, P-32, P-33, P-34, P-35, P-36, P-46]
 ---
 
 ## Context

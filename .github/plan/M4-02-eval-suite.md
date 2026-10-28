@@ -5,7 +5,7 @@ labels: ["eval", "agent", "infra"]
 blocked_by: ["M4-01"]
 estimate: "5h"
 resources: ["OPENAI"]
-needs: []
+needs: [P-01, P-02, P-03, P-05, P-11, P-24, P-25, P-26, P-27, P-43, P-46]
 ---
 
 ## Context

@@ -5,7 +5,7 @@ labels: [backend, frontend, critical]
 blocked_by: [M2-GATE]
 estimate: "5h"
 resources: []
-needs: []
+needs: [P-01, P-02, P-03, P-04, P-05, P-07, P-12, P-14]
 ---
 
 ## Context

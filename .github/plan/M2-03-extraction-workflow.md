@@ -5,7 +5,7 @@ labels: [agent, backend]
 blocked_by: [M2-01, M2-02]
 estimate: "4h"
 resources: [OPENAI]
-needs: []
+needs: [P-01, P-02, P-03, P-04, P-05, P-07, P-14, P-24, P-46]
 ---
 
 ## Context

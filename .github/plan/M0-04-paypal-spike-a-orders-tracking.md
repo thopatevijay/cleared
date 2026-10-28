@@ -5,7 +5,7 @@ labels: ["recon", "backend", "blocker-risk"]
 blocked_by: ["M0-02"]
 estimate: "4h"
 resources: ["PAYPAL_SANDBOX"]
-needs: []
+needs: [P-01, P-02, P-03, P-05, P-20, P-21, P-22, P-46]
 ---
 
 ## Context
