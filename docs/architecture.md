@@ -53,14 +53,79 @@ Each line is marked **K** (known, with its source) or **A** (assumed, with how i
 
 **State machines:**
 
+*Payment* (mirror only: Cleared records what PayPal reports and never invents a state)
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  state "PENDING (reason)" as PENDING
+  COMPLETED --> PENDING
+  PENDING --> COMPLETED
+  COMPLETED --> REFUNDED
+  COMPLETED --> REVERSED
+  PENDING --> REFUNDED
+  PENDING --> REVERSED
 ```
-Payment:        COMPLETED ⇄ PENDING(reason) ─► REFUNDED | REVERSED            (mirror only)
-ProofPack:      empty ─► collecting ─► checked ─► ready ;  ─► stale on new evidence
-Hold:           open ─► explained ─► action_proposed ─► approved ─► filed ─► released | still_held
-Dispute:        PayPal: OPEN ─► WAITING_FOR_SELLER_RESPONSE ─► UNDER_REVIEW ─► RESOLVED
-                ours:   draft_ready ─► approved ─► filed
-ProposedAction: proposed ─► approved | rejected ;  approved ─► executing ─► succeeded | failed | unknown
-                unknown ─► (reconcile against PayPal) ─► succeeded | failed
+
+*ProofPack*
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  [*] --> empty
+  empty --> collecting
+  collecting --> checked
+  checked --> ready
+  checked --> stale: new evidence
+  ready --> stale: new evidence
+```
+
+*Hold*
+
+```mermaid
+stateDiagram-v2
+  [*] --> open
+  open --> explained
+  explained --> action_proposed
+  action_proposed --> approved
+  approved --> filed
+  filed --> released
+  filed --> still_held
+```
+
+*Dispute*: PayPal's states (mirror) and our draft states
+
+```mermaid
+stateDiagram-v2
+  direction LR
+  state "PayPal (mirror)" as paypal {
+    direction LR
+    OPEN --> WAITING_FOR_SELLER_RESPONSE
+    WAITING_FOR_SELLER_RESPONSE --> UNDER_REVIEW
+    UNDER_REVIEW --> RESOLVED
+  }
+  state "ours" as ours {
+    direction LR
+    state "approved" as d_approved
+    state "filed" as d_filed
+    draft_ready --> d_approved
+    d_approved --> d_filed
+  }
+```
+
+*ProposedAction*
+
+```mermaid
+stateDiagram-v2
+  [*] --> proposed
+  proposed --> approved
+  proposed --> rejected
+  approved --> executing
+  executing --> succeeded
+  executing --> failed
+  executing --> unknown
+  unknown --> succeeded: reconcile against PayPal
+  unknown --> failed: reconcile against PayPal
 ```
 
 **Events** (outbox, each with a `version` field): `payment.captured`, `payment.status_changed`, `evidence.added`, `pack.checked`, `hold.opened`, `hold.released`, `dispute.opened`, `dispute.status_changed`, `action.approved`, `action.executed`, `action.failed`, `action.unknown`.
@@ -197,12 +262,22 @@ All tables carry `workspace_id`, except platform tables. Timestamps are UTC `tim
 
 ## 10. Agent architecture
 
-```
-trigger (payment / evidence / hold / dispute) ─► [input guardrail: delimit + injection scan]
-   ─► model (structured output, schema-validated) ─► [output guardrail: schema + verbatim-quote check]
-   ─► ProposedAction (never a direct PayPal call) ─► seller approval (bound to the payload hash)
-   ─► [action guardrail: policy · ownership · HATEOAS link · deadline] ─► PayPal
-every step ─► agent_steps + audit_log          kill switch (DB flag + env) ─► stops all execution
+```mermaid
+flowchart TB
+  trigger["Trigger<br/>payment · evidence · hold · dispute"]
+  ig{{"Input guardrail<br/>delimit + injection scan"}}
+  model["Model<br/>structured output, schema-validated"]
+  og{{"Output guardrail<br/>schema + verbatim-quote check"}}
+  pa["ProposedAction<br/>never a direct PayPal call"]
+  approve["Seller approval<br/>bound to the payload hash"]
+  ag{{"Action guardrail<br/>policy · ownership · HATEOAS link · deadline"}}
+  paypal["PayPal"]
+  trace[("agent_steps + audit_log")]
+  kill["Kill switch<br/>DB flag + env"]
+
+  trigger --> ig --> model --> og --> pa --> approve --> ag --> paypal
+  ig & model & og & pa & approve & ag -.-> trace
+  kill -. stops all execution .-> ag
 ```
 
 **Shape:** deterministic workflows, not an open loop:
