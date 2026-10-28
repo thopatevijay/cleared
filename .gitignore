@@ -48,3 +48,6 @@ pgdata/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Next.js generated (imports .next/types, which exists only after a build)
+next-env.d.ts

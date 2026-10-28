@@ -1,0 +1,17 @@
+{
+  "name": "@cleared/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.ts",
+    "typecheck": "tsc --noEmit -p .",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cleared/adapters": "workspace:*",
+    "@cleared/core": "workspace:*",
+    "@cleared/db": "workspace:*"
+  }
+}

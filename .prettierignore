@@ -1,0 +1,9 @@
+pnpm-lock.yaml
+.github/plan/
+docs/
+*.md
+.next/
+dist/
+coverage/
+.claude/
+.kickoff-state.md
