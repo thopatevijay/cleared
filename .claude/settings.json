@@ -1,0 +1,33 @@
+{
+  "claudeMdExcludes": [
+    "/Users/vijay/hackathons/CLAUDE.md",
+    "/Users/vijay/hackathons/CLAUDE.local.md",
+    "/Users/vijay/hackathons/.claude/rules/anchor.md",
+    "/Users/vijay/hackathons/.claude/rules/dotnet.md",
+    "/Users/vijay/hackathons/.claude/rules/pinocchio.md",
+    "/Users/vijay/hackathons/.claude/rules/rust.md",
+    "/Users/vijay/hackathons/.claude/rules/typescript.md"
+  ],
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.*.local)",
+      "Read(./.env.production)",
+      "Read(./.env.development)",
+      "Read(./**/.env)",
+      "Edit(./.env)",
+      "Edit(./.env.local)",
+      "Edit(./**/.env)",
+      "Bash(cat .env)",
+      "Bash(cat ./.env)",
+      "Bash(cat */.env)",
+      "Bash(less .env)",
+      "Bash(head .env)",
+      "Bash(tail .env)",
+      "Bash(grep * .env)",
+      "Bash(printenv)",
+      "Bash(env)"
+    ]
+  }
+}

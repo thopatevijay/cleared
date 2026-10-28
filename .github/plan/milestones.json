@@ -1,0 +1,8 @@
+[
+  {"title": "M0 · Recon & Bootstrap", "due": "2026-10-30", "description": "Prerequisites, Bryntum and organiser questions, repo + CI, local stack, integration spikes recording real fixtures (PayPal orders/tracking, disputes, webhooks; OpenAI), Render pipeline, Bryntum spike."},
+  {"title": "M1 · Walking Skeleton", "due": "2026-11-01", "description": "Domain core, schema, outbox + worker, webhook ingest, auth + demo workspaces, design system, a skeleton dashboard deployed to Render, observability baseline."},
+  {"title": "M2 · Dispute Loop", "due": "2026-11-05", "description": "Evidence intake, agent harness, extraction, two-pass scope check, proof-pack UI, dispute ingest + deadline watcher, dispute draft + compiled PDF, action governance, dispute UI, judge scenario runner with the labelled sandbox decision."},
+  {"title": "M3 · Holds & Cash", "due": "2026-11-08", "description": "Holds + explanations, tracking + carrier map + route advice, guided Completed, cash calendar, client acknowledgement, scope snapshot, email alerts, reconcile/SLO/synthetic checks, review-hold pool; the storyboard runs for real on production."},
+  {"title": "M4 · Trust & Global", "due": "2026-11-10", "description": "Gold sets + eval suite, Hindi + currency/time-zone formatting, accessibility + performance, security review, load test, judging runbook + retention."},
+  {"title": "M5 · Submission", "due": "2026-11-12", "description": "README, video, Devpost text, then M5-CLEANUP, M5-GATE from a clean clone, then submit (repo public only with the owner's OK)."}
+]

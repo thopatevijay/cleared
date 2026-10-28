@@ -1,0 +1,50 @@
+# Secrets: never commit
+.env
+.env.*
+!.env.example
+.dev-refs.md
+*.pem
+*.key
+*.p12
+credentials*.json
+service-account*.json
+
+# Kickoff and workflow state (private)
+.kickoff-state.md
+.prp/
+.claude/worktrees/
+
+# Private from day one (landing-checks.sh fails if any is tracked)
+docs/research/
+docs/outreach/
+docs/recon/
+.review/
+
+# Build output and dependencies
+node_modules/
+.next/
+dist/
+build/
+out/
+coverage/
+.turbo/
+*.tsbuildinfo
+playwright-report/
+test-results/
+
+# Large or rendered media
+*.mp4
+*.mov
+*.webm
+media/renders/
+
+# Local data
+.data/
+*.sqlite
+pgdata/
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
