@@ -1,0 +1,44 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 579 >>
+stream
+BT /F1 11 Tf 56 760 Td 15 TL
+(Delivery note \(synthetic sample, Cleared sandbox test data\)) '
+() '
+(Seller: Example Handloom Studio, Jaipur, India) '
+(Buyer: Sample Buyer, Austin, TX, USA) '
+(Order reference: SAMPLE-ORDER-0001) '
+(Item: 1 x hand-block-printed cotton table runner \(180 x 35 cm\)) '
+(Dispatched: 2026-10-20 via India Post, tracking EX000000000IN \(sample\)) '
+(Delivered: 2026-10-27, left at front desk \(carrier scan, sample\)) '
+() '
+(The item matched the listing photos and description.) '
+(This document is synthetic and contains no real personal data.) '
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000871 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+941
+%%EOF
