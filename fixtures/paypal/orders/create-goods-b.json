@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T04:57:21.081Z",
+    "env": "sandbox",
+    "ticket": "M0-04",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "5d3ce40b-ac55-4faf-a649-958f491b18df",
+      "prefer": "return=representation"
+    },
+    "body": {
+      "intent": "CAPTURE",
+      "purchase_units": [
+        {
+          "reference_id": "goods-b",
+          "custom_id": "spike-c897b1d1-604a-4d01-8ec5-84da8bf660b6",
+          "amount": {
+            "currency_code": "USD",
+            "value": "18.50"
+          }
+        }
+      ],
+      "payment_source": {
+        "card": {
+          "number": "CARD-1",
+          "expiry": "2030-12",
+          "security_code": "[REDACTED]",
+          "name": "Person 1"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f56182214244f"
+    },
+    "body": {
+      "id": "3KD72075PM7588429",
+      "intent": "CAPTURE",
+      "status": "COMPLETED",
+      "payment_source": {
+        "card": {
+          "name": "Person 1",
+          "last_digits": "1111",
+          "expiry": "2030-12",
+          "brand": "VISA",
+          "type": "CREDIT",
+          "bin_details": {}
+        }
+      },
+      "purchase_units": [
+        {
+          "reference_id": "goods-b",
+          "amount": {
+            "currency_code": "USD",
+            "value": "18.50"
+          },
+          "payee": {
+            "email_address": "merchant-1@example.test",
+            "merchant_id": "MERCHANT-1"
+          },
+          "custom_id": "spike-c897b1d1-604a-4d01-8ec5-84da8bf660b6",
+          "soft_descriptor": "TEST STORE",
+          "supplementary_data": {
+            "risk": {
+              "risk_level_indicator": "HIGH_RISK"
+            }
+          },
+          "payments": {
+            "captures": [
+              {
+                "id": "7F7924957B2117201",
+                "status": "COMPLETED",
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "18.50"
+                },
+                "final_capture": true,
+                "seller_protection": {
+                  "status": "NOT_ELIGIBLE"
+                },
+                "seller_receivable_breakdown": {
+                  "gross_amount": {
+                    "currency_code": "USD",
+                    "value": "18.50"
+                  },
+                  "paypal_fee": {
+                    "currency_code": "USD",
+                    "value": "0.97"
+                  },
+                  "net_amount": {
+                    "currency_code": "USD",
+                    "value": "17.53"
+                  }
+                },
+                "custom_id": "spike-c897b1d1-604a-4d01-8ec5-84da8bf660b6",
+                "links": [
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/payments/captures/7F7924957B2117201",
+                    "rel": "self",
+                    "method": "GET"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/payments/captures/7F7924957B2117201/refund",
+                    "rel": "refund",
+                    "method": "POST"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3KD72075PM7588429",
+                    "rel": "up",
+                    "method": "GET"
+                  }
+                ],
+                "create_time": "2026-10-29T04:57:20Z",
+                "update_time": "2026-10-29T04:57:20Z",
+                "network_transaction_reference": {
+                  "id": "CARD-3",
+                  "network": "VISA"
+                },
+                "processor_response": {
+                  "cvv_code": "M",
+                  "response_code": "0000"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "create_time": "2026-10-29T04:57:20Z",
+      "update_time": "2026-10-29T04:57:20Z",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/3KD72075PM7588429",
+          "rel": "self",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}

@@ -24,7 +24,12 @@ import { createScrubber } from "../../packages/adapters/src/testing/scrub.ts";
 
 const TICKET = "M0-04";
 // PayPal's published sandbox test Visa (developer.paypal.com/tools/sandbox/card-testing); synthetic holder.
-const CARD: CardSource = { number: "4111111111111111", expiry: "2030-12", securityCode: "123", name: "Asha Verma" };
+const CARD: CardSource = {
+  number: "4111111111111111",
+  expiry: "2030-12",
+  securityCode: "123",
+  name: "Asha Verma",
+};
 
 function env(name: string): string {
   const v = process.env[name];
@@ -50,9 +55,13 @@ async function main(): Promise<void> {
   const record = process.argv.includes("--record");
   const credentials = { clientId: env("PAYPAL_CLIENT_ID"), clientSecret: env("PAYPAL_CLIENT_SECRET") };
   const liveTokens = new Set<string>();
-  const scrubber = createScrubber({ secrets: () => [credentials.clientId, credentials.clientSecret, ...liveTokens] });
+  const scrubber = createScrubber({
+    secrets: () => [credentials.clientId, credentials.clientSecret, ...liveTokens],
+  });
   const dir = fileURLToPath(new URL("../../fixtures/paypal/", import.meta.url));
-  const recorder: Recorder | undefined = record ? createRecorder({ dir, ticket: TICKET, scrubber }) : undefined;
+  const recorder: Recorder | undefined = record
+    ? createRecorder({ dir, ticket: TICKET, scrubber })
+    : undefined;
   const label = (name: string, note?: string): void => recorder?.label(name, note);
 
   const http = createHttpClient({
@@ -75,7 +84,13 @@ async function main(): Promise<void> {
   // Order A (goods): create with card → captured in the same call; same PayPal-Request-Id replays.
   const reqA = randomUUID();
   const customA = `spike-${randomUUID()}`;
-  const orderA = { amount: { currency_code: "USD", value: "42.00" }, customId: customA, referenceId: "goods-a", card: CARD, requestId: reqA };
+  const orderA = {
+    amount: { currency_code: "USD", value: "42.00" },
+    customId: customA,
+    referenceId: "goods-a",
+    card: CARD,
+    requestId: reqA,
+  };
   label("orders/create-goods-a", "card payment_source, intent CAPTURE, custom_id spike-<uuid>");
   const a = await pp.createOrder(orderA);
   let capA = firstCapture(a);
@@ -90,7 +105,13 @@ async function main(): Promise<void> {
   if (capA === undefined) throw new Error("order A has no capture");
   label("orders/create-goods-a-replay", "same PayPal-Request-Id as create-goods-a");
   const aAgain = await pp.createOrder(orderA);
-  out.order_a = { id: a.id, status: a.status, capture: capA.id, capture_status: capA.status, replay_same_id: aAgain.id === a.id };
+  out.order_a = {
+    id: a.id,
+    status: a.status,
+    capture: capA.id,
+    capture_status: capA.status,
+    replay_same_id: aAgain.id === a.id,
+  };
 
   label("orders/get-order-a");
   const gotA = await pp.getOrder(a.id);
@@ -102,37 +123,89 @@ async function main(): Promise<void> {
 
   // Order B (goods): tracked with OTHER.
   label("orders/create-goods-b");
-  const b = await pp.createOrder({ amount: { currency_code: "USD", value: "18.50" }, customId: `spike-${randomUUID()}`, referenceId: "goods-b", card: CARD, requestId: randomUUID() });
+  const b = await pp.createOrder({
+    amount: { currency_code: "USD", value: "18.50" },
+    customId: `spike-${randomUUID()}`,
+    referenceId: "goods-b",
+    card: CARD,
+    requestId: randomUUID(),
+  });
   const capB = firstCapture(b);
   if (capB === undefined) throw new Error("order B has no capture");
 
   label("tracking/track-ind-delhivery");
-  const tA = await pp.trackOrder(a.id, { captureId: capA.id, trackingNumber: `SPKA${String(Date.now())}`, carrier: "IND_DELHIVERY", requestId: randomUUID() });
+  const tA = await pp.trackOrder(a.id, {
+    captureId: capA.id,
+    trackingNumber: `SPKA${String(Date.now())}`,
+    carrier: "IND_DELHIVERY",
+    requestId: randomUUID(),
+  });
   label("tracking/track-other", "carrier OTHER + carrier_name_other");
-  const tB = await pp.trackOrder(b.id, { captureId: capB.id, trackingNumber: `SPKB${String(Date.now())}`, carrier: "OTHER", carrierNameOther: "Kampala Express Couriers", requestId: randomUUID() });
-  out.trackers = [tA, tB].map((o) => o.purchase_units[0]?.shipping?.trackers?.map((t) => ({ id: t.id, status: t.status })));
+  const tB = await pp.trackOrder(b.id, {
+    captureId: capB.id,
+    trackingNumber: `SPKB${String(Date.now())}`,
+    carrier: "OTHER",
+    carrierNameOther: "Kampala Express Couriers",
+    requestId: randomUUID(),
+  });
+  out.trackers = [tA, tB].map((o) =>
+    o.purchase_units[0]?.shipping?.trackers?.map((t) => ({ id: t.id, status: t.status })),
+  );
 
   // Order C (service): legacy trackers-batch COMPLETED with no tracking number, then read back.
   label("orders/create-service-c");
-  const c = await pp.createOrder({ amount: { currency_code: "USD", value: "120.00" }, customId: `spike-${randomUUID()}`, referenceId: "service-c", card: CARD, requestId: randomUUID() });
+  const c = await pp.createOrder({
+    amount: { currency_code: "USD", value: "120.00" },
+    customId: `spike-${randomUUID()}`,
+    referenceId: "service-c",
+    card: CARD,
+    requestId: randomUUID(),
+  });
   const capC = firstCapture(c);
   if (capC === undefined) throw new Error("order C has no capture");
-  label("tracking/trackers-batch-completed", "legacy /v1/shipping/trackers-batch, status COMPLETED, no tracking number");
+  label(
+    "tracking/trackers-batch-completed",
+    "legacy /v1/shipping/trackers-batch, status COMPLETED, no tracking number",
+  );
   const batch = await pp.markCompleted([capC.id]);
   label("tracking/get-legacy-tracker", "read-back of <capture id>-NOTRACKER");
   const legacy = await pp.getLegacyTracker(capC.id);
-  out.service = { order: c.id, capture: capC.id, batch_errors: batch.errors.length, legacy_status: legacy.status };
+  out.service = {
+    order: c.id,
+    capture: capC.id,
+    batch_errors: batch.errors.length,
+    legacy_status: legacy.status,
+  };
 
   // Error cases.
   label("errors/400-validation", "amount.value not a number");
-  const e400 = await expectError("400", () => pp.createOrder({ ...orderA, amount: { currency_code: "USD", value: "forty-two" }, requestId: randomUUID() }));
+  const e400 = await expectError("400", () =>
+    pp.createOrder({
+      ...orderA,
+      amount: { currency_code: "USD", value: "forty-two" },
+      requestId: randomUUID(),
+    }),
+  );
   label("errors/404-capture");
   const e404 = await expectError("404", () => pp.getCapture("0NOTACAPTURE0000"));
-  out.errors = { e400: [e400.status, e400.paypal?.name, e400.debugId !== undefined], e404: [e404.status, e404.paypal?.name] };
+  out.errors = {
+    e400: [e400.status, e400.paypal?.name, e400.debugId !== undefined],
+    e404: [e404.status, e404.paypal?.name],
+  };
 
-  out.revoked = await revokedTokenPath(http, credentials, token.value, a.id, label, tokens, liveTokens, cache);
+  out.revoked = await revokedTokenPath(
+    http,
+    credentials,
+    token.value,
+    a.id,
+    label,
+    tokens,
+    liveTokens,
+    cache,
+  );
   console.log(JSON.stringify(out, null, 2));
-  if (recorder !== undefined) console.log(`wrote ${String(recorder.written.length)} fixtures:\n${recorder.written.join("\n")}`);
+  if (recorder !== undefined)
+    console.log(`wrote ${String(recorder.written.length)} fixtures:\n${recorder.written.join("\n")}`);
 }
 
 /** Terminates the live token at PayPal, then GETs with it: 401 → one forced refresh → 200. */
@@ -155,7 +228,10 @@ async function revokedTokenPath(
     body: `token=${encodeURIComponent(value)}&token_type_hint=ACCESS_TOKEN`,
     idempotent: true,
   });
-  label("errors/401-revoked-token", "GET with the revoked token → 401; .2 = forced re-mint; .3 = retried GET → 200");
+  label(
+    "errors/401-revoked-token",
+    "GET with the revoked token → 401; .2 = forced re-mint; .3 = retried GET → 200",
+  );
   const pp = createPayPalOrdersClient({ http, tokens });
   const before = cache.get(credentials.clientId)?.token?.value;
   const order = await pp.getOrder(orderId);
@@ -165,7 +241,10 @@ async function revokedTokenPath(
 }
 
 main().catch((err: unknown) => {
-  const e = err instanceof PayPalApiError ? { status: err.status, name: err.paypal?.name, debug: err.debugId, details: err.paypal?.details } : String(err);
+  const e =
+    err instanceof PayPalApiError
+      ? { status: err.status, name: err.paypal?.name, debug: err.debugId, details: err.paypal?.details }
+      : String(err);
   console.error("spike failed:", JSON.stringify(e));
   process.exit(1);
 });

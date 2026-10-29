@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T04:57:34.151Z",
+    "env": "sandbox",
+    "ticket": "M0-04",
+    "scrubbed": true,
+    "note": "GET with the revoked token → 401; .2 = forced re-mint; .3 = retried GET → 200"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders/2KC08730ML031160C",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 401,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f5734451a4218"
+    },
+    "body": {
+      "error": "invalid_token",
+      "error_description": "Access Token not found in cache"
+    }
+  }
+}

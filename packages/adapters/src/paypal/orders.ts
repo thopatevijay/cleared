@@ -164,7 +164,8 @@ export function createPayPalOrdersClient(options: PayPalOrdersClientOptions): Pa
         representation: true,
         body: {},
       }),
-    getOrder: (orderId) => call({ method: "GET", path: `/v2/checkout/orders/${seg(orderId)}`, schema: OrderSchema }),
+    getOrder: (orderId) =>
+      call({ method: "GET", path: `/v2/checkout/orders/${seg(orderId)}`, schema: OrderSchema }),
     getCapture: (captureId) =>
       call({ method: "GET", path: `/v2/payments/captures/${seg(captureId)}`, schema: CaptureSchema }),
     trackOrder: (orderId, input) =>

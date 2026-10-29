@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T04:57:11.448Z",
+    "env": "sandbox",
+    "ticket": "M0-04",
+    "scrubbed": true,
+    "note": "capture on an order the card create already captured"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders/2KC08730ML031160C/capture",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "e9cf7481-aa75-4242-89be-45d780cd3865",
+      "prefer": "return=representation"
+    },
+    "body": {}
+  },
+  "response": {
+    "status": 422,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f3674842bc064"
+    },
+    "body": {
+      "name": "UNPROCESSABLE_ENTITY",
+      "details": [
+        {
+          "issue": "ORDER_ALREADY_CAPTURED",
+          "description": "Order already captured.If 'intent=CAPTURE' only one capture per order is allowed."
+        }
+      ],
+      "message": "The requested action could not be performed, semantically incorrect, or failed business validation.",
+      "debug_id": "f3674842bc064",
+      "links": [
+        {
+          "href": "https://developer.paypal.com/api/rest/reference/orders/v2/errors/#ORDER_ALREADY_CAPTURED",
+          "rel": "information_link",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T04:57:29.418Z",
+    "env": "sandbox",
+    "ticket": "M0-04",
+    "scrubbed": true,
+    "note": "legacy /v1/shipping/trackers-batch, status COMPLETED, no tracking number"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/shipping/trackers-batch",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "trackers": [
+        {
+          "transaction_id": "7AS90958XD7569923",
+          "status": "COMPLETED"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f529566754294"
+    },
+    "body": {
+      "tracker_identifiers": [
+        {
+          "transaction_id": "7AS90958XD7569923",
+          "links": [
+            {
+              "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/7AS90958XD7569923-NOTRACKER",
+              "rel": "self",
+              "method": "GET",
+              "encType": "application/json"
+            },
+            {
+              "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/7AS90958XD7569923-NOTRACKER",
+              "rel": "replace",
+              "method": "PUT",
+              "encType": "application/json"
+            }
+          ]
+        }
+      ],
+      "errors": [],
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers-batch",
+          "rel": "self",
+          "method": "POST",
+          "encType": "application/json"
+        }
+      ]
+    }
+  }
+}

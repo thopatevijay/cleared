@@ -4,12 +4,7 @@
 // captured on every response, and an `onExchange` hook (the fixture recorder).
 import { randomUUID } from "node:crypto";
 import { createBreaker, type Breaker, type BreakerOptions } from "./breaker.ts";
-import {
-  CircuitOpenError,
-  HttpNetworkError,
-  HttpStatusError,
-  HttpTimeoutError,
-} from "./errors.ts";
+import { CircuitOpenError, HttpNetworkError, HttpStatusError, HttpTimeoutError } from "./errors.ts";
 
 export type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD";
 
@@ -119,9 +114,15 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       });
     } catch (err) {
       if (isTimeout(err)) {
-        return { kind: "timeout", error: new HttpTimeoutError(options.vendor, req.method, req.url, timeoutMs, { cause: err }) };
+        return {
+          kind: "timeout",
+          error: new HttpTimeoutError(options.vendor, req.method, req.url, timeoutMs, { cause: err }),
+        };
       }
-      return { kind: "network", error: new HttpNetworkError(options.vendor, req.method, req.url, { cause: err }) };
+      return {
+        kind: "network",
+        error: new HttpNetworkError(options.vendor, req.method, req.url, { cause: err }),
+      };
     }
     const bodyText = await raw.text();
     const resHeaders = Object.fromEntries(raw.headers.entries());
@@ -164,7 +165,15 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       if (result.kind !== "response") throw result.error;
       const { res } = result;
       if (res.status >= 200 && res.status < 300) return res;
-      throw new HttpStatusError(options.vendor, req.method, req.url, res.status, res.bodyText, res.headers, res.debugId);
+      throw new HttpStatusError(
+        options.vendor,
+        req.method,
+        req.url,
+        res.status,
+        res.bodyText,
+        res.headers,
+        res.debugId,
+      );
     }
   }
 

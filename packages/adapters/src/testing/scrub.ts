@@ -25,7 +25,18 @@ const SECRET_KEYS = new Set([
   "token",
 ]);
 
-type Kind = "payer-email" | "merchant-email" | "person" | "merchant" | "payer" | "account" | "app" | "address" | "phone" | "ip" | "card";
+type Kind =
+  | "payer-email"
+  | "merchant-email"
+  | "person"
+  | "merchant"
+  | "payer"
+  | "account"
+  | "app"
+  | "address"
+  | "phone"
+  | "ip"
+  | "card";
 
 const ID_KEYS: Readonly<Record<string, Kind>> = {
   merchant_id: "merchant",
@@ -108,7 +119,10 @@ export function createScrubber(options: ScrubberOptions = {}): Scrubber {
     if (key === "number" && parent === "card") return placeholder("card", input);
     if (key === "name" && (parent === "card" || parent === "shipping")) return placeholder("person", input);
     if (key === "email_address" || key === "email") {
-      return placeholder(path.some((p) => p.toLowerCase() === "payee") ? "merchant-email" : "payer-email", input);
+      return placeholder(
+        path.some((p) => p.toLowerCase() === "payee") ? "merchant-email" : "payer-email",
+        input,
+      );
     }
     if (key === "ip_address" || key === "ip") return placeholder("ip", input);
     const kind = ID_KEYS[key];
@@ -116,7 +130,10 @@ export function createScrubber(options: ScrubberOptions = {}): Scrubber {
     return text(input);
   }
 
-  function headers(input: Readonly<Record<string, string>>, allow: readonly string[]): Record<string, string> {
+  function headers(
+    input: Readonly<Record<string, string>>,
+    allow: readonly string[],
+  ): Record<string, string> {
     const out: Record<string, string> = {};
     for (const [k, v] of Object.entries(input)) {
       const lower = k.toLowerCase();

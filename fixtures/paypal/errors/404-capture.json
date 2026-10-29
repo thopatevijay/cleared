@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T04:57:32.430Z",
+    "env": "sandbox",
+    "ticket": "M0-04",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/captures/0NOTACAPTURE0000",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "content-type": "application/json;charset=UTF-8",
+      "paypal-debug-id": "f879495775b42"
+    },
+    "body": {
+      "name": "RESOURCE_NOT_FOUND",
+      "message": "The specified resource does not exist.",
+      "debug_id": "f879495775b42",
+      "details": [
+        {
+          "issue": "INVALID_RESOURCE_ID",
+          "description": "Specified resource ID does not exist. Please check the resource ID and try again."
+        }
+      ],
+      "links": [
+        {
+          "href": "https://developer.paypal.com/docs/api/payments/v2/#error-INVALID_RESOURCE_ID",
+          "rel": "information_link"
+        }
+      ]
+    }
+  }
+}
