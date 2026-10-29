@@ -39,7 +39,9 @@ Measured locally (2026-10-29, Postgres 18.6 on port 5632): the built web app ans
 | `DATABASE_URL` | web, worker | `fromDatabase: cleared-db` `connectionString` (private network) |
 | `NODE_VERSION`, `NODE_ENV=production`, `PAYPAL_ENV=sandbox`, `AGENT_KILL_SWITCH=false`, `OPENAI_MODEL_SMALL`, `OPENAI_MODEL_LARGE`, `LLM_DAILY_CAP_USD=1`, `LLM_WORKSPACE_CAP_USD=0.10`, `DEMO_WORKSPACES_PER_IP_PER_DAY=3`, `DEMO_WORKSPACES_GLOBAL_MAX=200`, `LOG_LEVEL=info` | group `cleared-shared` | values from `.env.example` |
 | `SESSION_SECRET`, `ENCRYPTION_KEY` | group `cleared-shared` | `generateValue: true` (a base64 256-bit value; one value shared by both services) |
-| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, `OPENAI_API_KEY`, `RESEND_API_KEY`, `SENTRY_DSN`, `EMAIL_FROM`, `EMAIL_RECIPIENT_ALLOWLIST` | web: `sync: false`; worker: `fromService` → web | entered once by the owner in the dashboard at Blueprint creation |
+| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_WEBHOOK_ID`, `OPENAI_API_KEY`, `RESEND_API_KEY`, `SENTRY_DSN`, `EMAIL_FROM`, `EMAIL_RECIPIENT_ALLOWLIST` | web: `sync: false`; worker: `fromService` → web for all except `PAYPAL_WEBHOOK_ID` (web-only) | entered once by the owner in the dashboard at Blueprint creation |
+
+**Pitfall (first Blueprint creation, 2026-10-29):** `PAYPAL_WEBHOOK_ID` was left blank (M1-04 creates the webhook), so Render never created it on `cleared-web`, and the worker's `fromService … envVarKey: PAYPAL_WEBHOOK_ID` failed the Blueprint with `environment variable not found: "PAYPAL_WEBHOOK_ID" for cleared-web`. A `fromService` reference fails Blueprint creation when the source variable is empty; the worker now references only the 7 variables that always have a value.
 
 Render prompts for `sync: false` values only when the Blueprint is created; a later sync ignores them. A new secret added later goes into the web service's Environment page by hand. The worker's `fromService` copies refresh on the next Blueprint sync.
 
