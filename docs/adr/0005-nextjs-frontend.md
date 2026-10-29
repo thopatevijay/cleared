@@ -9,7 +9,7 @@ Design is 20% of the score; the users are global and mobile-first; Bryntum is a 
 
 ## Decision
 
-Next.js 16 App Router: server components for reads, client components for interactive panels. Tailwind 4 with design tokens; next-intl with EN + HI; WCAG 2.2 AA; empty, loading and error states on every screen. Performance budget: LCP < 2.5 s, INP < 200 ms, CLS < 0.1. The cash calendar is one Bryntum Calendar wrapped in a `CashCalendar` component, with FullCalendar (MIT) as the fallback if Bryntum doesn't grant permission by 2026-11-04.
+Next.js 16 App Router: server components for reads, client components for interactive panels. Tailwind 4 with design tokens; next-intl with EN + HI; WCAG 2.2 AA; empty, loading and error states on every screen. Performance budget: LCP < 2.5 s, INP < 200 ms, CLS < 0.1. The cash calendar is one Bryntum Calendar wrapped in a `CashCalendar` component. The FullCalendar fallback was dropped by the owner on 2026-10-29 (ADR 0016).
 
 ## Alternatives considered
 

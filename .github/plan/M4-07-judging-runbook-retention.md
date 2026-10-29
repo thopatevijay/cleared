@@ -33,7 +33,7 @@ Judging runs 2026-12-01 14:00 PT → 2026-12-15 08:00 PT, and the project must s
     - global workspace cap reached: purge `loadtest`/abandoned workspaces; a cap raise needs the owner
     - a bad deploy: Render rollback to the previous deploy
     - Postgres near its storage limit
-    - the Bryntum trial expires: switch `CashCalendar` to FullCalendar
+    - the Bryntum trial expires or stops rendering: check the extension Bryntum confirmed (P-38); contact Bryntum; the accessible upcoming-releases list stays usable meanwhile
     - a judge-reported bug
     - the kill switch (`AGENT_KILL_SWITCH`)
   - **Change freeze:** from 2026-12-01, deploys are fixes only, each one followed by the synthetic check

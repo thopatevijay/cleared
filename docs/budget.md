@@ -21,7 +21,7 @@ Ticket M0-00 · prices checked 2026-10-28 · **owner-approved ceiling: $80 total
 | OpenAI | pay-as-you-go, owner key | see below | ≈ $9 expected | ≈ $8 expected | $0 | **yes**: owner key; project budget enforces the cap |
 | Resend | Free: 3,000/mo, 100/day | $0 | $0 | $0 | $0 | no purchase (owner-only email, no domain: P-44) |
 | Sentry | Developer (free): 5k errors, 1 user, 30-day lookback | $0 | $0 | $0 | $0 | no purchase |
-| Bryntum Calendar | trial | $0 | $0 | $0 | $0 | no purchase (permission pending, M0-01; FullCalendar MIT fallback) |
+| Bryntum Calendar | trial | $0 | $0 | $0 | $0 | no purchase (Bryntum only, ADR 0016; written permission pending, M0-01) |
 | GitHub | Free, private repo: 2,000 Actions minutes/mo | $0 | $0 | $0 | $0 | no purchase (see the CI minutes risk below) |
 | Devpost, YouTube, Discord, cloudflared | free | $0 | $0 | $0 | $0 | no purchase |
 | **Total expected** | | | **≈ $18** | **≈ $30** | **≈ $5** | **≈ $53** |

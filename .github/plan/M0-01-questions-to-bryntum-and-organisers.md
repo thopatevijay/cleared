@@ -83,7 +83,7 @@ grep -rnE '(client_id|client_secret|Bearer |A21AA|sk-)' docs/outreach/ | wc -l  
 
 ## Handoff
 
-- **M0-09 / M3-05:** the Bryntum answer (or none by 2026-11-04 → FullCalendar behind `CashCalendar`)
+- **M0-09 / M3-05:** the Bryntum answer. ADR 0016 (2026-10-29) means Bryntum only, and M3-05 needs the written OK (P-38) before it starts
 - **M3-09 / M5-01:** the Transaction Search answer (scope arrives → back-fill; otherwise the documented launch limit stays in README and `PROJECT.md` §9)
 - **M2-10 / M5-01 / M5-03:** the organisers' answer on the labelled sandbox decision step (wording in the README and Devpost text)
 - **M0-GATE:** the "sent" comments exist on this issue
