@@ -1,0 +1,15 @@
+# Makes this spike its own pnpm root: the repo's workspace, lockfile and CI never see it (M0-09).
+packages: []
+
+# pnpm 12 fails the install on any unlisted dependency build script.
+# The Bryntum trial runs an (obfuscated) postinstall that stamps a per-install trial id into its own
+# .js files (calendar-trial -> calendar-trial-lib/build.js: replaces `%LICENSE%` with a random UUID).
+# See docs/evidence/m0-09-bryntum-spike.md. sharp (next/image) is not used by the spike.
+allowBuilds:
+  "@bryntum/calendar-trial": true
+  "@bryntum/calendar-trial-lib": true
+  sharp: false
+
+minimumReleaseAgeExclude:
+  - "@bryntum/calendar-react@7.3.8"
+  - "@bryntum/calendar-trial@7.3.8"
