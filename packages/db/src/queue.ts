@@ -14,16 +14,40 @@ export type Queue = PgBoss;
 
 type DrizzleTx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
+function connectionStringOf(db: Db): string {
+  const connectionString = db.$client.options.connectionString;
+  if (!connectionString) throw new Error("queue: the db pool has no connectionString");
+  return connectionString;
+}
+
 /** Starts pg-boss on the database behind `db` (creating or migrating its schema) and returns it. */
 export async function createQueue(db: Db): Promise<Queue> {
-  const connectionString = db.$client.options.connectionString;
-  if (!connectionString) throw new Error("createQueue: the db pool has no connectionString");
-  const boss = new PgBoss({ connectionString, schema: QUEUE_SCHEMA, max: QUEUE_POOL_MAX });
+  const boss = new PgBoss({
+    connectionString: connectionStringOf(db),
+    schema: QUEUE_SCHEMA,
+    max: QUEUE_POOL_MAX,
+  });
   boss.on("error", (error: unknown) => {
     console.error(JSON.stringify({ service: "queue", msg: "pg-boss error", error: String(error) }));
   });
   await boss.start();
   return boss;
+}
+
+/**
+ * Creates or migrates the pg-boss schema without running any worker, supervisor or scheduler.
+ * Part of `migrate`, so the schema exists right after `make up` and on deploy.
+ */
+export async function installQueueSchema(db: Db): Promise<void> {
+  const boss = new PgBoss({
+    connectionString: connectionStringOf(db),
+    schema: QUEUE_SCHEMA,
+    max: 1,
+    supervise: false,
+    schedule: false,
+  });
+  await boss.start();
+  await boss.stop({ graceful: false });
 }
 
 /** Wraps a Drizzle transaction so pg-boss writes the job inside it. */

@@ -24,7 +24,9 @@ describe.skipIf(!dbAvailable)("transactional enqueue (compose Postgres)", () => 
   });
 
   it("the job exists after COMMIT", async () => {
-    const id = await db.transaction(async (tx) => boss.send(queueName, { case: "commit" }, { db: jobDb(tx) }));
+    const id = await db.transaction(async (tx) =>
+      boss.send(queueName, { case: "commit" }, { db: jobDb(tx) }),
+    );
     expect(id).toEqual(expect.any(String));
     const jobs = await boss.findJobs(queueName, { id: id ?? "" });
     expect(jobs.map((j) => j.data)).toEqual([{ case: "commit" }]);

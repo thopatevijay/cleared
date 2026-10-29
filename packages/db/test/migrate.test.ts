@@ -19,7 +19,9 @@ describe.skipIf(!dbAvailable)("migrations (compose Postgres)", () => {
   it("enables pgcrypto and creates no domain tables", async () => {
     const ext = await db.$client.query("select 1 from pg_extension where extname = 'pgcrypto'");
     expect(ext.rowCount).toBe(1);
-    const tables = await db.$client.query("select 1 from information_schema.tables where table_schema = 'public'");
+    const tables = await db.$client.query(
+      "select 1 from information_schema.tables where table_schema = 'public'",
+    );
     expect(tables.rowCount).toBe(0);
   });
 });
