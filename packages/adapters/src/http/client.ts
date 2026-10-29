@@ -12,7 +12,13 @@ export interface HttpRequest {
   readonly method: HttpMethod;
   readonly url: string;
   readonly headers?: Readonly<Record<string, string>>;
-  readonly body?: string;
+  /** Text (JSON, form) or bytes (multipart with binary file parts). */
+  readonly body?: string | Uint8Array;
+  /**
+   * What `onExchange` sees instead of a binary body (e.g. the multipart text with file bytes
+   * replaced by name, size and sha256). Defaults to `[binary body: N bytes]`.
+   */
+  readonly bodyPreview?: string;
   /** Overrides the client's default timeout for this call. */
   readonly timeoutMs?: number;
   /**
@@ -130,7 +136,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       vendor: options.vendor,
       attempt,
       durationMs: cfg.now() - started,
-      request: { method: req.method, url: req.url, headers, body: req.body },
+      request: { method: req.method, url: req.url, headers, body: exchangeBody(req) },
       response: { status: raw.status, headers: resHeaders, body: bodyText },
     });
     const res: HttpResponse = {
@@ -178,6 +184,12 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
   }
 
   return { vendor: options.vendor, request, breaker };
+}
+
+/** The request body as recorded: text as sent, bytes as their preview. */
+function exchangeBody(req: HttpRequest): string | undefined {
+  if (req.body === undefined || typeof req.body === "string") return req.body;
+  return req.bodyPreview ?? `[binary body: ${String(req.body.byteLength)} bytes]`;
 }
 
 /** Timeouts, transport failures, 5xx and 429 count toward the breaker; 4xx do not. */

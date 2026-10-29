@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:43:21.816Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "GET /v1/customer/disputes?update_time_after=<run start>"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes?update_time_after=2026-10-29T05%3A15%3A51.338Z&page_size=50",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f945006927ac4"
+    },
+    "body": {
+      "items": [
+        {
+          "dispute_id": "PP-R-TCZ-10195079",
+          "create_time": "2026-10-29T05:35:17.000Z",
+          "update_time": "2026-10-29T05:38:54.000Z",
+          "disputed_transactions": [
+            {
+              "buyer_transaction_id": "2Y450061V76738409",
+              "buyer": {
+                "payer_id": "PAYER-4"
+              },
+              "seller": {
+                "merchant_id": "MERCHANT-1"
+              }
+            }
+          ],
+          "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+          "status": "WAITING_FOR_SELLER_RESPONSE",
+          "dispute_state": "REQUIRED_ACTION",
+          "dispute_amount": {
+            "currency_code": "USD",
+            "value": "12.00"
+          },
+          "dispute_life_cycle_stage": "CHARGEBACK",
+          "dispute_channel": "EXTERNAL",
+          "seller_response_due_date": "2026-11-09T04:59:59.000Z",
+          "links": [
+            {
+              "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-TCZ-10195079",
+              "rel": "self",
+              "method": "GET"
+            }
+          ]
+        },
+        {
+          "dispute_id": "PP-R-UVC-10195076",
+          "create_time": "2026-10-29T05:16:59.000Z",
+          "update_time": "2026-10-29T05:38:33.000Z",
+          "disputed_transactions": [
+            {
+              "buyer_transaction_id": "3DU47244EB672003U",
+              "buyer": {
+                "payer_id": "PAYER-2"
+              },
+              "seller": {
+                "merchant_id": "MERCHANT-1"
+              }
+            }
+          ],
+          "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+          "status": "RESOLVED",
+          "dispute_state": "RESOLVED",
+          "dispute_amount": {
+            "currency_code": "USD",
+            "value": "64.00"
+          },
+          "dispute_life_cycle_stage": "CHARGEBACK",
+          "dispute_channel": "EXTERNAL",
+          "outcome": "WON",
+          "links": [
+            {
+              "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-UVC-10195076",
+              "rel": "self",
+              "method": "GET"
+            }
+          ]
+        },
+        {
+          "dispute_id": "PP-R-ARH-10195077",
+          "create_time": "2026-10-29T05:17:00.000Z",
+          "update_time": "2026-10-29T05:27:53.000Z",
+          "disputed_transactions": [
+            {
+              "buyer_transaction_id": "8J955250E88441913",
+              "buyer": {
+                "payer_id": "PAYER-3"
+              },
+              "seller": {
+                "merchant_id": "MERCHANT-1"
+              }
+            }
+          ],
+          "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+          "status": "UNDER_REVIEW",
+          "dispute_state": "UNDER_PAYPAL_REVIEW",
+          "dispute_amount": {
+            "currency_code": "USD",
+            "value": "9.00"
+          },
+          "dispute_life_cycle_stage": "CHARGEBACK",
+          "dispute_channel": "EXTERNAL",
+          "links": [
+            {
+              "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077",
+              "rel": "self",
+              "method": "GET"
+            }
+          ]
+        },
+        {
+          "dispute_id": "PP-R-VFE-10195075",
+          "create_time": "2026-10-29T05:16:58.000Z",
+          "update_time": "2026-10-29T05:20:33.000Z",
+          "disputed_transactions": [
+            {
+              "buyer_transaction_id": "648548579F305092D",
+              "buyer": {
+                "payer_id": "PAYER-1"
+              },
+              "seller": {
+                "merchant_id": "MERCHANT-1"
+              }
+            }
+          ],
+          "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+          "status": "WAITING_FOR_SELLER_RESPONSE",
+          "dispute_state": "REQUIRED_ACTION",
+          "dispute_amount": {
+            "currency_code": "USD",
+            "value": "23.00"
+          },
+          "dispute_life_cycle_stage": "CHARGEBACK",
+          "dispute_channel": "EXTERNAL",
+          "seller_response_due_date": "2026-11-09T04:59:59.000Z",
+          "links": [
+            {
+              "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-VFE-10195075",
+              "rel": "self",
+              "method": "GET"
+            }
+          ]
+        }
+      ],
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes?update_time_after=2026-10-29T05:15:51.338Z&page_size=50",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes?update_time_after=2026-10-29T05:15:51.338Z&page_size=50",
+          "rel": "first",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}

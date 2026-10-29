@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:43:52.066Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "the timed-out write's PayPal-Request-Id resent raw (no link check) after the dispute moved to WAITING_FOR_SELLER_RESPONSE"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-VFE-10195075/provide-supporting-info",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "multipart/form-data; boundary=4d7c4b86528e4f429ba99cae1bffadf9",
+      "paypal-request-id": "36086a29-5466-4a7a-bcbc-14f8f71fbc39"
+    },
+    "body": "--4d7c4b86528e4f429ba99cae1bffadf9\r\nContent-Disposition: form-data; name=\"input\"\r\nContent-Type: application/json\r\n\r\n{\"notes\":\"Supporting info (timeout probe). Synthetic sandbox case: the item was dispatched with tracking and delivered; the delivery note is attached.\"}\r\n--4d7c4b86528e4f429ba99cae1bffadf9--\r\n"
+  },
+  "response": {
+    "status": 422,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "ca51fdd734af7"
+    },
+    "body": {
+      "name": "UNPROCESSABLE_ENTITY",
+      "message": "The requested action could not be performed, semantically incorrect, or failed business validation.",
+      "debug_id": "ca51fdd734af7",
+      "information_link": "https://developer.paypal.com/docs/api/customer-disputes/v1/#errors",
+      "details": [
+        {
+          "issue": "ACTION_NOT_ALLOWED_IN_CURRENT_DISPUTE_STATE"
+        }
+      ],
+      "links": []
+    }
+  }
+}

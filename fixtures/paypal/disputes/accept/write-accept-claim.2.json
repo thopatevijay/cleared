@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:27:27.919Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "accept_claim (REFUND): fresh GET (link re-check), then the write"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077/accept-claim",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "9bc55749-8e0b-4c1d-8974-a92021b17770"
+    },
+    "body": {
+      "note": "Accepting the claim; refund the buyer.",
+      "accept_claim_type": "REFUND"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "ca51fc568da2e"
+    },
+    "body": {
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077",
+          "rel": "detail",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}

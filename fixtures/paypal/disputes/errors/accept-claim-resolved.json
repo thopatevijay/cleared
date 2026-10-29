@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:39:18.643Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "accept_claim sent while its link is absent"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-UVC-10195076/accept-claim",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "8bb1f929-dd34-4ab5-b9e6-fb2758385704"
+    },
+    "body": {
+      "note": "Accepting while not offered.",
+      "accept_claim_type": "REFUND"
+    }
+  },
+  "response": {
+    "status": 422,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f157357e89722"
+    },
+    "body": {
+      "name": "UNPROCESSABLE_ENTITY",
+      "message": "The requested action could not be performed, semantically incorrect, or failed business validation.",
+      "debug_id": "f157357e89722",
+      "information_link": "https://developer.paypal.com/docs/api/customer-disputes/v1/#errors",
+      "details": [
+        {
+          "issue": "ACTION_NOT_ALLOWED_IN_CURRENT_DISPUTE_STATE"
+        }
+      ],
+      "links": []
+    }
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:31:55.166Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "re-read 60 s after the same-id retry"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-VFE-10195075",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "ca51fcbf2aec2"
+    },
+    "body": {
+      "dispute_id": "PP-R-VFE-10195075",
+      "create_time": "2026-10-29T05:16:58.545Z",
+      "update_time": "2026-10-29T05:20:33.048Z",
+      "disputed_transactions": [
+        {
+          "buyer_transaction_id": "648548579F305092D",
+          "seller_transaction_id": "7MJ69441LL4596355",
+          "create_time": "2026-10-29T05:16:54.000Z",
+          "transaction_status": "HELD",
+          "gross_amount": {
+            "currency_code": "USD",
+            "value": "23.00"
+          },
+          "custom": "spike-fd2a8258-dde2-4325-b2da-68ca9bcd8722",
+          "buyer": {
+            "payer_id": "PAYER-1",
+            "name": "Person 1"
+          },
+          "seller": {
+            "email": "payer-1@example.test",
+            "merchant_id": "MERCHANT-1",
+            "name": "Person 2"
+          },
+          "seller_protection_eligible": false,
+          "seller_protection_type": "SELLER_PROTECTION_INELIGIBLE"
+        }
+      ],
+      "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+      "status": "WAITING_FOR_SELLER_RESPONSE",
+      "dispute_amount": {
+        "currency_code": "USD",
+        "value": "23.00"
+      },
+      "dispute_state": "REQUIRED_ACTION",
+      "external_reason_code": "C2",
+      "fund_movements": [
+        {
+          "party": "RECEIVER",
+          "amount": {
+            "currency_code": "USD",
+            "value": "21.91"
+          },
+          "initiated_time": "2026-10-29T05:20:04.000Z",
+          "type": "DEBIT",
+          "reason": "HOLD_PLACED"
+        }
+      ],
+      "dispute_life_cycle_stage": "CHARGEBACK",
+      "dispute_channel": "EXTERNAL",
+      "extensions": {
+        "buyer_contacted_time": "2026-10-29T05:16:57.000Z"
+      },
+      "evidences": [
+        {
+          "evidence_type": "CREATE",
+          "notes": "Cleared sandbox chargeback",
+          "source": "SUBMITTED_BY_BUYER",
+          "date": "2026-10-29T05:16:58.545Z",
+          "dispute_life_cycle_stage": "CHARGEBACK"
+        },
+        {
+          "evidence_type": "PROOF_OF_FULFILLMENT",
+          "source": "REQUESTED_FROM_SELLER",
+          "date": "2026-10-29T05:20:33.048Z"
+        },
+        {
+          "evidence_type": "PROOF_OF_REFUND",
+          "source": "REQUESTED_FROM_SELLER",
+          "date": "2026-10-29T05:20:33.048Z"
+        },
+        {
+          "evidence_type": "OTHER",
+          "source": "REQUESTED_FROM_SELLER",
+          "date": "2026-10-29T05:20:33.048Z"
+        }
+      ],
+      "seller_response_due_date": "2026-11-09T04:59:59.000Z",
+      "offer": {
+        "buyer_requested_amount": {
+          "currency_code": "USD",
+          "value": "23.00"
+        }
+      },
+      "refund_details": {
+        "allowed_refund_amount": {
+          "currency_code": "USD",
+          "value": "23.00"
+        }
+      },
+      "supporting_info": [
+        {
+          "notes": "Supporting info (timeout probe). Synthetic sandbox case: the item was dispatched with tracking and delivered; the delivery note is attached.",
+          "source": "SUBMITTED_BY_SELLER",
+          "provided_time": "2026-10-29T05:18:07.234Z"
+        }
+      ],
+      "allowed_response_options": {
+        "accept_claim": {
+          "accept_claim_types": [
+            "REFUND"
+          ]
+        }
+      },
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-VFE-10195075",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-VFE-10195075/accept-claim",
+          "rel": "accept_claim",
+          "method": "POST"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-VFE-10195075/provide-evidence",
+          "rel": "provide_evidence",
+          "method": "POST"
+        }
+      ]
+    }
+  }
+}

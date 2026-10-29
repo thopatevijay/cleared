@@ -10,3 +10,5 @@ export { createBreaker, type Breaker, type BreakerState } from "./http/breaker.t
 export * from "./paypal/token.ts";
 export * from "./paypal/orders.ts";
 export * from "./paypal/schemas.ts";
+export * from "./paypal/disputes.ts";
+export * from "./paypal/dispute-schemas.ts";

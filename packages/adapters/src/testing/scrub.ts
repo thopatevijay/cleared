@@ -58,6 +58,9 @@ const ID_KEYS: Readonly<Record<string, Kind>> = {
   phone_number: "phone",
 };
 
+// `name` under these keys is a person or business (card holder, shipping, a dispute's buyer/seller).
+const NAMED_PARENTS = new Set(["card", "shipping", "buyer", "seller"]);
+
 const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const CARD_RE = /\b\d{13,19}\b/g;
 const IPV4_RE = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
@@ -117,7 +120,7 @@ export function createScrubber(options: ScrubberOptions = {}): Scrubber {
     if (SECRET_KEYS.has(key)) return REDACTED;
     const parent = (path.at(-2) ?? "").toLowerCase();
     if (key === "number" && parent === "card") return placeholder("card", input);
-    if (key === "name" && (parent === "card" || parent === "shipping")) return placeholder("person", input);
+    if (key === "name" && NAMED_PARENTS.has(parent)) return placeholder("person", input);
     if (key === "email_address" || key === "email") {
       return placeholder(
         path.some((p) => p.toLowerCase() === "payee") ? "merchant-email" : "payer-email",

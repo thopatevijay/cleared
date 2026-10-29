@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:52:13.638Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "the accept-claim dispute, read again later"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f458090871166"
+    },
+    "body": {
+      "dispute_id": "PP-R-ARH-10195077",
+      "create_time": "2026-10-29T05:17:00.724Z",
+      "update_time": "2026-10-29T05:46:04.046Z",
+      "disputed_transactions": [
+        {
+          "buyer_transaction_id": "8J955250E88441913",
+          "seller_transaction_id": "54W821880C511020E",
+          "create_time": "2026-10-29T05:16:55.000Z",
+          "transaction_status": "HELD",
+          "gross_amount": {
+            "currency_code": "USD",
+            "value": "9.00"
+          },
+          "custom": "spike-d62c0ae3-3ad4-4fbc-88ae-4e29106e5d8b",
+          "buyer": {
+            "payer_id": "PAYER-1",
+            "name": "Person 1"
+          },
+          "seller": {
+            "email": "payer-1@example.test",
+            "merchant_id": "MERCHANT-1",
+            "name": "Person 2"
+          },
+          "seller_protection_eligible": false,
+          "seller_protection_type": "SELLER_PROTECTION_INELIGIBLE"
+        }
+      ],
+      "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+      "status": "UNDER_REVIEW",
+      "dispute_amount": {
+        "currency_code": "USD",
+        "value": "9.00"
+      },
+      "dispute_state": "UNDER_PAYPAL_REVIEW",
+      "external_reason_code": "C2",
+      "fund_movements": [
+        {
+          "party": "RECEIVER",
+          "amount": {
+            "currency_code": "USD",
+            "value": "8.28"
+          },
+          "initiated_time": "2026-10-29T05:20:04.000Z",
+          "type": "DEBIT",
+          "reason": "HOLD_PLACED"
+        }
+      ],
+      "dispute_life_cycle_stage": "CHARGEBACK",
+      "dispute_channel": "EXTERNAL",
+      "extensions": {
+        "buyer_contacted_time": "2026-10-29T05:16:59.000Z"
+      },
+      "evidences": [
+        {
+          "evidence_type": "CREATE",
+          "notes": "Cleared sandbox chargeback",
+          "source": "SUBMITTED_BY_BUYER",
+          "date": "2026-10-29T05:17:00.724Z",
+          "dispute_life_cycle_stage": "CHARGEBACK"
+        },
+        {
+          "evidence_type": "OTHER",
+          "notes": "Accepting the claim; refund the buyer.",
+          "source": "SUBMITTED_BY_SELLER",
+          "date": "2026-10-29T05:27:27.378Z",
+          "action_info": {
+            "action": "ACCEPT_CLAIM",
+            "response_option": "REFUND"
+          },
+          "dispute_life_cycle_stage": "CHARGEBACK"
+        }
+      ],
+      "offer": {
+        "buyer_requested_amount": {
+          "currency_code": "USD",
+          "value": "9.00"
+        }
+      },
+      "refund_details": {
+        "allowed_refund_amount": {
+          "currency_code": "USD",
+          "value": "9.00"
+        }
+      },
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077/adjudicate",
+          "rel": "adjudicate",
+          "method": "POST"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077/require-evidence",
+          "rel": "require_evidence",
+          "method": "POST"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077/provide-supporting-info",
+          "rel": "provide_supporting_info",
+          "method": "POST"
+        }
+      ]
+    }
+  }
+}

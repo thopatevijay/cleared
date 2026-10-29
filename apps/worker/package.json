@@ -7,7 +7,7 @@
     "start": "node src/index.ts",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest"
   },
   "dependencies": {
     "@cleared/adapters": "workspace:*",

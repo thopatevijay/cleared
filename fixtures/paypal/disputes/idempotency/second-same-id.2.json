@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:36:27.027Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "provide_supporting_info (id X again, link still present): fresh GET (link re-check), then the write"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-TCZ-10195079/provide-supporting-info",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "multipart/form-data; boundary=98e35767fca04ac8bb914e9ff8bf3419",
+      "paypal-request-id": "8407bfc5-dda3-4348-81dc-56104ecdc36b"
+    },
+    "body": "--98e35767fca04ac8bb914e9ff8bf3419\r\nContent-Disposition: form-data; name=\"input\"\r\nContent-Type: application/json\r\n\r\n{\"notes\":\"Supporting info (same id twice). Synthetic sandbox case: the item was dispatched with tracking and delivered; the delivery note is attached.\"}\r\n--98e35767fca04ac8bb914e9ff8bf3419--\r\n"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f8958263d3dda"
+    },
+    "body": {
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-TCZ-10195079",
+          "rel": "detail",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}

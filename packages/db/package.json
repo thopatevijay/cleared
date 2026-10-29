@@ -11,7 +11,7 @@
     "generate": "drizzle-kit generate",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest"
   },
   "dependencies": {
     "@cleared/core": "workspace:*",
