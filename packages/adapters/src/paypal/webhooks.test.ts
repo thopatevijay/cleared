@@ -1,7 +1,7 @@
 // verify-webhook-signature postback body: the event goes back exactly as received (PayPal: parsing and
 // re-serialising "can fail verification"), so the raw text must appear byte-for-byte.
 import { describe, expect, it } from "vitest";
-import { verifyRequestBody } from "./webhooks.ts";
+import { rfc3339, verifyRequestBody } from "./webhooks.ts";
 
 const headers = {
   "PayPal-Transmission-Id": "t-1",
@@ -10,6 +10,16 @@ const headers = {
   "paypal-cert-url": "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-1",
   "paypal-auth-algo": "SHA256withRSA",
 };
+
+describe("rfc3339 (event-list filters reject fractional seconds)", () => {
+  it.each([
+    ["2026-10-29T06:00:00.123Z", "2026-10-29T06:00:00Z"],
+    ["2026-10-29T06:00:00Z", "2026-10-29T06:00:00Z"],
+    ["2026-10-29T11:30:00.5+05:30", "2026-10-29T11:30:00+05:30"],
+  ])("%s → %s", (input, out) => {
+    expect(rfc3339(input)).toBe(out);
+  });
+});
 
 describe("verifyRequestBody", () => {
   it("splices the raw event in verbatim (whitespace, key order and escapes kept)", () => {

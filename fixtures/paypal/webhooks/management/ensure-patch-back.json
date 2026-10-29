@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T06:16:02.681Z",
+    "env": "sandbox",
+    "ticket": "M0-06",
+    "scrubbed": true,
+    "note": "ensureWebhook with the full set again: list + PATCH"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/notifications/webhooks",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f230135c12e06"
+    },
+    "body": {
+      "webhooks": [
+        {
+          "id": "9H93406745674050R",
+          "url": "https://choosing-bookstore-release-civic.trycloudflare.com/api/webhooks/paypal",
+          "event_types": [
+            {
+              "name": "CUSTOMER.DISPUTE.CREATED",
+              "description": "A customer dispute is created.",
+              "status": "ENABLED"
+            },
+            {
+              "name": "CUSTOMER.DISPUTE.UPDATED",
+              "description": "A customer dispute is updated.",
+              "status": "ENABLED"
+            },
+            {
+              "name": "PAYMENT.CAPTURE.COMPLETED",
+              "description": "A payment capture completes.",
+              "status": "ENABLED"
+            },
+            {
+              "name": "PAYMENT.CAPTURE.DECLINED",
+              "description": "This event is triggered when a payment capture is declined.",
+              "status": "ENABLED"
+            },
+            {
+              "name": "PAYMENT.CAPTURE.DENIED",
+              "description": "A payment capture is denied.",
+              "status": "ENABLED"
+            },
+            {
+              "name": "PAYMENT.CAPTURE.PENDING",
+              "description": "The state of a payment capture changes to pending.",
+              "status": "ENABLED"
+            },
+            {
+              "name": "PAYMENT.CAPTURE.REFUNDED",
+              "description": "A merchant refunds a payment capture.",
+              "status": "ENABLED"
+            },
+            {
+              "name": "PAYMENT.CAPTURE.REVERSED",
+              "description": "PayPal reverses a payment capture.",
+              "status": "ENABLED"
+            }
+          ],
+          "links": [
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks/9H93406745674050R",
+              "rel": "self",
+              "method": "GET"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks/9H93406745674050R",
+              "rel": "update",
+              "method": "PATCH"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks/9H93406745674050R",
+              "rel": "delete",
+              "method": "DELETE"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

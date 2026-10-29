@@ -261,11 +261,19 @@ export function createPayPalWebhooksClient(options: PayPalWebhooksClientOptions)
 function eventsQuery(input: ListWebhookEventsInput): string {
   const q = new URLSearchParams();
   q.set("page_size", String(input.pageSize ?? 50));
-  if (input.startTime !== undefined) q.set("start_time", input.startTime);
-  if (input.endTime !== undefined) q.set("end_time", input.endTime);
+  if (input.startTime !== undefined) q.set("start_time", rfc3339(input.startTime));
+  if (input.endTime !== undefined) q.set("end_time", rfc3339(input.endTime));
   if (input.eventType !== undefined) q.set("event_type", input.eventType);
   if (input.transactionId !== undefined) q.set("transaction_id", input.transactionId);
   return q.toString();
+}
+
+/**
+ * PayPal rejects fractional seconds in the event-list filters (400 VALIDATION_ERROR "RFC 3339 section
+ * 5.6", measured M0-06): `…T06:00:00.123Z` → `…T06:00:00Z`.
+ */
+export function rfc3339(iso: string): string {
+  return iso.replace(/\.\d+(?=Z$|[+-]\d{2}:\d{2}$)/, "");
 }
 
 /**

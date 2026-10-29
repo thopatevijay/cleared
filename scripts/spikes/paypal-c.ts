@@ -130,7 +130,11 @@ function deliveryFixture(d: Delivery, s: Scrubber, note: string): unknown {
 }
 
 /** Simulator delivery → byte-for-byte fixture plus the public cert, so its real signature verifies offline. */
-function simulatorFixture(d: Delivery, certPem: string): unknown {
+/**
+ * `signedWith`: simulate-event addressed by `webhook_id` is signed with THAT webhook's id; addressed by
+ * `url` it is signed with the literal `WEBHOOK_ID` (measured in this spike, run 2 + the url probe).
+ */
+function simulatorFixture(d: Delivery, certPem: string, signedWith: string): unknown {
   return {
     meta: {
       recorded_at: new Date().toISOString(),
@@ -138,7 +142,8 @@ function simulatorFixture(d: Delivery, certPem: string): unknown {
       ticket: TICKET,
       scrubbed: false,
       received_at: d.meta.received_at,
-      note: "simulator (mock) delivery kept byte-for-byte: PayPal sample data, signed with webhook id WEBHOOK_ID",
+      note: "simulator (mock) delivery kept byte-for-byte: PayPal sample data",
+      signed_webhook_id: signedWith,
     },
     event_type: d.event.event_type,
     headers: d.meta.headers,
@@ -230,6 +235,10 @@ async function main(): Promise<void> {
   // The app's other webhooks (e.g. a real one) must never land in a fixture: their ids are scrubbed.
   for (const w of await wh.listWebhooks()) if (w.url !== hookUrl) foreignIds.add(w.id);
   log("existing-webhooks", { count: foreignIds.size });
+  if (process.argv.includes("--simulate-url-only")) {
+    await simulateByUrl(wh, hookUrl);
+    return;
+  }
 
   recording = true;
   const out: Record<string, unknown> = { started: new Date(T0).toISOString(), hookUrl };
@@ -275,6 +284,38 @@ async function main(): Promise<void> {
     const summary = join(RECEIVER_DIR, "summary.json");
     writeFileSync(summary, `${JSON.stringify(out, null, 2)}\n`);
     log("summary", { file: summary });
+  }
+}
+
+/**
+ * Follow-up probe (`--simulate-url-only`): a simulator event addressed by `url` (no webhook id), with no
+ * webhook registered. Which webhook id does PayPal sign it with? Tries `WEBHOOK_ID` (the documented
+ * mock id); keeps the delivery byte-for-byte as `simulator/url-<type>`.
+ */
+async function simulateByUrl(wh: PayPalWebhooksClient, hookUrl: string): Promise<void> {
+  const type = "PAYMENT.CAPTURE.COMPLETED";
+  const ev = await wh.simulateEvent({ url: hookUrl, eventType: type });
+  const at = Date.now();
+  const d = await waitFor((x) => x.event.id === ev.id, 5 * 60_000);
+  if (d === undefined) return log("url-simulate", { delivered: false });
+  const http = createHttpClient({ vendor: "paypal-cert", timeoutMs: VENDOR_TIMEOUTS_MS.paypal });
+  const v = createWebhookVerifier({ http, now: () => d.meta.received_ms });
+  const r = await v.verifyWebhook({
+    rawBody: d.raw,
+    headers: d.meta.headers,
+    webhookId: SIMULATOR_WEBHOOK_ID,
+  });
+  log("url-simulate", {
+    delivered: true,
+    latency_ms: d.meta.received_ms - at,
+    selfWithWEBHOOK_ID: r.ok ? "SUCCESS" : r,
+  });
+  if (process.argv.includes("--record") && r.ok) {
+    const certUrl = d.meta.headers["paypal-cert-url"] ?? "";
+    writeJson(
+      `simulator/url-${fileName(type)}`,
+      simulatorFixture(d, await certPem(http, certUrl), SIMULATOR_WEBHOOK_ID),
+    );
   }
 }
 
@@ -368,7 +409,11 @@ async function simulatorEvents(
       rec.label("management/simulate", `POST /v1/notifications/simulate-event ${type}`);
     }
     try {
-      const ev = await wh.simulateEvent({ webhookId, eventType: type });
+      // A Payments v2-only type (DECLINED) answers 400 "Not a valid Resource Type" at the default
+      // resource version (run 1); retry it once at 2.0.
+      const ev = await wh
+        .simulateEvent({ webhookId, eventType: type })
+        .catch(() => wh.simulateEvent({ webhookId, eventType: type, resourceVersion: "2.0" }));
       sims[type] = { id: ev.id, at: Date.now() };
       simIds.add(ev.id);
     } catch (err) {
@@ -403,11 +448,10 @@ async function verifyAll(
   let recordedVerify = false;
   for (const d of readDeliveries(T0)) {
     const simulated = isSim(d);
-    const id = simulated ? SIMULATOR_WEBHOOK_ID : webhookId;
     // Verified after the run: the clock is pinned to the receive time (what the route would see).
     const verifier = createWebhookVerifier({ http, cache, now: () => d.meta.received_ms });
     const t = performance.now();
-    const self = await verifier.verifyWebhook({ rawBody: d.raw, headers: d.meta.headers, webhookId: id });
+    const self = await verifier.verifyWebhook({ rawBody: d.raw, headers: d.meta.headers, webhookId });
     const coldMs = performance.now() - t;
     let api: string | undefined;
     if (!simulated) {
@@ -442,7 +486,7 @@ async function verifyAll(
         if (!existsFixture(`simulator/${fileName(d.event.event_type)}`)) {
           writeJson(
             `simulator/${fileName(d.event.event_type)}`,
-            simulatorFixture(d, await certPem(http, certUrl)),
+            simulatorFixture(d, await certPem(http, certUrl), webhookId),
           );
         }
       } else {

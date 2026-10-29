@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T06:22:47.813Z",
+    "env": "sandbox",
+    "ticket": "M0-06",
+    "scrubbed": true,
+    "received_at": "2026-10-29T06:19:35.194Z",
+    "note": "real delivery; self-verify SUCCESS, API SUCCESS"
+  },
+  "event_type": "CUSTOMER.DISPUTE.CREATED",
+  "headers": {
+    "user-agent": "PayPal/AUHD-1.0-1",
+    "content-type": "application/json",
+    "paypal-auth-algo": "SHA256withRSA",
+    "paypal-auth-version": "v2",
+    "paypal-cert-url": "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-360caa42-fca2a594-bf9ab596",
+    "paypal-transmission-id": "b5cda3fa-d360-11f1-8107-35ee3bdc7b63",
+    "paypal-transmission-sig": "LWoL71KRIwO3lFr5RiqXbu0xLH2QeG3MZs1q7xFlPj5RKcXvdWjElzREYVpfrqlKdCB5V2TGEEHbOprPLgqvOOQfT0M4Q6xXckyTNs90kTBkfYQitOTjD3GuN5N0UmQh/4mFtNb9bvMYt4rG6IaO1UGzvrHo5i0QZgkLEl92b05rjbF5dAEtIA/bqkfVWE6gmCCuUyKrcUlM1yu3LBC1TJESKiO/8zD4TCTvoPjoQfwvmB4ySKXv5PYDzFQCATEa4gGCqcyvtYK+r9L3dgHeDxf/mJp7VJVuKtrm7xAM9sRMdkrWjOI7MvGecC3CvZzRdWrQVZQk/93CQfwBUs5WlQ==",
+    "paypal-transmission-time": "2026-10-29T06:19:34Z"
+  },
+  "raw_body": "{\"id\":\"WH-5WD9164028571322G-17G30127FJ447530Y\",\"event_version\":\"1.0\",\"create_time\":\"2026-10-29T06:19:33.413Z\",\"resource_type\":\"dispute\",\"event_type\":\"CUSTOMER.DISPUTE.CREATED\",\"summary\":\"A new dispute opened with case # PP-R-YKI-10195086\",\"resource\":{\"dispute_id\":\"PP-R-YKI-10195086\",\"create_time\":\"2026-10-29T06:16:30.460Z\",\"update_time\":\"2026-10-29T06:19:24.460Z\",\"disputed_transactions\":[{\"buyer_transaction_id\":\"7KK70998EN328454X\",\"seller_transaction_id\":\"0M327451J9579884Y\",\"transaction_status\":\"COMPLETED\",\"custom\":\"spike-db4716b3-94d1-4524-ab16-73222372d61d\",\"seller\":{\"merchant_id\":\"MERCHANT-2\",\"name\":\"Person 1\"},\"seller_protection_eligible\":false,\"seller_protection_type\":\"SELLER_PROTECTION_INELIGIBLE\"}],\"reason\":\"MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED\",\"status\":\"UNDER_REVIEW\",\"dispute_amount\":{\"currency_code\":\"USD\",\"value\":\"37.00\"},\"external_reason_code\":\"C2\",\"dispute_life_cycle_stage\":\"CHARGEBACK\",\"dispute_channel\":\"EXTERNAL\",\"offer\":{\"buyer_requested_amount\":{\"currency_code\":\"USD\",\"value\":\"37.00\"}},\"refund_details\":{\"allowed_refund_amount\":{\"currency_code\":\"USD\",\"value\":\"37.00\"}},\"links\":[{\"href\":\"https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-YKI-10195086\",\"rel\":\"self\",\"method\":\"GET\"},{\"href\":\"https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-YKI-10195086/provide-supporting-info\",\"rel\":\"provide_supporting_info\",\"method\":\"POST\"}]},\"links\":[{\"href\":\"https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-5WD9164028571322G-17G30127FJ447530Y\",\"rel\":\"self\",\"method\":\"GET\"},{\"href\":\"https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-5WD9164028571322G-17G30127FJ447530Y/resend\",\"rel\":\"resend\",\"method\":\"POST\"}]}"
+}

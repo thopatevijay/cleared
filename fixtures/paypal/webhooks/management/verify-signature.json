@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T06:22:47.326Z",
+    "env": "sandbox",
+    "ticket": "M0-06",
+    "scrubbed": true,
+    "note": "POST /v1/notifications/verify-webhook-signature (real delivery)"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/notifications/verify-webhook-signature",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "auth_algo": "SHA256withRSA",
+      "cert_url": "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-360caa42-fca2a594-bf9ab596",
+      "transmission_id": "44038b3f-d360-11f1-9402-a7eee8059a65",
+      "transmission_sig": "ZQ9rE/hVD+nF8rUi13T8EUkbki/bOHDXZVjwb3/7KDgltclD0DvoH0TGc2QNzM4Ih8GMxa8JpvGlUjoZuUHfuRRV86SqFQOK5fFx2JXhg3EwfaET+6LU/1M8OmrDtajt5PcDBAWmE4jNxrEKBTLJ6qHF2vTIansOBjPueMpgPaULkbpzn1foMGnEg2IhyFl4oAbEpBrlz4TuQNwSX1729obfwbKJPcShqDpQPHKJ5TjtiXsMgNrlfOEora2YbcwJSbTReMQZZJ+MIKzEMzQXUiqKiKq8jcxPjins3zddBtCCy3AsfT28E7vlx4D7X16apDCzAFkN3shaKheUv50zVg==",
+      "transmission_time": "2026-10-29T06:16:23Z",
+      "webhook_id": "9H93406745674050R",
+      "webhook_event": {
+        "id": "WH-2CK67944VL911102K-0RL32799TA7321821",
+        "event_version": "1.0",
+        "create_time": "2026-10-29T06:16:14.041Z",
+        "resource_type": "capture",
+        "resource_version": "2.0",
+        "event_type": "PAYMENT.CAPTURE.COMPLETED",
+        "summary": "Payment completed for $ 37.0 USD",
+        "resource": {
+          "id": "0M327451J9579884Y",
+          "amount": {
+            "currency_code": "USD",
+            "value": "37.00"
+          },
+          "final_capture": true,
+          "seller_protection": {
+            "status": "NOT_ELIGIBLE"
+          },
+          "seller_receivable_breakdown": {
+            "gross_amount": {
+              "currency_code": "USD",
+              "value": "37.00"
+            },
+            "paypal_fee": {
+              "currency_code": "USD",
+              "value": "1.45"
+            },
+            "net_amount": {
+              "currency_code": "USD",
+              "value": "35.55"
+            }
+          },
+          "custom_id": "spike-db4716b3-94d1-4524-ab16-73222372d61d",
+          "status": "COMPLETED",
+          "processor_response": {
+            "avs_code": "",
+            "cvv_code": "M",
+            "response_code": "0000"
+          },
+          "supplementary_data": {
+            "related_ids": {
+              "order_id": "90J43999BW241705J"
+            }
+          },
+          "payee": {
+            "email_address": "merchant-1@example.test",
+            "merchant_id": "MERCHANT-2"
+          },
+          "create_time": "2026-10-29T06:16:08Z",
+          "update_time": "2026-10-29T06:16:08Z",
+          "links": [
+            {
+              "href": "https://api.sandbox.paypal.com/v2/payments/captures/0M327451J9579884Y",
+              "rel": "self",
+              "method": "GET"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v2/payments/captures/0M327451J9579884Y/refund",
+              "rel": "refund",
+              "method": "POST"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v2/checkout/orders/90J43999BW241705J",
+              "rel": "up",
+              "method": "GET"
+            }
+          ],
+          "network_transaction_reference": {
+            "id": "CARD-1",
+            "network": "VISA"
+          }
+        },
+        "links": [
+          {
+            "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-2CK67944VL911102K-0RL32799TA7321821",
+            "rel": "self",
+            "method": "GET"
+          },
+          {
+            "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-2CK67944VL911102K-0RL32799TA7321821/resend",
+            "rel": "resend",
+            "method": "POST"
+          }
+        ]
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f58586132dba0"
+    },
+    "body": {
+      "verification_status": "SUCCESS"
+    }
+  }
+}

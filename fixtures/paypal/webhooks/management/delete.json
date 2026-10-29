@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T06:22:53.379Z",
+    "env": "sandbox",
+    "ticket": "M0-06",
+    "scrubbed": true,
+    "note": "DELETE the spike webhook"
+  },
+  "request": {
+    "method": "DELETE",
+    "url": "https://api-m.sandbox.paypal.com/v1/notifications/webhooks/9H93406745674050R",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "paypal-debug-id": "f469201ea5a52"
+    },
+    "body": null
+  }
+}

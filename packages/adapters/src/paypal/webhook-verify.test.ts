@@ -16,7 +16,7 @@ const NOW = Date.parse("2026-10-29T08:00:00Z");
 const GOOD_CERT = "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-360caa42-fca2a594-test";
 
 function countingVerifier(respond?: (url: string) => Response) {
-  const calls: { url: string; redirect: RequestRedirect | undefined }[] = [];
+  const calls: { url: string; redirect: RequestInit["redirect"] }[] = [];
   const http = createHttpClient({
     vendor: "paypal-cert",
     timeoutMs: 1_000,

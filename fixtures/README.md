@@ -60,6 +60,34 @@ msw serves each fixture **once**, matched on method + full URL (and `PayPal-Requ
 fixture recorded one), in the order listed. A request with no remaining fixture is unhandled and
 **fails the test** (`onUnhandledFrame: "error"`); nothing reaches the network.
 
+## Webhook deliveries (`paypal/webhooks/{deliveries,simulator}/`, M0-06)
+
+An inbound delivery is not a request/response exchange, so it has its own format:
+
+```json
+{
+  "meta": { "recorded_at": "…", "env": "sandbox", "ticket": "M0-06", "scrubbed": true, "received_at": "…", "note": "…", "signed_webhook_id": "simulator only" },
+  "event_type": "PAYMENT.CAPTURE.COMPLETED",
+  "headers": { "paypal-transmission-id": "…", "paypal-transmission-time": "…", "paypal-transmission-sig": "…", "paypal-cert-url": "…", "paypal-auth-algo": "SHA256withRSA", "…": "…" },
+  "raw_body": "<the body as one string>",
+  "cert_pem": "simulator only: the public cert served at paypal-cert-url"
+}
+```
+
+- **`simulator/`: byte-for-byte** (`meta.scrubbed: false`). This is PayPal sample data with no personal
+  data. `raw_body` is exactly the bytes PayPal sent, so the real signature verifies offline against
+  `cert_pem`, using `meta.signed_webhook_id`:
+  - a simulation sent by `webhook_id` is signed with **that webhook's id** (the deleted spike webhook);
+  - a simulation sent by `url` is signed with the literal `WEBHOOK_ID`.
+- **`deliveries/`: scrubbed** (`meta.scrubbed: true`). `raw_body` is the received JSON after the
+  scrubber, re-serialised compactly as PayPal sends it. The scrub breaks PayPal's signature, so
+  `webhook-verify.replay.test.ts` re-signs each file with an RSA key pair generated at test runtime.
+  No private key is ever stored. The live verify results (self-verify **and** the API) are in
+  `meta.note` and `docs/evidence/m0-06-paypal-spike-c.md`.
+- Recording uses `scripts/spikes/webhook-receiver.ts` (port 8080 + `PORT_OFFSET`), a `cloudflared`
+  quick tunnel, and `scripts/spikes/paypal-c.ts --url <tunnel> --record` (about 7 min). The follow-up
+  `--simulate-url-only` probe records only the `url-*` file.
+
 ## Checks
 
 The M0-04 Validation Gate (`.github/plan/M0-04-*.md`) greps this directory for credential-shaped
@@ -83,6 +111,9 @@ grep on every run. (The patterns are not copied here, because this README would 
 | `paypal/disputes/errors` | each write sent while its link is absent → PayPal's `ACTION_NOT_ALLOWED_IN_CURRENT_DISPUTE_STATE` | M0-05 |
 | `paypal/disputes/list` | `update-time-after` (`listDisputes`) | M0-05 |
 | `samples/evidence` | `delivery-note.pdf`: synthetic one-page PDF (`scripts/spikes/evidence-pdf.ts`) | M0-05 |
+| `paypal/webhooks/management` | `list-before`, `ensure-1` (list + `.2` create), `ensure-2` (list only: no-op), `ensure-patch-subset` / `ensure-patch-back` (list + `.2` PATCH), `list-after-ensure`, `lookup-ensure`, `lookup-list`, `simulate`, `events-list`, `verify-signature`, `delete`, `list-after` (exchange format, scrubbed) | M0-06 |
+| `paypal/webhooks/deliveries` | real deliveries through the tunnel: `payment-capture-completed`, `customer-dispute-created`, `customer-dispute-updated` (delivery format, scrubbed) | M0-06 |
+| `paypal/webhooks/simulator` | one simulator delivery per subscribed type (9, sent by `webhook_id`) + `url-payment-capture-completed` (sent by `url`) (delivery format, byte-for-byte, with `cert_pem`) | M0-06 |
 
 Dispute recordings: `pnpm tsx --env-file=<path to .env> scripts/spikes/paypal-b.ts --record` (≈ 20–45 min,
 polls ≥ 60 s apart). Follow-ups: `--idempotency` (same request id twice), `--idempotency --raw-retry-only --dispute <id> --request-id <id> [--full-capture <id>] [--accept-dispute <id> --accept-capture <id>]`, and `--require-evidence --dispute <id>`.
