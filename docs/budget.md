@@ -55,6 +55,8 @@ Render prices are per month and billed pro rata per second, so a service costs i
 
 Worst case: Render $36 + OpenAI $5 (Oct 28–31 at $1/day plus the spike) + $25 (Nov) + $14 (Dec) = **$80**.
 
+**Render credit (owner-reported 2026-10-29):** a $50 "Hackathon Participant" Render credit is active on the Hobby workspace, valid to 2027-10-01. Render applies credits to "any costs accrued by your workspace… plan fee, compute usage, bandwidth" at the end of each monthly period, and any overage goes to the card on file (render.com/docs/credits). The Hobby plan has no monthly fee (render.com/docs/platform-features-by-plan). The ≈ $36 Render total therefore comes out of the credit, so expected **out-of-pocket ≈ $17 (OpenAI only)**, with the $80 ceiling unchanged. Never upgrade to a paid workspace plan: its fee would draw on the same credit. Check Billing → Usage weekly until 2026-12-15.
+
 ## Assumptions
 
 - The Render services are created on 2026-10-30 (M0-08) and deleted after the purge on 2026-12-22. Deleting them earlier saves about $0.67/day.
