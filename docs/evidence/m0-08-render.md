@@ -20,7 +20,17 @@ Sources, checked 2026-10-29:
 
 Render renamed its plans: `starter` and `basic-256mb` are the legacy names of `0.5c-512mb` and `0.1c-256mb`. The specs and prices are identical, and Render says the legacy names "remain valid across all Render tooling", Blueprints included. The file uses the names the ticket and the budget use.
 
-Public web URL: _recorded after the owner creates the Blueprint (P-34)_.
+Public web URL: **https://cleared-web-gd1b.onrender.com** (`RENDER_WEB_URL` in `.env.example`).
+
+Live resources, as listed by the Render CLI (v2.33.0, read-only `render services list` / `render deploys list`, 2026-10-29):
+
+| Resource | Render id | Type | Region | Plan |
+|---|---|---|---|---|
+| `cleared-web` | `srv-dbheesg473hc739p3g0g` | web_service | oregon | starter |
+| `cleared-worker` | `srv-dbhehn0473hc739paf3g` | background_worker | oregon | starter |
+| `cleared-db` | `dpg-dbheefg473hc739p28u0-a` | postgres 18 | oregon | basic_256mb |
+
+Blueprint `exs-dbhe9c61egvs73fb9su0`, repo `thopatevijay/cleared`, branch `main`.
 
 ## How a deploy runs
 
@@ -47,11 +57,49 @@ Render prompts for `sync: false` values only when the Blueprint is created; a la
 
 ## Owner steps (P-34)
 
-_Recorded when done: date, branch, screenshot path of the Blueprint sync with no errors._
+2026-10-29, done by the owner in the dashboard: New → Blueprint → `thopatevijay/cleared`, branch `main` → entered the `sync: false` values → Apply.
+
+1. The first creation (from `e4b1c12`) failed while creating the worker: `environment variable not found: "PAYPAL_WEBHOOK_ID" for cleared-web` (see the pitfall above). It was fixed in #75 (`f40148a`).
+2. The owner ran **Manual Sync** on `f40148a`. All 3 resources were created and the sync showed no errors.
+
+**No screenshot was taken.** The Render CLI listing above (all 3 resources present, each with a live deploy) is the record that the Blueprint synced without errors. Validation before creation: `render.yaml` passes Render's JSON schema (https://render.com/schema/render.yaml.json, ajv 8, draft 2020-12), and a bogus plan value is rejected by the same check.
 
 ## Acceptance evidence
 
-_Filled after the services exist: `/healthz` output against `origin/main`, the pre-deploy migration log line, the worker `worker ready` log line, the merge-to-live time._
+**`/healthz`** (2026-10-29, before this PR merged; `origin/main` = `f40148a`):
+
+```
+$ curl -fsS https://cleared-web-gd1b.onrender.com/healthz
+{"ok":true,"commit":"f40148a932630c9b36e7156f56eb7b08e2c04c24"}
+```
+
+**Pre-deploy migration** (web deploy `dep-dbheib2vcj2c738035eg`, from `render logs -r srv-dbheesg473hc739p3g0g`):
+
+```
+2026-10-29 06:35:58  ==> Build successful 🎉
+2026-10-29 06:36:00  ==> Starting pre-deploy: pnpm --filter @cleared/db run migrate
+2026-10-29 06:36:16  {"service":"db","msg":"migrations applied","applied":1,"queueSchema":"pgboss"}
+```
+
+The same lines appear for the two earlier deploys (06:28:53 and 06:33:52), so a re-run is a no-op.
+
+**Worker** (deploy `dep-dbheib2vcj2c7380356g`, from `render logs -r srv-dbhehn0473hc739paf3g`):
+
+```
+2026-10-29 06:36:13  $ node src/index.ts
+2026-10-29 06:36:15  {"service":"worker","msg":"worker ready","commit":"f40148a932630c9b36e7156f56eb7b08e2c04c24"}
+```
+
+Node on Render: `Using Node.js version 24.22.2 via environment variable NODE_VERSION`. pnpm: `v12.15.0` (Corepack).
+
+**Merge → live, with the checksPass trigger** (times from `gh pr view --json mergedAt`, `gh run list`, and `render deploys list -o json`):
+
+| Commit | Merged to `main` | CI on `main` finished (success) | Render deploy created | Web live | Merge → live |
+|---|---|---|---|---|---|
+| `8deb5b9` (#74) | 06:31:45Z | 06:33:05Z (run 40829756882) | 06:33:08Z | 06:34:34Z | **2 min 49 s** |
+| `f40148a` (#75) | 06:33:59Z | 06:35:22Z (run 40829982783; landing checks completed 06:35:21Z) | 06:35:24Z | 06:36:47Z | **2 min 48 s** |
+
+Both deploys started 2–3 s after the last CI check passed, never before it. This is the checksPass trigger at work; Render labels the trigger `new_commit`. Both are well inside the 10-minute bound. The worker deploy of `f40148a` was live at 06:36:09Z.
 
 ## Rollback
 
