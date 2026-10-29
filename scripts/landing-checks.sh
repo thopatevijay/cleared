@@ -46,6 +46,11 @@ else
   echo "landing-checks: no package.json yet (before M0-02 repo bootstrap): pnpm checks not applicable"
 fi
 
+# TS scripts outside the workspaces (spikes import the product adapters): typecheck so they do not rot.
+if [ -f tsconfig.scripts.json ]; then
+  pnpm exec tsc --noEmit -p tsconfig.scripts.json
+fi
+
 # Project-specific checks below. Guard a check that a later ticket creates with `if [ -x … ]; then …; fi` (never `[ … ] && …`: a false test as the last command fails the script) and say so.
 # Put slow checks (emulators, e2e, full-stack runs) inside `if [ "$FAST" = 0 ]; then … fi`.
 
