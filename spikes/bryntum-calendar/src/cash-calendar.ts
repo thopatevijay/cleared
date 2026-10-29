@@ -35,9 +35,7 @@ export type CashCalendarProps = {
 };
 
 export function formatAmount(e: ReleaseEvent, locale: string): string {
-  return new Intl.NumberFormat(locale, { style: "currency", currency: e.currency }).format(
-    Number(e.amount),
-  );
+  return new Intl.NumberFormat(locale, { style: "currency", currency: e.currency }).format(Number(e.amount));
 }
 
 export function eventText(e: ReleaseEvent, locale: string): string {

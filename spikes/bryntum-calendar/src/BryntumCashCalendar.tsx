@@ -20,9 +20,7 @@ function renderEvent(byId: Map<string, ReleaseEvent>, p: CashCalendarProps) {
   return ({ eventRecord }: { eventRecord: EventModel }): DomConfig[] => {
     const e = byId.get(String(eventRecord.id));
     if (!e) return [];
-    const parts: DomConfig[] = [
-      { tag: "span", dataset: { cashEvent: e.id }, text: eventText(e, p.locale) },
-    ];
+    const parts: DomConfig[] = [{ tag: "span", dataset: { cashEvent: e.id }, text: eventText(e, p.locale) }];
     if (e.estimated) parts.push({ tag: "span", className: "est-badge", text: p.labels.estimated });
     return parts;
   };

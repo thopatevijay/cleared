@@ -86,7 +86,13 @@ async function keyboard(page) {
   const arrows = await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120) ?? "");
   await page.keyboard.press("ArrowRight");
   const arrowsAfter = await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120) ?? "");
-  return { tabStops: trail.length, reachedEvent, enterSelects, arrowMovesFocus: arrows !== arrowsAfter, trail };
+  return {
+    tabStops: trail.length,
+    reachedEvent,
+    enterSelects,
+    arrowMovesFocus: arrows !== arrowsAfter,
+    trail,
+  };
 }
 
 async function axe(page, name) {
@@ -134,11 +140,18 @@ async function measure(browser, impl) {
   const watermark = await d.page.evaluate(() => {
     const hits = [];
     for (const el of document.querySelectorAll("body *")) {
-      const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join(" ");
+      const own = [...el.childNodes]
+        .filter((n) => n.nodeType === 3)
+        .map((n) => n.textContent)
+        .join(" ");
       const cs = getComputedStyle(el, "::before").content + " " + getComputedStyle(el, "::after").content;
       const txt = `${own} ${cs}`;
       if (/trial|bryntum|licen[cs]e|evaluation/i.test(txt))
-        hits.push({ tag: el.tagName.toLowerCase(), cls: String(el.className).slice(0, 80), text: txt.trim().slice(0, 120) });
+        hits.push({
+          tag: el.tagName.toLowerCase(),
+          cls: String(el.className).slice(0, 80),
+          text: txt.trim().slice(0, 120),
+        });
     }
     return hits.slice(0, 10);
   });
@@ -150,13 +163,16 @@ async function measure(browser, impl) {
   const m = await open(browser, `${BASE}${route}`, { width: 375, height: 812 });
   await renderMs(m.page);
   await m.page.waitForTimeout(500);
-  const mobile = await m.page.evaluate((sel) => ({
-    scrollWidth: document.documentElement.scrollWidth,
-    visibleEvents: [...document.querySelectorAll(sel)].filter((e) => {
-      const r = e.getBoundingClientRect();
-      return r.width > 0 && r.height > 0;
-    }).length,
-  }), EVENT);
+  const mobile = await m.page.evaluate(
+    (sel) => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      visibleEvents: [...document.querySelectorAll(sel)].filter((e) => {
+        const r = e.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+      }).length,
+    }),
+    EVENT,
+  );
   await m.page.screenshot({ path: path.join(OUT, `${impl}-375-light.png`), fullPage: true });
   const axeMobile = await axe(m.page, `${impl}-375`);
   await m.ctx.close();
