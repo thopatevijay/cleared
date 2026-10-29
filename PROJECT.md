@@ -102,7 +102,7 @@ See [docs/architecture.md](docs/architecture.md).
 
 ## 4. Tech stack
 
-Versions verified on npm 2026-10-28; re-verified in M0-02 on 2026-10-28 (change: `@sentry/*` 11.9.0 → 11.10.0; Bryntum is on its private registry and is checked in M0-09).
+Versions verified on npm 2026-10-28; re-verified in M0-02 on 2026-10-28 (change: `@sentry/*` 11.9.0 → 11.10.0; Bryntum's trial installs from public npm as `@bryntum/calendar-trial`, owner decision 2026-10-29, checked in M0-09).
 
 | Component | Version | Why |
 |---|---|---|
@@ -118,14 +118,14 @@ Versions verified on npm 2026-10-28; re-verified in M0-02 on 2026-10-28 (change:
 | pg-boss | 12.38.0 | Postgres queue, transactional enqueue, DLQ |
 | openai | 7.45.1 | AI provider (owner choice); models verified in M0-07 |
 | own typed PayPal client | — | every PayPal call: Orders, Payments, Order Tracking, Disputes, webhooks, legacy Tracking, on the shared HTTP client. `@paypal/paypal-server-sdk` 2.5.0 is **not used**: its transport is hard-wired axios (ADR 0011 addendum, M0-04) |
-| @bryntum/calendar (trial) + @bryntum/calendar-react | 7.3.8 | cash calendar (licence pending; FullCalendar fallback) |
+| @bryntum/calendar (trial: `npm:@bryntum/calendar-trial@7.3.8`) + @bryntum/calendar-react | 7.3.8 | cash calendar (licence pending; FullCalendar fallback; `docs/evidence/m0-09-bryntum-spike.md`) |
 | @cantoo/pdf-lib / @react-pdf/renderer | 2.11.1 / 4.9.0 | compiled evidence PDF, scope snapshot (upstream pdf-lib is unmaintained since 2021) |
 | sharp / file-type / unpdf | 0.35.5 / 22.2.0 / 1.9.1 | image re-encoding (EXIF strip), magic-byte sniffing, PDF text layer for citations |
 | swr | 2.5.1 | UI polling |
 | tsx | 4.23.15 | TS scripts (spikes, setup) |
 | typescript-eslint | 8.72.1 | lint (requires TS < 6.1) |
 | @axe-core/playwright / @lhci/cli | 4.14.0 / 0.15.1 | a11y and performance checks |
-| @fullcalendar/react + core | 7.1.3 | MIT fallback behind `CashCalendar` (plugin majors verified in M0-09) |
+| @fullcalendar/react (+ core 7.1.3 transitively) + temporal-polyfill 1.0.6 | 7.1.3 | MIT fallback behind `CashCalendar`. v7 ships daygrid/list as `@fullcalendar/react/daygrid` and `/list`; the separate `@fullcalendar/daygrid`/`list` packages (6.1.22) are v6 and must not be mixed in (M0-09) |
 | Noto Sans / Noto Sans Devanagari | OFL font assets | EN/HI in PDFs |
 | pino | 10.4.0 | JSON logs |
 | @sentry/nextjs / @sentry/node | 11.10.0 | error tracking (web / worker) |
