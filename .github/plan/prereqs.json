@@ -757,9 +757,9 @@
       "M0-GATE"
     ],
     "who": "owner",
-    "how": "dashboard.render.com → sign up with GitHub (thopatevijay) → Workspace Settings → Billing → Add payment method. Paid starter plans are approved in docs/budget.md",
+    "how": "dashboard.render.com → sign up with GitHub (thopatevijay) → Workspace Settings → Billing → Add payment method. Paid starter plans are approved in docs/budget.md (owner on the Hobby workspace plan, 2026-10-29: $0 + compute; Starter instances are billed as compute)",
     "lands_in": "Render account (no env var)",
-    "status": "pending",
+    "status": "done",
     "required": true
   },
   {
@@ -773,7 +773,7 @@
     "who": "owner",
     "how": "dashboard.render.com → Account Settings → Git Providers → GitHub → Configure → Only select repositories → add thopatevijay/cleared → Save",
     "lands_in": "GitHub App installation (no env var)",
-    "status": "pending",
+    "status": "done",
     "required": true
   },
   {
