@@ -75,3 +75,14 @@ grep on every run. (The patterns are not copied here, because this README would 
 | `paypal/orders` | `create-goods-a`, `create-goods-a-replay`, `get-order-a`, `get-capture-a`, `create-goods-b`, `create-service-c` | M0-04 |
 | `paypal/tracking` | `track-ind-delhivery`, `track-other`, `trackers-batch-completed`, `get-legacy-tracker` | M0-04 |
 | `paypal/errors` | `400-validation`, `404-capture`, `401-revoked-token` (+`.2`, `.3`), `capture-already-captured` | M0-04 |
+| `paypal/disputes/full` | chargeback → every distinct state (`state-N-<status>`) → `write-supporting-info`, `write-evidence`, `write-adjudicate` (each = re-check GET + `.2` write) → `capture-N-<status>` (hold and release) | M0-05 |
+| `paypal/disputes/unknown` | chargeback, states, `guard-refused-evidence` (GET only: refused client-side), `before`, `timeout-precheck-get`, `after-timeout`, `retry-same-request-id-failed`, `after-retry`, `raw-retry-same-request-id` | M0-05 |
+| `paypal/disputes/accept` | chargeback, states, `write-accept-claim`, `capture-N-<status>` (refund state) | M0-05 |
+| `paypal/disputes/idempotency` | the same `PayPal-Request-Id` sent twice while the link is present, then a re-read | M0-05 |
+| `paypal/disputes/errors` | each write sent while its link is absent → PayPal's `ACTION_NOT_ALLOWED_IN_CURRENT_DISPUTE_STATE` | M0-05 |
+| `paypal/disputes/list` | `update-time-after` (`listDisputes`) | M0-05 |
+| `samples/evidence` | `delivery-note.pdf`: synthetic one-page PDF (`scripts/spikes/evidence-pdf.ts`) | M0-05 |
+
+Dispute recordings: `pnpm tsx --env-file=<path to .env> scripts/spikes/paypal-b.ts --record` (≈ 20–45 min,
+polls ≥ 60 s apart); the request-id follow-up is `… paypal-b.ts --record --idempotency --dispute <id> --request-id <id>`.
+Multipart bodies are recorded as text with each file's bytes replaced by `[type N bytes sha256:…]`.

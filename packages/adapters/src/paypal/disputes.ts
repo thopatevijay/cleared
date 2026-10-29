@@ -73,7 +73,9 @@ export class DisputeActionNotAllowedError extends Error {
 
   constructor(action: DisputeAction, dispute: Dispute) {
     const available = allowedActions(dispute);
-    super(`${action} not offered by dispute ${dispute.dispute_id} (${dispute.status}); links: ${available.join(", ") || "none"}`);
+    super(
+      `${action} not offered by dispute ${dispute.dispute_id} (${dispute.status}); links: ${available.join(", ") || "none"}`,
+    );
     this.name = "DisputeActionNotAllowedError";
     this.action = action;
     this.status = dispute.status;
@@ -135,7 +137,10 @@ export function checkEvidenceFiles(files: readonly EvidenceFile[]): void {
 /** Notes are at most 2000 characters (UTF-16 length: never under-counts). */
 export function checkNotes(notes: string | undefined): void {
   if (notes !== undefined && notes.length > EVIDENCE_LIMITS.maxNotesChars) {
-    throw new EvidenceRejectedError("NOTES_TOO_LONG", `notes are ${String(notes.length)} characters; the limit is 2000`);
+    throw new EvidenceRejectedError(
+      "NOTES_TOO_LONG",
+      `notes are ${String(notes.length)} characters; the limit is 2000`,
+    );
   }
 }
 
@@ -152,7 +157,11 @@ export interface Multipart {
 }
 
 /** multipart/form-data: an `input` JSON part, then `file1`…`fileN`. */
-export function buildMultipart(input: unknown, files: readonly EvidenceFile[], boundary = randomUUID().replaceAll("-", "")): Multipart {
+export function buildMultipart(
+  input: unknown,
+  files: readonly EvidenceFile[],
+  boundary = randomUUID().replaceAll("-", ""),
+): Multipart {
   const enc = new TextEncoder();
   const chunks: Uint8Array[] = [];
   const preview: string[] = [];
@@ -160,16 +169,26 @@ export function buildMultipart(input: unknown, files: readonly EvidenceFile[], b
     chunks.push(enc.encode(text));
     preview.push(text);
   };
-  push(`--${boundary}\r\nContent-Disposition: form-data; name="input"\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(input)}\r\n`);
+  push(
+    `--${boundary}\r\nContent-Disposition: form-data; name="input"\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(input)}\r\n`,
+  );
   files.forEach((f, i) => {
     const type = CONTENT_TYPES[extension(f.name) ?? ""] ?? "application/octet-stream";
-    push(`--${boundary}\r\nContent-Disposition: form-data; name="file${String(i + 1)}"; filename="${f.name.replaceAll('"', "")}"\r\nContent-Type: ${type}\r\n\r\n`);
+    push(
+      `--${boundary}\r\nContent-Disposition: form-data; name="file${String(i + 1)}"; filename="${f.name.replaceAll('"', "")}"\r\nContent-Type: ${type}\r\n\r\n`,
+    );
     chunks.push(f.bytes);
-    preview.push(`[${type} ${String(f.bytes.byteLength)} bytes sha256:${createHash("sha256").update(f.bytes).digest("hex")}]`);
+    preview.push(
+      `[${type} ${String(f.bytes.byteLength)} bytes sha256:${createHash("sha256").update(f.bytes).digest("hex")}]`,
+    );
     push("\r\n");
   });
   push(`--${boundary}--\r\n`);
-  return { body: concat(chunks), contentType: `multipart/form-data; boundary=${boundary}`, preview: preview.join("") };
+  return {
+    body: concat(chunks),
+    contentType: `multipart/form-data; boundary=${boundary}`,
+    preview: preview.join(""),
+  };
 }
 
 function concat(chunks: readonly Uint8Array[]): Uint8Array {
@@ -186,7 +205,10 @@ function concat(chunks: readonly Uint8Array[]): Uint8Array {
 
 export type OutcomeSummary =
   | { readonly kind: "open" }
-  | { readonly kind: "seller_keeps_paypal_covered"; readonly text: "seller keeps the money (PayPal covered the case)" }
+  | {
+      readonly kind: "seller_keeps_paypal_covered";
+      readonly text: "seller keeps the money (PayPal covered the case)";
+    }
   | { readonly kind: "seller_favour"; readonly text: "resolved in the seller's favour" }
   | { readonly kind: "buyer_refunded"; readonly text: "resolved for the buyer (refunded)" }
   | { readonly kind: "canceled_by_buyer"; readonly text: "the buyer cancelled the case" }
@@ -199,11 +221,13 @@ export function describeOutcome(d: Pick<Dispute, "status" | "dispute_outcome">):
   if (o.outcome_code === "RESOLVED_WITH_PAYOUT" && o.outcome_reason === "REPRESENTED_BY_PAYPAL") {
     return { kind: "seller_keeps_paypal_covered", text: "seller keeps the money (PayPal covered the case)" };
   }
-  if (o.outcome_code === "RESOLVED_SELLER_FAVOUR") return { kind: "seller_favour", text: "resolved in the seller's favour" };
+  if (o.outcome_code === "RESOLVED_SELLER_FAVOUR")
+    return { kind: "seller_favour", text: "resolved in the seller's favour" };
   if (o.outcome_code === "RESOLVED_BUYER_FAVOUR" || o.outcome_code === "ACCEPTED") {
     return { kind: "buyer_refunded", text: "resolved for the buyer (refunded)" };
   }
-  if (o.outcome_code === "CANCELED_BY_BUYER") return { kind: "canceled_by_buyer", text: "the buyer cancelled the case" };
+  if (o.outcome_code === "CANCELED_BY_BUYER")
+    return { kind: "canceled_by_buyer", text: "the buyer cancelled the case" };
   return { kind: "unmapped", code: o.outcome_code, reason: o.outcome_reason };
 }
 
@@ -215,7 +239,11 @@ export type ReconcileVerdict = "landed" | "not_landed";
  * action's link disappearing or the status moving is the proof. `update_time` alone is not: PayPal
  * moves it for its own reasons.
  */
-export function reconcileAfterTimeout(action: DisputeAction, before: Dispute, after: Dispute): ReconcileVerdict {
+export function reconcileAfterTimeout(
+  action: DisputeAction,
+  before: Dispute,
+  after: Dispute,
+): ReconcileVerdict {
   if (action === "provide_supporting_info" || action === "provide_evidence") {
     return sellerSubmissions(after) > sellerSubmissions(before) ? "landed" : "not_landed";
   }
@@ -251,15 +279,35 @@ export interface ChargebackInput {
 export interface PayPalDisputesClient {
   listDisputes(q?: { updateTimeAfter?: string; pageSize?: number }): Promise<DisputeList>;
   getDispute(id: string): Promise<Dispute>;
-  provideSupportingInfo(id: string, input: { notes: string; files?: readonly EvidenceFile[] }, o: WriteOptions): Promise<DisputeWriteResponse>;
-  provideEvidence(id: string, input: { evidenceType: string; notes?: string; files: readonly EvidenceFile[] }, o: WriteOptions): Promise<DisputeWriteResponse>;
-  acceptClaim(id: string, input: { note: string; acceptClaimType?: string }, o: WriteOptions): Promise<DisputeWriteResponse>;
+  provideSupportingInfo(
+    id: string,
+    input: { notes: string; files?: readonly EvidenceFile[] },
+    o: WriteOptions,
+  ): Promise<DisputeWriteResponse>;
+  provideEvidence(
+    id: string,
+    input: { evidenceType: string; notes?: string; files: readonly EvidenceFile[] },
+    o: WriteOptions,
+  ): Promise<DisputeWriteResponse>;
+  acceptClaim(
+    id: string,
+    input: { note: string; acceptClaimType?: string },
+    o: WriteOptions,
+  ): Promise<DisputeWriteResponse>;
   /** Sandbox only. */
   processChargeback(input: ChargebackInput): Promise<{ dispute_id: string }>;
   /** Sandbox only: moves a dispute to wait for the given party's evidence. */
-  requireEvidence(id: string, party: "SELLER_EVIDENCE" | "BUYER_EVIDENCE", o: WriteOptions): Promise<DisputeWriteResponse>;
+  requireEvidence(
+    id: string,
+    party: "SELLER_EVIDENCE" | "BUYER_EVIDENCE",
+    o: WriteOptions,
+  ): Promise<DisputeWriteResponse>;
   /** Sandbox only: PayPal's decision, simulated. Label it as such in any UI. */
-  adjudicate(id: string, outcome: "SELLER_FAVOR" | "BUYER_FAVOR", o: WriteOptions): Promise<DisputeWriteResponse>;
+  adjudicate(
+    id: string,
+    outcome: "SELLER_FAVOR" | "BUYER_FAVOR",
+    o: WriteOptions,
+  ): Promise<DisputeWriteResponse>;
 }
 
 export interface PayPalDisputesClientOptions {
@@ -285,7 +333,9 @@ export interface DisputesTransport {
 }
 
 /** The raw, UNGUARDED call layer. Product code uses `createPayPalDisputesClient`; spikes use this to record PayPal's own refusals. */
-export function createDisputesTransport(options: Pick<PayPalDisputesClientOptions, "http" | "tokens" | "baseUrl">): DisputesTransport {
+export function createDisputesTransport(
+  options: Pick<PayPalDisputesClientOptions, "http" | "tokens" | "baseUrl">,
+): DisputesTransport {
   const base = options.baseUrl ?? PAYPAL_SANDBOX_BASE_URL;
   async function send<S extends z.ZodType>(o: SendOptions<S>): Promise<z.infer<S>> {
     const headers: Record<string, string> = { accept: "application/json" };
@@ -326,14 +376,33 @@ export function createPayPalDisputesClient(options: PayPalDisputesClientOptions)
     t.send({ method: "GET", path: `/v1/customer/disputes/${seg(id)}`, schema: DisputeSchema });
 
   /** Fresh re-read; refuses before the write if the action's link is absent. */
-  async function guarded(id: string, action: DisputeAction, o: WriteOptions, write: (path: string) => SendOptions<typeof DisputeWriteResponseSchema>): Promise<DisputeWriteResponse> {
+  async function guarded(
+    id: string,
+    action: DisputeAction,
+    o: WriteOptions,
+    write: (path: string) => SendOptions<typeof DisputeWriteResponseSchema>,
+  ): Promise<DisputeWriteResponse> {
     const d = await getDispute(id);
     if (!allowedActions(d).includes(action)) throw new DisputeActionNotAllowedError(action, d);
     const path = `/v1/customer/disputes/${seg(id)}/${action.replaceAll("_", "-")}`;
-    return t.send({ ...write(path), requestId: o.requestId, ...(o.timeoutMs === undefined ? {} : { timeoutMs: o.timeoutMs }) });
+    return t.send({
+      ...write(path),
+      requestId: o.requestId,
+      ...(o.timeoutMs === undefined ? {} : { timeoutMs: o.timeoutMs }),
+    });
   }
-  const post = (path: string, json: unknown) => ({ method: "POST" as const, path, schema: DisputeWriteResponseSchema, json });
-  const postMultipart = (path: string, multipart: Multipart) => ({ method: "POST" as const, path, schema: DisputeWriteResponseSchema, multipart });
+  const post = (path: string, json: unknown) => ({
+    method: "POST" as const,
+    path,
+    schema: DisputeWriteResponseSchema,
+    json,
+  });
+  const postMultipart = (path: string, multipart: Multipart) => ({
+    method: "POST" as const,
+    path,
+    schema: DisputeWriteResponseSchema,
+    multipart,
+  });
 
   return {
     getDispute,
@@ -341,27 +410,48 @@ export function createPayPalDisputesClient(options: PayPalDisputesClientOptions)
       const params = new URLSearchParams();
       if (q.updateTimeAfter !== undefined) params.set("update_time_after", q.updateTimeAfter);
       params.set("page_size", String(q.pageSize ?? 50));
-      return t.send({ method: "GET", path: `/v1/customer/disputes?${params.toString()}`, schema: DisputeListSchema });
+      return t.send({
+        method: "GET",
+        path: `/v1/customer/disputes?${params.toString()}`,
+        schema: DisputeListSchema,
+      });
     },
     provideSupportingInfo: async (id, input, o) => {
       checkNotes(input.notes);
       checkEvidenceFiles(input.files ?? []);
-      return guarded(id, "provide_supporting_info", o, (p) => postMultipart(p, buildMultipart({ notes: input.notes }, input.files ?? [])));
+      return guarded(id, "provide_supporting_info", o, (p) =>
+        postMultipart(p, buildMultipart({ notes: input.notes }, input.files ?? [])),
+      );
     },
     provideEvidence: async (id, input, o) => {
       checkNotes(input.notes);
-      if (input.files.length === 0 && input.notes === undefined) throw new EvidenceRejectedError("EMPTY", "evidence needs a file or notes");
+      if (input.files.length === 0 && input.notes === undefined)
+        throw new EvidenceRejectedError("EMPTY", "evidence needs a file or notes");
       checkEvidenceFiles(input.files);
-      const evidence = { evidence_type: input.evidenceType, documents: input.files.map((f) => ({ name: f.name })), ...(input.notes === undefined ? {} : { notes: input.notes }) };
-      return guarded(id, "provide_evidence", o, (p) => postMultipart(p, buildMultipart({ evidences: [evidence] }, input.files)));
+      const evidence = {
+        evidence_type: input.evidenceType,
+        documents: input.files.map((f) => ({ name: f.name })),
+        ...(input.notes === undefined ? {} : { notes: input.notes }),
+      };
+      return guarded(id, "provide_evidence", o, (p) =>
+        postMultipart(p, buildMultipart({ evidences: [evidence] }, input.files)),
+      );
     },
     acceptClaim: async (id, input, o) => {
       checkNotes(input.note);
-      return guarded(id, "accept_claim", o, (p) => post(p, { note: input.note, accept_claim_type: input.acceptClaimType ?? "REFUND" }));
+      return guarded(id, "accept_claim", o, (p) =>
+        post(p, { note: input.note, accept_claim_type: input.acceptClaimType ?? "REFUND" }),
+      );
     },
     processChargeback: async (input) => {
       sandboxOnly("processChargeback");
-      return t.send({ method: "POST", path: "/v2/customer-support/process-chargeback", schema: ChargebackResponseSchema, json: chargebackBody(input), requestId: input.requestId });
+      return t.send({
+        method: "POST",
+        path: "/v2/customer-support/process-chargeback",
+        schema: ChargebackResponseSchema,
+        json: chargebackBody(input),
+        requestId: input.requestId,
+      });
     },
     requireEvidence: async (id, party, o) => {
       sandboxOnly("requireEvidence");
@@ -384,7 +474,12 @@ function chargebackBody(input: ChargebackInput): unknown {
     merchant_id: input.merchantId,
     financial_institution: { processor: "FDMS" },
     transaction: { id_enc: input.captureId, amount: input.amount },
-    instrument: { instrument_type: "CARD", card_brand: "VISA", credit_card_transaction_id: digits(16), external: false },
+    instrument: {
+      instrument_type: "CARD",
+      card_brand: "VISA",
+      credit_card_transaction_id: digits(16),
+      external: false,
+    },
     dispute: {
       id: null,
       stage: "CHARGEBACK",
@@ -396,7 +491,11 @@ function chargebackBody(input: ChargebackInput): unknown {
       money_movement_date: iso(now),
       event_type: "DEBIT",
       chargeback_type: "REPORTED_TO_PROCESSOR",
-      processor_info: { reference_number: digits(23), reason_code: input.reasonCode ?? "C2", notes: "Cleared sandbox chargeback" },
+      processor_info: {
+        reference_number: digits(23),
+        reason_code: input.reasonCode ?? "C2",
+        notes: "Cleared sandbox chargeback",
+      },
     },
   };
 }

@@ -29,11 +29,7 @@ function escape(text: string): string {
 }
 
 export function buildEvidencePdf(): Buffer {
-  const content = [
-    "BT /F1 11 Tf 56 760 Td 15 TL",
-    ...LINES.map((l) => `(${escape(l)}) '`),
-    "ET",
-  ].join("\n");
+  const content = ["BT /F1 11 Tf 56 760 Td 15 TL", ...LINES.map((l) => `(${escape(l)}) '`), "ET"].join("\n");
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",

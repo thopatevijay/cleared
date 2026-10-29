@@ -6,28 +6,43 @@ import { createHttpClient } from "../http/client.ts";
 import { createPayPalDisputesClient, SandboxOnlyError, type PayPalDisputesClient } from "./disputes.ts";
 import type { TokenProvider } from "./token.ts";
 
-function client(env?: () => string | undefined, baseUrl?: string): { dc: PayPalDisputesClient; calls: string[] } {
+function client(
+  env?: () => string | undefined,
+  baseUrl?: string,
+): { dc: PayPalDisputesClient; calls: string[] } {
   const calls: string[] = [];
   const http = createHttpClient({
     vendor: "paypal",
     timeoutMs: 1_000,
     maxRetries: 0,
     fetch: (input) => {
-      calls.push(String(input));
+      calls.push(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
       return Promise.reject(new Error("no network in this test"));
     },
   });
   const tokens: TokenProvider = {
-    getToken: () => Promise.resolve({ value: "t", expiresAt: Date.now() + 60_000, scopes: [], appId: undefined }),
+    getToken: () =>
+      Promise.resolve({ value: "t", expiresAt: Date.now() + 60_000, scopes: [], appId: undefined }),
     invalidate: () => undefined,
     withToken: (call) => call("t"),
   };
-  const dc = createPayPalDisputesClient({ http, tokens, ...(env === undefined ? {} : { env }), ...(baseUrl === undefined ? {} : { baseUrl }) });
+  const dc = createPayPalDisputesClient({
+    http,
+    tokens,
+    ...(env === undefined ? {} : { env }),
+    ...(baseUrl === undefined ? {} : { baseUrl }),
+  });
   return { dc, calls };
 }
 
 const calls = (dc: PayPalDisputesClient) => [
-  () => dc.processChargeback({ captureId: "CAP1", amount: { currency_code: "USD", value: "1.00" }, merchantId: "M1", requestId: "r" }),
+  () =>
+    dc.processChargeback({
+      captureId: "CAP1",
+      amount: { currency_code: "USD", value: "1.00" },
+      merchantId: "M1",
+      requestId: "r",
+    }),
   () => dc.requireEvidence("PP-D-1", "SELLER_EVIDENCE", { requestId: "r" }),
   () => dc.adjudicate("PP-D-1", "SELLER_FAVOR", { requestId: "r" }),
 ];
@@ -37,11 +52,14 @@ afterEach(() => {
 });
 
 describe("sandbox-only dispute calls", () => {
-  it.each(["live", "production", "", undefined])("throw when PAYPAL_ENV is %j (explicit env)", async (value) => {
-    const { dc, calls: http } = client(() => value);
-    for (const run of calls(dc)) await expect(run()).rejects.toThrow(SandboxOnlyError);
-    expect(http).toEqual([]);
-  });
+  it.each(["live", "production", "", undefined])(
+    "throw when PAYPAL_ENV is %j (explicit env)",
+    async (value) => {
+      const { dc, calls: http } = client(() => value);
+      for (const run of calls(dc)) await expect(run()).rejects.toThrow(SandboxOnlyError);
+      expect(http).toEqual([]);
+    },
+  );
 
   it("read PAYPAL_ENV from the process at call time: live → throw", async () => {
     vi.stubEnv("PAYPAL_ENV", "live");
