@@ -57,8 +57,10 @@ replay.close();
 ```
 
 msw serves each fixture **once**, matched on method + full URL (and `PayPal-Request-Id` when the
-fixture recorded one), in the order listed. A request with no remaining fixture is unhandled and
-**fails the test** (`onUnhandledFrame: "error"`); nothing reaches the network.
+fixture recorded one), in the order listed. A request with no remaining fixture gets a **network
+error** (`HttpResponse.error()`, so the call fails fast) and is listed by `replay.unmatched()`;
+nothing reaches the network. The catch-all handler must never return `undefined`: in msw 3 that is a
+passthrough to the real host, and `onUnhandledFrame: "error"` does not fire for it.
 
 ## Webhook deliveries (`paypal/webhooks/{deliveries,simulator}/`, M0-06)
 

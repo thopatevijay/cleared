@@ -1,6 +1,7 @@
 // Offline replay of the M0-04 live sandbox run (fixtures/paypal/). No network: unmatched requests fail.
 import { afterEach, describe, expect, it } from "vitest";
 import { createHttpClient, type HttpClient } from "../http/client.ts";
+import { HttpNetworkError } from "../http/errors.ts";
 import { loadFixture } from "../testing/fixture.ts";
 import { startReplay, type Replay } from "../testing/replay.ts";
 import { createPayPalOrdersClient, firstCapture, PayPalApiError, type CreateOrderInput } from "./orders.ts";
@@ -173,7 +174,8 @@ describe("PayPal orders (replay of the recorded sandbox run)", () => {
   });
 
   it("an unrecorded request fails instead of reaching the network", async () => {
-    const { pp } = paypal([]);
-    await expect(pp.getOrder("NOTRECORDED1")).rejects.toThrow();
-  });
+    const { pp, replay: r } = paypal([]);
+    await expect(pp.getOrder("NOTRECORDED1")).rejects.toThrow(HttpNetworkError);
+    expect(r.unmatched()).toEqual(["GET https://api-m.sandbox.paypal.com/v2/checkout/orders/NOTRECORDED1"]);
+  }, 2_000);
 });
