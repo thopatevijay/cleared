@@ -24,7 +24,7 @@ All re-verified 2026-10-28 from paypalaihackathon.devpost.com/rules.
 
 **Open questions** (M0-01):
 - [ ] Bryntum: written OK for a public, judge-facing demo on the trial until 2026-12-15 (decision date 2026-11-04)
-- [ ] PayPal: a Transaction Search scope for the sandbox app (missing from the token)
+- [ ] PayPal: a Transaction Search scope for the sandbox app (missing from the old app's token; the fresh M0-00 app's token carries it, verified 2026-10-29 via P-22; a 200 from the Search/balances endpoints is not yet measured, M0-04)
 - [ ] Organisers: confirm that a sandbox-only build with a labelled sandbox decision step is acceptable
 
 ## 2. Product
