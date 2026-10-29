@@ -585,6 +585,47 @@ const arg = (name: string): string | undefined => {
   return i === -1 ? undefined : process.argv[i + 1];
 };
 
+/** `--require-evidence --dispute <id>`: evidence (if offered), wait for the require_evidence link, call it. */
+async function requireEvidenceProbe(f: Flow, id: string): Promise<Record<string, unknown>> {
+  const look = observer(f);
+  let d = await look(id);
+  if (allowedActions(d).includes("provide_evidence")) {
+    await write(f, "require/write-evidence", "provide_evidence", () =>
+      f.dc.provideEvidence(
+        id,
+        { evidenceType: "PROOF_OF_FULFILLMENT", notes: notesFor("Evidence."), files: [evidenceFile()] },
+        opts(),
+      ),
+    );
+  }
+  const t0 = Date.now();
+  while (!allowedActions(d).includes("require_evidence") && Date.now() - t0 < 15 * 60_000) {
+    await sleep(POLL_MS);
+    d = await look(id);
+  }
+  if (!allowedActions(d).includes("require_evidence"))
+    return { dispute: id, skipped: "no require_evidence link" };
+  const ok = await write(
+    f,
+    "require/write-require-evidence",
+    "require_evidence (SELLER_EVIDENCE, sandbox)",
+    () => f.dc.requireEvidence(id, "SELLER_EVIDENCE", opts()),
+  );
+  await sleep(POLL_MS);
+  f.reset();
+  const after = await f.dc.getDispute(id);
+  f.keep("require/after", "re-read 60 s after require-evidence");
+  const out = {
+    dispute: id,
+    ok,
+    status: after.status,
+    links: after.links.map((l) => l.rel),
+    due: after.seller_response_due_date,
+  };
+  f.log("require-evidence", out);
+  return out;
+}
+
 /** Later reads: the released capture of the full path, the accept-claim dispute and its capture. */
 async function laterSnapshots(f: Flow): Promise<Record<string, unknown>> {
   const out: Record<string, unknown> = {};
@@ -704,6 +745,17 @@ async function main(): Promise<void> {
       }).getToken()
     ).value,
   );
+  const target = arg("--dispute");
+  if (process.argv.includes("--require-evidence") && target !== undefined) {
+    console.log(
+      JSON.stringify(
+        { done: true, probe: await requireEvidenceProbe(makeFlow("require", ctx), target) },
+        null,
+        2,
+      ),
+    );
+    return;
+  }
   if (process.argv.includes("--idempotency")) {
     console.log(
       JSON.stringify({ done: true, probe: await idempotencyProbe(makeFlow("idempotency", ctx)) }, null, 2),

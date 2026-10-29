@@ -1,6 +1,6 @@
 {
   "meta": {
-    "recorded_at": "2026-10-29T05:43:54.497Z",
+    "recorded_at": "2026-10-29T05:52:13.638Z",
     "env": "sandbox",
     "ticket": "M0-05",
     "scrubbed": true,
@@ -18,12 +18,12 @@
     "status": 200,
     "headers": {
       "content-type": "application/json",
-      "paypal-debug-id": "ca51fdd7ef9e7"
+      "paypal-debug-id": "f458090871166"
     },
     "body": {
       "dispute_id": "PP-R-ARH-10195077",
       "create_time": "2026-10-29T05:17:00.724Z",
-      "update_time": "2026-10-29T05:43:26.336Z",
+      "update_time": "2026-10-29T05:46:04.046Z",
       "disputed_transactions": [
         {
           "buyer_transaction_id": "8J955250E88441913",
@@ -110,6 +110,16 @@
           "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077",
           "rel": "self",
           "method": "GET"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077/adjudicate",
+          "rel": "adjudicate",
+          "method": "POST"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077/require-evidence",
+          "rel": "require_evidence",
+          "method": "POST"
         },
         {
           "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077/provide-supporting-info",

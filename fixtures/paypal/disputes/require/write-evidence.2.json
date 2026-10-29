@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:47:30.924Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "provide_evidence: fresh GET (link re-check), then the write"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-TCZ-10195079/provide-evidence",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "multipart/form-data; boundary=0b5a8b11803c479d8225d480cac6820c",
+      "paypal-request-id": "df2c4eb7-43e1-4b34-8db6-7a660a0e4ecb"
+    },
+    "body": "--0b5a8b11803c479d8225d480cac6820c\r\nContent-Disposition: form-data; name=\"input\"\r\nContent-Type: application/json\r\n\r\n{\"evidences\":[{\"evidence_type\":\"PROOF_OF_FULFILLMENT\",\"documents\":[{\"name\":\"delivery-note.pdf\"}],\"notes\":\"Evidence. Synthetic sandbox case: the item was dispatched with tracking and delivered; the delivery note is attached.\"}]}\r\n--0b5a8b11803c479d8225d480cac6820c\r\nContent-Disposition: form-data; name=\"file1\"; filename=\"delivery-note.pdf\"\r\nContent-Type: application/pdf\r\n\r\n[application/pdf 1124 bytes sha256:1cfdd3fb2b074dcf23e3160af91a88fdda2a2d812693cf07d5d2ea527efdc52f]\r\n--0b5a8b11803c479d8225d480cac6820c--\r\n"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f296811817a26"
+    },
+    "body": {
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-TCZ-10195079",
+          "rel": "detail",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}

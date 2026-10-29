@@ -1,6 +1,6 @@
 {
   "meta": {
-    "recorded_at": "2026-10-29T05:43:55.037Z",
+    "recorded_at": "2026-10-29T05:52:15.017Z",
     "env": "sandbox",
     "ticket": "M0-05",
     "scrubbed": true,
@@ -18,7 +18,7 @@
     "status": 200,
     "headers": {
       "content-type": "application/json;charset=UTF-8",
-      "paypal-debug-id": "ca51fdd85bba0"
+      "paypal-debug-id": "f8168375cbd2f"
     },
     "body": {
       "id": "54W821880C511020E",

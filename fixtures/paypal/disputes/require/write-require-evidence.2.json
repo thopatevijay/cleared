@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:51:40.295Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "require_evidence (SELLER_EVIDENCE, sandbox): fresh GET (link re-check), then the write"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-TCZ-10195079/require-evidence",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "9ea24324-f5c7-47d2-a37f-fd2f7761e197"
+    },
+    "body": {
+      "action": "SELLER_EVIDENCE"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f6599972312c8"
+    },
+    "body": {
+      "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-TCZ-10195079",
+      "rel": "self",
+      "method": "GET"
+    }
+  }
+}

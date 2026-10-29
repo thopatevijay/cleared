@@ -56,7 +56,7 @@ const pdf: EvidenceFile = { name: "delivery-note.pdf", bytes: new Uint8Array([0x
 
 /** Every recorded distinct state (`<flow>/state-N-<status>`), in recording order. */
 function stateFixtures(): string[] {
-  return ["full", "unknown", "accept", "idempotency"].flatMap((flow) => {
+  return ["full", "unknown", "accept", "idempotency", "require"].flatMap((flow) => {
     let files: string[];
     try {
       files = readdirSync(`${FIXTURES_DIR}${DIR}/${flow}`);
@@ -116,6 +116,7 @@ describe("guarded writes", () => {
     ["provide_evidence", "provide_evidence", "full/write-evidence"],
     ["adjudicate (sandbox)", "adjudicate", "full/write-adjudicate"],
     ["accept_claim", "accept_claim", "accept/write-accept-claim"],
+    ["require_evidence (sandbox)", "require_evidence", "require/write-require-evidence"],
   ];
 
   it.each(writes)(
@@ -131,6 +132,7 @@ describe("guarded writes", () => {
           dc.provideEvidence(id, { evidenceType: "PROOF_OF_FULFILLMENT", notes: "replay", files: [pdf] }, o),
         adjudicate: () => dc.adjudicate(id, "SELLER_FAVOR", o),
         accept_claim: () => dc.acceptClaim(id, { note: "replay" }, o),
+        require_evidence: () => dc.requireEvidence(id, "SELLER_EVIDENCE", o),
       };
       const res = DisputeWriteResponseSchema.parse(await run[action]?.());
       expect(res.links?.length ?? 0).toBeGreaterThanOrEqual(0);
@@ -228,6 +230,18 @@ describe("outcome and the money", () => {
         idOf("accept/state-1-open"),
       ]),
     );
+  });
+});
+
+describe("require-evidence (sandbox)", () => {
+  it("moves the dispute back to WAITING_FOR_SELLER_RESPONSE with a new seller deadline", () => {
+    const before = dispute("require/write-require-evidence");
+    const after = dispute("require/after");
+    expect(before.status).toBe("UNDER_REVIEW");
+    expect(after.status).toBe("WAITING_FOR_SELLER_RESPONSE");
+    expect(allowedActions(after).sort()).toEqual(["accept_claim", "provide_evidence"]);
+    expect(after.seller_response_due_date).toBeTruthy();
+    expect(reconcileAfterTimeout("require_evidence", before, after)).toBe("landed");
   });
 });
 
