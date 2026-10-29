@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T06:15:59.952Z",
+    "env": "sandbox",
+    "ticket": "M0-06",
+    "scrubbed": true,
+    "note": "ensureWebhook #1: list + create"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/notifications/webhooks",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f72172063cfaa"
+    },
+    "body": {
+      "webhooks": []
+    }
+  }
+}

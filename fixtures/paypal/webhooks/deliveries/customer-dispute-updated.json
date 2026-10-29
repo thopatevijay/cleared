@@ -1,0 +1,22 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T06:22:48.870Z",
+    "env": "sandbox",
+    "ticket": "M0-06",
+    "scrubbed": true,
+    "received_at": "2026-10-29T06:20:35.073Z",
+    "note": "real delivery; self-verify SUCCESS, API SUCCESS"
+  },
+  "event_type": "CUSTOMER.DISPUTE.UPDATED",
+  "headers": {
+    "user-agent": "PayPal/AUHD-1.0-1",
+    "content-type": "application/json",
+    "paypal-auth-algo": "SHA256withRSA",
+    "paypal-auth-version": "v2",
+    "paypal-cert-url": "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-360caa42-fca2a594-bf9ab596",
+    "paypal-transmission-id": "d983558d-d360-11f1-896a-53c0d1edcc0e",
+    "paypal-transmission-sig": "YrlRavsqaJqW2+2+UC40/MXm+8KuQfVUwt8VotET2VfGq1izagEKaKEhuP9u14yYHJI4yIach2tYuDFsm64Yn0Kr08nkS/zz+F/vOQx6rIdV+9bPcAdPPGvp3NbWBh5OqLpluH54JVjsw9VT/imdEQZyX9TbvRrGBkBYN2ZOrLPUdsQOc6Ki4s1ZodDSEvzLEMlMMOak3wkRNu+BlcCXqI/pyz0GxVINEMKItRAcN5kJ19LcZdeyRXOGpYb+g/yKbzvT4HKapeHXWlZBIyP5jrKSyTPmYcZhOt6B6Jz1duPQBfsecuUKtAlQXbWOv+rebC8jPeRo236Cn4pEX2XUjQ==",
+    "paypal-transmission-time": "2026-10-29T06:20:34Z"
+  },
+  "raw_body": "{\"id\":\"WH-3XN51907WT607083P-68J828049H6368801\",\"event_version\":\"1.0\",\"create_time\":\"2026-10-29T06:20:33.392Z\",\"resource_type\":\"dispute\",\"event_type\":\"CUSTOMER.DISPUTE.UPDATED\",\"summary\":\"A dispute was updated with case # PP-R-YKI-10195086\",\"resource\":{\"dispute_id\":\"PP-R-YKI-10195086\",\"create_time\":\"2026-10-29T06:16:30.460Z\",\"update_time\":\"2026-10-29T06:20:14.111Z\",\"disputed_transactions\":[{\"buyer_transaction_id\":\"7KK70998EN328454X\",\"seller_transaction_id\":\"0M327451J9579884Y\",\"transaction_status\":\"HELD\",\"custom\":\"spike-db4716b3-94d1-4524-ab16-73222372d61d\",\"seller\":{\"merchant_id\":\"MERCHANT-2\",\"name\":\"Person 1\"},\"seller_protection_eligible\":false,\"seller_protection_type\":\"SELLER_PROTECTION_INELIGIBLE\"}],\"reason\":\"MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED\",\"status\":\"WAITING_FOR_SELLER_RESPONSE\",\"dispute_amount\":{\"currency_code\":\"USD\",\"value\":\"37.00\"},\"external_reason_code\":\"C2\",\"fund_movements\":[{\"party\":\"RECEIVER\",\"amount\":{\"currency_code\":\"USD\",\"value\":\"35.55\"},\"initiated_time\":\"2026-10-29T06:19:34.000Z\",\"type\":\"DEBIT\",\"reason\":\"HOLD_PLACED\"}],\"dispute_life_cycle_stage\":\"CHARGEBACK\",\"dispute_channel\":\"EXTERNAL\",\"seller_response_due_date\":\"2026-11-09T04:59:59.000Z\",\"offer\":{\"buyer_requested_amount\":{\"currency_code\":\"USD\",\"value\":\"37.00\"}},\"refund_details\":{\"allowed_refund_amount\":{\"currency_code\":\"USD\",\"value\":\"37.00\"}},\"allowed_response_options\":{\"accept_claim\":{\"accept_claim_types\":[\"REFUND\"]}},\"links\":[{\"href\":\"https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-YKI-10195086\",\"rel\":\"self\",\"method\":\"GET\"},{\"href\":\"https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-YKI-10195086/accept-claim\",\"rel\":\"accept_claim\",\"method\":\"POST\"},{\"href\":\"https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-YKI-10195086/provide-evidence\",\"rel\":\"provide_evidence\",\"method\":\"POST\"}]},\"links\":[{\"href\":\"https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-3XN51907WT607083P-68J828049H6368801\",\"rel\":\"self\",\"method\":\"GET\"},{\"href\":\"https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-3XN51907WT607083P-68J828049H6368801/resend\",\"rel\":\"resend\",\"method\":\"POST\"}]}"
+}

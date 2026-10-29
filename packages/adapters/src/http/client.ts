@@ -28,6 +28,11 @@ export interface HttpRequest {
    */
   readonly idempotent?: boolean;
   readonly correlationId?: string;
+  /**
+   * Redirect handling (default `"follow"`). `"manual"` returns the 3xx as is, so it fails as a
+   * non-2xx: used where the target host is security-checked (the webhook cert fetch, ADR 0012).
+   */
+  readonly redirect?: "follow" | "manual";
 }
 
 export interface HttpResponse {
@@ -117,6 +122,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
         headers,
         body: req.body ?? null,
         signal: AbortSignal.timeout(timeoutMs),
+        redirect: req.redirect ?? "follow",
       });
     } catch (err) {
       if (isTimeout(err)) {

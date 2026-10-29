@@ -1,0 +1,289 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T06:22:45.590Z",
+    "env": "sandbox",
+    "ticket": "M0-06",
+    "scrubbed": true,
+    "note": "GET /v1/notifications/webhooks-events since the run start"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/notifications/webhooks-events?page_size=50&start_time=2026-10-29T06%3A14%3A56Z",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f780686ccd66b"
+    },
+    "body": {
+      "events": [
+        {
+          "id": "WH-3XN51907WT607083P-68J828049H6368801",
+          "create_time": "2026-10-29T06:20:33.392Z",
+          "resource_type": "dispute",
+          "event_type": "CUSTOMER.DISPUTE.UPDATED",
+          "summary": "A dispute was updated with case # PP-R-YKI-10195086",
+          "resource": {
+            "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+            "dispute_channel": "EXTERNAL",
+            "create_time": "2026-10-29T06:16:30.460Z",
+            "allowed_response_options": {
+              "accept_claim": {
+                "accept_claim_types": [
+                  "REFUND"
+                ]
+              }
+            },
+            "dispute_id": "PP-R-YKI-10195086",
+            "dispute_life_cycle_stage": "CHARGEBACK",
+            "refund_details": {
+              "allowed_refund_amount": {
+                "currency_code": "USD",
+                "value": "37.00"
+              }
+            },
+            "fund_movements": [
+              {
+                "party": "RECEIVER",
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "35.55"
+                },
+                "initiated_time": "2026-10-29T06:19:34.000Z",
+                "type": "DEBIT",
+                "reason": "HOLD_PLACED"
+              }
+            ],
+            "offer": {
+              "buyer_requested_amount": {
+                "currency_code": "USD",
+                "value": "37.00"
+              }
+            },
+            "disputed_transactions": [
+              {
+                "buyer_transaction_id": "7KK70998EN328454X",
+                "seller_transaction_id": "0M327451J9579884Y",
+                "transaction_status": "HELD",
+                "custom": "spike-db4716b3-94d1-4524-ab16-73222372d61d",
+                "seller": {
+                  "merchant_id": "MERCHANT-2",
+                  "name": "Person 1"
+                },
+                "seller_protection_eligible": false,
+                "seller_protection_type": "SELLER_PROTECTION_INELIGIBLE"
+              }
+            ],
+            "update_time": "2026-10-29T06:20:14.111Z",
+            "seller_response_due_date": "2026-11-09T04:59:59.000Z",
+            "links": [
+              {
+                "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-YKI-10195086",
+                "rel": "self",
+                "method": "GET"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-YKI-10195086/accept-claim",
+                "rel": "accept_claim",
+                "method": "POST"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-YKI-10195086/provide-evidence",
+                "rel": "provide_evidence",
+                "method": "POST"
+              }
+            ],
+            "dispute_amount": {
+              "currency_code": "USD",
+              "value": "37.00"
+            },
+            "external_reason_code": "C2",
+            "status": "WAITING_FOR_SELLER_RESPONSE"
+          },
+          "links": [
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-3XN51907WT607083P-68J828049H6368801",
+              "rel": "self",
+              "method": "GET",
+              "encType": "application/json"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-3XN51907WT607083P-68J828049H6368801/resend",
+              "rel": "resend",
+              "method": "POST",
+              "encType": "application/json"
+            }
+          ],
+          "event_version": "1.0"
+        },
+        {
+          "id": "WH-5WD9164028571322G-17G30127FJ447530Y",
+          "create_time": "2026-10-29T06:19:33.413Z",
+          "resource_type": "dispute",
+          "event_type": "CUSTOMER.DISPUTE.CREATED",
+          "summary": "A new dispute opened with case # PP-R-YKI-10195086",
+          "resource": {
+            "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+            "dispute_channel": "EXTERNAL",
+            "create_time": "2026-10-29T06:16:30.460Z",
+            "dispute_id": "PP-R-YKI-10195086",
+            "dispute_life_cycle_stage": "CHARGEBACK",
+            "refund_details": {
+              "allowed_refund_amount": {
+                "currency_code": "USD",
+                "value": "37.00"
+              }
+            },
+            "offer": {
+              "buyer_requested_amount": {
+                "currency_code": "USD",
+                "value": "37.00"
+              }
+            },
+            "disputed_transactions": [
+              {
+                "buyer_transaction_id": "7KK70998EN328454X",
+                "seller_transaction_id": "0M327451J9579884Y",
+                "transaction_status": "COMPLETED",
+                "custom": "spike-db4716b3-94d1-4524-ab16-73222372d61d",
+                "seller": {
+                  "merchant_id": "MERCHANT-2",
+                  "name": "Person 1"
+                },
+                "seller_protection_eligible": false,
+                "seller_protection_type": "SELLER_PROTECTION_INELIGIBLE"
+              }
+            ],
+            "update_time": "2026-10-29T06:19:24.460Z",
+            "links": [
+              {
+                "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-YKI-10195086",
+                "rel": "self",
+                "method": "GET"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-YKI-10195086/provide-supporting-info",
+                "rel": "provide_supporting_info",
+                "method": "POST"
+              }
+            ],
+            "dispute_amount": {
+              "currency_code": "USD",
+              "value": "37.00"
+            },
+            "external_reason_code": "C2",
+            "status": "UNDER_REVIEW"
+          },
+          "links": [
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-5WD9164028571322G-17G30127FJ447530Y",
+              "rel": "self",
+              "method": "GET",
+              "encType": "application/json"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-5WD9164028571322G-17G30127FJ447530Y/resend",
+              "rel": "resend",
+              "method": "POST",
+              "encType": "application/json"
+            }
+          ],
+          "event_version": "1.0"
+        },
+        {
+          "id": "WH-2CK67944VL911102K-0RL32799TA7321821",
+          "create_time": "2026-10-29T06:16:14.041Z",
+          "resource_type": "capture",
+          "event_type": "PAYMENT.CAPTURE.COMPLETED",
+          "summary": "Payment completed for $ 37.0 USD",
+          "resource": {
+            "amount": {
+              "currency_code": "USD",
+              "value": "37.00"
+            },
+            "seller_protection": {
+              "status": "NOT_ELIGIBLE"
+            },
+            "create_time": "2026-10-29T06:16:08Z",
+            "network_transaction_reference": {
+              "id": "CARD-1",
+              "network": "VISA"
+            },
+            "custom_id": "spike-db4716b3-94d1-4524-ab16-73222372d61d",
+            "payee": {
+              "email_address": "merchant-1@example.test",
+              "merchant_id": "MERCHANT-2"
+            },
+            "supplementary_data": {
+              "related_ids": {
+                "order_id": "90J43999BW241705J"
+              }
+            },
+            "update_time": "2026-10-29T06:16:08Z",
+            "final_capture": true,
+            "seller_receivable_breakdown": {
+              "gross_amount": {
+                "currency_code": "USD",
+                "value": "37.00"
+              },
+              "paypal_fee": {
+                "currency_code": "USD",
+                "value": "1.45"
+              },
+              "net_amount": {
+                "currency_code": "USD",
+                "value": "35.55"
+              }
+            },
+            "processor_response": {
+              "avs_code": "",
+              "cvv_code": "M",
+              "response_code": "0000"
+            },
+            "links": [
+              {
+                "href": "https://api.sandbox.paypal.com/v2/payments/captures/0M327451J9579884Y",
+                "rel": "self",
+                "method": "GET"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v2/payments/captures/0M327451J9579884Y/refund",
+                "rel": "refund",
+                "method": "POST"
+              },
+              {
+                "href": "https://api.sandbox.paypal.com/v2/checkout/orders/90J43999BW241705J",
+                "rel": "up",
+                "method": "GET"
+              }
+            ],
+            "id": "0M327451J9579884Y",
+            "status": "COMPLETED"
+          },
+          "links": [
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-2CK67944VL911102K-0RL32799TA7321821",
+              "rel": "self",
+              "method": "GET",
+              "encType": "application/json"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-2CK67944VL911102K-0RL32799TA7321821/resend",
+              "rel": "resend",
+              "method": "POST",
+              "encType": "application/json"
+            }
+          ],
+          "event_version": "1.0",
+          "resource_version": "2.0"
+        }
+      ],
+      "count": 3
+    }
+  }
+}
