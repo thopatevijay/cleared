@@ -1,0 +1,10 @@
+Order TRN-2207 · Scope brief (synthetic sample)
+Seller: Kiran Language Services (kiran@example.test)
+Client: Brightpath Appliances (support@example.test)
+Price: USD 380.00, paid via PayPal on 21 September 2026
+
+Deliverables:
+1. Translate the 10-page user manual for the AirPure 300 from English into Hindi.
+2. Deliver the translation as a PDF that keeps the original page layout.
+3. Include a bilingual glossary of the 50 key technical terms.
+4. Delivery by 5 October 2026.

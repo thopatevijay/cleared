@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" font-family="Helvetica, Arial, sans-serif">
+  <rect width="900" height="520" fill="#eceff1"/>
+  <rect x="0" y="0" width="900" height="44" fill="#d5dade"/>
+  <circle cx="22" cy="22" r="7" fill="#ff5f57"/><circle cx="44" cy="22" r="7" fill="#febc2e"/><circle cx="66" cy="22" r="7" fill="#28c840"/>
+  <text x="330" y="28" font-size="15" fill="#222">Shared folder · LOGO-1042 final</text>
+  <rect x="20" y="64" width="860" height="36" fill="#ffffff"/>
+  <text x="40" y="88" font-size="13" font-weight="bold" fill="#333">Name</text>
+  <text x="520" y="88" font-size="13" font-weight="bold" fill="#333">Modified</text>
+  <text x="720" y="88" font-size="13" font-weight="bold" fill="#333">Size</text>
+  <g font-size="14" fill="#111">
+    <rect x="20" y="104" width="860" height="40" fill="#ffffff"/><text x="40" y="129">northwind-logo.svg</text><text x="520" y="129">18 Oct 2026, 19:58</text><text x="720" y="129">14 KB</text>
+    <rect x="20" y="148" width="860" height="40" fill="#ffffff"/><text x="40" y="173">northwind-logo.png</text><text x="520" y="173">18 Oct 2026, 19:58</text><text x="720" y="173">212 KB</text>
+    <rect x="20" y="192" width="860" height="40" fill="#ffffff"/><text x="40" y="217">northwind-logo-black.png</text><text x="520" y="217">18 Oct 2026, 19:59</text><text x="720" y="217">188 KB</text>
+    <rect x="20" y="236" width="860" height="40" fill="#ffffff"/><text x="40" y="261">northwind-logo-white.png</text><text x="520" y="261">18 Oct 2026, 19:59</text><text x="720" y="261">176 KB</text>
+    <rect x="20" y="280" width="860" height="40" fill="#ffffff"/><text x="40" y="305">northwind-brand-guide.pdf</text><text x="520" y="305">18 Oct 2026, 20:04</text><text x="720" y="305">96 KB</text>
+  </g>
+  <text x="40" y="360" font-size="13" fill="#555">5 items</text>
+  <circle cx="790" cy="440" r="48" fill="#1b7f79"/>
+  <path d="M777 462 C 777 422, 812 413, 816 404 C 808 438, 795 452, 777 462 Z" fill="#ffffff"/>
+</svg>

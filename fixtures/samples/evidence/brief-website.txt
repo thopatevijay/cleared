@@ -1,0 +1,10 @@
+Order WEB-3315 · Scope brief (synthetic sample)
+Seller: Dev Arora Web (dev@example.test)
+Client: Lotus Yoga Studio (hello@example.test)
+Price: USD 650.00, paid via PayPal on 1 September 2026
+
+Deliverables:
+1. A five-page website: Home, About, Classes, Gallery and Contact.
+2. Responsive layout that works on mobile phones.
+3. A contact form that emails new enquiries to the studio.
+4. Site live on the client's domain by 30 September 2026.
