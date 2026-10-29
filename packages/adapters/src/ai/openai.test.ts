@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { elideDataUrls } from "./exchange.ts";
 import { evidenceContent, toStrictJsonSchema } from "./openai.ts";
 import { costUsd, PRICES, UnknownModelPriceError } from "./prices.ts";
 import { ExtractResult, ScopeClaims, ScopeVerdicts } from "./schemas.ts";
@@ -72,13 +71,5 @@ describe("openai adapter: prices", () => {
   it("has a positive price for every listed model", () => {
     for (const p of Object.values(PRICES))
       expect(p.inputPerM > 0 && p.outputPerM > 0 && p.cachedInputPerM > 0).toBe(true);
-  });
-});
-
-describe("openai adapter: fixture scrubbing helpers", () => {
-  it("elides inline base64 payloads", () => {
-    expect(elideDataUrls({ a: [{ image_url: "data:image/png;base64,QUJD" }] })).toEqual({
-      a: [{ image_url: "data:image/png;base64,<elided 4 chars>" }],
-    });
   });
 });

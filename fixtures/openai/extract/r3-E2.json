@@ -1,6 +1,6 @@
 {
   "meta": {
-    "recorded_at": "2026-10-29T05:04:01.832Z",
+    "recorded_at": "2026-10-29T05:13:24.646Z",
     "env": "live",
     "ticket": "M0-07",
     "scrubbed": true
@@ -128,22 +128,19 @@
   "response": {
     "status": 200,
     "headers": {
-      "content-type": "application/json",
-      "openai-processing-ms": "2488",
-      "openai-version": "2020-10-01",
-      "x-request-id": "req_ac9e8c8ebcf14057b34a8ccf4163c73b"
+      "content-type": "application/json"
     },
     "body": {
-      "id": "resp_015d6a3bc5d31f95016ae2d3bf27a487d1b61498733fd971e5",
+      "id": "resp_0377e8c8ae6b209c016ae2d5f1d33087d1a988e171bee4fada",
       "object": "response",
-      "created_at": 1793250239,
+      "created_at": 1793250801,
       "status": "completed",
       "access_programs": null,
       "background": false,
       "billing": {
         "payer": "developer"
       },
-      "completed_at": 1793250241,
+      "completed_at": 1793250804,
       "error": null,
       "frequency_penalty": 0,
       "incomplete_details": null,
@@ -154,7 +151,7 @@
       "moderation": null,
       "output": [
         {
-          "id": "msg_015d6a3bc5d31f95016ae2d3bfb5fc87d1a3e20782e26f82d0",
+          "id": "msg_0377e8c8ae6b209c016ae2d5f26d3487d1978d46945b9a8af8",
           "type": "message",
           "status": "completed",
           "content": [
@@ -162,7 +159,7 @@
               "type": "output_text",
               "annotations": [],
               "logprobs": [],
-              "text": "{\"evidence_id\":\"E2\",\"item_kind\":\"chat\",\"summary\":\"Chat export about the website launch, a test form submission, and a question about the gallery page.\",\"facts\":[{\"kind\":\"other\",\"statement\":\"Lotus Yoga Studio says photos for the gallery are in a shared folder.\",\"quote\":\"Photos for the gallery are in the shared folder.\"},{\"kind\":\"other\",\"statement\":\"Dev Arora Web says the site is live and that a screenshot is attached.\",\"quote\":\"The site is live at lotusyoga.example.test. Screenshot attached.\"},{\"kind\":\"approval\",\"statement\":\"Lotus Yoga Studio says the site looks lovely on their laptop.\",\"quote\":\"Looks lovely on my laptop.\"},{\"kind\":\"other\",\"statement\":\"Lotus Yoga Studio says a test message sent through the form arrived in their inbox.\",\"quote\":\"I sent a test message through the form and it arrived in our inbox.\"},{\"kind\":\"complaint\",\"statement\":\"Lotus Yoga Studio asks where the gallery page is and says the menu shows only Home, About, Classes, and Contact.\",\"quote\":\"Where is the gallery page? I only see Home, About, Classes and Contact in the menu.\"}],\"instruction_like_lines\":[]}"
+              "text": "{\"evidence_id\":\"E2\",\"item_kind\":\"chat\",\"summary\":\"Chat export for order WEB-3315 records the client sharing gallery photos, the developer saying the site is live, the client reporting a successful form test, and the client asking where the gallery page is.\",\"facts\":[{\"kind\":\"other\",\"statement\":\"Lotus Yoga Studio said photos for the gallery were in the shared folder.\",\"quote\":\"Photos for the gallery are in the shared folder.\"},{\"kind\":\"other\",\"statement\":\"Dev Arora Web said the site was live at lotusyoga.example.test and that a screenshot was attached.\",\"quote\":\"The site is live at lotusyoga.example.test. Screenshot attached.\"},{\"kind\":\"other\",\"statement\":\"Lotus Yoga Studio said the site looked lovely on their laptop and that a test message sent through the form arrived in their inbox.\",\"quote\":\"Looks lovely on my laptop. I sent a test message through the form and it arrived in our inbox.\"},{\"kind\":\"complaint\",\"statement\":\"Lotus Yoga Studio asked where the gallery page was and said the menu showed only Home, About, Classes and Contact.\",\"quote\":\"Where is the gallery page? I only see Home, About, Classes and Contact in the menu.\"}],\"instruction_like_lines\":[]}"
             }
           ],
           "phase": "final_answer",
@@ -303,11 +300,11 @@
           "cache_write_tokens": 0,
           "cached_tokens": 0
         },
-        "output_tokens": 249,
+        "output_tokens": 262,
         "output_tokens_details": {
           "reasoning_tokens": 0
         },
-        "total_tokens": 748
+        "total_tokens": 761
       },
       "user": null,
       "metadata": {}

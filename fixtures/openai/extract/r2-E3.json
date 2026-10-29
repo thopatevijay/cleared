@@ -1,6 +1,6 @@
 {
   "meta": {
-    "recorded_at": "2026-10-29T05:03:42.738Z",
+    "recorded_at": "2026-10-29T05:13:04.749Z",
     "env": "live",
     "ticket": "M0-07",
     "scrubbed": true
@@ -137,22 +137,19 @@
   "response": {
     "status": 200,
     "headers": {
-      "content-type": "application/json",
-      "openai-processing-ms": "3506",
-      "openai-version": "2020-10-01",
-      "x-request-id": "req_2232dc3199d1481c9802add41c03ba08"
+      "content-type": "application/json"
     },
     "body": {
-      "id": "resp_0b5e4b1c188cd52c016ae2d3ab1dd887d18317af3a5f5a73b6",
+      "id": "resp_02812c4446f0cf65016ae2d5dc518087d18427975e37413d76",
       "object": "response",
-      "created_at": 1793250219,
+      "created_at": 1793250780,
       "status": "completed",
       "access_programs": null,
       "background": false,
       "billing": {
         "payer": "developer"
       },
-      "completed_at": 1793250222,
+      "completed_at": 1793250784,
       "error": null,
       "frequency_penalty": 0,
       "incomplete_details": null,
@@ -163,7 +160,7 @@
       "moderation": null,
       "output": [
         {
-          "id": "msg_0b5e4b1c188cd52c016ae2d3abde5887d1a07a9b59a56131c6",
+          "id": "msg_02812c4446f0cf65016ae2d5dd242087d1ba586955e08de4a8",
           "type": "message",
           "status": "completed",
           "content": [
@@ -171,7 +168,7 @@
               "type": "output_text",
               "annotations": [],
               "logprobs": [],
-              "text": "{\"evidence_id\":\"E3\",\"item_kind\":\"delivery_document\",\"summary\":\"A translated AirPure 300 manual PDF is marked delivered on 4 October 2026. The file contains translated pages 1–8, with pages 9–10 to follow separately, and includes a 50-term bilingual glossary.\",\"facts\":[{\"kind\":\"deliverable\",\"statement\":\"The delivered file is a Hindi translation of the AirPure 300 user manual, whose English source is 10 pages.\",\"quote\":\"AirPure 300 · User manual (Hindi translation)\"},{\"kind\":\"deadline\",\"statement\":\"The document states it was delivered on 4 October 2026.\",\"quote\":\"Delivered 4 October 2026\"},{\"kind\":\"deliverable\",\"statement\":\"The file contains translated pages 1 to 8, covering the listed manual sections.\",\"quote\":\"Translated pages in this file: 1 to 8 (Introduction, Safety, Setup, Controls, Filters, Modes, Cleaning, Trou\"},{\"kind\":\"deliverable\",\"statement\":\"Pages 9 and 10, covering the maintenance schedule and warranty, are to follow in a separate file.\",\"quote\":\"Pages 9 and 10 (Maintenance schedule, Warranty) will follow in a separate file.\"},{\"kind\":\"requirement\",\"statement\":\"Each translated page keeps the original page layout and figure positions.\",\"quote\":\"Layout: each translated page keeps the original page layout and figure positions.\"},{\"kind\":\"deliverable\",\"statement\":\"The file includes a bilingual English-to-Hindi glossary of 50 key technical terms on its last page.\",\"quote\":\"Bilingual glossary of 50 key technical terms, English to Hindi, on the last page of this file.\"},{\"kind\":\"other\",\"statement\":\"The document says safety warnings are reproduced with their original formatting, as requested by the client.\",\"quote\":\"Safety warnings are reproduced with their original formatting, as requested by the client.\"}],\"instruction_like_lines\":[]}"
+              "text": "{\"evidence_id\":\"E3\",\"item_kind\":\"delivery_document\",\"summary\":\"A translated AirPure 300 manual PDF is identified as delivered on 4 October 2026. It contains translated pages 1–8, with pages 9–10 to follow separately, retains original page layouts and figure positions, and includes a 50-term English-to-Hindi glossary.\",\"facts\":[{\"kind\":\"deliverable\",\"statement\":\"The file is a Hindi translation of the AirPure 300 user manual.\",\"quote\":\"AirPure 300 · User manual (Hindi translation)\"},{\"kind\":\"deadline\",\"statement\":\"The document states it was delivered on 4 October 2026.\",\"quote\":\"Delivered 4 October 2026 (synthetic sample)\"},{\"kind\":\"deliverable\",\"statement\":\"The source manual is in English and has 10 pages; this file translates pages 1–8, covering the listed sections through “Trou”.\",\"quote\":\"Source: AirPure 300 user manual, English, 10 pages.\\nTranslated pages in this file: 1 to 8 (Introduction, Safety, Setup, Controls, Filters, Modes, Cleaning, Trou\"},{\"kind\":\"deliverable\",\"statement\":\"Pages 9 and 10, covering the maintenance schedule and warranty, are stated to follow in a separate file.\",\"quote\":\"Pages 9 and 10 (Maintenance schedule, Warranty) will follow in a separate file.\"},{\"kind\":\"deliverable\",\"statement\":\"Each translated page keeps the original page layout and figure positions.\",\"quote\":\"Layout: each translated page keeps the original page layout and figure positions.\"},{\"kind\":\"deliverable\",\"statement\":\"The file includes a bilingual English-to-Hindi glossary of 50 key technical terms on its last page.\",\"quote\":\"Bilingual glossary of 50 key technical terms, English to Hindi, on the last page of this file.\"},{\"kind\":\"requirement\",\"statement\":\"Safety warnings are said to be reproduced with their original formatting, as requested by the client.\",\"quote\":\"Safety warnings are reproduced with their original formatting, as requested by the client.\"}],\"instruction_like_lines\":[]}"
             }
           ],
           "phase": "final_answer",
@@ -312,11 +309,11 @@
           "cache_write_tokens": 0,
           "cached_tokens": 0
         },
-        "output_tokens": 392,
+        "output_tokens": 430,
         "output_tokens_details": {
           "reasoning_tokens": 0
         },
-        "total_tokens": 958
+        "total_tokens": 996
       },
       "user": null,
       "metadata": {}

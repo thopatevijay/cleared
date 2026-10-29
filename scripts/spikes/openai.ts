@@ -1,8 +1,9 @@
 // M0-07 OpenAI spike: per pack extract (SMALL) -> check_scope pass 1 (LARGE) -> pass 2 (LARGE) ->
 // verbatim check; then the error cases. Measures tokens, cost and latency; --record writes scrubbed
-// fixtures to fixtures/openai/{extract,scope-pass1,scope-pass2,errors}/ (M0-04 format).
+// fixtures to fixtures/openai/{extract,scope-pass1,scope-pass2,errors}/ through M0-04's shared HTTP
+// client, recorder and scrubber (`meta.env = "live"`: OpenAI has no sandbox).
 //
-//   node --env-file=<path to .env> scripts/spikes/openai.ts --record
+//   pnpm tsx --env-file=<path to .env> scripts/spikes/openai.ts --record
 //
 // Spend guard: every call reserves its worst case (input estimate + max_output_tokens) against
 // MAX_USD, accumulated across runs in .prp/m0-07-spend.json (gitignored); a call that could cross
@@ -15,7 +16,9 @@ import {
   type AiResult,
   type EvidencePart,
 } from "../../packages/adapters/src/ai/openai.ts";
-import { recordingFetch, type Exchange, type Fixture } from "../../packages/adapters/src/ai/exchange.ts";
+import type { Exchange } from "../../packages/adapters/src/http/client.ts";
+import { createRecorder, toFixture } from "../../packages/adapters/src/testing/record.ts";
+import { createScrubber } from "../../packages/adapters/src/testing/scrub.ts";
 import { priceFor } from "../../packages/adapters/src/ai/prices.ts";
 import { ExtractResult, ScopeClaims, ScopeVerdicts } from "../../packages/adapters/src/ai/schemas.ts";
 import { checkQuotes, type QuoteCheck } from "../../packages/core/src/proof/verbatim.ts";
@@ -100,22 +103,38 @@ function charge(usd: number): void {
   writeFileSync(LEDGER, JSON.stringify({ usd: spent }));
 }
 
-// ---- recording ------------------------------------------------------------------------------
-let target: { area: string; name: string } | null = null;
-function onExchange(ex: Exchange): void {
-  if (!RECORD || target === null) return;
-  const dir = join(FIXTURES, target.area);
-  mkdirSync(dir, { recursive: true });
-  let path = join(dir, `${target.name}.json`);
-  for (let n = 2; existsSync(path); n += 1) path = join(dir, `${target.name}-attempt${String(n)}.json`);
-  const fixture: Fixture = {
-    meta: { recorded_at: new Date().toISOString(), env: "live", ticket: "M0-07", scrubbed: true },
-    ...ex,
-  };
-  writeFileSync(path, `${JSON.stringify(fixture, null, 2)}\n`);
+// ---- recording (M0-04 recorder on the shared client's onExchange) ---------------------------
+const DATA_URL = /^data:([\w/+.-]+);base64,([A-Za-z0-9+/=]+)$/;
+/** Replaces inline base64 payloads (images, PDFs) with a short marker so fixtures stay small. */
+function elide(value: unknown): unknown {
+  if (typeof value === "string") {
+    const m = DATA_URL.exec(value);
+    return m ? `data:${m[1] ?? ""};base64,<elided ${String(m[2]?.length ?? 0)} chars>` : value;
+  }
+  if (Array.isArray(value)) return value.map(elide);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, elide(v)]));
+  }
+  return value;
 }
-const fetchImpl = recordingFetch(onExchange);
-const provider = createOpenAiProvider({ apiKey, fetch: fetchImpl });
+function elideBody(ex: Exchange): Exchange {
+  if (ex.request.body === undefined) return ex;
+  const body = JSON.stringify(elide(JSON.parse(ex.request.body)));
+  return { ...ex, request: { ...ex.request, body } };
+}
+const scrubber = createScrubber({ secrets: () => [apiKey] });
+const recorder = createRecorder({
+  dir: FIXTURES,
+  ticket: "M0-07",
+  scrubber,
+  env: "live",
+  transform: elideBody,
+});
+let labelled = false;
+function onExchange(ex: Exchange): void {
+  if (RECORD && labelled) recorder.onExchange(ex);
+}
+const provider = createOpenAiProvider({ apiKey, onExchange });
 
 // ---- evidence -------------------------------------------------------------------------------
 function part(item: Item): EvidencePart {
@@ -163,9 +182,10 @@ async function call<T>(
   area: string,
   fn: () => Promise<AiResult<T>>,
 ): Promise<AiResult<T>> {
-  target = { area, name: `${run}-${item}` };
+  recorder.label(`${area}/${run}-${item}`);
+  labelled = true;
   const res = await fn();
-  target = null;
+  labelled = false;
   charge(res.costUsd);
   const u = res.usage;
   rows.push({
@@ -309,18 +329,40 @@ async function errorCases(): Promise<void> {
     reasoningEffort: "none" as const,
   };
   reserve(SMALL, chars([brief]), 0, 2000);
-  const timeoutProvider = createOpenAiProvider({ apiKey, fetch: fetchImpl, timeoutMs: 1, maxRetries: 0 });
-  await call("err", "error", "timeout-client", "errors", () =>
+  // A timeout has no response, so the shared client reports no exchange: write that fixture by hand.
+  const timeoutProvider = createOpenAiProvider({ apiKey, timeoutMs: 1 });
+  const res = await call("err", "error", "timeout-client", "errors", () =>
     timeoutProvider.generate({ ...base, model: SMALL, maxOutputTokens: 2000 }),
   );
+  const request: Exchange["request"] = {
+    method: "POST",
+    url: "https://api.openai.com/v1/responses",
+    headers: { "content-type": "application/json" },
+    body: undefined,
+  };
+  if (RECORD && !res.ok) writeTimeoutFixture(request, res.error.detail);
   reserve(SMALL, chars([brief]), 0, 16);
   await call("err", "error", "incomplete-max-output-tokens", "errors", () =>
     provider.generate({ ...base, model: SMALL, maxOutputTokens: 16 }),
   );
-  const noRetry = createOpenAiProvider({ apiKey, fetch: fetchImpl, maxRetries: 0 });
   await call("err", "error", "model-not-found", "errors", () =>
-    noRetry.generate({ ...base, model: "gpt-does-not-exist", maxOutputTokens: 16 }),
+    provider.generate({ ...base, model: "gpt-does-not-exist", maxOutputTokens: 16 }),
   );
+}
+
+function writeTimeoutFixture(request: Exchange["request"], detail: string): void {
+  const ex: Exchange = {
+    vendor: "openai",
+    attempt: 1,
+    durationMs: 1,
+    request,
+    response: { status: 0, headers: {}, body: JSON.stringify({ transport_error: "HttpTimeoutError" }) },
+  };
+  const note = `no response: the shared client timed out (timeoutMs 1) and threw; ${detail.slice(0, 120)}`;
+  const fixture = toFixture(ex, scrubber, "M0-07", new Date(), note, "live");
+  const file = join(FIXTURES, "errors/err-timeout-client.json");
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify(fixture, null, 2)}\n`);
 }
 
 async function main(): Promise<void> {

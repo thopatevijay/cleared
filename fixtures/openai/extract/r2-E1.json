@@ -1,6 +1,6 @@
 {
   "meta": {
-    "recorded_at": "2026-10-29T05:03:36.040Z",
+    "recorded_at": "2026-10-29T05:12:57.089Z",
     "env": "live",
     "ticket": "M0-07",
     "scrubbed": true
@@ -128,22 +128,19 @@
   "response": {
     "status": 200,
     "headers": {
-      "content-type": "application/json",
-      "openai-processing-ms": "2618",
-      "openai-version": "2020-10-01",
-      "x-request-id": "req_a33aac0606b04353816f887936b1f5f1"
+      "content-type": "application/json"
     },
     "body": {
-      "id": "resp_0e243da520c72223016ae2d3a549e487d1b912c8217bbe8a78",
+      "id": "resp_0957305404c41bcf016ae2d5d63cd887d1a99236642b66416c",
       "object": "response",
-      "created_at": 1793250213,
+      "created_at": 1793250774,
       "status": "completed",
       "access_programs": null,
       "background": false,
       "billing": {
         "payer": "developer"
       },
-      "completed_at": 1793250215,
+      "completed_at": 1793250776,
       "error": null,
       "frequency_penalty": 0,
       "incomplete_details": null,
@@ -154,7 +151,7 @@
       "moderation": null,
       "output": [
         {
-          "id": "msg_0e243da520c72223016ae2d3a60d2087d188e376f05291b63f",
+          "id": "msg_0957305404c41bcf016ae2d5d6e07487d18b1811cd01618fdc",
           "type": "message",
           "status": "completed",
           "content": [
@@ -162,7 +159,7 @@
               "type": "output_text",
               "annotations": [],
               "logprobs": [],
-              "text": "{\"evidence_id\":\"E1\",\"item_kind\":\"scope_brief\",\"summary\":\"Scope brief for Order TRN-2207, listing the translation, formatting, glossary and delivery requirements, along with the price and payment date.\",\"facts\":[{\"kind\":\"price\",\"statement\":\"The order price is USD 380.00, paid via PayPal on 21 September 2026.\",\"quote\":\"Price: USD 380.00, paid via PayPal on 21 September 2026\"},{\"kind\":\"deliverable\",\"statement\":\"Translate the 10-page AirPure 300 user manual from English into Hindi.\",\"quote\":\"Translate the 10-page user manual for the AirPure 300 from English into Hindi.\"},{\"kind\":\"requirement\",\"statement\":\"The translation must be delivered as a PDF that keeps the original page layout.\",\"quote\":\"Deliver the translation as a PDF that keeps the original page layout.\"},{\"kind\":\"deliverable\",\"statement\":\"Include a bilingual glossary of 50 key technical terms.\",\"quote\":\"Include a bilingual glossary of the 50 key technical terms.\"},{\"kind\":\"deadline\",\"statement\":\"Delivery is due by 5 October 2026.\",\"quote\":\"Delivery by 5 October 2026.\"}],\"instruction_like_lines\":[]}"
+              "text": "{\"evidence_id\":\"E1\",\"item_kind\":\"scope_brief\",\"summary\":\"Scope brief for order TRN-2207 from Kiran Language Services to Brightpath Appliances, priced at USD 380.00 and paid via PayPal on 21 September 2026.\",\"facts\":[{\"kind\":\"price\",\"statement\":\"The price is USD 380.00, paid via PayPal on 21 September 2026.\",\"quote\":\"Price: USD 380.00, paid via PayPal on 21 September 2026\"},{\"kind\":\"requirement\",\"statement\":\"Translate the 10-page AirPure 300 user manual from English into Hindi.\",\"quote\":\"Translate the 10-page user manual for the AirPure 300 from English into Hindi.\"},{\"kind\":\"deliverable\",\"statement\":\"Provide the translation as a PDF that keeps the original page layout.\",\"quote\":\"Deliver the translation as a PDF that keeps the original page layout.\"},{\"kind\":\"deliverable\",\"statement\":\"Include a bilingual glossary of 50 key technical terms.\",\"quote\":\"Include a bilingual glossary of the 50 key technical terms.\"},{\"kind\":\"deadline\",\"statement\":\"Delivery is due by 5 October 2026.\",\"quote\":\"Delivery by 5 October 2026.\"}],\"instruction_like_lines\":[]}"
             }
           ],
           "phase": "final_answer",
@@ -303,11 +300,11 @@
           "cache_write_tokens": 0,
           "cached_tokens": 0
         },
-        "output_tokens": 257,
+        "output_tokens": 264,
         "output_tokens_details": {
           "reasoning_tokens": 0
         },
-        "total_tokens": 730
+        "total_tokens": 737
       },
       "user": null,
       "metadata": {}

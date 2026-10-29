@@ -1,6 +1,6 @@
 {
   "meta": {
-    "recorded_at": "2026-10-29T05:03:46.796Z",
+    "recorded_at": "2026-10-29T05:13:08.194Z",
     "env": "live",
     "ticket": "M0-07",
     "scrubbed": true
@@ -93,15 +93,12 @@
   "response": {
     "status": 200,
     "headers": {
-      "content-type": "application/json",
-      "openai-processing-ms": "3685",
-      "openai-version": "2020-10-01",
-      "x-request-id": "req_e0a9381820584efc9faef1e8b4d870f9"
+      "content-type": "application/json"
     },
     "body": {
-      "id": "resp_062e27257e16ff78016ae2d3aefaec87d19389487888c972e5",
+      "id": "resp_02dea7a67a5779ed016ae2d5e0f16087d1b90c4e78855856d6",
       "object": "response",
-      "created_at": 1793250223,
+      "created_at": 1793250784,
       "status": "completed",
       "access_programs": {
         "cyber": "standard"
@@ -110,7 +107,7 @@
       "billing": {
         "payer": "developer"
       },
-      "completed_at": 1793250226,
+      "completed_at": 1793250787,
       "error": null,
       "frequency_penalty": 0,
       "incomplete_details": null,
@@ -121,7 +118,7 @@
       "moderation": null,
       "output": [
         {
-          "id": "msg_062e27257e16ff78016ae2d3b053ec87d1805cddea7e2d19a1",
+          "id": "msg_02dea7a67a5779ed016ae2d5e1d61887d19afb10022dbc69f5",
           "type": "message",
           "status": "completed",
           "content": [

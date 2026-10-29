@@ -6,7 +6,8 @@ import { z } from "zod";
 export const FixtureSchema = z.object({
   meta: z.object({
     recorded_at: z.string(),
-    env: z.literal("sandbox"),
+    // "sandbox" for PayPal; "live" for vendors without a sandbox (OpenAI, M0-07)
+    env: z.enum(["sandbox", "live"]),
     ticket: z.string(),
     scrubbed: z.literal(true),
     note: z.string().optional(),

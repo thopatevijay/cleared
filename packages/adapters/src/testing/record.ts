@@ -5,6 +5,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { Exchange } from "../http/client.ts";
 import type { Fixture } from "./fixture.ts";
+
+type FixtureEnv = Fixture["meta"]["env"];
 import { REQUEST_HEADER_ALLOW, RESPONSE_HEADER_ALLOW, type Scrubber } from "./scrub.ts";
 
 export interface RecorderOptions {
@@ -12,6 +14,10 @@ export interface RecorderOptions {
   readonly dir: string;
   readonly ticket: string;
   readonly scrubber: Scrubber;
+  /** `fixture.meta.env`: "sandbox" (default) or "live" for a vendor without a sandbox (OpenAI). */
+  readonly env?: FixtureEnv;
+  /** Rewrites an exchange before scrubbing (e.g. eliding inline base64 file payloads). */
+  readonly transform?: (exchange: Exchange) => Exchange;
   readonly now?: () => Date;
 }
 
@@ -32,7 +38,8 @@ export function createRecorder(options: RecorderOptions): Recorder {
     if (current === undefined) throw new Error("recorder: label() before the first exchange");
     current.count += 1;
     const name = current.count === 1 ? current.name : `${current.name}.${String(current.count)}`;
-    const fixture = toFixture(exchange, options.scrubber, options.ticket, now(), current.note);
+    const ex = options.transform ? options.transform(exchange) : exchange;
+    const fixture = toFixture(ex, options.scrubber, options.ticket, now(), current.note, options.env);
     const file = join(options.dir, `${name}.json`);
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, `${JSON.stringify(fixture, null, 2)}\n`);
@@ -48,11 +55,18 @@ export function createRecorder(options: RecorderOptions): Recorder {
   };
 }
 
-export function toFixture(e: Exchange, s: Scrubber, ticket: string, at: Date, note?: string): Fixture {
+export function toFixture(
+  e: Exchange,
+  s: Scrubber,
+  ticket: string,
+  at: Date,
+  note?: string,
+  env: FixtureEnv = "sandbox",
+): Fixture {
   return {
     meta: {
       recorded_at: at.toISOString(),
-      env: "sandbox",
+      env,
       ticket,
       scrubbed: true,
       ...(note === undefined ? {} : { note }),

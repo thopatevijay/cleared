@@ -2,10 +2,20 @@
 // schema (z.toJSONSchema), the output re-validated with zod, usage -> cost from prices.ts.
 // Evidence travels in a delimited data channel in the user message; `instructions` carries only
 // our own text (CLAUDE.md: evidence is data, never instructions).
-// Timeout 60 s (ADR 0011) is the SDK's own option until M0-04's shared HTTP client lands.
+// Transport: the SDK's fetch is routed through the shared HTTP client (ADR 0011: OpenAI 60 s
+// timeout, retries only on timeout/5xx/429 with jitter and Retry-After, the breaker, onExchange
+// for the fixture recorder). The SDK's own retries are off so the shared client is the only policy.
 import OpenAI from "openai";
 import type { Response as OaiResponse, ResponseInputContent } from "openai/resources/responses/responses";
 import { z } from "zod";
+import {
+  createHttpClient,
+  VENDOR_TIMEOUTS_MS,
+  type Exchange,
+  type HttpClient,
+  type HttpMethod,
+} from "../http/client.ts";
+import { CircuitOpenError, HttpStatusError, HttpTimeoutError } from "../http/errors.ts";
 import { costUsd, type TokenUsage } from "./prices.ts";
 import { ResponseUsage } from "./schemas.ts";
 
@@ -63,20 +73,25 @@ export interface AiProvider {
 
 export interface OpenAiProviderOptions {
   readonly apiKey: string;
+  /** The shared client to send through; built with the OpenAI defaults when absent. */
+  readonly http?: HttpClient;
+  /** Used only when `http` is absent: per-call timeout (default 60 s) and the recorder hook. */
   readonly timeoutMs?: number;
-  readonly maxRetries?: number;
-  readonly fetch?: typeof fetch;
+  readonly onExchange?: (exchange: Exchange) => void;
 }
 
-export const OPENAI_TIMEOUT_MS = 60_000;
+export const OPENAI_TIMEOUT_MS = VENDOR_TIMEOUTS_MS.openai;
 
 export function createOpenAiProvider(opts: OpenAiProviderOptions): AiProvider {
-  const client = new OpenAI({
-    apiKey: opts.apiKey,
-    timeout: opts.timeoutMs ?? OPENAI_TIMEOUT_MS,
-    maxRetries: opts.maxRetries ?? 2,
-    ...(opts.fetch ? { fetch: opts.fetch } : {}),
-  });
+  const http =
+    opts.http ??
+    createHttpClient({
+      vendor: "openai",
+      timeoutMs: opts.timeoutMs ?? OPENAI_TIMEOUT_MS,
+      ...(opts.onExchange ? { onExchange: opts.onExchange } : {}),
+    });
+  // The SDK timeout is only a backstop above the shared client's; the shared client times out first.
+  const client = new OpenAI({ apiKey: opts.apiKey, maxRetries: 0, timeout: 120_000, fetch: fetchVia(http) });
   return {
     async generate(req) {
       const started = performance.now();
@@ -84,16 +99,29 @@ export function createOpenAiProvider(opts: OpenAiProviderOptions): AiProvider {
         const res = await client.responses.create(buildRequest(req));
         return interpret(req, res, performance.now() - started);
       } catch (err) {
-        return failure(
-          req.model,
-          transportKind(err),
-          errorDetail(err),
-          performance.now() - started,
-          null,
-          null,
-        );
+        const ms = performance.now() - started;
+        return failure(req.model, transportKind(err), errorDetail(err), ms, null, null);
       }
     },
+  };
+}
+
+/** A `fetch` for the SDK that sends through the shared client and hands non-2xx back as a Response. */
+export function fetchVia(http: HttpClient): typeof fetch {
+  return async (input, init) => {
+    const url = input instanceof Request ? input.url : input instanceof URL ? input.href : input;
+    const headers = Object.fromEntries(new Headers(init?.headers).entries());
+    const body = typeof init?.body === "string" ? init.body : undefined;
+    const method = (init?.method ?? "GET").toUpperCase() as HttpMethod;
+    try {
+      const res = await http.request({ method, url, headers, ...(body === undefined ? {} : { body }) });
+      return new Response(res.bodyText, { status: res.status, headers: res.headers });
+    } catch (err) {
+      if (err instanceof HttpStatusError) {
+        return new Response(err.bodyText, { status: err.status, headers: err.headers });
+      }
+      throw err;
+    }
   };
 }
 
@@ -233,6 +261,9 @@ function failure<T>(
 }
 
 function transportKind(err: unknown): AiErrorKind {
+  const cause = err instanceof Error ? err.cause : undefined;
+  if (err instanceof HttpTimeoutError || cause instanceof HttpTimeoutError) return "timeout";
+  if (err instanceof CircuitOpenError || cause instanceof CircuitOpenError) return "connection";
   if (err instanceof OpenAI.APIConnectionTimeoutError) return "timeout";
   if (err instanceof OpenAI.APIConnectionError) return "connection";
   return "http";

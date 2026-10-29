@@ -1,6 +1,6 @@
 {
   "meta": {
-    "recorded_at": "2026-10-29T05:03:38.903Z",
+    "recorded_at": "2026-10-29T05:13:00.072Z",
     "env": "live",
     "ticket": "M0-07",
     "scrubbed": true
@@ -128,22 +128,19 @@
   "response": {
     "status": 200,
     "headers": {
-      "content-type": "application/json",
-      "openai-processing-ms": "2503",
-      "openai-version": "2020-10-01",
-      "x-request-id": "req_62e5b2c819af4d18b7ba82306213517e"
+      "content-type": "application/json"
     },
     "body": {
-      "id": "resp_0c851e242d9d9f4e016ae2d3a842f487d189bce8e39e78a37a",
+      "id": "resp_00d096d96bc21e50016ae2d5d9461887d1a97f691da3e4530e",
       "object": "response",
-      "created_at": 1793250216,
+      "created_at": 1793250777,
       "status": "completed",
       "access_programs": null,
       "background": false,
       "billing": {
         "payer": "developer"
       },
-      "completed_at": 1793250218,
+      "completed_at": 1793250779,
       "error": null,
       "frequency_penalty": 0,
       "incomplete_details": null,
@@ -154,7 +151,7 @@
       "moderation": null,
       "output": [
         {
-          "id": "msg_0c851e242d9d9f4e016ae2d3a8ca8087d1b0a459ad2e3f23c0",
+          "id": "msg_00d096d96bc21e50016ae2d5da09a887d184c3e658e9189440",
           "type": "message",
           "status": "completed",
           "content": [
@@ -162,7 +159,7 @@
               "type": "output_text",
               "annotations": [],
               "logprobs": [],
-              "text": "{\"evidence_id\":\"E2\",\"item_kind\":\"chat\",\"summary\":\"Chat messages describe a request about safety-warning formatting, a claimed delivery of a Hindi PDF and glossary, positive feedback on the glossary, and a reported omission of two pages that the service provider says are still under review.\",\"facts\":[{\"kind\":\"requirement\",\"statement\":\"Brightpath Appliances requested that the safety warnings remain exactly as formatted.\",\"quote\":\"Please keep the safety warnings exactly as formatted.\"},{\"kind\":\"deliverable\",\"statement\":\"Kiran Language Services said it delivered the Hindi PDF and glossary on October 4.\",\"quote\":\"Delivered the Hindi PDF and the glossary today.\"},{\"kind\":\"approval\",\"statement\":\"Brightpath Appliances said the glossary was very useful.\",\"quote\":\"The glossary is very useful.\"},{\"kind\":\"complaint\",\"statement\":\"Brightpath Appliances reported that pages 9 and 10, covering maintenance and warranty, were missing from the PDF.\",\"quote\":\"Pages 9 and 10 (maintenance and warranty) are not in it.\"},{\"kind\":\"other\",\"statement\":\"Kiran Language Services apologized and said the two pages were still in review with its proofreader.\",\"quote\":\"Apologies, those two pages are still in review with my proofreader.\"}],\"instruction_like_lines\":[]}"
+              "text": "{\"evidence_id\":\"E2\",\"item_kind\":\"chat\",\"summary\":\"Chat about a Hindi PDF and glossary delivery, followed by a report that two pages were missing and a reply that they were still under review.\",\"facts\":[{\"kind\":\"requirement\",\"statement\":\"Brightpath asked that the safety warnings remain exactly as formatted.\",\"quote\":\"Please keep the safety warnings exactly as formatted.\"},{\"kind\":\"deliverable\",\"statement\":\"Kiran stated that the Hindi PDF and glossary were delivered on October 4, 2026.\",\"quote\":\"Delivered the Hindi PDF and the glossary today.\"},{\"kind\":\"approval\",\"statement\":\"Brightpath said the glossary was useful.\",\"quote\":\"The glossary is very useful.\"},{\"kind\":\"complaint\",\"statement\":\"Brightpath reported that pages 9 and 10, covering maintenance and warranty, were missing from the PDF.\",\"quote\":\"Pages 9 and 10 (maintenance and warranty) are not in it.\"},{\"kind\":\"other\",\"statement\":\"Kiran said the two pages were still with the proofreader for review.\",\"quote\":\"those two pages are still in review with my proofreader.\"}],\"instruction_like_lines\":[]}"
             }
           ],
           "phase": "final_answer",
@@ -303,11 +300,11 @@
           "cache_write_tokens": 0,
           "cached_tokens": 0
         },
-        "output_tokens": 260,
+        "output_tokens": 237,
         "output_tokens_details": {
           "reasoning_tokens": 0
         },
-        "total_tokens": 778
+        "total_tokens": 755
       },
       "user": null,
       "metadata": {}

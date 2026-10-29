@@ -1,6 +1,6 @@
 {
   "meta": {
-    "recorded_at": "2026-10-29T05:04:50.161Z",
+    "recorded_at": "2026-10-29T05:14:11.782Z",
     "env": "live",
     "ticket": "M0-07",
     "scrubbed": true
@@ -128,22 +128,19 @@
   "response": {
     "status": 200,
     "headers": {
-      "content-type": "application/json",
-      "openai-processing-ms": "2966",
-      "openai-version": "2020-10-01",
-      "x-request-id": "req_3447623c36dd4f3f8fa40f43d2f4976c"
+      "content-type": "application/json"
     },
     "body": {
-      "id": "resp_037ea2e22094464a016ae2d3ef114887d1a84cde75a079b376",
+      "id": "resp_04a27eea0b6bf001016ae2d620b7c087d1939f28b70add847e",
       "object": "response",
-      "created_at": 1793250287,
+      "created_at": 1793250848,
       "status": "completed",
       "access_programs": null,
       "background": false,
       "billing": {
         "payer": "developer"
       },
-      "completed_at": 1793250289,
+      "completed_at": 1793250851,
       "error": null,
       "frequency_penalty": 0,
       "incomplete_details": null,
@@ -154,7 +151,7 @@
       "moderation": null,
       "output": [
         {
-          "id": "msg_037ea2e22094464a016ae2d3ef9a5c87d1a6ce1ef686fee275",
+          "id": "msg_04a27eea0b6bf001016ae2d621556c87d1ae59110d201901ac",
           "type": "message",
           "status": "completed",
           "content": [
@@ -162,7 +159,7 @@
               "type": "output_text",
               "annotations": [],
               "logprobs": [],
-              "text": "{\"evidence_id\":\"E1\",\"item_kind\":\"scope_brief\",\"summary\":\"Scope brief for order LOGO-1042, priced at USD 240.00 and paid via PayPal on 2 October 2026. It specifies logo files, colour variants, a one-page PDF brand guide, an editable Illustrator source file, delivery by 20 October 2026, and up to two revision rounds requested in the order chat.\",\"facts\":[{\"kind\":\"price\",\"statement\":\"The order price is USD 240.00, paid via PayPal on 2 October 2026.\",\"quote\":\"Price: USD 240.00, paid via PayPal on 2 October 2026\"},{\"kind\":\"deliverable\",\"statement\":\"The primary logo is to be delivered in SVG and PNG formats.\",\"quote\":\"Primary logo in SVG and PNG formats.\"},{\"kind\":\"deliverable\",\"statement\":\"Three colour variants are required: full colour, black, and white.\",\"quote\":\"Three colour variants: full colour, black, and white.\"},{\"kind\":\"deliverable\",\"statement\":\"A one-page PDF brand guide listing the colour codes is required.\",\"quote\":\"A one-page brand guide (PDF) listing the colour codes.\"},{\"kind\":\"deliverable\",\"statement\":\"The editable source file is to be delivered in Adobe Illustrator (.ai) format.\",\"quote\":\"The editable source file in Adobe Illustrator (.ai) format.\"},{\"kind\":\"deadline\",\"statement\":\"Final files are due by 20 October 2026.\",\"quote\":\"Final files delivered by 20 October 2026.\"},{\"kind\":\"requirement\",\"statement\":\"Up to two revision rounds are allowed, requested in the order chat.\",\"quote\":\"Revisions: up to two rounds, requested in the order chat.\"}],\"instruction_like_lines\":[]}"
+              "text": "{\"evidence_id\":\"E1\",\"item_kind\":\"scope_brief\",\"summary\":\"Scope brief for order LOGO-1042, listing the price, payment date, logo deliverables, revision allowance, and final delivery date.\",\"facts\":[{\"kind\":\"price\",\"statement\":\"The order price is USD 240.00, paid via PayPal on 2 October 2026.\",\"quote\":\"Price: USD 240.00, paid via PayPal on 2 October 2026\"},{\"kind\":\"deliverable\",\"statement\":\"A primary logo in SVG and PNG formats is required.\",\"quote\":\"1. Primary logo in SVG and PNG formats.\"},{\"kind\":\"deliverable\",\"statement\":\"Three colour variants are required: full colour, black, and white.\",\"quote\":\"2. Three colour variants: full colour, black, and white.\"},{\"kind\":\"deliverable\",\"statement\":\"A one-page PDF brand guide listing the colour codes is required.\",\"quote\":\"3. A one-page brand guide (PDF) listing the colour codes.\"},{\"kind\":\"deliverable\",\"statement\":\"The editable source file in Adobe Illustrator (.ai) format is required.\",\"quote\":\"4. The editable source file in Adobe Illustrator (.ai) format.\"},{\"kind\":\"deadline\",\"statement\":\"Final files are due by 20 October 2026.\",\"quote\":\"5. Final files delivered by 20 October 2026.\"},{\"kind\":\"requirement\",\"statement\":\"Up to two revision rounds are allowed, requested in the order chat.\",\"quote\":\"Revisions: up to two rounds, requested in the order chat.\"}],\"instruction_like_lines\":[]}"
             }
           ],
           "phase": "final_answer",
@@ -303,11 +300,11 @@
           "cache_write_tokens": 0,
           "cached_tokens": 0
         },
-        "output_tokens": 367,
+        "output_tokens": 330,
         "output_tokens_details": {
           "reasoning_tokens": 0
         },
-        "total_tokens": 861
+        "total_tokens": 824
       },
       "user": null,
       "metadata": {}

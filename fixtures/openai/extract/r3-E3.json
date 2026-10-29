@@ -1,6 +1,6 @@
 {
   "meta": {
-    "recorded_at": "2026-10-29T05:04:04.160Z",
+    "recorded_at": "2026-10-29T05:13:27.435Z",
     "env": "live",
     "ticket": "M0-07",
     "scrubbed": true
@@ -137,22 +137,19 @@
   "response": {
     "status": 200,
     "headers": {
-      "content-type": "application/json",
-      "openai-processing-ms": "1984",
-      "openai-version": "2020-10-01",
-      "x-request-id": "req_f2c7833ea62d4d9fb62a4e9f89e4ca39"
+      "content-type": "application/json"
     },
     "body": {
-      "id": "resp_0a4aea569348f4e8016ae2d3c20a6887d1bf17dc8f6f2c5279",
+      "id": "resp_0e0046c3baf99737016ae2d5f4d95487d1a3b5562fa0d39ea0",
       "object": "response",
-      "created_at": 1793250242,
+      "created_at": 1793250804,
       "status": "completed",
       "access_programs": null,
       "background": false,
       "billing": {
         "payer": "developer"
       },
-      "completed_at": 1793250243,
+      "completed_at": 1793250807,
       "error": null,
       "frequency_penalty": 0,
       "incomplete_details": null,
@@ -163,7 +160,7 @@
       "moderation": null,
       "output": [
         {
-          "id": "msg_0a4aea569348f4e8016ae2d3c2a23487d19935dd98dc6c42a0",
+          "id": "msg_0e0046c3baf99737016ae2d5f5974487d18cef7e45c5849419",
           "type": "message",
           "status": "completed",
           "content": [
@@ -171,7 +168,7 @@
               "type": "output_text",
               "annotations": [],
               "logprobs": [],
-              "text": "{\"evidence_id\":\"E3\",\"item_kind\":\"screenshot\",\"summary\":\"Website contact page for Lotus Yoga Studio with a contact form and listed studio hours.\",\"facts\":[{\"kind\":\"other\",\"statement\":\"The website is branded Lotus Yoga Studio.\",\"quote\":\"Lotus Yoga Studio\"},{\"kind\":\"other\",\"statement\":\"The contact page says messages will receive a reply within one day.\",\"quote\":\"Send us a message and we will reply within one day.\"},{\"kind\":\"other\",\"statement\":\"The listed weekday studio hours are Monday through Friday, 6:30 to 20:00.\",\"quote\":\"Mon to Fri, 6:30 to 20:00\"},{\"kind\":\"other\",\"statement\":\"The listed Saturday studio hours are 8:00 to 12:00.\",\"quote\":\"Sat, 8:00 to 12:00\"}],\"instruction_like_lines\":[]}"
+              "text": "{\"evidence_id\":\"E3\",\"item_kind\":\"screenshot\",\"summary\":\"Screenshot of the Lotus Yoga Studio contact page showing a contact form and studio hours.\",\"facts\":[{\"kind\":\"other\",\"statement\":\"The page is titled “Contact us” and invites visitors to send a message.\",\"quote\":\"Contact us\"},{\"kind\":\"other\",\"statement\":\"The page says the studio will reply within one day.\",\"quote\":\"Send us a message and we will reply within one day.\"},{\"kind\":\"other\",\"statement\":\"The contact form has Name, Email and Message fields and a Send message button.\",\"quote\":\"Send message\"},{\"kind\":\"other\",\"statement\":\"The listed weekday studio hours are Monday to Friday, 6:30 to 20:00.\",\"quote\":\"Mon to Fri, 6:30 to 20:00\"},{\"kind\":\"other\",\"statement\":\"The listed Saturday studio hours are 8:00 to 12:00.\",\"quote\":\"Sat, 8:00 to 12:00\"}],\"instruction_like_lines\":[]}"
             }
           ],
           "phase": "final_answer",
@@ -309,14 +306,14 @@
       "usage": {
         "input_tokens": 1086,
         "input_tokens_details": {
-          "cache_write_tokens": 1083,
-          "cached_tokens": 0
+          "cache_write_tokens": 0,
+          "cached_tokens": 1083
         },
-        "output_tokens": 182,
+        "output_tokens": 213,
         "output_tokens_details": {
           "reasoning_tokens": 0
         },
-        "total_tokens": 1268
+        "total_tokens": 1299
       },
       "user": null,
       "metadata": {}

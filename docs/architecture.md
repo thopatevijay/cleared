@@ -309,7 +309,7 @@ Not applicable: Cleared puts nothing on-chain.
 | Web service | 1 × starter ($7) | 2 × standard (~$50) |
 | Worker | 1 × starter ($7), 5 concurrent jobs | 1 × standard ($25), 20 concurrent jobs |
 | Postgres | starter ($6), < 1 GB | standard (~$50), ~100 GB evidence moved to S3 (~$3) |
-| LLM | ≤ $1/day cap | 50k packs × measured cost per pack (M0-07), with caching |
+| LLM | ≤ $1/day cap | 50k packs × $0.0073 (median) to $0.0106 (worst) per pack, measured in M0-07 = **$365–$530/month** before caching |
 | Email | free tier | ~$20 |
 
 - **Arithmetic:** 50k payments/month ≈ 1.2 AI runs/min on average. Webhook peaks of 5/s are far below one web instance's capacity. pg-boss at 20 concurrent jobs handles bursts with headroom.

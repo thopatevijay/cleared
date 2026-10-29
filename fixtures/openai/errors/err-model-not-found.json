@@ -1,6 +1,6 @@
 {
   "meta": {
-    "recorded_at": "2026-10-29T05:05:52.701Z",
+    "recorded_at": "2026-10-29T05:15:14.283Z",
     "env": "live",
     "ticket": "M0-07",
     "scrubbed": true
@@ -128,10 +128,7 @@
   "response": {
     "status": 404,
     "headers": {
-      "content-type": "application/json",
-      "openai-processing-ms": "126",
-      "openai-version": "2020-10-01",
-      "x-request-id": "req_d82e648ec5554995ac65bca5325108f6"
+      "content-type": "application/json"
     },
     "body": {
       "error": {
