@@ -109,8 +109,9 @@ accurate description to send with the question.
 **Bryntum.** The npm `license` field is `Commercial`. The README says: "Bryntum Calendar is commercial
 software and requires a paid license. Please visit the [Bryntum Calendar End User
 License](https://bryntum.com/products/license/) for the full text of the license." The licence that
-ships in the package (`@bryntum/calendar-react/license.pdf`, "Licence Terms (v39)"), clause 4,
-*Trial Licence*:
+ships in the package (`@bryntum/calendar-react/license.pdf`, "Licence Terms (v39)") is byte-identical
+(`cmp`) to the `license.pdf` in the owner's official trial download (`calendar-7.3.8-trial`, trial
+registered 2026-10-29 by the owner). Clause 4, *Trial Licence*:
 
 > 4.2 (a) … the Licensor instead grants the Licensee and its Affiliates a revocable, non-exclusive,
 > non-transferable and non-sublicensable licence to install, load, launch, access, run, execute,
@@ -127,10 +128,21 @@ ships in the package (`@bryntum/calendar-react/license.pdf`, "Licence Terms (v39
 > functioning of any output.
 
 So a public, judge-facing demo is outside "internal evaluation" without Bryntum's written OK. The
-packaged terms give a **30-day trial period** (60 days in total), not the 45 days assumed in the
-owner decision. A trial counted from 2026-10-29 would end its trial period around 2026-11-28 and the
-60-day term around 2026-12-28, if that is how Bryntum counts. Whatever Bryntum writes in M0-01
-overrides this. Logged to BL-01.
+terms give a **60-day term** (a 30-day trial period + 30 days to agree a quote), not the 45 days
+the Bryntum website states and the owner decision assumed. A trial counted from 2026-10-29 would end
+its trial period around 2026-11-28 and the 60-day term around 2026-12-28, if that is how Bryntum
+counts. Under 4.2(d) the npm trial package **may stop working after the trial period**: a judge
+could find a broken calendar before 2026-12-15. This spike did not observe a time limit, because it
+ran on day 1. Whatever Bryntum writes in M0-01 overrides this. Logged to BL-01.
+
+**Install path matches Bryntum's own guidance.** The AI setup guidance the owner received after
+registering the trial gives `@bryntum/calendar@npm:@bryntum/calendar-trial@<version>`. The wrapper
+`@bryntum/calendar-react` takes the same version with no `-trial` suffix, at exact pinned versions.
+That is what the spike does. For CSS import order and React patterns, it points to
+<https://raw.githubusercontent.com/bryntum/skills/refs/heads/main/bryntum/SKILL.md> and
+<https://bryntum.com/products/calendar/docs/>. The spike's CSS (structural `calendar.css`, one
+theme, FontAwesome `fontawesome.css` + `solid.css`) follows the package's own notes. The Bryntum MCP
+server and skills were not installed.
 
 **FullCalendar.** `@fullcalendar/react/LICENSE.md`: "MIT License · Copyright (c) 2026 Adam Shaw ·
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software …"
@@ -194,6 +206,7 @@ Keep the `CashCalendar` interface above, so the vendor sits behind one component
 Decision rule, tied to M0-01 (decision date **2026-11-04**):
 - **Bryntum** only if, by 2026-11-04, Bryntum has said **in writing** that the 7.3.8 trial may run on
   the public, judge-facing demo **until 2026-12-15** (or has given a licence or hackathon key). The
+  OK must also confirm that the trial build keeps working until then (4.2(d) allows a time limit). The
   watermark must be acceptable to them and to us. Then add the Bryntum adapter behind
   `CashCalendar`: no `timeZone` prop, a keyboard `onSelect`, the a11y overrides, and the two
   `allowBuilds` entries. Accept +1.5 MiB gzip on the calendar route only (dynamic import).
@@ -208,8 +221,10 @@ Decision rule, tied to M0-01 (decision date **2026-11-04**):
   Keyboard: FC events are tab stops and Enter works; day cells are not focusable. Token plan: the
   `BRYNTUM_NPM_TOKEN` env/secret only for a licensed build.
 - **M0-01:** the watermark description and screenshot above. The packaged trial terms say "internal
-  evaluation … not for any other purpose" and 30 + 30 days, so ask for a written exception that
-  covers public judging until 2026-12-15.
+  evaluation … not for any other purpose" and 30 + 30 days (the website says 45). They also say the
+  software may "function for a limited period of time". So ask for a written exception that covers
+  public judging until 2026-12-15, and for confirmation that the npm trial build keeps working
+  until then.
 - **M1-06:** neither month view is WCAG 2.2 AA clean out of the box (contrast in both; Bryntum adds
   label mismatch and an unnamed 375 px button). At 375 px both month grids cut the event labels, so
   the design system needs a mobile list/agenda pattern for the calendar.
