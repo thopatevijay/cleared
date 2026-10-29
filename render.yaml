@@ -1,0 +1,121 @@
+# Render Blueprint (ADR 0014, M0-08). Spec: https://render.com/docs/blueprint-spec (checked 2026-10-29).
+# Plans: https://render.com/docs/compute-plans. `starter` is the legacy name of `0.5c-512mb` and
+# `basic-256mb` of `0.1c-256mb` (same specs and price; legacy names stay valid in Blueprints).
+# Cost: web $7 + worker $7 + Postgres $6 ≈ $20/month (docs/budget.md).
+#
+# Never put a secret value here. Secrets are `sync: false` (the owner types them into the dashboard
+# once, at Blueprint creation) or `generateValue: true`. The worker reads the web service's secrets
+# through `fromService` so each value is entered exactly once.
+
+envVarGroups:
+  # Shared by web and worker: both must hold the same session and encryption keys.
+  - name: cleared-shared
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      - key: PAYPAL_ENV
+        value: sandbox
+      - key: SESSION_SECRET
+        generateValue: true
+      # 32-byte key, base64 (AES-256-GCM): generateValue yields a base64-encoded 256-bit value
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: AGENT_KILL_SWITCH
+        value: "false"
+      - key: OPENAI_MODEL_SMALL
+        value: gpt-6-luna
+      - key: OPENAI_MODEL_LARGE
+        value: gpt-6.1-terra
+      - key: LLM_DAILY_CAP_USD
+        value: "1"
+      - key: LLM_WORKSPACE_CAP_USD
+        value: "0.10"
+      - key: DEMO_WORKSPACES_PER_IP_PER_DAY
+        value: "3"
+      - key: DEMO_WORKSPACES_GLOBAL_MAX
+        value: "200"
+      - key: LOG_LEVEL
+        value: info
+
+services:
+  - type: web
+    name: cleared-web
+    runtime: node
+    region: oregon
+    plan: starter
+    branch: main
+    # Deploy a commit on main only after its GitHub checks pass (CI runs on every push to main).
+    autoDeployTrigger: checksPass
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @cleared/web build
+    # Drizzle migrations, then the pg-boss schema (M0-03). A failure stops the deploy; the old one keeps serving.
+    preDeployCommand: pnpm --filter @cleared/db run migrate
+    startCommand: pnpm --filter @cleared/web start
+    healthCheckPath: /healthz
+    envVars:
+      - fromGroup: cleared-shared
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cleared-db
+          property: connectionString
+      - key: PAYPAL_CLIENT_ID
+        sync: false
+      - key: PAYPAL_CLIENT_SECRET
+        sync: false
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: EMAIL_RECIPIENT_ALLOWLIST
+        sync: false
+
+  - type: worker
+    name: cleared-worker
+    runtime: node
+    region: oregon
+    plan: starter
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    startCommand: pnpm --filter @cleared/worker start
+    envVars:
+      - fromGroup: cleared-shared
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cleared-db
+          property: connectionString
+      # Same values as the web service, entered once there.
+      - key: PAYPAL_CLIENT_ID
+        fromService: { type: web, name: cleared-web, envVarKey: PAYPAL_CLIENT_ID }
+      - key: PAYPAL_CLIENT_SECRET
+        fromService: { type: web, name: cleared-web, envVarKey: PAYPAL_CLIENT_SECRET }
+      - key: PAYPAL_WEBHOOK_ID
+        fromService: { type: web, name: cleared-web, envVarKey: PAYPAL_WEBHOOK_ID }
+      - key: OPENAI_API_KEY
+        fromService: { type: web, name: cleared-web, envVarKey: OPENAI_API_KEY }
+      - key: RESEND_API_KEY
+        fromService: { type: web, name: cleared-web, envVarKey: RESEND_API_KEY }
+      - key: SENTRY_DSN
+        fromService: { type: web, name: cleared-web, envVarKey: SENTRY_DSN }
+      - key: EMAIL_FROM
+        fromService: { type: web, name: cleared-web, envVarKey: EMAIL_FROM }
+      - key: EMAIL_RECIPIENT_ALLOWLIST
+        fromService: { type: web, name: cleared-web, envVarKey: EMAIL_RECIPIENT_ALLOWLIST }
+
+databases:
+  - name: cleared-db
+    plan: basic-256mb
+    region: oregon
+    # Matches local compose (postgres:18.6-alpine, M0-03); immutable after creation.
+    postgresMajorVersion: "18"
+    databaseName: cleared
+    user: cleared
+    # Private network only: no external connections.
+    ipAllowList: []
