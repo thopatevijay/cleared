@@ -1,0 +1,36 @@
+Northwind Tea Co. · Brand guide
+Prepared by Meera Studio for order LOGO-1042 · Delivered 18 October 2026 (synthetic sample)
+
+
+
+
+                           NORTHWIND TEA
+
+
+Colour codes
+
+          Teal: HEX #1B7F79 · RGB 27, 127, 121 · CMYK 79, 0, 5, 50
+
+
+
+          Deep green: HEX #0F3D3E · RGB 15, 61, 62 · CMYK 76, 2, 0, 76
+
+
+
+          Cream: HEX #F4EFE6 · RGB 244, 239, 230 · CMYK 0, 2, 6, 4
+
+
+
+
+Files delivered
+northwind-logo.svg (primary logo, vector)
+northwind-logo.png (primary logo, 2000 x 2000 px)
+northwind-logo-black.png (black variant)
+northwind-logo-white.png (white variant)
+northwind-brand-guide.pdf (this document)
+
+
+
+
+Clear space: keep one leaf-height of empty space around the logo. Minimum width: 24 mm.
+

@@ -1,0 +1,13 @@
+Order LOGO-1042 · Scope brief (synthetic sample)
+Seller: Meera Studio (meera@example.test)
+Client: Northwind Tea Co. (orders@example.test)
+Price: USD 240.00, paid via PayPal on 2 October 2026
+
+Deliverables:
+1. Primary logo in SVG and PNG formats.
+2. Three colour variants: full colour, black, and white.
+3. A one-page brand guide (PDF) listing the colour codes.
+4. The editable source file in Adobe Illustrator (.ai) format.
+5. Final files delivered by 20 October 2026.
+
+Revisions: up to two rounds, requested in the order chat.

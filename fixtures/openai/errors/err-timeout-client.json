@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:15:10.869Z",
+    "env": "live",
+    "ticket": "M0-07",
+    "scrubbed": true,
+    "note": "no response: the shared client timed out (timeoutMs 1) and threw; 0  Request timed out."
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 0,
+    "headers": {},
+    "body": {
+      "transport_error": "HttpTimeoutError"
+    }
+  }
+}

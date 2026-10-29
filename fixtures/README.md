@@ -16,6 +16,9 @@ the product adapters, and was scrubbed before it touched the disk.
 }
 ```
 
+- `meta.env` is `"sandbox"` (PayPal) or `"live"` for a vendor with no sandbox (`fixtures/openai/`, M0-07).
+  OpenAI request bodies have inline base64 files elided to `data:<type>;base64,<elided N chars>`
+  (`createRecorder({ transform })`); `fixtures/samples/evidence/` holds the source files.
 - `body` is parsed JSON when the wire body was JSON, a (scrubbed) string otherwise (form bodies), and
   `null` when empty.
 - **Headers are allow-listed**, never deny-listed. Request: `content-type`, `accept`, `prefer`,

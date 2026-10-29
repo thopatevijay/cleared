@@ -1,0 +1,6 @@
+Order WEB-3315 · Client chat export (synthetic sample)
+
+[2026-09-03 12:00] Lotus Yoga Studio: Photos for the gallery are in the shared folder.
+[2026-09-28 21:14] Dev Arora Web: The site is live at lotusyoga.example.test. Screenshot attached.
+[2026-09-29 08:30] Lotus Yoga Studio: Looks lovely on my laptop. I sent a test message through the form and it arrived in our inbox.
+[2026-09-30 17:05] Lotus Yoga Studio: Where is the gallery page? I only see Home, About, Classes and Contact in the menu.

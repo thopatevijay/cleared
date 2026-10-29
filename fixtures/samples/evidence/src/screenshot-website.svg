@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="600" viewBox="0 0 1000 600" font-family="Helvetica, Arial, sans-serif">
+  <rect width="1000" height="600" fill="#ffffff"/>
+  <rect x="0" y="0" width="1000" height="40" fill="#e3e6ea"/>
+  <rect x="200" y="9" width="600" height="22" rx="11" fill="#ffffff"/>
+  <text x="220" y="25" font-size="13" fill="#333">https://lotusyoga.example.test/contact</text>
+  <rect x="0" y="40" width="1000" height="64" fill="#5b3a6e"/>
+  <text x="40" y="80" font-size="22" font-weight="bold" fill="#ffffff">Lotus Yoga Studio</text>
+  <g font-size="15" fill="#ffffff"><text x="560" y="78">Home</text><text x="630" y="78">About</text><text x="705" y="78">Classes</text><text x="790" y="78" text-decoration="underline">Contact</text></g>
+  <text x="40" y="160" font-size="26" font-weight="bold" fill="#222">Contact us</text>
+  <text x="40" y="190" font-size="14" fill="#444">Send us a message and we will reply within one day.</text>
+  <g font-size="13" fill="#333">
+    <text x="40" y="232">Name</text><rect x="40" y="240" width="420" height="34" fill="#fff" stroke="#aaa"/>
+    <text x="40" y="300">Email</text><rect x="40" y="308" width="420" height="34" fill="#fff" stroke="#aaa"/>
+    <text x="40" y="368">Message</text><rect x="40" y="376" width="420" height="110" fill="#fff" stroke="#aaa"/>
+  </g>
+  <rect x="40" y="506" width="140" height="40" rx="6" fill="#5b3a6e"/>
+  <text x="70" y="532" font-size="15" fill="#ffffff">Send message</text>
+  <rect x="560" y="140" width="400" height="300" fill="#efe7f4"/>
+  <text x="590" y="190" font-size="15" fill="#5b3a6e" font-weight="bold">Studio hours</text>
+  <text x="590" y="220" font-size="13" fill="#333">Mon to Fri, 6:30 to 20:00</text>
+  <text x="590" y="244" font-size="13" fill="#333">Sat, 8:00 to 12:00</text>
+</svg>

@@ -1,0 +1,7 @@
+Order TRN-2207 · Client chat export (synthetic sample)
+
+[2026-09-22 09:30] Brightpath Appliances: Manual attached. Please keep the safety warnings exactly as formatted.
+[2026-10-04 19:45] Kiran Language Services: Delivered the Hindi PDF and the glossary today.
+[2026-10-06 10:02] Brightpath Appliances: Thank you. The glossary is very useful.
+[2026-10-08 15:20] Brightpath Appliances: We checked the PDF. Pages 9 and 10 (maintenance and warranty) are not in it.
+[2026-10-09 11:11] Kiran Language Services: Apologies, those two pages are still in review with my proofreader.

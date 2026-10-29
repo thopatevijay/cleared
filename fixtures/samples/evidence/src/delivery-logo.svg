@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="595" height="842" viewBox="0 0 595 842" font-family="Helvetica, Arial, sans-serif">
+  <rect width="595" height="842" fill="#ffffff"/>
+  <text x="48" y="70" font-size="22" font-weight="bold" fill="#0f3d3e">Northwind Tea Co. · Brand guide</text>
+  <text x="48" y="96" font-size="11" fill="#444">Prepared by Meera Studio for order LOGO-1042 · Delivered 18 October 2026 (synthetic sample)</text>
+  <circle cx="110" cy="190" r="56" fill="#1b7f79"/>
+  <path d="M95 215 C 95 170, 135 160, 140 150 C 130 190, 115 205, 95 215 Z" fill="#ffffff"/>
+  <text x="190" y="200" font-size="28" font-weight="bold" fill="#0f3d3e">NORTHWIND TEA</text>
+  <text x="48" y="300" font-size="15" font-weight="bold" fill="#111">Colour codes</text>
+  <rect x="48" y="315" width="40" height="40" fill="#1b7f79"/>
+  <text x="100" y="340" font-size="12" fill="#111">Teal: HEX #1B7F79 · RGB 27, 127, 121 · CMYK 79, 0, 5, 50</text>
+  <rect x="48" y="365" width="40" height="40" fill="#0f3d3e"/>
+  <text x="100" y="390" font-size="12" fill="#111">Deep green: HEX #0F3D3E · RGB 15, 61, 62 · CMYK 76, 2, 0, 76</text>
+  <rect x="48" y="415" width="40" height="40" fill="#f4efe6" stroke="#999"/>
+  <text x="100" y="440" font-size="12" fill="#111">Cream: HEX #F4EFE6 · RGB 244, 239, 230 · CMYK 0, 2, 6, 4</text>
+  <text x="48" y="510" font-size="15" font-weight="bold" fill="#111">Files delivered</text>
+  <text x="48" y="535" font-size="12" fill="#111">northwind-logo.svg (primary logo, vector)</text>
+  <text x="48" y="555" font-size="12" fill="#111">northwind-logo.png (primary logo, 2000 x 2000 px)</text>
+  <text x="48" y="575" font-size="12" fill="#111">northwind-logo-black.png (black variant)</text>
+  <text x="48" y="595" font-size="12" fill="#111">northwind-logo-white.png (white variant)</text>
+  <text x="48" y="615" font-size="12" fill="#111">northwind-brand-guide.pdf (this document)</text>
+  <text x="48" y="680" font-size="11" fill="#555">Clear space: keep one leaf-height of empty space around the logo. Minimum width: 24 mm.</text>
+</svg>
