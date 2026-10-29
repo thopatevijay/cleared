@@ -618,6 +618,7 @@ async function idempotencyProbe(f: Flow): Promise<Record<string, unknown>> {
     );
     f.log("raw-retry", out.rawRetry as Record<string, unknown>);
   }
+  if (process.argv.includes("--raw-retry-only")) return out;
   const { capture, merchantId } = await freshCapture(f, "12.00");
   const id = await chargeback(f, capture, merchantId);
   const look = observer(f);
