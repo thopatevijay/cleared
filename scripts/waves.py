@@ -92,7 +92,10 @@ def failing_prereqs() -> tuple[dict[str, dict], str | None]:
     script = Path("scripts/check-prereqs.py")
     if not script.exists() or not (PLAN / "prereqs.json").exists():
         return {}, "no prerequisites inventory yet (ticket M0-00): holds not evaluated"
-    code, out = sh([sys.executable, str(script), "--json"])
+    # check-prereqs exits 1 whenever a required item is missing, which is exactly when holds matter:
+    # read its stdout whatever the exit code.
+    r = subprocess.run([sys.executable, str(script), "--json"], capture_output=True, text=True)
+    out = r.stdout.strip() or r.stderr.strip()
     try:
         rows = json.loads(out)
     except json.JSONDecodeError:
@@ -176,6 +179,8 @@ def main() -> None:
         tickets[tid] = Ticket(tid=tid, issue=i["number"], title=i["title"],
                               blocked_by=meta.get("blocked_by", []), labels=labels,
                               needs=meta.get("needs", []), state=i["state"], resources=res)
+    # BL-01 is the backlog issue, never a spawnable ticket.
+    tickets = {t: k for t, k in tickets.items() if not t.startswith("BL-")}
     if not tickets:
         print(f"milestone {ms!r} has no mapped tickets", file=sys.stderr)
         sys.exit(1)
