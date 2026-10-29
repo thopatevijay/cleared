@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T04:57:31.580Z",
+    "env": "sandbox",
+    "ticket": "M0-04",
+    "scrubbed": true,
+    "note": "amount.value not a number"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "2de6579b-ba02-4a86-b7d2-6d2e858856f8",
+      "prefer": "return=representation"
+    },
+    "body": {
+      "intent": "CAPTURE",
+      "purchase_units": [
+        {
+          "reference_id": "goods-a",
+          "custom_id": "spike-63d98cb5-7e7a-4972-b28b-937684136e12",
+          "amount": {
+            "currency_code": "USD",
+            "value": "forty-two"
+          }
+        }
+      ],
+      "payment_source": {
+        "card": {
+          "number": "CARD-1",
+          "expiry": "2030-12",
+          "security_code": "[REDACTED]",
+          "name": "Person 1"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f94587526e90a"
+    },
+    "body": {
+      "name": "INVALID_REQUEST",
+      "message": "Request is not well-formed, syntactically incorrect, or violates schema.",
+      "debug_id": "f94587526e90a",
+      "details": [
+        {
+          "field": "/purchase_units/@reference_id=='goods-a'/amount/value",
+          "value": "forty-two",
+          "location": "body",
+          "issue": "INVALID_PARAMETER_SYNTAX",
+          "description": "The value of a field does not conform to the expected format."
+        }
+      ],
+      "links": [
+        {
+          "href": "https://developer.paypal.com/docs/api/orders/v2/#error-INVALID_PARAMETER_SYNTAX",
+          "rel": "information_link",
+          "encType": "application/json"
+        }
+      ]
+    }
+  }
+}

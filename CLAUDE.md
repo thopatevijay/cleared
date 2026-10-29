@@ -15,7 +15,7 @@ An AI agent for small cross-border PayPal sellers. It builds a proof pack per pa
 `/status` · `/start <ID>` · `/start-milestone <n>` (run `python3 scripts/waves.py <n>` first) · `/gate <n>` · `/backlog`
 
 ## Stack
-Node 24 · pnpm workspaces · TypeScript 6.0.3 · Next.js 16 (App Router) · Tailwind 4 · next-intl · zod 4 · Drizzle + Postgres · pg-boss · openai SDK · @paypal/paypal-server-sdk + our own typed client (Disputes, webhooks, legacy Tracking) · Bryntum Calendar (behind `CashCalendar`) · pino · Sentry · Resend · vitest · Playwright · msw. Hosting: Render (web, worker, Postgres; Oregon).
+Node 24 · pnpm workspaces · TypeScript 6.0.3 · Next.js 16 (App Router) · Tailwind 4 · next-intl · zod 4 · Drizzle + Postgres · pg-boss · openai SDK · our own typed PayPal client on the shared HTTP client (no PayPal SDK: ADR 0011 addendum) · Bryntum Calendar (behind `CashCalendar`) · pino · Sentry · Resend · vitest · Playwright · msw. Hosting: Render (web, worker, Postgres; Oregon).
 
 Layout: `apps/web`, `apps/worker`, `packages/core` (domain, no I/O), `packages/adapters`, `packages/db`.
 
