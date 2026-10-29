@@ -653,7 +653,7 @@
     "who": "owner",
     "how": "platform.openai.com → Settings → Projects → cleared → Limits → set monthly budget $25 and an alert threshold; on 2026-12-01 lower it to $14 (judging runbook)",
     "lands_in": "OpenAI console (no env var); mirrored in docs/budget.md",
-    "status": "pending",
+    "status": "done",
     "required": true
   },
   {
@@ -905,7 +905,7 @@
     "who": "owner",
     "how": "open https://discord.gg/sJ2G6DyvSK and join",
     "lands_in": "Discord account",
-    "status": "pending",
+    "status": "done",
     "required": true
   },
   {
