@@ -7,11 +7,20 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "migrate": "node src/migrate.ts",
+    "generate": "drizzle-kit generate",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
     "test": "vitest run"
   },
   "dependencies": {
-    "@cleared/core": "workspace:*"
+    "@cleared/core": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "pg": "8.23.1",
+    "pg-boss": "12.38.0"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1",
+    "drizzle-kit": "0.31.11"
   }
 }

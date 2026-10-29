@@ -1,3 +1,8 @@
 packages:
   - apps/*
   - packages/*
+
+# Dependency build scripts (pnpm 12 fails the install on any unlisted one).
+# esbuild (via drizzle-kit) ships its binary as an optional dependency; its postinstall only verifies it.
+allowBuilds:
+  esbuild: false
