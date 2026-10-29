@@ -92,12 +92,13 @@ services:
           name: cleared-db
           property: connectionString
       # Same values as the web service, entered once there.
+      # A `fromService` reference fails Blueprint creation if the source var is empty on cleared-web
+      # (Render never creates a blank `sync: false` var). Reference only vars that always have a value.
+      # PAYPAL_WEBHOOK_ID is web-only: the web route verifies webhooks (M1-04); the worker never does.
       - key: PAYPAL_CLIENT_ID
         fromService: { type: web, name: cleared-web, envVarKey: PAYPAL_CLIENT_ID }
       - key: PAYPAL_CLIENT_SECRET
         fromService: { type: web, name: cleared-web, envVarKey: PAYPAL_CLIENT_SECRET }
-      - key: PAYPAL_WEBHOOK_ID
-        fromService: { type: web, name: cleared-web, envVarKey: PAYPAL_WEBHOOK_ID }
       - key: OPENAI_API_KEY
         fromService: { type: web, name: cleared-web, envVarKey: OPENAI_API_KEY }
       - key: RESEND_API_KEY
