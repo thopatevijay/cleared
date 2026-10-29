@@ -828,17 +828,17 @@
   },
   {
     "id": "P-37",
-    "what": "Bryntum trial registry login on or after 2026-11-01",
-    "kind": "credential",
+    "what": "Bryntum Calendar trial packages resolve from public npm (no registry login)",
+    "kind": "tool",
     "needed_by": [
       "M0-09",
       "M0-GATE",
       "M3-05"
     ],
-    "who": "owner",
-    "how": "on/after 2026-11-01: bryntum.com → Download → Calendar trial (registers the account), then `npm login --registry=https://npm.bryntum.com --scope=@bryntum` (username: email with '@' replaced by '..', password 'trial'); the token stays in ~/.npmrc only",
-    "lands_in": "~/.npmrc (user level; never in the repo)",
-    "verify": "grep -qE 'npm\\.bryntum\\.com/:_authToken=.+' \"$HOME/.npmrc\"",
+    "who": "claude",
+    "how": "nothing to log in: install `\"@bryntum/calendar\": \"npm:@bryntum/calendar-trial@7.3.8\"` and `@bryntum/calendar-react@7.3.8` from the public registry (owner decision 2026-10-29, replaces the npm.bryntum.com login); trial = watermark, evaluation terms",
+    "lands_in": "spikes/bryntum-calendar/package.json (and apps/web in M3-05 if Bryntum is chosen)",
+    "verify": "npm view @bryntum/calendar-trial@7.3.8 version && npm view @bryntum/calendar-react@7.3.8 version",
     "required": true
   },
   {
@@ -856,7 +856,7 @@
   },
   {
     "id": "P-39",
-    "what": "BRYNTUM_NPM_TOKEN for Render and CI builds (only if Bryntum is chosen)",
+    "what": "BRYNTUM_NPM_TOKEN for Render and CI builds: not needed while the public trial package is used; only if Bryntum issues a licensed build",
     "kind": "credential",
     "needed_by": [
       "M3-05"
@@ -938,7 +938,7 @@
   },
   {
     "id": "P-45",
-    "what": "Bryntum registry login waits until 2026-11-01 (approved 2026-10-28)",
+    "what": "Bryntum trial starts now via the public npm trial package; extension to 2026-12-15 requested from Bryntum via Discord DM with ONE email (owner decision 2026-10-29, replaces 'wait until 2026-11-01')",
     "kind": "decision",
     "needed_by": [
       "M0-01",
