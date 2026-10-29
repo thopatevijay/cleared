@@ -843,16 +843,16 @@
   },
   {
     "id": "P-38",
-    "what": "Bryntum written OK to show the trial publicly until 2026-12-15 (else FullCalendar)",
+    "what": "Bryntum written OK to show the trial on the public demo until 2026-12-15, plus the trial extension (ADR 0016: Bryntum only, no fallback)",
     "kind": "decision",
     "needed_by": [
       "M3-05"
     ],
     "who": "owner",
-    "how": "M0-01 drafts; owner sends; record the answer on M0-01 by 2026-11-04",
+    "how": "owner: Bryntum Discord DM + the M0-01 email to sales@bryntum.com; record the written answer (link or screenshot) on M0-01 (#3), then reply 'done P-38'",
     "lands_in": "apps/web/config/cash-calendar.ts decision note",
     "status": "pending",
-    "required": false
+    "required": true
   },
   {
     "id": "P-39",
