@@ -126,22 +126,21 @@ def ensure_milestones(repo: str, dry: bool) -> dict[str, int]:
 
 
 def existing_issues(repo: str) -> dict[str, dict]:
-    """Open issues keyed by ticket id (the title prefix), so renaming a ticket's title updates its
-    issue instead of creating a duplicate. Closed issues are ignored for matching."""
-    out = sh(["gh", "issue", "list", "-R", repo, "--state", "open", "--limit", "300",
+    """Issues keyed by ticket id. The committed issue map wins (open or closed), so a closed ticket
+    is synced in place and never re-created; then open issues by title prefix for new tickets."""
+    out = sh(["gh", "issue", "list", "-R", repo, "--state", "all", "--limit", "500",
               "--json", "number,title,state"])
     rows = json.loads(out or "[]")
-    have: dict[str, dict] = {}
-    for i in rows:
-        m = re.match(r"^([A-Z0-9]+-[A-Z0-9]+)\b", i["title"])
-        if m:
-            have.setdefault(m.group(1), i)
-    # Fallback for titles without an id prefix (e.g. BL-01): the committed issue map.
     by_num = {i["number"]: i for i in rows}
+    have: dict[str, dict] = {}
     if MAP.exists():
         for tid, num in json.loads(MAP.read_text()).items():
-            if tid not in have and num in by_num:
+            if num in by_num:
                 have[tid] = by_num[num]
+    for i in rows:
+        m = re.match(r"^([A-Z0-9]+-[A-Z0-9]+)\b", i["title"])
+        if m and i["state"] == "OPEN":
+            have.setdefault(m.group(1), i)
     return have
 
 
