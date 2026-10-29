@@ -117,8 +117,7 @@ Versions verified on npm 2026-10-28; re-verified in M0-02 on 2026-10-28 (change:
 | pg | 8.23.1 | Postgres driver |
 | pg-boss | 12.38.0 | Postgres queue, transactional enqueue, DLQ |
 | openai | 7.45.1 | AI provider (owner choice); models verified in M0-07 |
-| @paypal/paypal-server-sdk | 2.5.0 | Orders, Payments, Order Tracking (timeouts set explicitly) |
-| own typed client | — | Disputes, webhooks, legacy Tracking (not in the SDK) |
+| own typed PayPal client | — | every PayPal call: Orders, Payments, Order Tracking, Disputes, webhooks, legacy Tracking, on the shared HTTP client. `@paypal/paypal-server-sdk` 2.5.0 is **not used**: its transport is hard-wired axios (ADR 0011 addendum, M0-04) |
 | @bryntum/calendar (trial) + @bryntum/calendar-react | 7.3.8 | cash calendar (licence pending; FullCalendar fallback) |
 | @cantoo/pdf-lib / @react-pdf/renderer | 2.11.1 / 4.9.0 | compiled evidence PDF, scope snapshot (upstream pdf-lib is unmaintained since 2021) |
 | sharp / file-type / unpdf | 0.35.5 / 22.2.0 / 1.9.1 | image re-encoding (EXIF strip), magic-byte sniffing, PDF text layer for citations |
