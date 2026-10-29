@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:16:58.826Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "POST /v2/customer-support/process-chargeback (sandbox)"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/customer-support/process-chargeback",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "4a4d1ae1-39cc-4830-bcb4-2147efaf7fbf"
+    },
+    "body": {
+      "adjacency": "PAYPAL",
+      "file_layout": "ATCK_CB",
+      "merchant_id": "MERCHANT-1",
+      "financial_institution": {
+        "processor": "FDMS"
+      },
+      "transaction": {
+        "id_enc": "7MJ69441LL4596355",
+        "amount": {
+          "currency_code": "USD",
+          "value": "23.00"
+        }
+      },
+      "instrument": {
+        "instrument_type": "CARD",
+        "card_brand": "VISA",
+        "credit_card_transaction_id": "CARD-2",
+        "external": false
+      },
+      "dispute": {
+        "id": null,
+        "stage": "CHARGEBACK",
+        "response_date": "2026-11-08T05:16:57.592Z",
+        "status": "2",
+        "amount": {
+          "currency_code": "USD",
+          "value": "23.00"
+        },
+        "receive_date": "2026-10-29T05:16:57.592Z",
+        "event_code": "CHARGEBACK_INITIATED",
+        "money_movement_date": "2026-10-29T05:16:57.592Z",
+        "event_type": "DEBIT",
+        "chargeback_type": "REPORTED_TO_PROCESSOR",
+        "processor_info": {
+          "reference_number": "97656183179685946553842",
+          "reason_code": "C2",
+          "notes": "Cleared sandbox chargeback"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "ca51fb60bf8e3"
+    },
+    "body": {
+      "dispute_id": "PP-R-VFE-10195075"
+    }
+  }
+}

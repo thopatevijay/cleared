@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:31:58.806Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "adjudicate: fresh GET (link re-check), then the write"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-UVC-10195076/adjudicate",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "3d363337-79ba-41e8-81a5-7b6ab83a264f"
+    },
+    "body": {
+      "adjudication_outcome": "SELLER_FAVOR"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "ca51fcc01e9cf"
+    },
+    "body": {
+      "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-UVC-10195076",
+      "rel": "self",
+      "method": "GET"
+    }
+  }
+}

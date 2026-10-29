@@ -13,6 +13,7 @@ import {
   createPayPalDisputesClient,
   describeOutcome,
   DisputeActionNotAllowedError,
+  DISPUTE_WRITES_IDEMPOTENT,
   reconcileAfterTimeout,
   type DisputeAction,
   type EvidenceFile,
@@ -85,8 +86,9 @@ describe("dispute states (replay of the recorded sandbox runs)", () => {
   it("the same status offers different actions: links decide, never a status map", () => {
     const underReview = states.map(dispute).filter((d) => d.status === "UNDER_REVIEW");
     const sets = new Set(underReview.map((d) => allowedActions(d).sort().join(",")));
+    // before the seller is asked; after evidence (sandbox decision offered); after adjudicate (none)
     expect(sets).toEqual(
-      new Set(["provide_supporting_info", "adjudicate,provide_supporting_info,require_evidence"]),
+      new Set(["provide_supporting_info", "adjudicate,provide_supporting_info,require_evidence", ""]),
     );
     const resolved = states.map(dispute).filter((d) => d.status === "RESOLVED");
     for (const d of resolved) expect(allowedActions(d)).toEqual([]);
@@ -244,5 +246,43 @@ describe("unknown outcome (client timeout on a write)", () => {
       .catch((e: unknown) => e);
     expect(err).toBeInstanceOf(DisputeActionNotAllowedError);
     expect(r.unused()).toEqual([]);
+  });
+
+  it("the same PayPal-Request-Id resent after the state moved is NOT replayed: PayPal refuses it (422)", async () => {
+    const name = "unknown/raw-retry-same-request-id";
+    const f = loadFixture(`${DIR}/${name}`);
+    expect(f.request.headers["paypal-request-id"]).toBeTruthy();
+    const { raw } = paypal([name]);
+    const err = await raw
+      .send({
+        method: "POST",
+        path: new URL(f.request.url).pathname,
+        schema: DisputeWriteResponseSchema,
+        requestId: requestIdOf(name),
+        multipart: buildMultipart({}, []),
+      })
+      .catch((e: unknown) => e);
+    expect((err as PayPalApiError).status).toBe(422);
+    expect((err as PayPalApiError).paypal?.details?.[0]?.issue).toBe(
+      "ACTION_NOT_ALLOWED_IN_CURRENT_DISPUTE_STATE",
+    );
+  });
+
+  it("the same PayPal-Request-Id sent twice while the link is present creates TWO entries (not idempotent)", async () => {
+    expect(requestIdOf("idempotency/second-same-id.2")).toBe(requestIdOf("idempotency/first.2"));
+    const { dc, replay: r } = paypal([
+      "idempotency/first",
+      "idempotency/first.2",
+      "idempotency/second-same-id",
+      "idempotency/second-same-id.2",
+    ]);
+    const id = idOf("idempotency/first");
+    const o = { requestId: requestIdOf("idempotency/first.2") };
+    await dc.provideSupportingInfo(id, { notes: "x" }, o);
+    await dc.provideSupportingInfo(id, { notes: "x" }, o);
+    expect(r.unused()).toEqual([]);
+    const after = dispute("idempotency/after");
+    expect(after.supporting_info?.length).toBe(2);
+    expect(DISPUTE_WRITES_IDEMPOTENT).toBe(false); // so the shared client never auto-retries a dispute write
   });
 });

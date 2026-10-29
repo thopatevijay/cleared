@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:18:05.222Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "provide_supporting_info: fresh GET (link re-check), then the write"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-UVC-10195076/provide-supporting-info",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "multipart/form-data; boundary=0ef9bcf70f764a0492a163bb15b511f5",
+      "paypal-request-id": "dd758ae0-ddff-409d-9e69-eefdcea799b3"
+    },
+    "body": "--0ef9bcf70f764a0492a163bb15b511f5\r\nContent-Disposition: form-data; name=\"input\"\r\nContent-Type: application/json\r\n\r\n{\"notes\":\"Supporting info. Synthetic sandbox case: the item was dispatched with tracking and delivered; the delivery note is attached.\"}\r\n--0ef9bcf70f764a0492a163bb15b511f5\r\nContent-Disposition: form-data; name=\"file1\"; filename=\"delivery-note.pdf\"\r\nContent-Type: application/pdf\r\n\r\n[application/pdf 1124 bytes sha256:1cfdd3fb2b074dcf23e3160af91a88fdda2a2d812693cf07d5d2ea527efdc52f]\r\n--0ef9bcf70f764a0492a163bb15b511f5--\r\n"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "ca51fb7ab2f88"
+    },
+    "body": {
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-UVC-10195076",
+          "rel": "detail",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}

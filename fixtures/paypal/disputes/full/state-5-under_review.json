@@ -1,0 +1,153 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:34:03.874Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "links: self"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-UVC-10195076",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f260899d38ce8"
+    },
+    "body": {
+      "dispute_id": "PP-R-UVC-10195076",
+      "create_time": "2026-10-29T05:16:59.065Z",
+      "update_time": "2026-10-29T05:33:43.940Z",
+      "disputed_transactions": [
+        {
+          "buyer_transaction_id": "3DU47244EB672003U",
+          "seller_transaction_id": "794390931G848631R",
+          "create_time": "2026-10-29T05:16:54.000Z",
+          "transaction_status": "COMPLETED",
+          "gross_amount": {
+            "currency_code": "USD",
+            "value": "64.00"
+          },
+          "custom": "spike-7f168094-2c09-4159-97c2-aa52549f3cb1",
+          "buyer": {
+            "payer_id": "PAYER-2",
+            "name": "Person 1"
+          },
+          "seller": {
+            "email": "payer-1@example.test",
+            "merchant_id": "MERCHANT-1",
+            "name": "Person 2"
+          },
+          "seller_protection_eligible": false,
+          "seller_protection_type": "SELLER_PROTECTION_INELIGIBLE"
+        }
+      ],
+      "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+      "status": "UNDER_REVIEW",
+      "dispute_amount": {
+        "currency_code": "USD",
+        "value": "64.00"
+      },
+      "dispute_state": "UNDER_PAYPAL_REVIEW",
+      "external_reason_code": "C2",
+      "adjudications": [
+        {
+          "type": "PAYOUT_TO_BUYER",
+          "adjudication_time": "2026-10-29T05:31:58.276Z",
+          "reason": "REPRESENTED_BY_PAYPAL",
+          "dispute_life_cycle_stage": "CHARGEBACK"
+        }
+      ],
+      "fund_movements": [
+        {
+          "party": "RECEIVER",
+          "amount": {
+            "currency_code": "USD",
+            "value": "61.85"
+          },
+          "initiated_time": "2026-10-29T05:20:04.000Z",
+          "type": "DEBIT",
+          "reason": "HOLD_PLACED"
+        },
+        {
+          "party": "RECEIVER",
+          "amount": {
+            "currency_code": "USD",
+            "value": "61.85"
+          },
+          "initiated_time": "2026-10-29T05:33:04.000Z",
+          "type": "CREDIT",
+          "reason": "HOLD_RELEASED"
+        }
+      ],
+      "dispute_life_cycle_stage": "CHARGEBACK",
+      "dispute_channel": "EXTERNAL",
+      "extensions": {
+        "buyer_contacted_time": "2026-10-29T05:16:58.000Z"
+      },
+      "evidences": [
+        {
+          "evidence_type": "CREATE",
+          "notes": "Cleared sandbox chargeback",
+          "source": "SUBMITTED_BY_BUYER",
+          "date": "2026-10-29T05:16:59.065Z",
+          "dispute_life_cycle_stage": "CHARGEBACK"
+        },
+        {
+          "evidence_type": "PROOF_OF_FULFILLMENT",
+          "documents": [
+            {
+              "name": "delivery-note.pdf",
+              "url": "https://api-m.sandbox.paypal.com/v2/content/documents/DIS-010-11f1-d359-6e4fa720-8fda-ba5c27a47b56/files/1/download"
+            }
+          ],
+          "notes": "Evidence. Synthetic sandbox case: the item was dispatched with tracking and delivered; the delivery note is attached.",
+          "source": "SUBMITTED_BY_SELLER",
+          "date": "2026-10-29T05:27:28.550Z",
+          "action_info": {
+            "action": "PROVIDE_EVIDENCE"
+          },
+          "dispute_life_cycle_stage": "CHARGEBACK"
+        }
+      ],
+      "offer": {
+        "buyer_requested_amount": {
+          "currency_code": "USD",
+          "value": "64.00"
+        }
+      },
+      "refund_details": {
+        "allowed_refund_amount": {
+          "currency_code": "USD",
+          "value": "64.00"
+        }
+      },
+      "supporting_info": [
+        {
+          "notes": "Supporting info. Synthetic sandbox case: the item was dispatched with tracking and delivered; the delivery note is attached.",
+          "documents": [
+            {
+              "name": "delivery-note.pdf",
+              "url": "https://api-m.sandbox.paypal.com/v2/content/documents/DIS-010-11f1-d358-1e483ef0-b5db-4924cef26d8e/files/1/download"
+            }
+          ],
+          "source": "SUBMITTED_BY_SELLER",
+          "provided_time": "2026-10-29T05:18:04.824Z"
+        }
+      ],
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-UVC-10195076",
+          "rel": "self",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}

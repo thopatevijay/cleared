@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:39:19.778Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "provide_supporting_info sent while its link is absent"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-UVC-10195076/provide-supporting-info",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "multipart/form-data; boundary=308b8798bb474c8f844e4e3e8764b6ab",
+      "paypal-request-id": "3bcacfdd-c362-4725-a212-cb3b0dc60b55"
+    },
+    "body": "--308b8798bb474c8f844e4e3e8764b6ab\r\nContent-Disposition: form-data; name=\"input\"\r\nContent-Type: application/json\r\n\r\n{\"notes\":\"Supporting info sent while not offered.\"}\r\n--308b8798bb474c8f844e4e3e8764b6ab--\r\n"
+  },
+  "response": {
+    "status": 422,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f173787d9319c"
+    },
+    "body": {
+      "name": "UNPROCESSABLE_ENTITY",
+      "message": "The requested action could not be performed, semantically incorrect, or failed business validation.",
+      "debug_id": "f173787d9319c",
+      "information_link": "https://developer.paypal.com/docs/api/customer-disputes/v1/#errors",
+      "details": [
+        {
+          "issue": "ACTION_NOT_ALLOWED_IN_CURRENT_DISPUTE_STATE"
+        }
+      ],
+      "links": []
+    }
+  }
+}

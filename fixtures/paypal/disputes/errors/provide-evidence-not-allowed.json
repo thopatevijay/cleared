@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:17:00.308Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "provide_evidence sent while its link is absent"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-VFE-10195075/provide-evidence",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "multipart/form-data; boundary=f1852458524342bfb38c42170beb7e3b",
+      "paypal-request-id": "dcf61b90-647c-4031-b638-285ac663ed6a"
+    },
+    "body": "--f1852458524342bfb38c42170beb7e3b\r\nContent-Disposition: form-data; name=\"input\"\r\nContent-Type: application/json\r\n\r\n{\"evidences\":[{\"evidence_type\":\"PROOF_OF_FULFILLMENT\",\"documents\":[{\"name\":\"delivery-note.pdf\"}],\"notes\":\"Delivered; see delivery note.\"}]}\r\n--f1852458524342bfb38c42170beb7e3b\r\nContent-Disposition: form-data; name=\"file1\"; filename=\"delivery-note.pdf\"\r\nContent-Type: application/pdf\r\n\r\n[application/pdf 1124 bytes sha256:1cfdd3fb2b074dcf23e3160af91a88fdda2a2d812693cf07d5d2ea527efdc52f]\r\n--f1852458524342bfb38c42170beb7e3b--\r\n"
+  },
+  "response": {
+    "status": 422,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "ca51fb6196f52"
+    },
+    "body": {
+      "name": "UNPROCESSABLE_ENTITY",
+      "message": "The requested action could not be performed, semantically incorrect, or failed business validation.",
+      "debug_id": "ca51fb6196f52",
+      "information_link": "https://developer.paypal.com/docs/api/customer-disputes/v1/#errors",
+      "details": [
+        {
+          "issue": "ACTION_NOT_ALLOWED_IN_CURRENT_DISPUTE_STATE"
+        }
+      ],
+      "links": []
+    }
+  }
+}

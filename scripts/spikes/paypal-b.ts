@@ -585,6 +585,37 @@ const arg = (name: string): string | undefined => {
   return i === -1 ? undefined : process.argv[i + 1];
 };
 
+/** Later reads: the released capture of the full path, the accept-claim dispute and its capture. */
+async function laterSnapshots(f: Flow): Promise<Record<string, unknown>> {
+  const out: Record<string, unknown> = {};
+  const fullCapture = arg("--full-capture");
+  if (fullCapture !== undefined) {
+    f.reset();
+    const c = await f.pp.getCapture(fullCapture);
+    f.keep("full/capture-3-completed", "the full path's capture after RESOLVED: hold released");
+    out.fullCapture = { status: c.status, reason: c.status_details?.reason, update_time: c.update_time };
+  }
+  const acceptDispute = arg("--accept-dispute");
+  const acceptCapture = arg("--accept-capture");
+  if (acceptDispute !== undefined && acceptCapture !== undefined) {
+    f.reset();
+    const d = await f.dc.getDispute(acceptDispute);
+    f.keep(`accept/later-${d.status.toLowerCase()}`, "the accept-claim dispute, read again later");
+    const c = await f.pp.getCapture(acceptCapture);
+    f.keep(`accept/later-capture-${c.status.toLowerCase()}`, "the accept-claim capture, read again later");
+    out.accept = {
+      status: d.status,
+      outcome: d.dispute_outcome,
+      update_time: d.update_time,
+      capture: c.status,
+      reason: c.status_details?.reason,
+      capture_update: c.update_time,
+    };
+  }
+  f.log("later", out);
+  return out;
+}
+
 /**
  * Follow-up probe (`--idempotency [--dispute <id> --request-id <id>]`): what PayPal does with a
  * repeated PayPal-Request-Id on provide-supporting-info.
@@ -618,7 +649,7 @@ async function idempotencyProbe(f: Flow): Promise<Record<string, unknown>> {
     );
     f.log("raw-retry", out.rawRetry as Record<string, unknown>);
   }
-  if (process.argv.includes("--raw-retry-only")) return out;
+  if (process.argv.includes("--raw-retry-only")) return { ...out, ...(await laterSnapshots(f)) };
   const { capture, merchantId } = await freshCapture(f, "12.00");
   const id = await chargeback(f, capture, merchantId);
   const look = observer(f);

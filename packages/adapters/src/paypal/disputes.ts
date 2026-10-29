@@ -42,7 +42,10 @@ export type DisputeAction = (typeof DISPUTE_ACTIONS)[number];
 
 /**
  * Whether dispute writes may be retried on timeout / 5xx with the same PayPal-Request-Id.
- * Measured in M0-05 (docs/evidence/m0-05-paypal-spike-b.md): see the unknown-outcome finding.
+ * Measured in M0-05 (docs/evidence/m0-05-paypal-spike-b.md): NO. The same id sent twice while the link
+ * was present created two supporting-info entries, and the id of a write that landed after a client
+ * timeout was refused (422) once the state moved on. A timed-out dispute write is reconciled by
+ * re-reading the dispute (`reconcileAfterTimeout`), never by resending.
  */
 export const DISPUTE_WRITES_IDEMPOTENT = false;
 

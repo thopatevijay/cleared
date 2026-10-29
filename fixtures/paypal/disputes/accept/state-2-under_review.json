@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:18:03.989Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "links: self, provide_supporting_info"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "ca51fb79e7988"
+    },
+    "body": {
+      "dispute_id": "PP-R-ARH-10195077",
+      "create_time": "2026-10-29T05:17:00.724Z",
+      "update_time": "2026-10-29T05:17:53.977Z",
+      "disputed_transactions": [
+        {
+          "buyer_transaction_id": "8J955250E88441913",
+          "seller_transaction_id": "54W821880C511020E",
+          "create_time": "2026-10-29T05:16:55.000Z",
+          "transaction_status": "COMPLETED",
+          "gross_amount": {
+            "currency_code": "USD",
+            "value": "9.00"
+          },
+          "custom": "spike-d62c0ae3-3ad4-4fbc-88ae-4e29106e5d8b",
+          "buyer": {
+            "payer_id": "PAYER-3",
+            "name": "Person 1"
+          },
+          "seller": {
+            "email": "payer-1@example.test",
+            "merchant_id": "MERCHANT-1",
+            "name": "Person 2"
+          },
+          "seller_protection_eligible": false
+        }
+      ],
+      "reason": "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+      "status": "UNDER_REVIEW",
+      "dispute_amount": {
+        "currency_code": "USD",
+        "value": "9.00"
+      },
+      "dispute_state": "UNDER_PAYPAL_REVIEW",
+      "external_reason_code": "C2",
+      "dispute_life_cycle_stage": "CHARGEBACK",
+      "dispute_channel": "EXTERNAL",
+      "extensions": {
+        "buyer_contacted_time": "2026-10-29T05:16:59.000Z"
+      },
+      "evidences": [
+        {
+          "evidence_type": "CREATE",
+          "notes": "Cleared sandbox chargeback",
+          "source": "SUBMITTED_BY_BUYER",
+          "date": "2026-10-29T05:17:00.724Z",
+          "dispute_life_cycle_stage": "CHARGEBACK"
+        }
+      ],
+      "offer": {
+        "buyer_requested_amount": {
+          "currency_code": "USD",
+          "value": "9.00"
+        }
+      },
+      "refund_details": {
+        "allowed_refund_amount": {
+          "currency_code": "USD",
+          "value": "9.00"
+        }
+      },
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/customer/disputes/PP-R-ARH-10195077/provide-supporting-info",
+          "rel": "provide_supporting_info",
+          "method": "POST"
+        }
+      ]
+    }
+  }
+}

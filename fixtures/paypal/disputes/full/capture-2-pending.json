@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-29T05:27:27.266Z",
+    "env": "sandbox",
+    "ticket": "M0-05",
+    "scrubbed": true,
+    "note": "capture PENDING BUYER_COMPLAINT"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/captures/794390931G848631R",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json;charset=UTF-8",
+      "paypal-debug-id": "ca51fc567dc78"
+    },
+    "body": {
+      "id": "794390931G848631R",
+      "amount": {
+        "currency_code": "USD",
+        "value": "64.00"
+      },
+      "final_capture": true,
+      "seller_protection": {
+        "status": "NOT_ELIGIBLE"
+      },
+      "custom_id": "spike-7f168094-2c09-4159-97c2-aa52549f3cb1",
+      "status": "PENDING",
+      "status_details": {
+        "reason": "BUYER_COMPLAINT"
+      },
+      "processor_response": {
+        "avs_code": "",
+        "cvv_code": "M",
+        "response_code": "0000"
+      },
+      "supplementary_data": {
+        "related_ids": {
+          "order_id": "734597746E180433H"
+        }
+      },
+      "payee": {
+        "email_address": "merchant-1@example.test",
+        "merchant_id": "MERCHANT-1"
+      },
+      "create_time": "2026-10-29T05:16:54Z",
+      "update_time": "2026-10-29T05:20:04Z",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/payments/captures/794390931G848631R",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/payments/captures/794390931G848631R/refund",
+          "rel": "refund",
+          "method": "POST"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/734597746E180433H",
+          "rel": "up",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}
