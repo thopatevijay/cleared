@@ -22,6 +22,8 @@ export * from "./queue-policy.ts";
 export { withTransaction, type Executor, type Tx } from "./tx.ts";
 export {
   forWorkspace,
+  workspaceViews,
+  type WorkspaceViews,
   WORKSPACE_REPO_NAMES,
   type ListOptions,
   type MutableScopedRepo,
@@ -31,6 +33,7 @@ export {
   type ScopedRepo,
   type WorkspaceRepos,
 } from "./repos/workspace/index.ts";
+export { TEST_PAYMENT_REQUESTED, type CurrencyTotal } from "./repos/workspace/payments-list.ts";
 export { platform, type PlatformRepos } from "./repos/platform/index.ts";
 export type * from "./repos/platform/index.ts";
 export { seed, SEED_USER_EMAIL, SEED_USER_ID, SEED_WORKSPACE_ID } from "./seed.ts";

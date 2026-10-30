@@ -1,0 +1,78 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Self-hosted faces from next/font (layout.tsx sets --font-atkinson, --font-noto-deva, --font-atkinson-mono).
+   The token stacks stay as the fallbacks. */
+@theme inline {
+  --font-sans: var(--font-atkinson), "Atkinson Hyperlegible Next", "Noto Sans", system-ui, sans-serif;
+  --font-devanagari:
+    var(--font-noto-deva), var(--font-atkinson), "Noto Sans Devanagari", system-ui, sans-serif;
+  --font-mono: var(--font-atkinson-mono), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+@layer base {
+  html {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+  html:lang(hi) {
+    font-family: var(--font-devanagari);
+  }
+  body {
+    background: var(--color-bg);
+    min-height: 100dvh;
+  }
+  /* components.md "Focus ring": 2 px focus colour, offset 2 px, never removed without a replacement. */
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  /* The sticky header (56 px) never covers a focused element (WCAG 2.4.11). */
+  a,
+  button,
+  input {
+    scroll-margin-top: 64px;
+  }
+}
+
+@layer components {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+  .flash {
+    animation: flash var(--duration-settle) var(--ease-standard);
+  }
+  .spin {
+    animation: spin 900ms linear infinite;
+  }
+  .skeleton-pulse {
+    background: var(--color-skeleton);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spin,
+    .skeleton-pulse,
+    .flash {
+      animation: none;
+    }
+  }
+}
+
+@keyframes flash {
+  from {
+    background-color: var(--color-status-completed-bg);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.55;
+  }
+}

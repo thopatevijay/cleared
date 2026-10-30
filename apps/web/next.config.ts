@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 const config: NextConfig = {
   reactStrictMode: true,
@@ -7,4 +8,5 @@ const config: NextConfig = {
   env: { NEXT_PUBLIC_SENTRY_DSN: process.env["SENTRY_DSN"] ?? "" },
 };
 
-export default config;
+// next-intl (M1-07): messages per locale, loaded by src/i18n/request.ts.
+export default createNextIntlPlugin("./src/i18n/request.ts")(config);

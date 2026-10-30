@@ -4,7 +4,8 @@ import { compareInstants, DEMO_WORKSPACE_EXPIRES_AT, type Instant } from "@clear
 import { platform, withTransaction, type Tx } from "@cleared/db";
 import { z } from "zod";
 import { checkDemoCaps } from "../caps.ts";
-import { anonymousScopeId, clientIp, ipHash } from "../client-ip.ts";
+import { anonymousScopeId, clientIp, clientIpSource, ipHash } from "../client-ip.ts";
+import { webLogger } from "../request-context.ts";
 import { checkMutation, readJson } from "../csrf.ts";
 import type { Deps } from "../deps.ts";
 import { withIdempotency } from "../idempotency.ts";
@@ -23,6 +24,7 @@ export async function postDemo(req: Request, deps: Deps): Promise<Response> {
   const check = checkMutation(req, deps.config.appOrigin);
   if (!check.ok) return check.response;
   const ip = ipHash(clientIp(req.headers), deps.config.sessionSecret);
+  webLogger().info({ ipSource: clientIpSource(req.headers) }, "demo client ip source");
   const scope = { scopeId: anonymousScopeId(ip), route: DEMO_ROUTE, key: check.idempotencyKey };
   return withIdempotency(req, deps, scope, async () => {
     const cid = correlationId(req);
