@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkQuote, checkQuotes, collapseWhitespace } from "./verbatim.ts";
+import { checkQuote, checkQuotes, collapseWhitespace } from "../../src/proof/verbatim.ts";
 
 const brief =
   "Deliverables:\n- Primary logo in SVG and PNG\n- Three colour variants\n- Final files by 15 Nov 2026";
