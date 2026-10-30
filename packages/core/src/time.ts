@@ -16,7 +16,8 @@ export type Instant = z.infer<typeof InstantSchema>;
 
 export function parseInstant(raw: string): Result<Instant, DomainError> {
   const ms = ISO_WITH_ZONE.test(raw) ? Date.parse(raw) : Number.NaN;
-  if (Number.isNaN(ms)) return err(domainError("invalid_instant", "not an ISO-8601 instant with a zone", { raw }));
+  if (Number.isNaN(ms))
+    return err(domainError("invalid_instant", "not an ISO-8601 instant with a zone", { raw }));
   return ok(fromEpochMs(ms));
 }
 

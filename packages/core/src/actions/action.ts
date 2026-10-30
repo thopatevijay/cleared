@@ -43,7 +43,12 @@ export function transitionAction(state: ActionState, event: ActionEvent): Result
 }
 
 /** One approved PayPal write each. Goods tracking is PayPal's product; ours is one approved action. */
-export const ACTION_KINDS = ["add_tracking", "provide_evidence", "provide_supporting_info", "accept_claim"] as const;
+export const ACTION_KINDS = [
+  "add_tracking",
+  "provide_evidence",
+  "provide_supporting_info",
+  "accept_claim",
+] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 export const ACTION_RISKS = ["low", "medium", "high"] as const;

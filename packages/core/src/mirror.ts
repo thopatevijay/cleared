@@ -6,8 +6,7 @@ import { compareInstants, type Instant } from "./time.ts";
 
 /** A PayPal enum value: one we know, or the raw string PayPal sent. */
 export type Mirrored<T extends string> =
-  | { readonly kind: "known"; readonly value: T }
-  | { readonly kind: "unrecognised"; readonly raw: string };
+  { readonly kind: "known"; readonly value: T } | { readonly kind: "unrecognised"; readonly raw: string };
 
 export function mirrorEnum<T extends string>(known: readonly T[], raw: string): Mirrored<T> {
   const match = known.find((k) => k === raw);

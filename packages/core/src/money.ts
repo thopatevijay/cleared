@@ -100,9 +100,7 @@ export function moneyToPayPal(money: Money): PayPalMoney {
 }
 
 /** Schema for Money inside our own payloads (events, contracts): the amount must already be canonical. */
-export const MoneySchema = z
-  .object({ amount: z.string(), currency: z.enum(CURRENCY_CODES) })
-  .refine((m) => {
-    const parsed = parseMoney(m.amount, m.currency);
-    return parsed.ok && parsed.value.amount === m.amount;
-  }, "amount is not a canonical decimal for its currency");
+export const MoneySchema = z.object({ amount: z.string(), currency: z.enum(CURRENCY_CODES) }).refine((m) => {
+  const parsed = parseMoney(m.amount, m.currency);
+  return parsed.ok && parsed.value.amount === m.amount;
+}, "amount is not a canonical decimal for its currency");

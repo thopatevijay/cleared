@@ -55,7 +55,9 @@ export const PayPalCaptureSchema = z.object({
   create_time: z.string().optional(),
   update_time: z.string().optional(),
   seller_receivable_breakdown: z.object({ net_amount: PayPalMoneySchema.optional() }).optional(),
-  supplementary_data: z.object({ related_ids: z.object({ order_id: z.string().optional() }).optional() }).optional(),
+  supplementary_data: z
+    .object({ related_ids: z.object({ order_id: z.string().optional() }).optional() })
+    .optional(),
 });
 export type PayPalCapture = z.infer<typeof PayPalCaptureSchema>;
 
@@ -95,7 +97,7 @@ export function mapCapture(body: unknown): Result<CaptureMirror, DomainError> {
   const captureId = CaptureIdSchema.safeParse(c.id);
   if (!captureId.success) return invalid("capture id is malformed", { id: c.id });
   const rawOrderId = c.supplementary_data?.related_ids?.order_id;
-  const orderId = rawOrderId === undefined ? null : OrderIdSchema.safeParse(rawOrderId).data ?? null;
+  const orderId = rawOrderId === undefined ? null : (OrderIdSchema.safeParse(rawOrderId).data ?? null);
   const amount = moneyFromPayPal(c.amount);
   if (!amount.ok) return amount;
   const net = c.seller_receivable_breakdown?.net_amount;

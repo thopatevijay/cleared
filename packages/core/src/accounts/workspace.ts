@@ -31,7 +31,11 @@ export type NewWorkspace = Omit<Workspace, "expiresAt">;
 export function newWorkspace(input: NewWorkspace): Result<Workspace, DomainError> {
   const expiresAt = input.kind === "demo" ? DEMO_WORKSPACE_EXPIRES_AT : null;
   if (expiresAt !== null && compareInstants(input.createdAt, expiresAt) >= 0) {
-    return err(domainError("invariant_violated", "demo workspaces can no longer be created", { createdAt: input.createdAt }));
+    return err(
+      domainError("invariant_violated", "demo workspaces can no longer be created", {
+        createdAt: input.createdAt,
+      }),
+    );
   }
   return ok({ ...input, expiresAt });
 }

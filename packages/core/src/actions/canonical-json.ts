@@ -2,12 +2,7 @@
 // The same value always yields the same string, whatever order its keys were built in.
 
 export type JsonValue =
-  | null
-  | boolean
-  | number
-  | string
-  | readonly JsonValue[]
-  | { readonly [key: string]: JsonValue | undefined };
+  null | boolean | number | string | readonly JsonValue[] | { readonly [key: string]: JsonValue | undefined };
 
 export function canonicalJson(value: JsonValue): string {
   if (value === null || typeof value === "boolean" || typeof value === "string") return JSON.stringify(value);

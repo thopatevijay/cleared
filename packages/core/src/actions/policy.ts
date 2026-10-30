@@ -30,8 +30,7 @@ export interface ExecutionContext {
 }
 
 export type ExecutionDecision =
-  | { readonly kind: "allow" }
-  | { readonly kind: "refuse"; readonly reason: RefusalReason };
+  { readonly kind: "allow" } | { readonly kind: "refuse"; readonly reason: RefusalReason };
 
 function refuse(reason: RefusalReason): ExecutionDecision {
   return { kind: "refuse", reason };
