@@ -5,14 +5,15 @@ import { closeDb, createDb, createQueue } from "@cleared/db";
 import { wireWorker } from "./boss.ts";
 import { startHeartbeat } from "./heartbeat.ts";
 import type { Connect } from "./main.ts";
-import { defaultRegistry, type Registry } from "./registry.ts";
+import type { Registry, Runtime } from "./registry.ts";
 
 /** How long a graceful pg-boss stop may wait for active jobs; Render allows 30 s after SIGTERM. */
 export const STOP_TIMEOUT_MS = 20_000;
 
 export interface ConnectOptions {
   readonly log: Logger;
-  readonly registry?: Registry;
+  /** A fixed registry, or one built once the pool and pg-boss exist (production: `defaultRegistry`). */
+  readonly registry: Registry | ((rt: Runtime) => Registry);
   readonly pollingIntervalSeconds?: number;
   /** Heartbeat interval (default 30 s, M1-08). */
   readonly heartbeatIntervalMs?: number;
@@ -35,7 +36,7 @@ export function makeConnect(opts: ConnectOptions): Connect {
               ? {}
               : { pollingIntervalSeconds: opts.pollingIntervalSeconds }),
           },
-          opts.registry ?? defaultRegistry(),
+          typeof opts.registry === "function" ? opts.registry({ db, boss }) : opts.registry,
         );
       } catch (error) {
         await boss.stop({ graceful: false }).catch(() => undefined);

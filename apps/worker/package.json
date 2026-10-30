@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --watch src/index.ts",
     "start": "node src/index.ts",
+    "sandbox:pay": "node src/cli/sandbox-pay.ts",
     "build": "tsc --noEmit -p .",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
@@ -15,7 +16,8 @@
     "@cleared/adapters": "workspace:*",
     "@cleared/core": "workspace:*",
     "@cleared/db": "workspace:*",
-    "@sentry/node": "11.7.0"
+    "@sentry/node": "11.7.0",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "msw": "3.0.3"

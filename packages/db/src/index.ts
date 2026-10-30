@@ -15,8 +15,10 @@ export {
   QUEUE_SCHEMA,
   type Job,
   type JobWithMetadata,
+  type CreateQueueOptions,
   type Queue,
 } from "./queue.ts";
+export * from "./queue-policy.ts";
 export { withTransaction, type Executor, type Tx } from "./tx.ts";
 export {
   forWorkspace,

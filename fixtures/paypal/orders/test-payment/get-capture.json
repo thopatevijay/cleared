@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-30T17:08:31.184Z",
+    "env": "sandbox",
+    "ticket": "M1-04",
+    "scrubbed": true,
+    "note": "capture GET right after the 3-step flow"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/captures/2FB27654CR016344S",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json;charset=UTF-8",
+      "paypal-debug-id": "f9539869d726f"
+    },
+    "body": {
+      "id": "2FB27654CR016344S",
+      "amount": {
+        "currency_code": "USD",
+        "value": "42.00"
+      },
+      "final_capture": true,
+      "seller_protection": {
+        "status": "NOT_ELIGIBLE"
+      },
+      "seller_receivable_breakdown": {
+        "gross_amount": {
+          "currency_code": "USD",
+          "value": "42.00"
+        },
+        "paypal_fee": {
+          "currency_code": "USD",
+          "value": "1.58"
+        },
+        "net_amount": {
+          "currency_code": "USD",
+          "value": "40.42"
+        }
+      },
+      "custom_id": "41b50aa1-c3ef-42c0-9fa4-61e9a550f78d",
+      "status": "COMPLETED",
+      "processor_response": {
+        "avs_code": "",
+        "cvv_code": "M",
+        "response_code": "0000"
+      },
+      "supplementary_data": {
+        "related_ids": {
+          "order_id": "662632381Y533430H"
+        }
+      },
+      "payee": {
+        "email_address": "merchant-1@example.test",
+        "merchant_id": "MERCHANT-1"
+      },
+      "create_time": "2026-10-30T17:08:28Z",
+      "update_time": "2026-10-30T17:08:28Z",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/payments/captures/2FB27654CR016344S",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/payments/captures/2FB27654CR016344S/refund",
+          "rel": "refund",
+          "method": "POST"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/662632381Y533430H",
+          "rel": "up",
+          "method": "GET"
+        }
+      ],
+      "network_transaction_reference": {
+        "id": "CARD-2",
+        "network": "VISA"
+      }
+    }
+  }
+}

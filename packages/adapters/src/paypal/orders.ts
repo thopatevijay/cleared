@@ -59,7 +59,8 @@ export interface CreateOrderInput {
   readonly customId: string;
   readonly referenceId?: string;
   readonly description?: string;
-  readonly card: CardSource;
+  /** With a card the order is `COMPLETED` at create (M0-04); without one it stays `CREATED`. */
+  readonly card?: CardSource;
   /** `PayPal-Request-Id`: same id → PayPal replays the first result instead of a second order. */
   readonly requestId: string;
 }
@@ -77,6 +78,8 @@ export interface TrackInput {
 export interface PayPalOrdersClient {
   createOrder(input: CreateOrderInput): Promise<Order>;
   captureOrder(orderId: string, requestId: string): Promise<Order>;
+  /** `POST /v2/checkout/orders/{id}/confirm-payment-source` with a card: `CREATED` → `APPROVED`. */
+  confirmCard(orderId: string, card: CardSource, requestId: string): Promise<Order>;
   getOrder(orderId: string): Promise<Order>;
   getCapture(captureId: string): Promise<Capture>;
   /** Orders v2 `POST /v2/checkout/orders/{id}/track` (201 + the order). */
@@ -145,15 +148,17 @@ export function createPayPalOrdersClient(options: PayPalOrdersClientOptions): Pa
               amount: input.amount,
             },
           ],
-          payment_source: {
-            card: {
-              number: input.card.number,
-              expiry: input.card.expiry,
-              security_code: input.card.securityCode,
-              name: input.card.name,
-            },
-          },
+          ...(input.card === undefined ? {} : { payment_source: cardSource(input.card) }),
         },
+      }),
+    confirmCard: (orderId, card, requestId) =>
+      call({
+        method: "POST",
+        path: `/v2/checkout/orders/${seg(orderId)}/confirm-payment-source`,
+        schema: OrderSchema,
+        requestId,
+        representation: true,
+        body: { payment_source: cardSource(card) },
       }),
     captureOrder: (orderId, requestId) =>
       call({
@@ -195,6 +200,17 @@ export function createPayPalOrdersClient(options: PayPalOrdersClientOptions): Pa
         path: `/v1/shipping/trackers/${seg(`${captureId}-${trackingNumber ?? "NOTRACKER"}`)}`,
         schema: LegacyTrackerSchema,
       }),
+  };
+}
+
+function cardSource(card: CardSource) {
+  return {
+    card: {
+      number: card.number,
+      expiry: card.expiry,
+      security_code: card.securityCode,
+      name: card.name,
+    },
   };
 }
 

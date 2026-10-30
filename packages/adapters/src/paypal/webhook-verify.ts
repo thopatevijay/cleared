@@ -8,6 +8,7 @@ import { verify as verifySignature, X509Certificate, type KeyObject } from "node
 import { isIP } from "node:net";
 import { crc32 } from "node:zlib";
 import type { HttpClient } from "../http/client.ts";
+import { HttpStatusError } from "../http/errors.ts";
 
 export const PAYPAL_CERT_HOSTS: readonly string[] = ["api.paypal.com", "api.sandbox.paypal.com"];
 /** A delivery whose transmission time is further than this from now is rejected (replay guard). */
@@ -33,6 +34,8 @@ export type WebhookVerifyFailure =
   | "cert_host_not_allowed"
   | "stale_transmission_time"
   | "cert_fetch_failed"
+  /** The cert host answered a redirect (never followed). Conclusive: no API fallback (M1-04). */
+  | "cert_redirect_refused"
   | "cert_invalid"
   | "cert_not_valid_now"
   | "bad_signature";
@@ -131,7 +134,10 @@ export function createWebhookVerifier(options: WebhookVerifierOptions): WebhookV
         ...(options.certTimeoutMs === undefined ? {} : { timeoutMs: options.certTimeoutMs }),
       });
       pem = res.bodyText;
-    } catch {
+    } catch (err) {
+      if (err instanceof HttpStatusError && err.status >= 300 && err.status < 400) {
+        return "cert_redirect_refused";
+      }
       return "cert_fetch_failed";
     }
     try {

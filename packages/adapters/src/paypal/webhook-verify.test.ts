@@ -86,7 +86,7 @@ describe("cert host allowlist (no network for a bad URL)", () => {
         new Response(null, { status: 302, headers: { location: "http://169.254.169.254/latest/meta-data" } }),
     );
     const r = await verifier.verifyWebhook({ rawBody: "{}", headers: headers(), webhookId: "WH" });
-    expect(reason(r)).toBe("cert_fetch_failed");
+    expect(reason(r)).toBe("cert_redirect_refused");
     expect(calls).toEqual([{ url: GOOD_CERT, redirect: "manual" }]);
   });
 
