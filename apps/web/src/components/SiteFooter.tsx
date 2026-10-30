@@ -11,7 +11,7 @@ export function LandingFooter() {
   );
 }
 
-export function DashboardFooter() {
+export function DashboardFooter({ current = false }: { current?: boolean }) {
   const t = useTranslations("dashboard");
   return (
     <footer className="border-t border-border py-6 text-sm text-text-muted">
@@ -19,6 +19,7 @@ export function DashboardFooter() {
         <span>{t("footer")}</span>
         <Link
           href="/audit"
+          aria-current={current ? "page" : undefined}
           className="inline-flex min-h-11 items-center text-accent underline underline-offset-2"
         >
           {t("footerAudit")}

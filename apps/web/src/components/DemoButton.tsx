@@ -3,18 +3,31 @@
 // workspace) and the browser's time zone; 201 → the dashboard. 429 → the cap copy from Retry-After.
 import { Hourglass, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "../i18n/navigation.ts";
 import { minutesFrom, NETWORK_ERROR, newKey, postJson } from "../lib/api.ts";
 import { useOnline } from "../lib/use-online.ts";
 import { ErrorPanel } from "./ErrorPanel.tsx";
 import { SandboxBadge } from "./SandboxBadge.tsx";
 
+/**
+ * Where "watch the video" points: the README, which carries the demo video link once it exists (M5).
+ * No video URL is invented here.
+ */
+const VIDEO_URL = "https://github.com/thopatevijay/cleared#readme";
+const video = (chunks: ReactNode) => (
+  <a href={VIDEO_URL} className="font-semibold underline underline-offset-2">
+    {chunks}
+  </a>
+);
+
 /** The per-IP cap answers Retry-After: 86400; the global cap 3600 (M1-05). */
 const PER_IP_RETRY_S = 3 * 3600;
 
 type Outcome =
-  { kind: "capped"; text: string; ref: string | null } | { kind: "error"; ref: string | null } | null;
+  | { kind: "capped"; perIp: boolean; minutes: number; ref: string | null }
+  | { kind: "error"; ref: string | null }
+  | null;
 
 export function DemoButton() {
   const t = useTranslations("landing");
@@ -41,7 +54,8 @@ export function DemoButton() {
       const perIp = (res.retryAfter ?? 0) > PER_IP_RETRY_S;
       setOutcome({
         kind: "capped",
-        text: perIp ? t("capIp") : t("capBusy", { minutes: minutesFrom(res.retryAfter) }),
+        perIp,
+        minutes: minutesFrom(res.retryAfter),
         ref: res.correlationId,
       });
     } else {
@@ -58,11 +72,13 @@ export function DemoButton() {
           disabled={busy || !online}
           aria-busy={busy || undefined}
           aria-label={busy ? t("demoBusy") : t("demoCtaName")}
-          className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-accent px-5 text-lg font-semibold text-on-accent hover:bg-accent-hover disabled:bg-surface-sunken disabled:text-text-muted md:w-auto md:self-start"
+          className="inline-flex min-h-12 w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-md bg-accent px-5 py-2 text-lg font-semibold text-on-accent hover:bg-accent-hover disabled:bg-surface-sunken disabled:text-text-muted md:w-auto md:self-start"
           data-testid="demo-cta"
         >
-          {busy ? <Loader2 aria-hidden="true" size={18} className="spin" /> : null}
-          <span>{busy ? t("demoBusy") : t("demoCta")}</span>
+          <span className="inline-flex items-center gap-2 text-center">
+            {busy ? <Loader2 aria-hidden="true" size={18} className="spin shrink-0" /> : null}
+            {busy ? t("demoBusy") : t("demoCta")}
+          </span>
           <SandboxBadge decorative />
         </button>
         <p className="text-sm text-text-muted">{online ? t("demoNote") : t("offline")}</p>
@@ -74,7 +90,9 @@ export function DemoButton() {
         >
           <p className="flex items-start gap-2 font-medium">
             <Hourglass aria-hidden="true" size={20} strokeWidth={1.75} className="mt-0.5 shrink-0" />
-            {outcome.text}
+            <span>
+              {outcome.perIp ? t.rich("capIp", { video }) : t("capBusy", { minutes: outcome.minutes })}
+            </span>
           </p>
           {outcome.ref ? (
             <p className="text-sm">

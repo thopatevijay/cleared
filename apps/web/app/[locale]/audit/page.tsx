@@ -39,7 +39,7 @@ export default async function Audit({ params }: { params: Promise<{ locale: stri
           </Link>
         </EmptyState>
       </main>
-      <DashboardFooter />
+      <DashboardFooter current />
     </>
   );
 }
