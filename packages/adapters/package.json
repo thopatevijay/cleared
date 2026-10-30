@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./testing/fixture": "./src/testing/fixture.ts"
+    "./testing/fixture": "./src/testing/fixture.ts",
+    "./testing/replay": "./src/testing/replay.ts",
+    "./testing/sentry-capture": "./src/testing/sentry-capture.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p .",

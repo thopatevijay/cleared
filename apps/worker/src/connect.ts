@@ -3,6 +3,7 @@
 import type { Logger } from "@cleared/adapters";
 import { closeDb, createDb, createQueue } from "@cleared/db";
 import { wireWorker } from "./boss.ts";
+import { startHeartbeat } from "./heartbeat.ts";
 import type { Connect } from "./main.ts";
 import { defaultRegistry, type Registry } from "./registry.ts";
 
@@ -13,6 +14,8 @@ export interface ConnectOptions {
   readonly log: Logger;
   readonly registry?: Registry;
   readonly pollingIntervalSeconds?: number;
+  /** Heartbeat interval (default 30 s, M1-08). */
+  readonly heartbeatIntervalMs?: number;
 }
 
 export function makeConnect(opts: ConnectOptions): Connect {
@@ -38,8 +41,15 @@ export function makeConnect(opts: ConnectOptions): Connect {
         await boss.stop({ graceful: false }).catch(() => undefined);
         throw error;
       }
+      const heartbeat = startHeartbeat({
+        db,
+        log: opts.log,
+        ...(opts.heartbeatIntervalMs === undefined ? {} : { intervalMs: opts.heartbeatIntervalMs }),
+      });
+      await heartbeat.first;
       return {
         async stop() {
+          heartbeat.stop();
           try {
             await boss.stop({ graceful: true, timeout: STOP_TIMEOUT_MS });
           } finally {

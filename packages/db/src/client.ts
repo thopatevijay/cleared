@@ -12,6 +12,14 @@ export type Db = NodePgDatabase & { $client: pg.Pool };
 
 export function createDb(url: string): Db {
   const pool = new pg.Pool({ connectionString: url, max: POOL_MAX });
+  // An idle client dropped by the server (Postgres restart, failover) emits `error` on the pool; with no
+  // listener that would crash the process. The pool discards the client and the next query reconnects,
+  // so `/healthz` stays up and `/readyz` reports `db:false` instead (M1-08).
+  pool.on("error", (error: Error) => {
+    console.error(
+      JSON.stringify({ service: "db", level: "warn", msg: "idle client error", error: error.message }),
+    );
+  });
   return drizzle({ client: pool });
 }
 

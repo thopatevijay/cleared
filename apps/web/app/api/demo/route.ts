@@ -2,9 +2,9 @@
 import { getDeps } from "../../../src/server/deps.ts";
 import { postDemo } from "../../../src/server/handlers/demo.ts";
 
+import { withRoute } from "../../../src/server/with-route.ts";
+
 // Reads the environment and the database per request, never at build time.
 export const dynamic = "force-dynamic";
 
-export function POST(req: Request): Promise<Response> {
-  return postDemo(req, getDeps());
-}
+export const POST = withRoute("/api/demo", (req: Request) => postDemo(req, getDeps()));
