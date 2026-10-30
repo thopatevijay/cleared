@@ -73,6 +73,11 @@ if git ls-files -- README.md apps packages | grep -E '\.(md|tsx?|json)$' | xargs
   exit 1
 fi
 
+# Design tokens (M1-06): tokens.css matches docs/design/tokens.json and every text pair meets WCAG AA.
+if [ -f docs/design/tokens.json ]; then
+  node scripts/design-tokens.mjs --check >/dev/null || { node scripts/design-tokens.mjs --check | grep -E "FAIL|design-tokens"; exit 1; }
+fi
+
 # Fixtures never carry credentials (recorded in M0 spikes). Guarded: fixtures/ is created in M0-04.
 if [ -d fixtures ]; then
   if grep -rniE "(access_token\"?\s*:\s*\"A21|client_secret|Bearer [A-Za-z0-9._-]{20,}|sk-[A-Za-z0-9]{20,})" fixtures; then
