@@ -34,9 +34,10 @@
   --color-status-info-fg: #1c4589;
   --color-status-sandbox-bg: #f0eee6;
   --color-status-sandbox-fg: #4d4733;
-  --font-sans: 'Atkinson Hyperlegible Next', 'Noto Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-devanagari: 'Noto Sans Devanagari', 'Atkinson Hyperlegible Next', 'Noto Sans', system-ui, sans-serif;
-  --font-mono: 'Atkinson Hyperlegible Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --font-sans:
+    "Atkinson Hyperlegible Next", "Noto Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-devanagari: "Noto Sans Devanagari", "Atkinson Hyperlegible Next", "Noto Sans", system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --text-xs: 0.8125rem;
   --text-xs--line-height: 1.45;
   --text-xs--font-weight: 400;
@@ -115,7 +116,7 @@
     --color-status-info-fg: #a9c6f5;
     --color-status-sandbox-bg: #2f2c22;
     --color-status-sandbox-fg: #d9d1b0;
-    --shadow-raised: 0 0 0 1px rgb(231 235 240 / 0.10);
+    --shadow-raised: 0 0 0 1px rgb(231 235 240 / 0.1);
     --shadow-overlay: 0 8px 24px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(231 235 240 / 0.14);
   }
 }
@@ -152,12 +153,13 @@
   --color-status-info-fg: #a9c6f5;
   --color-status-sandbox-bg: #2f2c22;
   --color-status-sandbox-fg: #d9d1b0;
-  --shadow-raised: 0 0 0 1px rgb(231 235 240 / 0.10);
+  --shadow-raised: 0 0 0 1px rgb(231 235 240 / 0.1);
   --shadow-overlay: 0 8px 24px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(231 235 240 / 0.14);
 }
 
 /* Hindi: Devanagari matras need taller lines. */
-:root:lang(hi), [lang="hi"] {
+:root:lang(hi),
+[lang="hi"] {
   --text-xs--line-height: 1.7;
   --text-sm--line-height: 1.75;
   --text-base--line-height: 1.75;

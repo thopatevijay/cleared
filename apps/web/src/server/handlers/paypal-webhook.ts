@@ -3,8 +3,8 @@
 // only when this request inserted it and it is routable, the `paypal.capture.sync` job. 200 on insert
 // and on a duplicate; no PayPal fetch inside the request. A rejected delivery → 401, nothing stored, a
 // warning with the transmission id only.
-import { randomUUID } from "node:crypto";
 import {
+  correlationIdOrNew,
   headerValue,
   PAYPAL_WEBHOOK_HEADERS,
   readRawBody,
@@ -14,6 +14,7 @@ import {
   type AuthResult,
   type Logger,
   type WebhookHeaders,
+  verificationFailureAlert,
 } from "@cleared/adapters";
 import { PAYPAL_CAPTURE_SYNC_QUEUE, platform, withTransaction, type Db, type Publisher } from "@cleared/db";
 import { apiError, CORRELATION_HEADER, json } from "../respond.ts";
@@ -37,7 +38,8 @@ export interface CaptureSyncJob {
 export type IngestOutcome = "stored" | "duplicate";
 
 export async function postPayPalWebhook(req: Request, deps: PayPalWebhookDeps): Promise<Response> {
-  const cid = randomUUID();
+  // Set by `withRoute` (M1-08): the request's correlation id, carried into the job envelope.
+  const cid = correlationIdOrNew();
   const transmissionId = headerValue(req.headers, PAYPAL_WEBHOOK_HEADERS.transmissionId) ?? null;
   if (deps.authenticate === null) {
     deps.log.error({ transmissionId }, "paypal webhook refused: PAYPAL_WEBHOOK_ID not configured");
@@ -48,6 +50,7 @@ export async function postPayPalWebhook(req: Request, deps: PayPalWebhookDeps): 
   const auth = await deps.authenticate({ rawBody: body.raw, headers: req.headers });
   if (!auth.ok) {
     deps.log.warn({ transmissionId, reason: auth.reason }, "paypal webhook rejected");
+    verificationFailureAlert.record();
     const status = auth.reason === "api_verification_error" ? 503 : 401;
     return apiError(status, "unauthorized", "The webhook signature was not verified.", cid);
   }

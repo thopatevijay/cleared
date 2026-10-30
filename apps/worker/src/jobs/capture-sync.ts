@@ -16,7 +16,7 @@ import {
   type SyncSource,
   type WorkspaceId,
 } from "@cleared/core";
-import type { PayPalCapturesClient } from "@cleared/adapters";
+import { reportQuarantine, type PayPalCapturesClient } from "@cleared/adapters";
 import { forWorkspace, platform, type Db, type Publisher, type Tx } from "@cleared/db";
 import { z } from "zod";
 import type { ConsumeContext, Handler } from "../consume.ts";
@@ -125,6 +125,7 @@ async function quarantine(run: Run, reason: string, workspaceId: WorkspaceId | n
     run.tx,
   );
   run.ctx.log.warn({ captureId: mirror.captureId, reason, workspaceId }, "capture quarantined");
+  reportQuarantine(reason, { extra: { captureId: mirror.captureId } }); // M1-08 alert (warning)
   return "quarantined";
 }
 

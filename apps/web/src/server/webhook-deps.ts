@@ -5,18 +5,17 @@
 import {
   correlationIdOrNew,
   createHttpClient,
-  createLogger,
   createPayPalWebhooksClient,
   createTokenProvider,
   createWebhookAuthenticator,
   createWebhookVerifier,
   PAYPAL_SANDBOX_BASE_URL,
   VENDOR_TIMEOUTS_MS,
-  type PayPalEnv,
 } from "@cleared/adapters";
 import { createPublisher, createQueue } from "@cleared/db";
 import { z } from "zod";
 import { getDb } from "./deps.ts";
+import { webLogger } from "./request-context.ts";
 import type { PayPalWebhookDeps } from "./handlers/paypal-webhook.ts";
 
 const Env = z.object({
@@ -49,7 +48,6 @@ async function build(): Promise<PayPalWebhookDeps> {
           http,
           tokens: createTokenProvider({ http, baseUrl: PAYPAL_SANDBOX_BASE_URL, credentials: creds }),
         });
-  const env_: PayPalEnv = env.PAYPAL_ENV;
   return {
     db,
     publisher: createPublisher(db, boss, correlationIdOrNew),
@@ -61,9 +59,9 @@ async function build(): Promise<PayPalWebhookDeps> {
             verifyViaApi: (i) =>
               wh === null ? Promise.reject(new Error("no PayPal credentials")) : wh.verifyViaApi(i),
             webhookId,
-            env: env_,
+            env: env.PAYPAL_ENV,
           }),
-    log: createLogger({ service: "web" }),
+    log: webLogger(),
     now: () => new Date(),
   };
 }
