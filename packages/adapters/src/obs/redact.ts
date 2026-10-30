@@ -50,8 +50,17 @@ export function rawBodySummary(raw: unknown): { size: number; sha256: string } {
   return { size: bytes.byteLength, sha256: createHash("sha256").update(bytes).digest("hex") };
 }
 
+/** An HTTP credential inside free text (`Bearer …`, `Basic …`). */
+const CREDENTIAL = /\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/g;
+/** A `__Host-`/`__Secure-` cookie pair inside free text (the session cookie is `__Host-cleared_session`). */
+const COOKIE_PAIR = /__(?:Host|Secure)-[A-Za-z0-9_-]+=[^;\s"',]*/g;
+
+/** Removes emails, bearer/basic credentials and session cookie pairs from free text. */
 export function scrubString(value: string): string {
-  return value.replace(EMAIL, EMAIL_REDACTED);
+  return value
+    .replace(EMAIL, EMAIL_REDACTED)
+    .replace(CREDENTIAL, "[credential]")
+    .replace(COOKIE_PAIR, "[cookie]");
 }
 
 /** A deep copy of `value` with secrets, personal fields, raw bodies and emails removed. */
@@ -78,7 +87,8 @@ function walk(value: unknown, depth: number, seen: WeakSet<object>): unknown {
 }
 
 function walkError(error: Error, depth: number, seen: WeakSet<object>): Record<string, unknown> {
-  const extra = walk({ ...error }, depth + 1, seen) as Record<string, unknown>;
+  const own = Object.fromEntries(Object.entries(error));
+  const extra = walk(own, depth + 1, seen) as Record<string, unknown>;
   return {
     ...extra,
     type: error.name,

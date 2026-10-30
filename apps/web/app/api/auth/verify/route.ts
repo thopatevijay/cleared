@@ -2,9 +2,9 @@
 import { getDeps } from "../../../../src/server/deps.ts";
 import { getVerify } from "../../../../src/server/handlers/verify.ts";
 
+import { withRoute } from "../../../../src/server/with-route.ts";
+
 // Reads the environment and the database per request, never at build time.
 export const dynamic = "force-dynamic";
 
-export function GET(req: Request): Promise<Response> {
-  return getVerify(req, getDeps());
-}
+export const GET = withRoute("/api/auth/verify", (req: Request) => getVerify(req, getDeps()));

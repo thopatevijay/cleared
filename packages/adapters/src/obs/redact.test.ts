@@ -60,7 +60,11 @@ describe("obs redaction (M1-08 AC: redaction)", () => {
 
   it("omits release outside Render", () => {
     const out: string[] = [];
-    createLogger({ service: "worker", env: {}, destination: { write: (s: string) => void out.push(s) } }).info("x");
+    createLogger({
+      service: "worker",
+      env: {},
+      destination: { write: (s: string) => void out.push(s) },
+    }).info("x");
     expect(JSON.parse(out[0] ?? "{}")).toMatchObject({ service: "worker", env: "development" });
     expect(out[0]).not.toContain("release");
   });

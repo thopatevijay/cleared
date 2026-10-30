@@ -18,10 +18,11 @@ describe("healthz", () => {
 
   it("GET /healthz answers 200 JSON, uncached, with the commit", async () => {
     vi.stubEnv("RENDER_GIT_COMMIT", "0123456789abcdef");
-    const res = GET();
+    const res = await GET(new Request("http://localhost/healthz"));
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("application/json");
     expect(res.headers.get("cache-control")).toBe("no-store");
+    expect(res.headers.get("x-correlation-id")).toMatch(/^[0-9a-f-]{36}$/);
     expect(await res.json()).toEqual({ ok: true, commit: "0123456789abcdef" });
   });
 });

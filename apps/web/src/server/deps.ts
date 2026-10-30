@@ -26,11 +26,18 @@ export function emailSenderFor(config: AuthConfig): EmailSender {
 }
 
 let deps: Deps | undefined;
+let db: Db | undefined;
+
+/** The web process's one pool; `/readyz` uses it without needing the auth config (M1-08). */
+export function getDb(): Db {
+  db ??= createDb(databaseUrl());
+  return db;
+}
 
 export function getDeps(): Deps {
   if (deps === undefined) {
     const config = authConfigFromEnv(process.env);
-    deps = { db: createDb(databaseUrl()), config, email: emailSenderFor(config), now: () => new Date() };
+    deps = { db: getDb(), config, email: emailSenderFor(config), now: () => new Date() };
   }
   return deps;
 }

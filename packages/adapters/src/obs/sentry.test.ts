@@ -25,8 +25,13 @@ afterEach(() => {
 
 describe("obs sentry (M1-08)", () => {
   it("is disabled without a DSN and never sends default PII", () => {
-    expect(sentryOptions({ service: "web", env: {} })).toMatchObject({ enabled: false, sendDefaultPii: false });
-    expect(sentryOptions({ service: "worker", env: { SENTRY_DSN: "https://k@o.ingest/1" } }).enabled).toBe(true);
+    expect(sentryOptions({ service: "web", env: {} })).toMatchObject({
+      enabled: false,
+      dataCollection: { userInfo: false, cookies: false, httpBodies: [], urlQueryParams: false },
+    });
+    expect(sentryOptions({ service: "worker", env: { SENTRY_DSN: "https://k@o.ingest/1" } }).enabled).toBe(
+      true,
+    );
   });
 
   it("tags the correlation id and workspace kind, never a workspace id", () => {

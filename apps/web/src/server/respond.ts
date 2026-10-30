@@ -1,13 +1,15 @@
 // JSON responses and the ADR 0003 error envelope for route handlers.
-import { randomUUID } from "node:crypto";
 import { errorEnvelope } from "@cleared/core";
+import { CORRELATION_HEADER, requestCorrelationId } from "./request-context.ts";
 
-export const CORRELATION_HEADER = "x-correlation-id";
+export { CORRELATION_HEADER };
 
-/** The caller's correlation id when it is sane, else a new one. */
+/**
+ * The request's correlation id: the one `withRoute` set (M1-08), else the inbound header when it is a
+ * UUID, else a new one.
+ */
 export function correlationId(req: Request): string {
-  const given = req.headers.get(CORRELATION_HEADER);
-  return given !== null && /^[A-Za-z0-9._-]{8,128}$/.test(given) ? given : randomUUID();
+  return requestCorrelationId(req);
 }
 
 export function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {

@@ -2,9 +2,9 @@
 import { getDeps } from "../../../../src/server/deps.ts";
 import { postSignOut } from "../../../../src/server/handlers/session-routes.ts";
 
+import { withRoute } from "../../../../src/server/with-route.ts";
+
 // Reads the environment and the database per request, never at build time.
 export const dynamic = "force-dynamic";
 
-export function POST(req: Request): Promise<Response> {
-  return postSignOut(req, getDeps());
-}
+export const POST = withRoute("/api/auth/sign-out", (req: Request) => postSignOut(req, getDeps()));

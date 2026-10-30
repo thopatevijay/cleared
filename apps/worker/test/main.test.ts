@@ -2,11 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import { commitOf, dryRun, start, type Connect } from "../src/main.ts";
 import { captureLog } from "./helpers.ts";
 
-/** The fields this suite asserts on (pino adds level and time). */
+/** The fields this suite asserts on (pino adds level and time; M1-08 adds env and release). */
 const pick = (l: Record<string, unknown>) => {
   const rest = { ...l };
   delete rest["level"];
   delete rest["time"];
+  delete rest["env"];
+  delete rest["release"];
   return rest;
 };
 

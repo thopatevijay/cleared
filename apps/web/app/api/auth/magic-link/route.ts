@@ -2,9 +2,9 @@
 import { getDeps } from "../../../../src/server/deps.ts";
 import { postMagicLink } from "../../../../src/server/handlers/magic-link.ts";
 
+import { withRoute } from "../../../../src/server/with-route.ts";
+
 // Reads the environment and the database per request, never at build time.
 export const dynamic = "force-dynamic";
 
-export function POST(req: Request): Promise<Response> {
-  return postMagicLink(req, getDeps());
-}
+export const POST = withRoute("/api/auth/magic-link", (req: Request) => postMagicLink(req, getDeps()));

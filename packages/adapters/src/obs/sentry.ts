@@ -5,7 +5,8 @@
 //   or an email
 // - goes through `scrubEvent` (`beforeSend`): cookies, auth headers, query-string tokens, user
 //   identity and email addresses are removed
-// Without a DSN the SDK is disabled, so nothing is sent.
+// Without a DSN the SDK is disabled, so nothing is sent. Nothing personal is collected by the SDK
+// either (`DATA_COLLECTION`, Sentry 11's replacement for `sendDefaultPii: false`).
 import { currentContext } from "./context.ts";
 import { redact, REDACTED, scrubString } from "./redact.ts";
 
@@ -13,7 +14,10 @@ export type AlertLevel = "error" | "warning";
 
 /** The slice of a Sentry SDK (`@sentry/node`, `@sentry/nextjs`) used here. */
 export interface AlertSink {
-  captureException(error: unknown, hint?: { tags?: Record<string, string>; extra?: Record<string, unknown> }): string;
+  captureException(
+    error: unknown,
+    hint?: { tags?: Record<string, string>; extra?: Record<string, unknown> },
+  ): string;
   captureMessage(
     message: string,
     hint?: { level?: AlertLevel; tags?: Record<string, string>; extra?: Record<string, unknown> },
@@ -74,7 +78,10 @@ export function createThresholdAlert(opts: {
       times = [...times.filter((x) => x > t - opts.windowMs), t];
       if (times.length <= opts.limit || t < quietUntil) return false;
       quietUntil = t + opts.windowMs;
-      reportWarning(opts.message, { ...ctx, extra: { ...ctx?.extra, count: times.length, windowMs: opts.windowMs } });
+      reportWarning(opts.message, {
+        ...ctx,
+        extra: { ...ctx?.extra, count: times.length, windowMs: opts.windowMs },
+      });
       return true;
     },
   };
@@ -103,10 +110,13 @@ export function scrubUrl(url: string): string {
 }
 
 function scrubRequest(request: Json): Json {
-  const { cookies: _cookies, data: _data, ...rest } = request;
+  const rest = { ...request };
+  delete rest["cookies"];
+  delete rest["data"];
   const out = redact(rest) as Json;
   if (typeof request["url"] === "string") out["url"] = scrubUrl(request["url"]);
-  if (typeof request["query_string"] === "string") out["query_string"] = scrubUrl(`?${request["query_string"]}`).slice(1);
+  if (typeof request["query_string"] === "string")
+    out["query_string"] = scrubUrl(`?${request["query_string"]}`).slice(1);
   return out;
 }
 
@@ -132,6 +142,27 @@ export interface SentryEnvOptions {
   readonly dsn?: string | undefined;
 }
 
+/**
+ * What the SDK may collect: no user info, cookies, bodies, query params, queue payloads, DB data or
+ * local variables. Sentry 11 replaced `sendDefaultPii` with this; it is the `sendDefaultPii: false`
+ * of the ticket, made explicit per category (M1-08).
+ */
+export const DATA_COLLECTION = {
+  userInfo: false,
+  cookies: false,
+  httpHeaders: {
+    request: { deny: ["cookie", "authorization", "set-cookie"] },
+    response: { deny: ["set-cookie"] },
+  },
+  httpBodies: [],
+  urlQueryParams: false,
+  databaseQueryData: false,
+  queues: false,
+  stackFrameVariables: false,
+  genAI: { inputs: false, outputs: false },
+  graphQL: { document: false, variables: false },
+};
+
 /** Shared init options: disabled without a DSN, no default PII, every event scrubbed. */
 export function sentryOptions(opts: SentryEnvOptions) {
   const env = opts.env ?? process.env;
@@ -140,12 +171,11 @@ export function sentryOptions(opts: SentryEnvOptions) {
   return {
     dsn,
     enabled: dsn !== "",
-    sendDefaultPii: false,
+    dataCollection: DATA_COLLECTION,
     environment: env["NODE_ENV"] ?? "development",
     ...(release ? { release } : {}),
     initialScope: { tags: { service: opts.service } },
     beforeSend: <E extends object>(event: E): E => scrubEvent(event),
-    beforeSendTransaction: <E extends object>(event: E): E => scrubEvent(event),
     tracesSampleRate: 0,
   };
 }

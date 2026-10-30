@@ -26,7 +26,8 @@ describe.skipIf(!dbAvailable)("worker process", () => {
       .split("\n")
       .map((l) => JSON.parse(l) as Record<string, unknown>);
     expect(code).toBe(0);
-    expect(lines).toEqual([
+    expect(lines[0]).toMatchObject({ service: "worker", msg: "worker observability ready", sentry: false });
+    expect(lines.slice(1)).toEqual([
       expect.objectContaining({
         service: "worker",
         level: "info",

@@ -142,7 +142,11 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       });
     } catch (err) {
       const failed = { method: req.method, url: req.url, attempt, correlationId };
-      logAttempt({ ...failed, durationMs: cfg.now() - started, failure: isTimeout(err) ? "timeout" : "network" });
+      logAttempt({
+        ...failed,
+        durationMs: cfg.now() - started,
+        failure: isTimeout(err) ? "timeout" : "network",
+      });
       if (isTimeout(err)) {
         return {
           kind: "timeout",

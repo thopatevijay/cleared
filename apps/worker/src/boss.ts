@@ -1,7 +1,7 @@
 // Wires the registry onto pg-boss (M1-03): creates each queue and its `.dlq`, starts its consumer with
 // concurrency 5 (architecture §12), starts a dead-letter consumer that logs and records the message,
 // and schedules the outbox relay every minute.
-import { correlationIdOrNew } from "@cleared/adapters";
+import { correlationIdOrNew, reportError } from "@cleared/adapters";
 import { RELAY_CRON, RELAY_QUEUE, relayOutbox, type Db, type Queue } from "@cleared/db";
 import { consume, type ConsumeDeps, type Handler } from "./consume.ts";
 import { dlqName, ensureQueue } from "./queues.ts";
@@ -27,13 +27,12 @@ function workOptions(deps: WireDeps) {
   } as const;
 }
 
-/** Dead-letter handler: the message exhausted its retries. M1-08 adds the Sentry alert. */
+/** Dead-letter handler: the message exhausted its retries. Logs it and raises one Sentry event (M1-08). */
 export function deadLetterHandler(queue: string): Handler {
   return (_data, { envelope, log, job }) => {
-    log.error(
-      { queue, dlq: dlqName(queue), messageId: envelope.messageId, sourceId: job.sourceId },
-      "message dead-lettered",
-    );
+    const fields = { queue, dlq: dlqName(queue), messageId: envelope.messageId, sourceId: job.sourceId };
+    log.error(fields, "message dead-lettered");
+    reportError(new Error(`message dead-lettered: ${queue}`), { extra: fields });
     return Promise.resolve();
   };
 }

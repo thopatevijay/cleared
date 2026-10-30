@@ -34,3 +34,4 @@ export type * from "./repos/platform/index.ts";
 export { seed, SEED_USER_EMAIL, SEED_USER_ID, SEED_WORKSPACE_ID } from "./seed.ts";
 export { WEBHOOK_EVENT_STATUSES, type WebhookEventStatus } from "../schema/enums.ts";
 export * from "./outbox/index.ts";
+export { pingDb, pingQueue } from "./health.ts";
