@@ -6,7 +6,9 @@ import { platform, type Executor } from "@cleared/db";
 import type { Deps } from "./deps.ts";
 import { apiError, correlationId } from "./respond.ts";
 
-export const SESSION_COOKIE = "__Host-cleared_session";
+import { SESSION_COOKIE } from "../lib/session-cookie.ts";
+
+export { SESSION_COOKIE };
 export const SELLER_SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 /** A seller session's expiry moves at most this often (one write per active 5 minutes). */
 export const RENEW_AFTER_MS = 5 * 60 * 1000;

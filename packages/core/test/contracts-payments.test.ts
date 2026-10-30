@@ -48,8 +48,8 @@ describe("payments contract (M1-07)", () => {
       testPayments: { waiting: 0, usedToday: 0, limit: 3 },
     };
     expect(PaymentsResponseSchema.parse(body)).toEqual(body);
-    expect(PaymentsResponseSchema.safeParse({ ...body, summary: { ...body.summary, inDispute: 1 } }).success).toBe(
-      false,
-    );
+    expect(
+      PaymentsResponseSchema.safeParse({ ...body, summary: { ...body.summary, inDispute: 1 } }).success,
+    ).toBe(false);
   });
 });

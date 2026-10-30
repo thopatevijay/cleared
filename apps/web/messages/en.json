@@ -1,0 +1,108 @@
+{
+  "common": {
+    "wordmark": "Cleared",
+    "skipMain": "Skip to main content",
+    "skipPayments": "Skip to payments",
+    "language": "Language",
+    "langEn": "English",
+    "langHi": "हिन्दी",
+    "langEnShort": "EN",
+    "langHiShort": "हिं",
+    "sandbox": "Sandbox",
+    "reference": "Reference",
+    "copy": "Copy",
+    "copied": "Copied",
+    "retry": "Retry",
+    "footerSandbox": "Sandbox only. Cleared is not affiliated with PayPal."
+  },
+  "meta": {
+    "title": "Cleared",
+    "description": "Your PayPal money, cleared."
+  },
+  "landing": {
+    "h1": "Get your held PayPal money moving, with proof ready before PayPal asks.",
+    "intro": "Cleared is an AI agent for small cross-border sellers. It builds a proof pack for every payment, explains holds with PayPal's own rules, and drafts dispute replies from that proof. It never sends anything to PayPal without your approval.",
+    "stepsTitle": "What happens in the demo",
+    "step1": "A real PayPal sandbox payment arrives through a webhook.",
+    "step2": "Cleared builds its proof pack from synthetic client files.",
+    "step3": "A sandbox chargeback opens a dispute; you approve the drafted reply.",
+    "step4": "Press \"<en>Simulate PayPal's decision (sandbox only)</en>\" and watch the money get released.",
+    "demoCta": "Try as demo seller",
+    "demoCtaName": "Try as demo seller (sandbox only)",
+    "demoBusy": "Creating your workspace…",
+    "demoNote": "No PayPal account or keys needed. Workspace lasts until 16 Dec 2026.",
+    "alreadySeller": "Already a seller?",
+    "emailLabel": "Email",
+    "signinCta": "Email me a sign-in link",
+    "sending": "Sending…",
+    "invalidEmail": "Enter an email like name@example.com",
+    "real": "Real: PayPal sandbox APIs and responses, PayPal's published rules. Synthetic: every person, chat and file in the demo.",
+    "readme": "Read the README on GitHub",
+    "checkTitle": "Check your email",
+    "checkBody": "If {email} can sign in, a link is on its way. It works once and expires in 15 minutes.",
+    "differentEmail": "Use a different email",
+    "sendAgain": "Didn't get it? Send again",
+    "sendAgainIn": "Send again in {seconds} s",
+    "capBusy": "The demo is busy right now. Try again in {minutes} minutes.",
+    "capIp": "This network has made 3 demo workspaces today. Try again tomorrow, or watch the video.",
+    "tooMany": "Too many sign-in requests. Try again in {minutes} minutes.",
+    "error": "Couldn't reach Cleared. Check your connection and try again.",
+    "offline": "You're offline. Connect to try the demo or sign in.",
+    "sessionEnded": "Your session ended. Sign in again or try the demo."
+  },
+  "expired": {
+    "title": "This sign-in link has expired or was already used",
+    "body": "Links work once, for 15 minutes.",
+    "orDemo": "Or try Cleared without an account"
+  },
+  "dashboard": {
+    "title": "Your PayPal money",
+    "summaryLabel": "Summary",
+    "held": "{amount} held",
+    "nothingHeld": "Nothing held",
+    "inDisputeNone": "— in dispute",
+    "proofReadyNone": "— proof-ready",
+    "pendingDispute": "Arrives with dispute support",
+    "pendingProof": "Arrives with proof packs",
+    "listHeading": "Payments",
+    "order": "Most urgent first",
+    "loadingSlow": "Loading payments from your workspace…",
+    "loadingSlower": "Still waiting. PayPal or our server may be slow.",
+    "errorTitle": "Couldn't load your payments",
+    "errorBody": "Check your connection and retry.",
+    "footer": "The agent does the work. You hold the keys.",
+    "footerAudit": "Audit log"
+  },
+  "row": {
+    "viaWebhook": "via webhook",
+    "viaPoll": "via sync",
+    "receive": "you receive {amount}",
+    "waiting": "Waiting for PayPal…",
+    "waitingHint": "Usually under 2 minutes.",
+    "arrived": "Payment {amount} arrived from PayPal: {status}",
+    "unknownAmount": "Not yet reported by PayPal"
+  },
+  "empty": {
+    "title": "No payments yet",
+    "body": "Create a sandbox test payment and watch it arrive from PayPal through a webhook.",
+    "cta": "Create a sandbox test payment",
+    "ctaName": "Create a sandbox test payment (sandbox only)",
+    "busy": "Creating…",
+    "capped": "You've made 3 test payments today. Try again tomorrow."
+  },
+  "status": {
+    "completed": "Completed",
+    "held": "Held",
+    "dispute": "In dispute",
+    "resolved": "Resolved",
+    "refunded": "Refunded",
+    "failed": "Not completed",
+    "quarantined": "Quarantined",
+    "info": "Info"
+  },
+  "audit": {
+    "title": "Audit log",
+    "empty": "The audit log fills in as the agent proposes actions and you approve them. Arrives with dispute support.",
+    "back": "Back to your PayPal money"
+  }
+}

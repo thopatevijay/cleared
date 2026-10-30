@@ -15,6 +15,15 @@ export function clientIp(headers: Headers): string {
   return hops.at(-1) ?? UNKNOWN_IP;
 }
 
+/**
+ * Which header `clientIp` used (M1-07): logged on demo creation (never the IP itself) so the Render
+ * deploy shows which header its proxy actually sets.
+ */
+export function clientIpSource(headers: Headers): "true-client-ip" | "x-forwarded-for" | "none" {
+  if (headers.get("true-client-ip")?.trim()) return "true-client-ip";
+  return (headers.get("x-forwarded-for") ?? "").trim() !== "" ? "x-forwarded-for" : "none";
+}
+
 /** HMAC-SHA256(secret, ip) as hex: what the caps store and count; the raw IP is never stored. */
 export function ipHash(ip: string, secret: string): string {
   return createHmac("sha256", secret).update(`ip:${ip}`).digest("hex");

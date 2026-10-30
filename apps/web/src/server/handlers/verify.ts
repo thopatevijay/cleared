@@ -19,7 +19,10 @@ export async function getVerify(req: Request, deps: Deps): Promise<Response> {
       const locale = localeFrom(req.headers.get("accept-language"));
       return new Response(null, {
         status: 303,
-        headers: { location: `${deps.config.appOrigin}/${locale}/signin/expired`, "cache-control": "no-store" },
+        headers: {
+          location: `${deps.config.appOrigin}/${locale}/signin/expired`,
+          "cache-control": "no-store",
+        },
       });
     }
     return apiError(

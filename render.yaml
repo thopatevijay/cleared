@@ -49,12 +49,21 @@ services:
     # Deploy a commit on main only after its GitHub checks pass (CI runs on every push to main).
     autoDeployTrigger: checksPass
     buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @cleared/web build
-    # Drizzle migrations, then the pg-boss schema (M0-03). A failure stops the deploy; the old one keeps serving.
-    preDeployCommand: pnpm --filter @cleared/db run migrate
-    startCommand: pnpm --filter @cleared/web start
+    # Drizzle migrations, then the pg-boss schema and queues (M0-03, M1-04), then the idempotent seed
+    # (M1-07). A failure stops the deploy; the old one keeps serving.
+    # Run commands call node directly, never pnpm: Corepack's pnpm download from the build is not in the
+    # runtime image, so every `pnpm …` start re-downloaded it (~4 s, and a registry.npmjs.org
+    # dependency at start; BL-01 6489828432). These are the same scripts the package.json entries run.
+    preDeployCommand: node packages/db/src/migrate.ts && node packages/db/src/seed.ts
+    # `next start` binds Render's PORT.
+    startCommand: cd apps/web && node_modules/.bin/next start
+    # Liveness only (no DB call); /readyz (db, queue, worker heartbeat) is for gates and monitoring (M1-08).
     healthCheckPath: /healthz
     envVars:
       - fromGroup: cleared-shared
+      # Public origin: magic links, the CSRF Origin check and redirects (M1-05). Not a secret.
+      - key: APP_BASE_URL
+        value: https://cleared-web-gd1b.onrender.com
       - key: DATABASE_URL
         fromDatabase:
           name: cleared-db
@@ -84,7 +93,8 @@ services:
     branch: main
     autoDeployTrigger: checksPass
     buildCommand: corepack enable && pnpm install --frozen-lockfile
-    startCommand: pnpm --filter @cleared/worker start
+    # node directly, not pnpm (BL-01 6489828432, see cleared-web); the same as `pnpm --filter @cleared/worker start`.
+    startCommand: node apps/worker/src/index.ts
     envVars:
       - fromGroup: cleared-shared
       - key: DATABASE_URL

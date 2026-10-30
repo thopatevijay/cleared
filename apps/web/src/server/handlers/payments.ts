@@ -50,7 +50,12 @@ export async function getPayments(req: Request, deps: Deps): Promise<Response> {
   const params = new URL(req.url).searchParams;
   const q = PaymentsQuerySchema.safeParse({ offset: params.get("offset"), limit: params.get("limit") });
   if (!q.success) {
-    return apiError(400, "invalid_request", "offset must be ≥ 0 and limit between 1 and 50.", correlationId(req));
+    return apiError(
+      400,
+      "invalid_request",
+      "offset must be ≥ 0 and limit between 1 and 50.",
+      correlationId(req),
+    );
   }
   const ws = await platform(deps.db).workspaces.get(session.workspaceId);
   if (ws === null) {

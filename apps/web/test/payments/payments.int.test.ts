@@ -88,7 +88,8 @@ describe.skipIf(!dbAvailable)("payments API (integration)", () => {
 
     expect((await post(randomUUID(), "https://evil.example")).status).toBe(403);
     expect(
-      (await postTestPayment(req("/api/sandbox/test-payments", { cookie, key: null }), deps, publisher)).status,
+      (await postTestPayment(req("/api/sandbox/test-payments", { cookie, key: null }), deps, publisher))
+        .status,
     ).toBe(400);
 
     const key = randomUUID();

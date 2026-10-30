@@ -6,3 +6,7 @@ packages:
 # esbuild (via drizzle-kit) ships its binary as an optional dependency; its postinstall only verifies it.
 allowBuilds:
   esbuild: false
+  # next-intl 4 (M1-07) pulls these in for its message extractor; both ship prebuilt binaries as
+  # optional dependencies, and their install scripts only rebuild from source as a fallback.
+  "@parcel/watcher": false
+  "@swc/core": false
