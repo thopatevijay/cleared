@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-30T16:46:57.848Z",
+    "env": "live",
+    "ticket": "M1-05",
+    "scrubbed": true,
+    "note": "one live magic-link send to the allowlisted test recipient (M1-05 live proof)"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.resend.com/emails",
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "from": "Cleared <payer-1@example.test>",
+      "to": [
+        "payer-2@example.test"
+      ],
+      "subject": "Your Cleared sign-in link",
+      "text": "Use this link to sign in to Cleared. It works once and expires in 15 minutes.\n\nhttp://localhost:3000/api/auth/verify?token=[REDACTED]\n\nIf you did not ask for this, ignore this email. Nobody can sign in without the link.\n",
+      "html": "<p>Use this link to sign in to Cleared. It works once and expires in 15 minutes.</p><p><a href=\"http://localhost:3000/api/auth/verify?token=[REDACTED]\">Sign in to Cleared</a></p><p>If you did not ask for this, ignore this email. Nobody can sign in without the link.</p>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "01a18db5-1681-7323-90b9-3a3f29b73659"
+    }
+  }
+}

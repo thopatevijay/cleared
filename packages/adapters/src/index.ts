@@ -16,3 +16,6 @@ export * from "./paypal/webhooks.ts";
 export * from "./paypal/webhook-verify.ts";
 export * from "./obs/context.ts";
 export * from "./obs/log.ts";
+export * from "./email/sender.ts";
+export * from "./email/resend.ts";
+export * from "./email/templates/render.ts";
