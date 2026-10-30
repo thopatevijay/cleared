@@ -10,6 +10,7 @@ export * from "./machine.ts";
 export * from "./mirror.ts";
 export * from "./events.ts";
 export * from "./contracts/error-envelope.ts";
+export * from "./contracts/payments.ts";
 
 export * from "./accounts/workspace.ts";
 export * from "./accounts/ownership.ts";

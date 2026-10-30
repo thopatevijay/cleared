@@ -3,7 +3,6 @@
 // the API fallback. PAYPAL_WEBHOOK_ID unset → the route answers 503 (fail closed), never verifies with
 // a guessed id.
 import {
-  correlationIdOrNew,
   createHttpClient,
   createPayPalWebhooksClient,
   createTokenProvider,
@@ -12,9 +11,9 @@ import {
   PAYPAL_SANDBOX_BASE_URL,
   VENDOR_TIMEOUTS_MS,
 } from "@cleared/adapters";
-import { createPublisher, createQueue } from "@cleared/db";
 import { z } from "zod";
 import { getDb } from "./deps.ts";
+import { getPublisher } from "./queue.ts";
 import { webLogger } from "./request-context.ts";
 import type { PayPalWebhookDeps } from "./handlers/paypal-webhook.ts";
 
@@ -34,7 +33,7 @@ async function build(): Promise<PayPalWebhookDeps> {
   const env = Env.parse(process.env);
   if (env.PAYPAL_ENV === "live") throw new Error("live PayPal is not enabled (sandbox only)");
   const db = getDb();
-  const boss = await createQueue(db, { background: false, max: 2 });
+  const publisher = await getPublisher();
   const http = createHttpClient({ vendor: "paypal", timeoutMs: VENDOR_TIMEOUTS_MS.paypal });
   const webhookId = env.PAYPAL_WEBHOOK_ID ?? "";
   const creds =
@@ -50,7 +49,7 @@ async function build(): Promise<PayPalWebhookDeps> {
         });
   return {
     db,
-    publisher: createPublisher(db, boss, correlationIdOrNew),
+    publisher,
     authenticate:
       webhookId === ""
         ? null

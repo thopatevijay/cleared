@@ -3,7 +3,7 @@
 import { WorkspaceIdSchema } from "@cleared/core";
 import { forWorkspace, platform, withTransaction, type Tx } from "@cleared/db";
 import type { Deps } from "../deps.ts";
-import { DEFAULT_TIMEZONE } from "../locale.ts";
+import { DEFAULT_TIMEZONE, localeFrom } from "../locale.ts";
 import { apiError, correlationId } from "../respond.ts";
 import { isToken, SELLER_SESSION_MS, sha256Hex, startSession } from "../session.ts";
 
@@ -14,6 +14,14 @@ export async function getVerify(req: Request, deps: Deps): Promise<Response> {
   const token = new URL(req.url).searchParams.get("token") ?? "";
   const signedIn = isToken(token) ? await withTransaction(deps.db, (tx) => signIn(deps, tx, token)) : null;
   if (signedIn === null) {
+    // A browser following the emailed link gets the expired-link page (M1-07); API clients keep the JSON 400.
+    if ((req.headers.get("accept") ?? "").includes("text/html")) {
+      const locale = localeFrom(req.headers.get("accept-language"));
+      return new Response(null, {
+        status: 303,
+        headers: { location: `${deps.config.appOrigin}/${locale}/signin/expired`, "cache-control": "no-store" },
+      });
+    }
     return apiError(
       400,
       "invalid_link",

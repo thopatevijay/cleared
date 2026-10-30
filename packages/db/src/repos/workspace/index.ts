@@ -4,6 +4,7 @@ import { WorkspaceIdSchema, type WorkspaceId } from "@cleared/core";
 import type { Db } from "../../client.ts";
 import * as s from "../../../schema/index.ts";
 import type { Executor } from "../../tx.ts";
+import { paymentsListRepo, testPaymentRequestsRepo } from "./payments-list.ts";
 import { findOneInScope, mutableScopedRepo, scopedRepo, type Row } from "./scoped.ts";
 
 function repos(db: Db, ws: string) {
@@ -45,12 +46,24 @@ function repos(db: Db, ws: string) {
   };
 }
 
+/** Workspace-scoped read models beyond plain table repos (M1-07); not part of the per-table isolation list. */
+export interface WorkspaceViews {
+  readonly paymentsList: ReturnType<typeof paymentsListRepo>;
+  readonly testPaymentRequests: ReturnType<typeof testPaymentRequestsRepo>;
+}
+
 export type WorkspaceRepos = ReturnType<typeof repos> & { readonly workspaceId: WorkspaceId };
 
 /** Every workspace-scoped repository, bound to one workspace. Throws on a non-uuid id. */
 export function forWorkspace(db: Db, workspaceId: WorkspaceId): WorkspaceRepos {
   const ws = WorkspaceIdSchema.parse(workspaceId);
   return { workspaceId: ws, ...repos(db, ws) };
+}
+
+/** The dashboard's reads and the test-payment counter, bound to one workspace. Throws on a non-uuid id. */
+export function workspaceViews(db: Db, workspaceId: WorkspaceId): WorkspaceViews {
+  const ws = WorkspaceIdSchema.parse(workspaceId);
+  return { paymentsList: paymentsListRepo(db, ws), testPaymentRequests: testPaymentRequestsRepo(db, ws) };
 }
 
 /** Names of the workspace-scoped repos (the isolation test iterates over all of them). */
