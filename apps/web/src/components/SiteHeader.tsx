@@ -1,7 +1,6 @@
 // The page header (landing and dashboard): skip link (first Tab stop), the text wordmark, the language
 // switch. Sticky, 56 px.
 import { useTranslations } from "next-intl";
-import { Suspense } from "react";
 import { LanguageSwitch } from "./LanguageSwitch.tsx";
 
 export function SiteHeader({
@@ -22,12 +21,10 @@ export function SiteHeader({
       </a>
       <header className="sticky top-0 z-[var(--z-sticky)] border-b border-border bg-surface">
         <div className="mx-auto flex h-14 max-w-[1200px] items-center justify-between px-4">
-          <span className="text-xl font-bold" lang="en">
+          <span className="font-[family-name:var(--font-atkinson)] text-xl leading-none font-bold" lang="en">
             {t("wordmark")}
           </span>
-          <Suspense fallback={null}>
-            <LanguageSwitch />
-          </Suspense>
+          <LanguageSwitch />
         </div>
       </header>
     </>

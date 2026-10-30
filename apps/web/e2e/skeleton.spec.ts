@@ -151,6 +151,45 @@ test("Atkinson Hyperlegible Next renders tabular figures (BL-01 6527541216)", as
   expect(Math.abs((widths.tabular[0] ?? 0) - (widths.tabular[1] ?? 1))).toBeLessThan(0.5);
 });
 
+const HELD_ROW = {
+  id: "5d0c6b1e-2f3a-4b5c-8d9e-0f1a2b3c4d5e",
+  captureId: "7KM64000HELD0001",
+  amount: { value: "64.00", currency: "USD" },
+  receivable: { value: "5326.08", currency: "INR" },
+  status: "PENDING",
+  statusReason: "PENDING_REVIEW",
+  source: "webhook",
+  updatedAt: "2026-10-30T08:32:00.000Z",
+};
+
+type Fulfil = Parameters<Parameters<Page["route"]>[1]>[0];
+const hang = (): Promise<void> => new Promise<void>(() => undefined);
+const errorReply =
+  (status: number, retryAfter?: string) =>
+  (r: Fulfil): Promise<void> =>
+    r.fulfill({
+      status,
+      headers: {
+        "x-correlation-id": "4c8e1f2a-6b3d-4e5f-9a0b-1c2d3e4f5a6b",
+        ...(retryAfter === undefined ? {} : { "retry-after": retryAfter }),
+      },
+      contentType: "application/json",
+      body: JSON.stringify({ error: { code: "x", message: "x", details: null, correlationId: "x" } }),
+    });
+
+/** Fresh landing page with one API answered by `reply`, then `act` drives it into the state. */
+async function landingState(
+  page: Page,
+  url: string,
+  reply: (r: Fulfil) => Promise<void>,
+  act: () => Promise<void>,
+): Promise<void> {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await page.goto(page.url().replace(/(\/(en|hi)).*$/, "$1"));
+  await page.route(url, reply);
+  await act();
+}
+
 test("screens and states for ui-reviewer (local)", async ({ browser }) => {
   test.skip(!shots, "screenshots are local-only");
   for (const locale of LOCALES) {
@@ -174,6 +213,41 @@ test("screens and states for ui-reviewer (local)", async ({ browser }) => {
     await expect(page.getByText(m.landing.capBusy.replace("{minutes}", "60"))).toBeVisible();
     await capture(page, `landing-cap-${locale}`);
     await page.unroute("**/api/demo");
+
+    await landingState(page, "**/api/demo", errorReply(429, "86400"), async () => {
+      await page.getByTestId("demo-cta").click();
+      await expect(page.getByText(m.landing.capIp)).toBeVisible();
+    });
+    await capture(page, `landing-cap-ip-${locale}`);
+    await landingState(page, "**/api/demo", errorReply(500), async () => {
+      await page.getByTestId("demo-cta").click();
+      await expect(page.getByTestId("error-panel")).toBeVisible();
+    });
+    await capture(page, `landing-error-${locale}`);
+    await landingState(page, "**/api/demo", hang, async () => {
+      await page.getByTestId("demo-cta").click();
+      await expect(page.getByTestId("demo-cta")).toHaveAttribute("aria-busy", "true");
+    });
+    await capture(page, `landing-creating-${locale}`);
+    await landingState(page, "**/api/auth/magic-link", hang, async () => {
+      await page.getByLabel(m.landing.emailLabel).fill("seller@example.test");
+      await page.getByRole("button", { name: m.landing.signinCta }).click();
+      await expect(page.getByRole("button", { name: m.landing.sending })).toBeVisible();
+    });
+    await capture(page, `landing-sending-${locale}`);
+    await landingState(page, "**/api/auth/magic-link", errorReply(429, "600"), async () => {
+      await page.getByLabel(m.landing.emailLabel).fill("seller@example.test");
+      await page.getByRole("button", { name: m.landing.signinCta }).click();
+      await expect(page.getByText(m.landing.tooMany.replace("{minutes}", "10"))).toBeVisible();
+    });
+    await capture(page, `landing-too-many-${locale}`);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    await page.goto(`/${locale}`);
+    await ctx.setOffline(true);
+    await expect(page.getByText(m.landing.offline)).toBeVisible();
+    await expect(page.getByTestId("demo-cta")).toBeDisabled();
+    await capture(page, `landing-offline-${locale}`);
+    await ctx.setOffline(false);
 
     await page.goto(`/${locale}`);
     await page.route("**/api/auth/magic-link", (r) =>
@@ -228,6 +302,33 @@ test("screens and states for ui-reviewer (local)", async ({ browser }) => {
     await page.reload();
     await expect(page.getByTestId("waiting-row")).toBeVisible();
     await capture(page, `dashboard-waiting-${locale}`);
+    await page.unroute("**/api/payments");
+
+    await page.route("**/api/payments", async (r) => {
+      const res = await r.fetch();
+      const body = (await res.json()) as { testPayments: { usedToday: number } };
+      body.testPayments.usedToday = 3;
+      await r.fulfill({ response: res, json: body });
+    });
+    await page.reload();
+    await expect(page.getByText(m.empty.capped)).toBeVisible();
+    await capture(page, `dashboard-capped-${locale}`);
+    await page.unroute("**/api/payments");
+
+    // A held (PENDING) row needs a PayPal review hold, which the sandbox card flow can't produce on
+    // demand: the row is the M1-01 capture shape with synthetic data from dashboard.md (Kofi Mensah,
+    // $64.00 USD, PENDING_REVIEW), injected into this page's response only.
+    await page.route("**/api/payments", async (r) => {
+      const res = await r.fetch();
+      const body = (await res.json()) as { items: unknown[]; total: number; summary: { held: unknown[] } };
+      body.items = [HELD_ROW];
+      body.total = 1;
+      body.summary.held = [{ value: "64.00", currency: "USD" }];
+      await r.fulfill({ response: res, json: body });
+    });
+    await page.reload();
+    await expect(page.getByTestId("payment-row").and(page.locator('[data-status="PENDING"]'))).toBeVisible();
+    await capture(page, `dashboard-held-${locale}`);
     await page.unroute("**/api/payments");
 
     await page.reload();

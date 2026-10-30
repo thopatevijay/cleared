@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { PaymentsResponseSchema, WorkspaceIdSchema } from "@cleared/core";
 import { createPublisher, createQueue, forWorkspace, type Publisher } from "@cleared/db";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { postDemo } from "../../src/server/handlers/demo.ts";
 import { getPayments, postTestPayment } from "../../src/server/handlers/payments.ts";
 import { getWorkspace } from "../../src/server/handlers/session-routes.ts";
@@ -11,6 +11,7 @@ import { cookieFrom, freshIp, req, testDb, testDeps } from "../support/db.ts";
 import { dbAvailable } from "../support/db-available.ts";
 
 let pub: Promise<Publisher> | undefined;
+const created: string[] = [];
 const publisher = (): Promise<Publisher> => {
   pub ??= createQueue(testDb(), { background: false, max: 2 }).then((b) => createPublisher(testDb(), b));
   return pub;
@@ -21,6 +22,7 @@ async function demo(): Promise<{ cookie: string; wsId: string }> {
   const cookie = cookieFrom(await postDemo(req("/api/demo", { ip: freshIp() }), deps));
   const res = await getWorkspace(req("/api/workspace", { method: "GET", cookie }), deps);
   const wsId = ((await res.json()) as { workspace: { id: string } }).workspace.id;
+  created.push(wsId);
   return { cookie, wsId };
 }
 
@@ -116,5 +118,14 @@ describe.skipIf(!dbAvailable)("payments API (integration)", () => {
     expect(capped.status).toBe(429);
     expect(((await capped.json()) as { error: { code: string } }).error.code).toBe("test_payment_limit");
     expect(PaymentsResponseSchema.parse((await list(cookie)).body).testPayments.usedToday).toBe(3);
+  });
+
+  // The jobs are real pg-boss rows in the shared test database: remove them so a worker test running
+  // against the same database never consumes them (they would fail without PayPal credentials).
+  afterEach(async () => {
+    await testDb().$client.query(
+      "delete from pgboss.job where name = 'sandbox.test_payment' and data->'data'->>'workspaceId' = any($1)",
+      [created],
+    );
   });
 });

@@ -5,8 +5,8 @@ import { Link } from "../i18n/navigation.ts";
 export function LandingFooter() {
   const t = useTranslations("common");
   return (
-    <footer className="border-t border-border px-4 py-6 text-sm text-text-muted">
-      <p className="mx-auto max-w-[1200px]">{t("footerSandbox")}</p>
+    <footer className="border-t border-border py-6 text-sm text-text-muted">
+      <p className="mx-auto max-w-[640px] px-4 xl:max-w-[1200px]">{t("footerSandbox")}</p>
     </footer>
   );
 }
@@ -14,8 +14,8 @@ export function LandingFooter() {
 export function DashboardFooter() {
   const t = useTranslations("dashboard");
   return (
-    <footer className="border-t border-border px-4 py-6 text-sm text-text-muted">
-      <p className="mx-auto flex max-w-[720px] flex-wrap items-center gap-x-3 xl:max-w-[1200px]">
+    <footer className="border-t border-border py-6 text-sm text-text-muted">
+      <p className="mx-auto flex max-w-[720px] flex-wrap items-center gap-x-3 px-4 xl:max-w-[1200px]">
         <span>{t("footer")}</span>
         <Link
           href="/audit"

@@ -24,9 +24,13 @@ export default async function Audit({ params }: { params: Promise<{ locale: stri
   return (
     <>
       <SiteHeader skipTo="main" skipLabel="skipMain" />
-      <main id="main" tabIndex={-1} className="mx-auto flex max-w-[720px] flex-col gap-6 px-4 py-6">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="mx-auto flex max-w-[720px] flex-col gap-6 px-4 py-6 xl:max-w-[1200px]"
+      >
         <h1 className="text-2xl font-bold">{t("title")}</h1>
-        <EmptyState icon={ScrollText} title={t("title")} body={t("empty")}>
+        <EmptyState icon={ScrollText} title={t("emptyTitle")} body={t("empty")}>
           <Link
             href="/payments"
             className="inline-flex min-h-11 items-center text-accent underline underline-offset-2"

@@ -83,7 +83,9 @@ export function DemoButton() {
           ) : null}
         </div>
       ) : null}
-      {outcome?.kind === "error" ? <ErrorPanel title={t("error")} reference={outcome.ref} /> : null}
+      {outcome?.kind === "error" ? (
+        <ErrorPanel title={t("error")} reference={outcome.ref} onRetry={() => void start()} busy={busy} />
+      ) : null}
     </div>
   );
 }

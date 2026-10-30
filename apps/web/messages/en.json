@@ -102,6 +102,7 @@
   },
   "audit": {
     "title": "Audit log",
+    "emptyTitle": "Nothing here yet",
     "empty": "The audit log fills in as the agent proposes actions and you approve them. Arrives with dispute support.",
     "back": "Back to your PayPal money"
   }

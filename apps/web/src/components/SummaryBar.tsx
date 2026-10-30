@@ -7,11 +7,25 @@ import type { ReactNode } from "react";
 import { intlLocale, isAppLocale } from "../i18n/routing.ts";
 import { formatAmount } from "../lib/format.ts";
 
-function Fact({ icon: Icon, children }: { icon: LucideIcon; children: ReactNode }) {
+/** One fact; `pending` is the visible "Arrives with …" line for parts later tickets deliver. */
+function Fact({
+  icon: Icon,
+  children,
+  pending,
+}: {
+  icon: LucideIcon;
+  children: ReactNode;
+  pending?: string;
+}) {
   return (
-    <span className="flex items-center gap-2 md:inline-flex">
-      <Icon aria-hidden="true" size={20} strokeWidth={1.75} className="shrink-0 text-text-muted" />
-      <span>{children}</span>
+    <span className="flex items-start gap-2 md:inline-flex">
+      <span className="flex h-[1lh] shrink-0 items-center">
+        <Icon aria-hidden="true" size={22} strokeWidth={1.75} className="text-text-muted" />
+      </span>
+      <span className="flex flex-col">
+        <span>{children}</span>
+        {pending ? <span className="text-sm font-normal text-text-muted">{pending}</span> : null}
+      </span>
     </span>
   );
 }
@@ -32,13 +46,11 @@ export function SummaryBar({ held }: { held: readonly Amount[] }) {
       data-testid="summary"
     >
       <Fact icon={Hourglass}>{held.length === 0 ? t("nothingHeld") : t("held", { amount: heldText })}</Fact>
-      <Fact icon={Scale}>
-        <span title={t("pendingDispute")}>{t("inDisputeNone")}</span>
-        <span className="sr-only"> ({t("pendingDispute")})</span>
+      <Fact icon={Scale} pending={t("pendingDispute")}>
+        {t("inDisputeNone")}
       </Fact>
-      <Fact icon={FileCheck}>
-        <span title={t("pendingProof")}>{t("proofReadyNone")}</span>
-        <span className="sr-only"> ({t("pendingProof")})</span>
+      <Fact icon={FileCheck} pending={t("pendingProof")}>
+        {t("proofReadyNone")}
       </Fact>
     </p>
   );

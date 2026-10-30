@@ -23,8 +23,8 @@ export function PaymentRow({ p, timeZone, flash }: { p: PaymentItem; timeZone: s
   const t = useTranslations("row");
   const raw = useLocale();
   const key = captureStatusKey(p.status);
-  // PENDING: the reason beside the badge. Unmapped statuses: PayPal's raw enum, so nothing is invented.
-  const detail = key === "held" ? p.statusReason : key === "completed" ? null : p.status;
+  // PayPal's exact enum beside the badge (copy rule 6): PENDING shows `status_details.reason`.
+  const detail = key === "held" ? (p.statusReason ?? p.status) : p.status;
   return (
     <li className={`${rowBase} ${flash ? "flash" : ""}`} data-testid="payment-row" data-status={p.status}>
       <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${RAIL[key]}`} />
