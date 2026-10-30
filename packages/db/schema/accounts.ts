@@ -34,6 +34,17 @@ const workspaceId = () =>
 /** Columns every workspace-scoped table starts with. */
 export const scoped = () => ({ id: pk(), workspaceId: workspaceId(), createdAt: createdAt() });
 
+/**
+ * M1-05: like `scoped()`, but `workspace_id` may be null for rows written before a workspace exists
+ * (a magic link for a new email, a demo-cap refusal in the audit log). `forWorkspace` still filters
+ * on `workspace_id = $ws`, so a null row is never visible through a workspace repo.
+ */
+export const optionallyScoped = () => ({
+  id: pk(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id),
+  createdAt: createdAt(),
+});
+
 export const users = pgTable(
   "users",
   {
@@ -68,17 +79,26 @@ export const sessions = pgTable(
 export const magicLinks = pgTable(
   "magic_links",
   {
-    ...scoped(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id),
+    /** workspace and user are null until the first verify of a new email creates them (M1-05) */
+    ...optionallyScoped(),
+    userId: uuid("user_id").references(() => users.id),
     tokenHash: text("token_hash").notNull(),
     expiresAt: tstz("expires_at").notNull(),
     usedAt: tstz("used_at"),
+    /** M1-05: the requested address, lower-cased (rate limit per email; the new seller's email) */
+    email: text("email").notNull(),
+    /** M1-05: HMAC of the requesting IP (rate limit per IP); never the raw IP */
+    requestedIpHash: text("requested_ip_hash").notNull(),
+    /** M1-05: the client's IANA zone and locale, used when the first verify creates the workspace */
+    timezone: text("timezone"),
+    locale: locale("locale"),
   },
   (t) => [
     uniqueIndex("magic_links_token_hash_key").on(t.tokenHash),
     index("magic_links_workspace_created_idx").on(t.workspaceId, t.createdAt),
+    index("magic_links_email_created_idx").on(t.email, t.createdAt),
+    index("magic_links_ip_created_idx").on(t.requestedIpHash, t.createdAt),
+    check("magic_links_email_lower", sql`${t.email} = lower(${t.email})`),
   ],
 );
 

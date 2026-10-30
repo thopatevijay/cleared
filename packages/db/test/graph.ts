@@ -34,7 +34,13 @@ async function seedAccounts(r: WorkspaceRepos): Promise<Ids & { users: string; a
     tokenHash: sha(randomUUID()),
     expiresAt: later,
   });
-  const link = await r.magicLinks.insert({ userId: user.id, tokenHash: sha(randomUUID()), expiresAt: later });
+  const link = await r.magicLinks.insert({
+    userId: user.id,
+    tokenHash: sha(randomUUID()),
+    expiresAt: later,
+    email: `link-${randomUUID()}@example.test`,
+    requestedIpHash: sha(randomUUID()),
+  });
   const note = await r.notifications.insert({ kind: "dispute_opened" });
   const run = await r.agentRuns.insert({
     task: "extract",
