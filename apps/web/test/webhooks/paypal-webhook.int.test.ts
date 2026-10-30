@@ -10,6 +10,7 @@ import {
   certUrlOf,
   cleanup,
   counts,
+  disputeSyncJobs,
   eventIdOf,
   flipByte,
   loadDeliveries,
@@ -69,7 +70,7 @@ describe.skipIf(!dbAvailable)("POST /api/webhooks/paypal", () => {
       expect(outbound).toEqual([]);
     });
 
-    it("routes: capture events get one capture-sync job; dispute events are stored only", async () => {
+    it("routes: capture events get one capture-sync job; dispute events re-fetch the disputed capture and stay received", async () => {
       for (const [, d] of deliveries) {
         const deps = await routeDeps({ webhookId: RESIGN_WEBHOOK_ID, now: sentAt(d) });
         seedResignKey(deps.verifier, d, sentAt(d));
@@ -78,6 +79,8 @@ describe.skipIf(!dbAvailable)("POST /api/webhooks/paypal", () => {
       expect((await counts([captureEventId])).jobs).toBe(1);
       const disputes = deliveries.filter(([, d]) => d.event_type.startsWith("CUSTOMER.DISPUTE."));
       expect((await counts(disputes.map(([, d]) => eventIdOf(d)))).jobs).toBe(0);
+      // BL-01 6489621553: one re-fetch of the disputed capture per dispute event, with no eventId
+      expect(await disputeSyncJobs("0M327451J9579884Y")).toBe(disputes.length);
       const raw = await (
         await routeDeps({ webhookId: "x", now: 0 })
       ).db.$client.query<{ status: string; verified: boolean }>(

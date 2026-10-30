@@ -29,10 +29,13 @@ export interface PayPalWebhookDeps {
   readonly now: () => Date;
 }
 
-/** The job payload: `eventId` is the `webhook_events.id` (uuid) the consumer marks processed. */
+/**
+ * The job payload: `eventId` is the `webhook_events.id` (uuid) the consumer marks processed; absent for
+ * a dispute event's capture re-fetch (that row stays `received` for M2-06).
+ */
 export interface CaptureSyncJob {
   readonly captureId: string;
-  readonly eventId: string;
+  readonly eventId?: string;
 }
 
 export type IngestOutcome = "stored" | "duplicate";
@@ -82,7 +85,10 @@ export async function postPayPalWebhook(req: Request, deps: PayPalWebhookDeps): 
       if (row === null) return "duplicate";
       const route = routeWebhook(event.data);
       if (route.kind === "capture_sync") {
-        const job: CaptureSyncJob = { captureId: route.captureId, eventId: row.id };
+        const job: CaptureSyncJob = {
+          captureId: route.captureId,
+          ...(route.marksEvent ? { eventId: row.id } : {}),
+        };
         await deps.publisher.enqueue(tx, PAYPAL_CAPTURE_SYNC_QUEUE, job);
       }
       return "stored";

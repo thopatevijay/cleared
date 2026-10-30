@@ -56,6 +56,12 @@ describe("routeWebhook over every recorded delivery", () => {
     "simulator/payment-capture-refunded.json": "capture_sync:5LK72275CG489890D",
     // v1 reversal sample has no capture reference at all: stored only
     "simulator/payment-capture-reversed.json": "store_only",
+    // disputes re-fetch the disputed capture without marking the event (BL-01 6489621553)
+    "deliveries/customer-dispute-created.json": "capture_sync:0M327451J9579884Y",
+    "deliveries/customer-dispute-updated.json": "capture_sync:0M327451J9579884Y",
+    "simulator/customer-dispute-created.json": "capture_sync:00D10444LD479031K",
+    "simulator/customer-dispute-resolved.json": "capture_sync:00D10444LD479031K",
+    "simulator/customer-dispute-updated.json": "capture_sync:00D10444LD479031K",
   };
   const all = [
     ...envelopes("deliveries").map(([f, e]) => [`deliveries/${f}`, e] as const),
@@ -65,7 +71,9 @@ describe("routeWebhook over every recorded delivery", () => {
     const r = routeWebhook(e);
     const got = r.kind === "capture_sync" ? `capture_sync:${r.captureId}` : r.kind;
     expect(got).toBe(expected[name] ?? "store_only");
-    if (e.event_type.startsWith("CUSTOMER.DISPUTE.")) expect(r.kind).toBe("store_only");
+    if (r.kind === "capture_sync") {
+      expect(r.marksEvent).toBe(!e.event_type.startsWith("CUSTOMER.DISPUTE."));
+    }
   });
 
   it("a v2 refund resource routes by its rel=up capture link", () => {

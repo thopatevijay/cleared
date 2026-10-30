@@ -104,8 +104,17 @@ export const WebhookEnvelopeSchema = z.object({
 export type WebhookEnvelope = z.infer<typeof WebhookEnvelopeSchema>;
 
 export type WebhookRoute =
-  | { readonly kind: "capture_sync"; readonly captureId: string }
-  /** Stored raw with status `received` (disputes and orders: M2-06), or a capture event with no id. */
+  | {
+      readonly kind: "capture_sync";
+      readonly captureId: string;
+      /**
+       * true for PAYMENT.CAPTURE.* (the sync marks the event processed). false for CUSTOMER.DISPUTE.*:
+       * the disputed capture is re-fetched (a chargeback hold arrives with no PAYMENT.CAPTURE.PENDING,
+       * BL-01 6489621553) but the event stays `received` for M2-06's dispute routing.
+       */
+      readonly marksEvent: boolean;
+    }
+  /** Stored raw with status `received` (orders, unknown types: M2-06), or an event with no capture id. */
   | { readonly kind: "store_only" };
 
 /** PAYMENT.CAPTURE.* events that re-fetch a capture (PayPal event names, never invented). */
@@ -182,8 +191,26 @@ export async function setupAppWebhook(
   return { url, webhookId: webhook.id, webhook: action, lookupId: lookup.id, lookup: lookupAction };
 }
 
+const DisputedCaptureSchema = z.object({
+  disputed_transactions: z
+    .array(z.object({ seller_transaction_id: z.string().regex(CAPTURE_ID).optional() }).loose())
+    .min(1),
+});
+
+/** The capture a CUSTOMER.DISPUTE.* event is about: `disputed_transactions[0].seller_transaction_id`. */
+export function disputedCaptureIdOf(resource: Record<string, unknown>): string | null {
+  const parsed = DisputedCaptureSchema.safeParse(resource);
+  return parsed.success ? (parsed.data.disputed_transactions[0]?.seller_transaction_id ?? null) : null;
+}
+
 export function routeWebhook(event: WebhookEnvelope): WebhookRoute {
+  if (event.event_type.startsWith("CUSTOMER.DISPUTE.")) {
+    const captureId = disputedCaptureIdOf(event.resource);
+    return captureId === null
+      ? { kind: "store_only" }
+      : { kind: "capture_sync", captureId, marksEvent: false };
+  }
   if (!(CAPTURE_EVENT_TYPES as readonly string[]).includes(event.event_type)) return { kind: "store_only" };
   const captureId = captureIdOf(event.event_type, event.resource);
-  return captureId === null ? { kind: "store_only" } : { kind: "capture_sync", captureId };
+  return captureId === null ? { kind: "store_only" } : { kind: "capture_sync", captureId, marksEvent: true };
 }

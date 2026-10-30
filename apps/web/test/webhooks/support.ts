@@ -187,4 +187,23 @@ export async function cleanup(eventIds: readonly string[]): Promise<void> {
     [eventIds],
   );
   await c.query("delete from webhook_events where provider = 'paypal' and event_id = any($1)", [eventIds]);
+  // Dispute re-fetch jobs carry no eventId (BL-01 6489621553): remove them by the fixtures' capture ids.
+  await c.query(
+    `delete from pgboss.job where name = 'paypal.capture.sync' and data->'data'->>'eventId' is null
+       and data->'data'->>'captureId' = any($1)`,
+    [FIXTURE_DISPUTED_CAPTURES],
+  );
+}
+
+/** `disputed_transactions[0].seller_transaction_id` of the recorded dispute deliveries. */
+export const FIXTURE_DISPUTED_CAPTURES = ["0M327451J9579884Y", "00D10444LD479031K"];
+
+/** capture-sync jobs for a capture that carry no eventId (dispute re-fetches). */
+export async function disputeSyncJobs(captureId: string): Promise<number> {
+  const r = await testDb().$client.query<{ n: string }>(
+    `select count(*) as n from pgboss.job where name = 'paypal.capture.sync'
+       and data->'data'->>'eventId' is null and data->'data'->>'captureId' = $1`,
+    [captureId],
+  );
+  return Number(r.rows[0]?.n ?? 0);
 }
