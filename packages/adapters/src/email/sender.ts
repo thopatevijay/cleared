@@ -13,7 +13,7 @@ export interface EmailMessage {
 
 export type SendResult =
   | { readonly kind: "sent"; readonly id: string }
-  | { readonly kind: "refused"; readonly reason: "recipient_not_allowlisted" };
+  | { readonly kind: "refused"; readonly reason: "recipient_not_allowlisted" | "not_configured" };
 
 export interface EmailSender {
   send(message: EmailMessage): Promise<SendResult>;
