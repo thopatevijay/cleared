@@ -22,6 +22,26 @@ jobs:
     name: landing checks
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    # DB-backed tests run against the same Postgres as compose.yaml (BL-01). Throwaway CI credentials,
+    # not secrets. REQUIRE_DB=1 makes those tests fail instead of skip when the database is unreachable.
+    services:
+      postgres:
+        image: postgres:18.6-alpine
+        env:
+          POSTGRES_USER: cleared
+          POSTGRES_PASSWORD: cleared
+          POSTGRES_DB: cleared
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cleared -d cleared"
+          --health-interval 1s
+          --health-timeout 3s
+          --health-retries 30
+          --health-start-period 5s
+    env:
+      DATABASE_URL: postgres://cleared:cleared@localhost:5432/cleared
+      REQUIRE_DB: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 (reads packageManager)
@@ -31,6 +51,8 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - name: migrate (Drizzle + pg-boss schema, as `make up`)
+        run: pnpm --filter @cleared/db run migrate
       - run: ./scripts/landing-checks.sh
 
   security:

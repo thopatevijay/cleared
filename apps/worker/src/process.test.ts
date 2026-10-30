@@ -1,4 +1,5 @@
-// Integration: the real process against the compose Postgres (`make up`). Skips when it is unreachable.
+// Integration: the real process against the compose Postgres (`make up`). Skips when it is unreachable
+// (fails instead with REQUIRE_DB=1).
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { fileURLToPath } from "node:url";
@@ -18,6 +19,10 @@ async function reachable(): Promise<boolean> {
 }
 
 const dbAvailable = await reachable();
+// REQUIRE_DB=1 (set in CI) turns the skip into a failure (BL-01).
+if (!dbAvailable && process.env["REQUIRE_DB"] === "1") {
+  throw new Error("worker process test: no Postgres at DATABASE_URL and REQUIRE_DB=1: cannot skip");
+}
 if (!dbAvailable) console.warn(`worker process test skipped: no Postgres at DATABASE_URL (run make up)`);
 
 const entry = fileURLToPath(new URL("./index.ts", import.meta.url));
