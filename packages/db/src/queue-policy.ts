@@ -1,0 +1,85 @@
+// Queue definitions and retry policy (ADR 0004, architecture §12). pg-boss 12 needs every queue created
+// before `send`/`work`; jobs inherit the queue's retry, expiry and dead-letter settings at insert time.
+// Moved here from apps/worker in M1-04 (BL-01 6528386693): `migrate` creates every known queue, so the
+// web can enqueue and emit before the worker has ever booted.
+import { DOMAIN_EVENT_TYPES } from "@cleared/core";
+import type { Queue } from "./queue.ts";
+
+/** Retries after the first attempt, with exponential backoff and jitter (pg-boss `retryBackoff`). */
+export const RETRY_LIMIT = 8;
+/** First backoff step in seconds; attempt n waits about `RETRY_DELAY_SECONDS * 2^(n-1)` (x1 to x2 jitter). */
+export const RETRY_DELAY_SECONDS = 2;
+export const RETRY_DELAY_MAX_SECONDS = 300;
+/** A dead-letter handler only logs and records, so it is short. */
+export const DLQ_EXPIRE_SECONDS = 60;
+
+export interface QueueSpec {
+  readonly name: string;
+  /** How long one attempt may stay active before pg-boss fails it (per queue, required). */
+  readonly expireInSeconds: number;
+  readonly retryLimit?: number;
+  readonly retryDelay?: number;
+}
+
+export function dlqName(queue: string): string {
+  return `${queue}.dlq`;
+}
+
+/** Creates (or updates) the queue and its dead-letter queue `<queue>.dlq`. */
+export async function ensureQueue(boss: Queue, spec: QueueSpec): Promise<void> {
+  const dlq = dlqName(spec.name);
+  await upsertQueue(boss, dlq, { expireInSeconds: DLQ_EXPIRE_SECONDS, retryLimit: 2, retryDelay: 5 });
+  await upsertQueue(boss, spec.name, {
+    expireInSeconds: spec.expireInSeconds,
+    retryLimit: spec.retryLimit ?? RETRY_LIMIT,
+    retryDelay: spec.retryDelay ?? RETRY_DELAY_SECONDS,
+    retryBackoff: true,
+    retryDelayMax: RETRY_DELAY_MAX_SECONDS,
+    deadLetter: dlq,
+  });
+}
+
+interface QueueSettings {
+  readonly expireInSeconds: number;
+  readonly retryLimit: number;
+  readonly retryDelay: number;
+  readonly retryBackoff?: boolean;
+  readonly retryDelayMax?: number;
+  readonly deadLetter?: string;
+}
+
+/** `createQueue` keeps an existing queue's settings, so an existing queue is updated to match. */
+async function upsertQueue(boss: Queue, name: string, settings: QueueSettings): Promise<void> {
+  if (await boss.getQueue(name)) await boss.updateQueue(name, settings);
+  else await boss.createQueue(name, settings);
+}
+
+/** Commands (not domain events) and their per-queue policy. */
+export const PAYPAL_CAPTURE_SYNC_QUEUE = "paypal.capture.sync";
+export const SANDBOX_TEST_PAYMENT_QUEUE = "sandbox.test_payment";
+
+export const COMMAND_QUEUES: readonly QueueSpec[] = [
+  // 12 retries with the 300 s cap ≈ 28 min minimum: longer than the 10-minute unowned-capture window.
+  { name: PAYPAL_CAPTURE_SYNC_QUEUE, expireInSeconds: 60, retryLimit: 12 },
+  { name: SANDBOX_TEST_PAYMENT_QUEUE, expireInSeconds: 120, retryLimit: 3 },
+];
+
+/** Every domain event type is a queue (M1-03: queue = outbox topic = `event.type`). */
+export const EVENT_QUEUES: readonly QueueSpec[] = DOMAIN_EVENT_TYPES.map((name) => ({
+  name,
+  expireInSeconds: 60,
+}));
+
+export const KNOWN_QUEUES: readonly QueueSpec[] = [...COMMAND_QUEUES, ...EVENT_QUEUES];
+
+/** Creates every known queue (and its `.dlq`); run by `migrate`. Idempotent. */
+export async function ensureKnownQueues(boss: Queue): Promise<number> {
+  for (const spec of KNOWN_QUEUES) await ensureQueue(boss, spec);
+  return KNOWN_QUEUES.length;
+}
+
+export function queueSpec(name: string): QueueSpec {
+  const spec = KNOWN_QUEUES.find((q) => q.name === name);
+  if (!spec) throw new Error(`unknown queue: ${name}`);
+  return spec;
+}

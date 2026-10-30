@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-30T17:08:25.753Z",
+    "env": "sandbox",
+    "ticket": "M1-04",
+    "scrubbed": true,
+    "note": "no payment_source: the order stays CREATED; custom_id = synthetic workspace uuid"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "7e2dd466-f423-4b09-b9db-56ea31830a3f",
+      "prefer": "return=representation"
+    },
+    "body": {
+      "intent": "CAPTURE",
+      "purchase_units": [
+        {
+          "description": "Cleared sandbox test payment",
+          "custom_id": "41b50aa1-c3ef-42c0-9fa4-61e9a550f78d",
+          "amount": {
+            "currency_code": "USD",
+            "value": "42.00"
+          }
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f89730033037a"
+    },
+    "body": {
+      "id": "662632381Y533430H",
+      "intent": "CAPTURE",
+      "status": "CREATED",
+      "purchase_units": [
+        {
+          "reference_id": "default",
+          "amount": {
+            "currency_code": "USD",
+            "value": "42.00"
+          },
+          "payee": {
+            "email_address": "merchant-1@example.test",
+            "merchant_id": "MERCHANT-1"
+          },
+          "description": "Cleared sandbox test payment",
+          "custom_id": "41b50aa1-c3ef-42c0-9fa4-61e9a550f78d"
+        }
+      ],
+      "create_time": "2026-10-30T17:08:25Z",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/662632381Y533430H",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://www.sandbox.paypal.com/checkoutnow?token=662632381Y533430H",
+          "rel": "approve",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/662632381Y533430H",
+          "rel": "update",
+          "method": "PATCH"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/662632381Y533430H/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ]
+    }
+  }
+}

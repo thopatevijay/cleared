@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-30T17:08:27.322Z",
+    "env": "sandbox",
+    "ticket": "M1-04",
+    "scrubbed": true,
+    "note": "confirm-payment-source with the sandbox test Visa"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders/662632381Y533430H/confirm-payment-source",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "7e2dd466-f423-4b09-b9db-56ea31830a3f-confirm",
+      "prefer": "return=representation"
+    },
+    "body": {
+      "payment_source": {
+        "card": {
+          "number": "CARD-1",
+          "expiry": "2030-12",
+          "security_code": "[REDACTED]",
+          "name": "Person 1"
+        }
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f1022245fe118"
+    },
+    "body": {
+      "id": "662632381Y533430H",
+      "intent": "CAPTURE",
+      "status": "APPROVED",
+      "payment_source": {
+        "card": {
+          "name": "Person 1",
+          "last_digits": "1111",
+          "expiry": "2030-12",
+          "brand": "VISA",
+          "type": "CREDIT",
+          "bin_details": {}
+        }
+      },
+      "purchase_units": [
+        {
+          "reference_id": "default",
+          "amount": {
+            "currency_code": "USD",
+            "value": "42.00"
+          },
+          "payee": {
+            "email_address": "merchant-1@example.test",
+            "merchant_id": "MERCHANT-1"
+          },
+          "description": "Cleared sandbox test payment",
+          "custom_id": "41b50aa1-c3ef-42c0-9fa4-61e9a550f78d"
+        }
+      ],
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/662632381Y533430H",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/662632381Y533430H/capture",
+          "rel": "capture",
+          "method": "POST"
+        }
+      ]
+    }
+  }
+}

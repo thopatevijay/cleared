@@ -4,6 +4,7 @@
 import { sql } from "drizzle-orm";
 import { fromDrizzle, PgBoss } from "pg-boss";
 import type { Db } from "./client.ts";
+import { ensureKnownQueues } from "./queue-policy.ts";
 
 export const QUEUE_SCHEMA = "pgboss";
 
@@ -21,12 +22,23 @@ function connectionStringOf(db: Db): string {
   return connectionString;
 }
 
+export interface CreateQueueOptions {
+  /**
+   * `false` for a send-only producer (the web app): no supervisor, scheduler or maintenance, just a
+   * small pool for `send`. Default true (the worker).
+   */
+  readonly background?: boolean;
+  readonly max?: number;
+}
+
 /** Starts pg-boss on the database behind `db` (creating or migrating its schema) and returns it. */
-export async function createQueue(db: Db): Promise<Queue> {
+export async function createQueue(db: Db, opts: CreateQueueOptions = {}): Promise<Queue> {
+  const background = opts.background ?? true;
   const boss = new PgBoss({
     connectionString: connectionStringOf(db),
     schema: QUEUE_SCHEMA,
-    max: QUEUE_POOL_MAX,
+    max: opts.max ?? QUEUE_POOL_MAX,
+    ...(background ? {} : { supervise: false, schedule: false, migrate: false }),
   });
   boss.on("error", (error: unknown) => {
     console.error(JSON.stringify({ service: "queue", msg: "pg-boss error", error: String(error) }));
@@ -36,10 +48,11 @@ export async function createQueue(db: Db): Promise<Queue> {
 }
 
 /**
- * Creates or migrates the pg-boss schema without running any worker, supervisor or scheduler.
- * Part of `migrate`, so the schema exists right after `make up` and on deploy.
+ * Creates or migrates the pg-boss schema and every known queue (M1-04, BL-01 6528386693) without
+ * running any worker, supervisor or scheduler. Part of `migrate`, so the schema and queues exist right
+ * after `make up` and on deploy. Returns the number of known queues ensured.
  */
-export async function installQueueSchema(db: Db): Promise<void> {
+export async function installQueueSchema(db: Db): Promise<number> {
   const boss = new PgBoss({
     connectionString: connectionStringOf(db),
     schema: QUEUE_SCHEMA,
@@ -48,7 +61,11 @@ export async function installQueueSchema(db: Db): Promise<void> {
     schedule: false,
   });
   await boss.start();
-  await boss.stop({ graceful: false });
+  try {
+    return await ensureKnownQueues(boss);
+  } finally {
+    await boss.stop({ graceful: false });
+  }
 }
 
 /** Wraps a Drizzle transaction so pg-boss writes the job inside it. */

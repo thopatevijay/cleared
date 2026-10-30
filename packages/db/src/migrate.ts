@@ -23,7 +23,7 @@ async function main(): Promise<void> {
   const db = createDb(databaseUrl());
   try {
     await runMigrations(db);
-    await installQueueSchema(db);
+    const queues = await installQueueSchema(db);
     const { rows } = await db.$client.query<{ n: string }>(
       "select count(*) as n from drizzle.__drizzle_migrations",
     );
@@ -33,6 +33,7 @@ async function main(): Promise<void> {
         msg: "migrations applied",
         applied: Number(rows[0]?.n ?? 0),
         queueSchema: QUEUE_SCHEMA,
+        queues,
       }),
     );
   } finally {
