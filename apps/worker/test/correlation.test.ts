@@ -31,7 +31,8 @@ describe.skipIf(!dbAvailable)("correlation id (compose Postgres)", () => {
     );
     expect(envelope.correlationId).toBe(correlationId);
 
-    await until(() => h.lines.some((l) => l.msg === "handler ran"));
+    // "message consumed" is logged after the handler's transaction commits, so wait for it (M1-08).
+    await until(() => h.lines.some((l) => l.msg === "message consumed"));
     const line = h.lines.find((l) => l.msg === "handler ran");
     expect(line).toMatchObject({
       service: "worker",
