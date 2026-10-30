@@ -1,6 +1,6 @@
 // Outbox rows, consumer receipts and worker heartbeats: plain data access. Emit/consume logic is M1-03;
 // readiness is M1-08.
-import { asc, desc, eq, inArray, isNull, type InferSelectModel } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, type InferSelectModel } from "drizzle-orm";
 import type { Db } from "../../client.ts";
 import { consumerReceipts, outbox, workerHeartbeats } from "../../../schema/index.ts";
 import type { Executor } from "../../tx.ts";
@@ -28,6 +28,24 @@ export function outboxRepo(db: Db) {
         .where(isNull(outbox.publishedAt))
         .orderBy(asc(outbox.createdAt))
         .limit(limit);
+    },
+    /** M1-03 relay: unpublished rows created before `cutoff`, oldest first. */
+    listUnpublishedBefore(cutoff: Date, limit = 100, tx?: Executor): Promise<OutboxRow[]> {
+      return (tx ?? db)
+        .select()
+        .from(outbox)
+        .where(and(isNull(outbox.publishedAt), lt(outbox.createdAt, cutoff)))
+        .orderBy(asc(outbox.createdAt))
+        .limit(limit);
+    },
+    /** M1-03 consume: sets `published_at` the first time; `false` when not an outbox row or already set. */
+    async markConsumed(id: string, at: Date, tx?: Executor): Promise<boolean> {
+      const rows = await (tx ?? db)
+        .update(outbox)
+        .set({ publishedAt: at })
+        .where(and(eq(outbox.id, id), isNull(outbox.publishedAt)))
+        .returning({ id: outbox.id });
+      return rows.length === 1;
     },
     async markPublished(ids: readonly string[], at: Date, tx?: Executor): Promise<number> {
       if (ids.length === 0) return 0;

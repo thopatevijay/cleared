@@ -7,7 +7,16 @@ export const dependsOn: readonly string[] = [CORE_PACKAGE];
 
 export { closeDb, createDb, databaseUrl, LOCAL_DATABASE_URL, POOL_MAX, type Db } from "./client.ts";
 export { MIGRATIONS_FOLDER, runMigrations } from "./migrate.ts";
-export { createQueue, installQueueSchema, jobDb, QUEUE_POOL_MAX, QUEUE_SCHEMA, type Queue } from "./queue.ts";
+export {
+  createQueue,
+  installQueueSchema,
+  jobDb,
+  QUEUE_POOL_MAX,
+  QUEUE_SCHEMA,
+  type Job,
+  type JobWithMetadata,
+  type Queue,
+} from "./queue.ts";
 export { withTransaction, type Executor, type Tx } from "./tx.ts";
 export {
   forWorkspace,
@@ -24,3 +33,4 @@ export { platform, type PlatformRepos } from "./repos/platform/index.ts";
 export type * from "./repos/platform/index.ts";
 export { seed, SEED_USER_EMAIL, SEED_USER_ID, SEED_WORKSPACE_ID } from "./seed.ts";
 export { WEBHOOK_EVENT_STATUSES, type WebhookEventStatus } from "../schema/enums.ts";
+export * from "./outbox/index.ts";

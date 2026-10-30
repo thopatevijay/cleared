@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "node --watch src/index.ts",
     "start": "node src/index.ts",
+    "build": "tsc --noEmit -p .",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
     "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest"
