@@ -1,5 +1,6 @@
 // Integration tests run against the compose Postgres (`make up`). When it is unreachable they skip
-// (global-setup.ts prints why), so `pnpm check` stays green without Docker.
+// (global-setup.ts prints why), so `pnpm check` stays green without Docker; with REQUIRE_DB=1 (CI)
+// global-setup.ts fails the run instead.
 import pg from "pg";
 import { databaseUrl } from "../src/client.ts";
 
