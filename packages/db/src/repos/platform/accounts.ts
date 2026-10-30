@@ -92,5 +92,38 @@ export function idempotencyKeysRepo(db: Db) {
         .returning({ key: idempotencyKeys.key });
       return rows.length === 1;
     },
+    /** M1-05: stores the response a replay returns. */
+    async complete(
+      row: {
+        sessionId: string;
+        route: string;
+        key: string;
+        responseHash: string;
+        responseStatus: number;
+        responseBody: unknown;
+      },
+      tx?: Executor,
+    ): Promise<void> {
+      await (tx ?? db)
+        .update(idempotencyKeys)
+        .set({
+          responseHash: row.responseHash,
+          responseStatus: row.responseStatus,
+          responseBody: row.responseBody,
+        })
+        .where(keyIs(row.sessionId, row.route, row.key));
+    },
+    /** M1-05: frees a claimed key whose request failed before it produced a response. */
+    async release(sessionId: string, route: string, key: string, tx?: Executor): Promise<void> {
+      await (tx ?? db).delete(idempotencyKeys).where(keyIs(sessionId, route, key));
+    },
   };
+}
+
+function keyIs(sessionId: string, route: string, key: string) {
+  return and(
+    eq(idempotencyKeys.sessionId, sessionId),
+    eq(idempotencyKeys.route, route),
+    eq(idempotencyKeys.key, key),
+  );
 }

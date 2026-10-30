@@ -73,7 +73,10 @@ export const outbox = pgTable(
   ],
 );
 
-/** Mutating API routes: one response per (session, route, key). */
+/**
+ * Mutating API routes: one response per (session, route, key). Anonymous routes (demo, magic link)
+ * use a scope id derived from the client IP in `session_id` (M1-05).
+ */
 export const idempotencyKeys = pgTable(
   "idempotency_keys",
   {
@@ -81,6 +84,9 @@ export const idempotencyKeys = pgTable(
     route: text("route").notNull(),
     key: text("key").notNull(),
     responseHash: sha256("response_hash"),
+    /** M1-05: the stored response a replay returns; null while the first request is in flight */
+    responseStatus: integer("response_status"),
+    responseBody: jsonb("response_body"),
     createdAt: createdAt(),
   },
   (t) => [

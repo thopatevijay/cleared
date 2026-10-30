@@ -1,7 +1,7 @@
 // Governance (ADR 0010): the agent only inserts proposed actions; approvals bind the payload sha256;
 // executions carry a unique idempotency key; the audit log is append-only (trigger, migration 0002).
 import { index, integer, jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { scoped } from "./accounts.ts";
+import { optionallyScoped, scoped } from "./accounts.ts";
 import { agentRuns } from "./agent.ts";
 import { sha256, tstz } from "./columns.ts";
 import { actionKind, actionRisk, actionState, auditActor } from "./enums.ts";
@@ -61,7 +61,8 @@ export const executions = pgTable(
 export const auditLog = pgTable(
   "audit_log",
   {
-    ...scoped(),
+    /** workspace_id is null for platform events with no workspace, e.g. a demo-cap refusal (M1-05) */
+    ...optionallyScoped(),
     at: tstz("at").notNull().defaultNow(),
     actor: auditActor("actor").notNull(),
     action: text("action").notNull(),

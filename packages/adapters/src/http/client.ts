@@ -120,7 +120,12 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       raw = await cfg.fetch(req.url, {
         method: req.method,
         headers,
-        body: req.body ?? null,
+        // Bytes are copied into a plain ArrayBuffer-backed view: the DOM lib's BodyInit (apps/web
+        // type-checks this file) rejects a Uint8Array over a possibly shared buffer.
+        body:
+          req.body === undefined || typeof req.body === "string"
+            ? (req.body ?? null)
+            : new Uint8Array(req.body),
         signal: AbortSignal.timeout(timeoutMs),
         redirect: req.redirect ?? "follow",
       });

@@ -2,6 +2,7 @@
 // email, workspace creation). Never hand these rows to a client without checking their workspace_id.
 import type { Db } from "../../client.ts";
 import { identityRepo, idempotencyKeysRepo, workspacesRepo } from "./accounts.ts";
+import { authRepo } from "./auth.ts";
 import { resourceOwnersRepo, webhookEventsRepo } from "./ingest.ts";
 import { consumerReceiptsRepo, outboxRepo, workerHeartbeatsRepo } from "./messaging.ts";
 
@@ -10,6 +11,7 @@ export function platform(db: Db) {
     workspaces: workspacesRepo(db),
     identity: identityRepo(db),
     idempotencyKeys: idempotencyKeysRepo(db),
+    auth: authRepo(db),
     webhookEvents: webhookEventsRepo(db),
     resourceOwners: resourceOwnersRepo(db),
     outbox: outboxRepo(db),
@@ -21,5 +23,6 @@ export function platform(db: Db) {
 export type PlatformRepos = ReturnType<typeof platform>;
 
 export type * from "./accounts.ts";
+export type * from "./auth.ts";
 export type * from "./ingest.ts";
 export type * from "./messaging.ts";
