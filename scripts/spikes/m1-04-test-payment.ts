@@ -42,9 +42,10 @@ async function main(): Promise<void> {
     secrets: () => [credentials.clientId, credentials.clientSecret, ...liveTokens],
   });
   const dir = fileURLToPath(new URL("../../fixtures/paypal/", import.meta.url));
-  const recorder: Recorder | undefined = process.argv.includes("--record") || arg("--get") !== undefined
-    ? createRecorder({ dir, ticket: TICKET, scrubber })
-    : undefined;
+  const recorder: Recorder | undefined =
+    process.argv.includes("--record") || arg("--get") !== undefined
+      ? createRecorder({ dir, ticket: TICKET, scrubber })
+      : undefined;
   let calls = 0;
   const http = createHttpClient({
     vendor: "paypal",

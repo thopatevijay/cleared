@@ -78,7 +78,9 @@ describe.skipIf(!dbAvailable)("POST /api/webhooks/paypal", () => {
       expect((await counts([captureEventId])).jobs).toBe(1);
       const disputes = deliveries.filter(([, d]) => d.event_type.startsWith("CUSTOMER.DISPUTE."));
       expect((await counts(disputes.map(([, d]) => eventIdOf(d)))).jobs).toBe(0);
-      const raw = await (await routeDeps({ webhookId: "x", now: 0 })).db.$client.query<{ status: string; verified: boolean }>(
+      const raw = await (
+        await routeDeps({ webhookId: "x", now: 0 })
+      ).db.$client.query<{ status: string; verified: boolean }>(
         "select status, verified from webhook_events where event_id = any($1)",
         [deliveries.map(([, d]) => eventIdOf(d))],
       );
@@ -173,7 +175,10 @@ describe.skipIf(!dbAvailable)("POST /api/webhooks/paypal", () => {
     ] as const;
     it.each(cases)("%s", async (_label, certUrl) => {
       const deps = await routeDeps({ webhookId: RESIGN_WEBHOOK_ID, now: sentAt(d) });
-      const res = await postPayPalWebhook(post(d.raw_body, { ...resign(d), "paypal-cert-url": certUrl }), deps);
+      const res = await postPayPalWebhook(
+        post(d.raw_body, { ...resign(d), "paypal-cert-url": certUrl }),
+        deps,
+      );
       expect(res.status).toBe(401);
       expect(outbound).toEqual([]);
       expect((await counts([captureEventId])).rows).toBe(0);
@@ -201,7 +206,9 @@ describe.skipIf(!dbAvailable)("POST /api/webhooks/paypal", () => {
       Array.from({ length: 5 }, () => postPayPalWebhook(post(d.raw_body, headers), deps)),
     );
     expect(res.map((r) => r.status)).toEqual([200, 200, 200, 200, 200]);
-    const outcomes = await Promise.all(res.map(async (r) => ((await r.json()) as { outcome: string }).outcome));
+    const outcomes = await Promise.all(
+      res.map(async (r) => ((await r.json()) as { outcome: string }).outcome),
+    );
     expect(outcomes.filter((o) => o === "stored")).toHaveLength(1);
     expect(await counts([captureEventId])).toEqual({ rows: 1, jobs: 1 });
   });

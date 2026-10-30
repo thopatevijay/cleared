@@ -12,7 +12,7 @@ import {
   type WebhookVerifier,
   type WebhookVerifyFailure,
 } from "./webhook-verify.ts";
-import type { VerificationStatus } from "./webhooks.ts";
+import { WEBHOOK_EVENT_TYPES, type PayPalWebhooksClient, type VerificationStatus } from "./webhooks.ts";
 
 /** 1 MB: PayPal events are a few KB; anything larger is refused before it is buffered. */
 export const MAX_WEBHOOK_BODY_BYTES = 1_048_576;
@@ -25,35 +25,25 @@ export const CERT_HOST_BY_ENV: Readonly<Record<PayPalEnv, string>> = {
 };
 
 export type RawBodyResult =
-  | { readonly ok: true; readonly raw: string }
-  | { readonly ok: false; readonly reason: "too_large" };
+  { readonly ok: true; readonly raw: string } | { readonly ok: false; readonly reason: "too_large" };
 
 /** Reads the request body as received (UTF-8 text, never re-serialised), refusing more than `max` bytes. */
 export async function readRawBody(req: Request, max = MAX_WEBHOOK_BODY_BYTES): Promise<RawBodyResult> {
   const declared = Number(req.headers.get("content-length") ?? "0");
   if (Number.isFinite(declared) && declared > max) return { ok: false, reason: "too_large" };
   if (req.body === null) return { ok: true, raw: "" };
-  const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
   let size = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > max) {
-      await reader.cancel().catch(() => undefined);
-      return { ok: false, reason: "too_large" };
-    }
-    chunks.push(value);
+  for await (const chunk of req.body as AsyncIterable<Uint8Array>) {
+    size += chunk.byteLength;
+    if (size > max) return { ok: false, reason: "too_large" };
+    chunks.push(chunk);
   }
   return { ok: true, raw: new TextDecoder().decode(Buffer.concat(chunks)) };
 }
 
 export type AuthFailure =
-  | WebhookVerifyFailure
-  | "cert_host_wrong_env"
-  | "api_verification_failed"
-  | "api_verification_error";
+  WebhookVerifyFailure | "cert_host_wrong_env" | "api_verification_failed" | "api_verification_error";
 
 export type AuthResult =
   | { readonly ok: true; readonly method: "self" | "api" }
@@ -159,6 +149,37 @@ export function captureIdOf(eventType: string, resource: Record<string, unknown>
   }
   const id = resource["id"];
   return typeof id === "string" && CAPTURE_ID.test(id) ? id : null;
+}
+
+/** The route every environment registers: `<web base URL>/api/webhooks/paypal`. */
+export const WEBHOOK_PATH = "/api/webhooks/paypal";
+
+export function webhookUrlFor(baseUrl: string): string {
+  const u = new URL(baseUrl);
+  if (u.protocol !== "https:") throw new Error("PayPal delivers webhooks to https URLs only");
+  return `${u.origin}${WEBHOOK_PATH}`;
+}
+
+export interface WebhookSetupResult {
+  readonly url: string;
+  readonly webhookId: string;
+  readonly webhook: "created" | "patched" | "unchanged";
+  readonly lookupId: string;
+  readonly lookup: "created" | "unchanged";
+}
+
+/**
+ * `scripts/setup.ts` (M1-04): idempotent. The app's webhook for `<baseUrl>/api/webhooks/paypal` with
+ * `WEBHOOK_EVENT_TYPES` (created once, patched when the event types drift), then the webhook lookup.
+ */
+export async function setupAppWebhook(
+  wh: Pick<PayPalWebhooksClient, "ensureWebhook" | "ensureWebhookLookup">,
+  baseUrl: string,
+): Promise<WebhookSetupResult> {
+  const url = webhookUrlFor(baseUrl);
+  const { webhook, action } = await wh.ensureWebhook(url, WEBHOOK_EVENT_TYPES);
+  const { lookup, action: lookupAction } = await wh.ensureWebhookLookup();
+  return { url, webhookId: webhook.id, webhook: action, lookupId: lookup.id, lookup: lookupAction };
 }
 
 export function routeWebhook(event: WebhookEnvelope): WebhookRoute {

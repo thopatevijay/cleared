@@ -15,20 +15,15 @@ import {
   type Logger,
   type WebhookHeaders,
 } from "@cleared/adapters";
-import {
-  PAYPAL_CAPTURE_SYNC_QUEUE,
-  platform,
-  withTransaction,
-  type Db,
-  type Publisher,
-} from "@cleared/db";
+import { PAYPAL_CAPTURE_SYNC_QUEUE, platform, withTransaction, type Db, type Publisher } from "@cleared/db";
 import { apiError, CORRELATION_HEADER, json } from "../respond.ts";
 
 export interface PayPalWebhookDeps {
   readonly db: Db;
   readonly publisher: Publisher;
   /** null when PAYPAL_WEBHOOK_ID is not configured: every delivery is refused with 503. */
-  readonly authenticate: ((input: { rawBody: string; headers: WebhookHeaders }) => Promise<AuthResult>) | null;
+  readonly authenticate:
+    ((input: { rawBody: string; headers: WebhookHeaders }) => Promise<AuthResult>) | null;
   readonly log: Logger;
   readonly now: () => Date;
 }

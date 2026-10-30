@@ -21,7 +21,11 @@ import { setupServer } from "msw/node";
 import { z } from "zod";
 import type { PayPalWebhookDeps } from "../../src/server/handlers/paypal-webhook.ts";
 import { testDb } from "../support/db.ts";
-import { FIXTURES_DIR, loadFixture, responseText } from "../../../../packages/adapters/src/testing/fixture.ts";
+import {
+  FIXTURES_DIR,
+  loadFixture,
+  responseText,
+} from "../../../../packages/adapters/src/testing/fixture.ts";
 
 export const DeliverySchema = z.object({
   meta: z.object({ scrubbed: z.boolean(), signed_webhook_id: z.string().optional() }).loose(),
@@ -41,7 +45,8 @@ export function loadDeliveries(area: "simulator" | "deliveries"): [string, Deliv
 }
 
 export const eventIdOf = (d: Delivery): string => (JSON.parse(d.raw_body) as { id: string }).id;
-export const sentAt = (d: Delivery): number => Date.parse(headerValue(d.headers, "paypal-transmission-time") ?? "");
+export const sentAt = (d: Delivery): number =>
+  Date.parse(headerValue(d.headers, "paypal-transmission-time") ?? "");
 export const certUrlOf = (d: Delivery): string => headerValue(d.headers, "paypal-cert-url") ?? "";
 
 /** One byte changed in the middle of the body (stays valid UTF-8). */
@@ -61,7 +66,10 @@ export function resign(d: Delivery, webhookId = RESIGN_WEBHOOK_ID): Record<strin
     webhookId,
     rawBody: d.raw_body,
   });
-  return { ...d.headers, "paypal-transmission-sig": sign("sha256", Buffer.from(message), keys.privateKey).toString("base64") };
+  return {
+    ...d.headers,
+    "paypal-transmission-sig": sign("sha256", Buffer.from(message), keys.privateKey).toString("base64"),
+  };
 }
 export function seedResignKey(verifier: WebhookVerifier, d: Delivery, now: number): void {
   verifier.cache.set(certUrlOf(d), {
@@ -73,9 +81,7 @@ export function seedResignKey(verifier: WebhookVerifier, d: Delivery, now: numbe
 
 /** msw: every request is recorded; only handlers a test adds answer, the rest fail as network errors. */
 export const outbound: string[] = [];
-export const server = setupServer(
-  mswHttp.all("*", () => HttpResponse.error()),
-);
+export const server = setupServer(mswHttp.all("*", () => HttpResponse.error()));
 server.events.on("request:start", ({ request }) => {
   outbound.push(`${request.method} ${request.url}`);
 });
@@ -115,7 +121,9 @@ export interface RouteDepsOptions {
 }
 
 /** Route deps with an injected clock; every HTTP call goes through msw (global fetch). */
-export async function routeDeps(o: RouteDepsOptions): Promise<PayPalWebhookDeps & { verifier: WebhookVerifier }> {
+export async function routeDeps(
+  o: RouteDepsOptions,
+): Promise<PayPalWebhookDeps & { verifier: WebhookVerifier }> {
   const http = createHttpClient({ vendor: "paypal", timeoutMs: 2_000, maxRetries: 0 });
   const verifier = createWebhookVerifier({
     http,
