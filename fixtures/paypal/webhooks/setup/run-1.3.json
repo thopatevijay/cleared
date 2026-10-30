@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-30T17:20:35.981Z",
+    "env": "sandbox",
+    "ticket": "M1-04",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/notifications/webhooks-lookup",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f12100011145d"
+    },
+    "body": {
+      "webhooks_lookups": [
+        {
+          "id": "9AA71399651744351",
+          "client_id": "[REDACTED]",
+          "links": [
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-lookup/9AA71399651744351",
+              "rel": "self",
+              "method": "GET"
+            },
+            {
+              "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-lookup/9AA71399651744351",
+              "rel": "delete",
+              "method": "DELETE"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

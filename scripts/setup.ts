@@ -69,7 +69,7 @@ async function main(): Promise<void> {
   recorder?.label("setup/token");
   tokensSeen.add((await tokens.getToken()).value);
   const wh = createPayPalWebhooksClient({ http, tokens });
-  const renderBase = process.env["RENDER_WEB_URL"] ?? DEFAULT_RENDER_WEB_URL;
+  const renderBase = process.env["RENDER_WEB_URL"] || DEFAULT_RENDER_WEB_URL;
 
   if (process.argv.includes("--list-webhooks")) {
     recorder?.label("setup/list");

@@ -1,10 +1,9 @@
 // `scripts/setup.ts` logic (`setupAppWebhook`) over recorded webhook-management exchanges (M1-04 AC:
 // run twice → exactly one webhook for the URL). M0-06's recording covers the create-then-no-op path on
 // its tunnel URL; the M1-04 recording (fixtures/paypal/webhooks/setup/) is the live run on the Render URL.
-import { existsSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { createHttpClient } from "../../src/http/client.ts";
-import { FIXTURES_DIR, loadFixture } from "../../src/testing/fixture.ts";
+import { loadFixture } from "../../src/testing/fixture.ts";
 import { startReplay, type Replay } from "../../src/testing/replay.ts";
 import { setupAppWebhook, webhookUrlFor } from "../../src/paypal/webhook-ingest.ts";
 import { createPayPalWebhooksClient, WEBHOOK_EVENT_TYPES } from "../../src/paypal/webhooks.ts";
@@ -59,27 +58,25 @@ describe("setupAppWebhook", () => {
     expect(replay?.unused()).toEqual([]);
   });
 
-  const live = `${FIXTURES_DIR}paypal/webhooks/setup/run-1.json`;
-  it.skipIf(!existsSync(live))(
-    "twice on the M1-04 live recording for the Render URL: exactly one webhook",
-    async () => {
-      const S = "paypal/webhooks/setup";
-      const wh = client([
-        `${S}/token`,
-        `${S}/run-1`,
-        `${S}/run-1.2`,
-        `${S}/run-1.3`,
-        `${S}/run-2`,
-        `${S}/run-2.2`,
-      ]);
-      const first = await setupAppWebhook(wh, RENDER);
-      const second = await setupAppWebhook(wh, RENDER);
-      expect(first.url).toBe(`${RENDER}/api/webhooks/paypal`);
-      expect(first.webhook).toBe("created");
-      expect(second.webhook).toBe("unchanged");
-      expect(second.webhookId).toBe(first.webhookId);
-      const created = loadFixture(`${S}/run-1.2`).response.body as { event_types: { name: string }[] };
-      expect(created.event_types.map((e) => e.name).sort()).toEqual([...WEBHOOK_EVENT_TYPES].sort());
-    },
-  );
+  it("twice on the M1-04 live recording for the Render URL: exactly one webhook", async () => {
+    const S = "paypal/webhooks/setup";
+    const wh = client([
+      `${S}/token`,
+      `${S}/run-1`,
+      `${S}/run-1.2`,
+      `${S}/run-1.3`,
+      `${S}/run-2`,
+      `${S}/run-2.2`,
+    ]);
+    const first = await setupAppWebhook(wh, RENDER);
+    const second = await setupAppWebhook(wh, RENDER);
+    expect(first.url).toBe(`${RENDER}/api/webhooks/paypal`);
+    expect(first.webhook).toBe("created");
+    expect(second.webhook).toBe("unchanged");
+    expect(second.webhookId).toBe(first.webhookId);
+    expect(first.webhookId).toBe("WH-RENDER-SCRUBBED"); // the real id is never committed
+    expect(replay?.unused()).toEqual([]);
+    const created = loadFixture(`${S}/run-1.2`).response.body as { event_types: { name: string }[] };
+    expect(created.event_types.map((e) => e.name).sort()).toEqual([...WEBHOOK_EVENT_TYPES].sort());
+  });
 });
