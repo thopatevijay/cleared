@@ -9,7 +9,7 @@ The agent's outputs file disputes and change seller state at PayPal; submissions
 
 ## Decision
 
-The agent can only insert `proposed_actions`. Execution requires a seller approval bound to the payload sha256. Before execution: policy check (in code; `accept_claim` needs typed confirmation and is never automatic), workspace ownership, a fresh re-fetch of the dispute requiring the matching HATEOAS link, and refusal when `now > seller_response_due_date − 1 h`. Execution states include `unknown` (timeout after send), resolved by reconciling against PayPal. Kill switch: a DB flag plus an env flag stop all executions. Append-only `audit_log` for every step. Limits: ≤ 6 model calls per run, token caps, $0.10 per demo workspace, $1/day global.
+The agent can only insert `proposed_actions`. Execution requires a seller approval bound to the payload sha256. Before execution: policy check (in code; `accept_claim` needs typed confirmation and is never automatic), workspace ownership, a fresh re-fetch of the dispute requiring the matching HATEOAS link, and refusal when `now ≥ seller_response_due_date − 1 h` (at the cutoff instant too). Execution states include `unknown` (timeout after send), resolved by reconciling against PayPal. Kill switch: a DB flag plus an env flag stop all executions. Append-only `audit_log` for every step. Limits: ≤ 6 model calls per run, token caps, $0.10 per demo workspace, $1/day global.
 
 ## Alternatives considered
 

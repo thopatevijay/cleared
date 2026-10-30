@@ -49,7 +49,7 @@ Each line is marked **K** (known, with its source) or **A** (assumed, with how i
 - Evidence is **immutable**: append-only, with a sha256 per item.
 - Every scope verdict cites a span that appears **verbatim** in stored evidence, or is marked `unverifiable`.
 - An approval is bound to the **sha256 of the exact draft** it approved.
-- No action runs after `seller_response_due_date − 1 h`, or without the matching PayPal action link at execution time.
+- No action runs at or after `seller_response_due_date − 1 h`, or without the matching PayPal action link at execution time.
 
 **State machines:**
 
