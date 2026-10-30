@@ -40,7 +40,10 @@ describe.skipIf(!dbAvailable)("outbox (compose Postgres)", () => {
   let workspaceId: string;
   /** Other tests and earlier runs leave unpublished rows; the relay counts assert only this test's. */
   const settleOtherRows = async (): Promise<void> => {
-    await db.update(outbox).set({ publishedAt: new Date() }).where(sql`${outbox.publishedAt} is null`);
+    await db
+      .update(outbox)
+      .set({ publishedAt: new Date() })
+      .where(sql`${outbox.publishedAt} is null`);
   };
 
   beforeAll(async () => {

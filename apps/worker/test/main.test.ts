@@ -4,7 +4,9 @@ import { captureLog } from "./helpers.ts";
 
 /** The fields this suite asserts on (pino adds level and time). */
 const pick = (l: Record<string, unknown>) => {
-  const { level: _level, time: _time, ...rest } = l;
+  const rest = { ...l };
+  delete rest["level"];
+  delete rest["time"];
   return rest;
 };
 
@@ -12,7 +14,9 @@ describe("worker entry", () => {
   it("logs one JSON line and exits 0 in --dry-run", () => {
     const { lines, log } = captureLog();
     expect(dryRun(log)).toBe(0);
-    expect(lines.map(pick)).toEqual([{ service: "worker", msg: "dry run: nothing to consume", dryRun: true }]);
+    expect(lines.map(pick)).toEqual([
+      { service: "worker", msg: "dry run: nothing to consume", dryRun: true },
+    ]);
   });
 
   it("reads the commit from RENDER_GIT_COMMIT", () => {

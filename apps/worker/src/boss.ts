@@ -30,7 +30,10 @@ function workOptions(deps: WireDeps) {
 /** Dead-letter handler: the message exhausted its retries. M1-08 adds the Sentry alert. */
 export function deadLetterHandler(queue: string): Handler {
   return (_data, { envelope, log, job }) => {
-    log.error({ queue, dlq: dlqName(queue), messageId: envelope.messageId, sourceId: job.sourceId }, "message dead-lettered");
+    log.error(
+      { queue, dlq: dlqName(queue), messageId: envelope.messageId, sourceId: job.sourceId },
+      "message dead-lettered",
+    );
     return Promise.resolve();
   };
 }
@@ -51,14 +54,17 @@ export async function scheduleRelay(deps: WireDeps): Promise<void> {
     await deps.boss.createQueue(RELAY_QUEUE, { policy: "singleton", expireInSeconds: 60, retryLimit: 0 });
   }
   await deps.boss.schedule(RELAY_QUEUE, RELAY_CRON);
-  await deps.boss.work(RELAY_QUEUE, { pollingIntervalSeconds: workOptions(deps).pollingIntervalSeconds }, async () => {
-    const result = await relayOutbox({ ...deps, correlation: correlationIdOrNew });
-    if (result.stale > 0) deps.log.warn(result, "outbox relay re-sent unpublished rows");
-  });
+  await deps.boss.work(
+    RELAY_QUEUE,
+    { pollingIntervalSeconds: workOptions(deps).pollingIntervalSeconds },
+    async () => {
+      const result = await relayOutbox({ ...deps, correlation: correlationIdOrNew });
+      if (result.stale > 0) deps.log.warn(result, "outbox relay re-sent unpublished rows");
+    },
+  );
 }
 
 export async function wireWorker(deps: WireDeps, registry: Registry): Promise<void> {
   await wireRegistry(deps, registry);
   await scheduleRelay(deps);
 }
-

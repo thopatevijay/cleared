@@ -87,10 +87,9 @@ describe.skipIf(!dbAvailable)("consume() (compose Postgres)", () => {
     const row = await withTransaction(h.db, (tx) => publisher.emit(tx, event));
     await until(async () => (await state(EVENT_QUEUE, row.id))?.state === "completed");
 
-    const [stored] = await h.db.$client.query<{ published_at: Date | null }>(
-      "select published_at from outbox where id = $1",
-      [row.id],
-    ).then((r) => r.rows);
+    const [stored] = await h.db.$client
+      .query<{ published_at: Date | null }>("select published_at from outbox where id = $1", [row.id])
+      .then((r) => r.rows);
     expect(stored?.published_at).toBeInstanceOf(Date);
     expect(effects).toContainEqual(event);
   });

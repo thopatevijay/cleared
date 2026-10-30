@@ -16,11 +16,7 @@ export interface Publisher {
   enqueue<T>(tx: Tx, queue: string, data: T, opts?: EnqueueOptions): Promise<Enqueued<T>>;
 }
 
-export function createPublisher(
-  db: Db,
-  boss: Queue,
-  correlation: CorrelationSource = randomUUID,
-): Publisher {
+export function createPublisher(db: Db, boss: Queue, correlation: CorrelationSource = randomUUID): Publisher {
   return {
     emit: (tx, event) => emit(db, boss, correlation, tx, event),
     enqueue: (tx, queue, data, opts) => enqueue(boss, correlation, tx, queue, data, opts),

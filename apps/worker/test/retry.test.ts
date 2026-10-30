@@ -20,7 +20,9 @@ describe.skipIf(!dbAvailable)("retry with backoff, then dead-letter (compose Pos
   };
 
   beforeAll(async () => {
-    h = await harness([{ queue: { name: queue, expireInSeconds: 30, retryLimit: 2, retryDelay: 1 }, handler: alwaysThrows }]);
+    h = await harness([
+      { queue: { name: queue, expireInSeconds: 30, retryLimit: 2, retryDelay: 1 }, handler: alwaysThrows },
+    ]);
   });
   afterAll(async () => {
     await h.close();
@@ -31,7 +33,9 @@ describe.skipIf(!dbAvailable)("retry with backoff, then dead-letter (compose Pos
     const id = (await withTransaction(h.db, (tx) => sendEnvelope(h.boss, tx, queue, envelope))) ?? "";
 
     const dlq = dlqName(queue);
-    await until(async () => (await h.boss.findJobs(dlq, { data: envelope })).some((j) => j.state === "completed"));
+    await until(async () =>
+      (await h.boss.findJobs(dlq, { data: envelope })).some((j) => j.state === "completed"),
+    );
 
     // Three attempts of the one job, retryCount 0, 1, 2.
     expect(attempts.map((a) => [a.id, a.retryCount])).toEqual([
@@ -57,7 +61,12 @@ describe.skipIf(!dbAvailable)("retry with backoff, then dead-letter (compose Pos
     expect(dead).toMatchObject({ sourceName: queue, sourceId: id, sourceRetryCount: 2, data: envelope });
     expect(dead?.output).toEqual({ consumed: true });
     expect(h.lines).toContainEqual(
-      expect.objectContaining({ msg: "message dead-lettered", queue, messageId: envelope.messageId, correlationId: "corr-dlq" }),
+      expect.objectContaining({
+        msg: "message dead-lettered",
+        queue,
+        messageId: envelope.messageId,
+        correlationId: "corr-dlq",
+      }),
     );
     console.log(`backoff delays (ms): ${delays.join(", ")}`);
   });

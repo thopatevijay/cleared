@@ -27,8 +27,18 @@ describe.skipIf(!dbAvailable)("worker process", () => {
       .map((l) => JSON.parse(l) as Record<string, unknown>);
     expect(code).toBe(0);
     expect(lines).toEqual([
-      expect.objectContaining({ service: "worker", level: "info", msg: "worker ready", commit: "testcommit" }),
-      expect.objectContaining({ service: "worker", msg: "worker stopping", commit: "testcommit", signal: "SIGTERM" }),
+      expect.objectContaining({
+        service: "worker",
+        level: "info",
+        msg: "worker ready",
+        commit: "testcommit",
+      }),
+      expect.objectContaining({
+        service: "worker",
+        msg: "worker stopping",
+        commit: "testcommit",
+        signal: "SIGTERM",
+      }),
       expect.objectContaining({ service: "worker", msg: "worker stopped", commit: "testcommit" }),
     ]);
   }, 30_000);

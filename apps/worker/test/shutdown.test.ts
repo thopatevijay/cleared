@@ -46,8 +46,24 @@ describe.skipIf(!dbAvailable)("graceful shutdown (spawned worker)", () => {
       expect(code).toBe(0);
       const order = lines
         .map((l) => l.msg)
-        .filter((m) => m !== undefined && ["slow job started", "worker stopping", "slow job finished", "message consumed", "worker stopped"].includes(m));
-      expect(order).toEqual(["slow job started", "worker stopping", "slow job finished", "message consumed", "worker stopped"]);
+        .filter(
+          (m) =>
+            m !== undefined &&
+            [
+              "slow job started",
+              "worker stopping",
+              "slow job finished",
+              "message consumed",
+              "worker stopped",
+            ].includes(m),
+        );
+      expect(order).toEqual([
+        "slow job started",
+        "worker stopping",
+        "slow job finished",
+        "message consumed",
+        "worker stopped",
+      ]);
       expect(elapsed).toBeGreaterThan(1_000); // it waited for the job instead of dropping it
       const [job] = await boss.findJobs(queue, { id: id ?? "" });
       expect(job).toMatchObject({ state: "completed", output: { consumed: true } });
