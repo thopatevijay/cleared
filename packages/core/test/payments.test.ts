@@ -22,8 +22,9 @@ describe("capture mapping against the recorded sandbox fixtures (M0-04 / M0-05)"
   const bodies = captureBodies("orders", "disputes");
 
   it("finds every capture body in fixtures/paypal/orders and fixtures/paypal/disputes", () => {
-    // 7 direct GET capture responses + 5 captures inside order responses (recorded 2026-10-29)
-    expect(bodies.length).toBe(12);
+    // 7 direct GET capture responses + 5 captures inside order responses (recorded 2026-10-29), plus
+    // M1-04 (2026-10-30): 2 capture GETs and 1 capture inside the test-payment capture response
+    expect(bodies.length).toBe(15);
     expect(new Set(bodies.map((b) => b.file.split("/")[0]))).toEqual(new Set(["orders", "disputes"]));
   });
 

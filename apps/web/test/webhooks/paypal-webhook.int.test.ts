@@ -129,8 +129,9 @@ describe.skipIf(!dbAvailable)("POST /api/webhooks/paypal", () => {
 
   describe("fallback: cert fetch timeout → verify-webhook-signature (M0-06 management fixture)", () => {
     const d = capture;
-    const hangCert = () =>
+    const hangCert = (): void => {
       server.use(mswHttp.get(certUrlOf(d), () => new Promise<Response>(() => undefined)));
+    };
 
     it("SUCCESS → 200 and one row", async () => {
       hangCert();
