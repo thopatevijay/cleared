@@ -1,0 +1,107 @@
+// Platform tables: not workspace-scoped (webhook ingest, ownership, outbox, idempotency, consumers,
+// worker readiness). Only `platform(db)` reads and writes them.
+import { sql } from "drizzle-orm";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
+import { workspaces } from "./accounts.ts";
+import { createdAt, pk, sha256, tstz } from "./columns.ts";
+import { paypalResourceType, webhookEventStatus } from "./enums.ts";
+
+/** ADR 0008: written when Cleared creates the resource; children inherit the owner on ingest. */
+export const paypalResourceOwner = pgTable(
+  "paypal_resource_owner",
+  {
+    resourceType: paypalResourceType("resource_type").notNull(),
+    resourceId: text("resource_id").notNull(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ name: "paypal_resource_owner_pkey", columns: [t.resourceType, t.resourceId] }),
+    index("paypal_resource_owner_workspace_created_idx").on(t.workspaceId, t.createdAt),
+  ],
+);
+
+/** ADR 0012: raw row first (verified or not), dedupe on (provider, event_id). */
+export const webhookEvents = pgTable(
+  "webhook_events",
+  {
+    id: pk(),
+    provider: text("provider").notNull(),
+    eventId: text("event_id").notNull(),
+    type: text("type").notNull(),
+    raw: jsonb("raw").notNull(),
+    verified: boolean("verified").notNull().default(false),
+    receivedAt: tstz("received_at").notNull().defaultNow(),
+    status: webhookEventStatus("status").notNull().default("received"),
+    processedAt: tstz("processed_at"),
+    correlationId: text("correlation_id"),
+    quarantineReason: text("quarantine_reason"),
+  },
+  (t) => [
+    uniqueIndex("webhook_events_provider_event_id_key").on(t.provider, t.eventId),
+    index("webhook_events_status_received_idx").on(t.status, t.receivedAt),
+  ],
+);
+
+/** ADR 0004: written in the state-change transaction; `payload` is a `DomainEvent`. */
+export const outbox = pgTable(
+  "outbox",
+  {
+    id: pk(),
+    topic: text("topic").notNull(),
+    version: integer("version").notNull(),
+    payload: jsonb("payload").notNull(),
+    createdAt: createdAt(),
+    publishedAt: tstz("published_at"),
+  },
+  (t) => [
+    index("outbox_unpublished_idx")
+      .on(t.createdAt)
+      .where(sql`${t.publishedAt} is null`),
+  ],
+);
+
+/** Mutating API routes: one response per (session, route, key). */
+export const idempotencyKeys = pgTable(
+  "idempotency_keys",
+  {
+    sessionId: uuid("session_id").notNull(),
+    route: text("route").notNull(),
+    key: text("key").notNull(),
+    responseHash: sha256("response_hash"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ name: "idempotency_keys_pkey", columns: [t.sessionId, t.route, t.key] }),
+    index("idempotency_keys_created_idx").on(t.createdAt),
+  ],
+);
+
+/** M1-03: an idempotent consumer records each message it has handled. */
+export const consumerReceipts = pgTable(
+  "consumer_receipts",
+  {
+    consumer: text("consumer").notNull(),
+    messageId: text("message_id").notNull(),
+    processedAt: tstz("processed_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ name: "consumer_receipts_pkey", columns: [t.consumer, t.messageId] })],
+);
+
+/** M1-08: readiness; one row per worker, upserted on every beat. */
+export const workerHeartbeats = pgTable("worker_heartbeats", {
+  workerId: text("worker_id").primaryKey(),
+  beatAt: tstz("beat_at").notNull(),
+});

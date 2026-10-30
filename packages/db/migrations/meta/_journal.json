@@ -8,6 +8,20 @@
       "when": 1793248673678,
       "tag": "0000_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793377764750,
+      "tag": "0001_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793377765016,
+      "tag": "0002_append_only_triggers",
+      "breakpoints": true
     }
   ]
 }
