@@ -28,6 +28,7 @@ For goods, PayPal help129 says: "Use one of our approved shipping carriers, and 
   - stores `executions` + `paypal_debug_id`
   - writes the audit log
   - Unknown outcome → reconcile by reading the order's trackers.
+- **Dashboard elements** (`docs/design/screens/dashboard.md`, elements 10, 11, 12): on a goods hold row, the route-advice line with `triangle-alert` icon + text, e.g. "India Post: PayPal accepts it; it may not speed up the release. Faster: Delhivery, DTDC, Ekart, Blue Dart", with Source and the sandbox caveat (replaces the wireframe's "not approved"); and the secondary button "File tracking" opening the hold detail with focus on the `ApprovalCard` for `add_tracking`
 - After filing, the hold's estimate switches to `goods_delivered` with the date "pending courier delivery confirmation" (no fabricated date).
 
 ## Out of scope
@@ -42,13 +43,16 @@ For goods, PayPal help129 says: "Use one of our approved shipping carriers, and 
 - [ ] `adviseRoute("IN", "INDIA_POST")` flags it and returns approved IN alternatives (unit test)
 - [ ] Fixture replay (M0-04 `track` fixtures): an approved `add_tracking` executes, and the execution + audit rows are written; a changed payload after approval is refused (hash mismatch)
 - [ ] Live (PAYPAL_SANDBOX): one approved `add_tracking` with IND_DELHIVERY on a Cleared-owned sandbox order returns 201; the `debug_id` is recorded in the PR
+- [ ] Playwright `dashboard-tracking.spec.ts`: a goods hold row with an `accepted` carrier (INDIA_POST) shows the route-advice line with the approved alternatives, Source and the caveat, as icon + text; an `approved` carrier shows no warning
+- [ ] "File tracking" on the goods hold row opens the hold detail with focus on the `add_tracking` `ApprovalCard`; once tracking is filed the button and the advice line are gone
+- [ ] No "not approved" string exists in `apps/web` (`grep -rn "not approved" apps/web` finds nothing)
 - [ ] UI: tier badges, route advice and the approval dialog pass axe (WCAG 2.2 AA) and work at 360 px; `ui-reviewer` passes
 
 ## Deliverables
 - `packages/core/data/carriers/{shipped-by-dropdown.json,api-carriers.json}`
 - `packages/core/src/carriers/{tiers.ts,advice.ts}` (+ tests)
 - `packages/adapters/src/paypal/tracking.ts`, `apps/worker/src/actions/add-tracking.ts`
-- `apps/web/components/tracking/**`, `apps/web/e2e/tracking.spec.ts`, message keys
+- `apps/web/components/tracking/**`, `apps/web/e2e/tracking.spec.ts`, `apps/web/e2e/dashboard-tracking.spec.ts`, dashboard additions in `apps/web/components/payments/` (route-advice line, "File tracking" action), message keys
 
 ## Validation Gate
 ```bash
@@ -56,7 +60,7 @@ cd "$(git rev-parse --show-toplevel)"
 python3 -I -c "import json;d=json.load(open('packages/core/data/carriers/shipped-by-dropdown.json'));assert d['count']==len(d['codes']) and d['source'] and d['captured_at'];print(d['count'])"
 pnpm --filter ./packages/core test -- carriers
 pnpm --filter ./apps/worker test -- add-tracking
-pnpm --filter ./apps/web exec playwright test e2e/tracking.spec.ts --reporter=line > "$TMPDIR/m3-03-e2e.txt"; tail -5 "$TMPDIR/m3-03-e2e.txt"
+pnpm --filter ./apps/web exec playwright test e2e/tracking.spec.ts e2e/dashboard-tracking.spec.ts --reporter=line > "$TMPDIR/m3-03-e2e.txt"; tail -5 "$TMPDIR/m3-03-e2e.txt"
 ./scripts/landing-checks.sh --fast
 ```
 

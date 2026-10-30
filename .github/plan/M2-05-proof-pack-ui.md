@@ -21,6 +21,7 @@ The proof pack is the hero screen for pillar P1 and the 0:20–0:45 storyboard s
 - SWR polling every 5 s while state is collecting or checking; stops when settled
 - All model output rendered as **plain text** (no markdown/HTML rendering; test asserts `<script>` in a fact renders literally)
 - EN + HI strings in `apps/web/messages/` (hot file); empty, loading and error states; mobile-first; WCAG 2.2 AA (labels, focus order, live region for state changes, 4.5:1 contrast)
+- **Dashboard elements** (`docs/design/screens/dashboard.md`, elements 3c, 6, 16): the `SummaryBar` "{count} payments proof-ready" fact (packs in state `checked` with no `missing` verdict; replaces the M1 "—"; `file-check` icon), the row sub-line "Proof pack: scope {s} · delivery {d} · client sign-off {c} · {n} sources" (verdict word + icon, never a bare tick; sign-off shows its pending state until M3-06), and for a new payment with an empty pack the row "New payment from {buyer}. Add proof so it's ready if PayPal asks." with the secondary button "Add proof" opening this page's intake panel
 - Read API used by the page: `GET /api/packs/:packId` (pack state, facts, verdicts with citations), workspace-scoped
 
 ## Out of scope
@@ -36,18 +37,21 @@ The proof pack is the hero screen for pillar P1 and the 0:20–0:45 storyboard s
 - [ ] Another workspace's pack URL returns the not-found page
 - [ ] axe-core finds no serious/critical violations on all states; keyboard-only flow works; page works at 360 px width
 - [ ] `/hi/...` renders every string from `messages/hi.json` (no missing-key warnings)
+- [ ] Playwright `dashboard-proof.spec.ts`: after a pack reaches `checked`, the dashboard summary shows "1 payment proof-ready" (count excludes any pack with a `missing` verdict) and clicking it applies `?filter=proof-ready`
+- [ ] The payment row sub-line reads "Proof pack: scope met · delivery met · client sign-off … · 3 sources" from the pack's verdicts, each verdict as word + icon (component test; no bare tick glyph in the DOM)
+- [ ] A new payment with an empty pack shows "Add proof"; activating it opens the pack page with focus in the intake panel (e2e); the button is absent once the pack has evidence
 - [ ] `ui-reviewer` passes against `docs/design/`
 
 ## Deliverables
 - `apps/web/app/[locale]/payments/[paymentId]/pack/page.tsx` and `components/pack/{EvidenceIntake,EvidenceList,FactsList,VerdictRow,Citation,PackStateBanner}.tsx`
 - `apps/web/app/api/packs/[packId]/route.ts`
 - `apps/web/messages/en.json`, `hi.json` (pack keys)
-- `apps/web/e2e/proof-pack.spec.ts`
+- `apps/web/e2e/proof-pack.spec.ts`, `apps/web/e2e/dashboard-proof.spec.ts`; dashboard additions in `apps/web/components/payments/` (`SummaryBar` proof-ready fact, pack sub-line, "Add proof" action) and message keys `summary.proofReady`, `row.pack`, `row.addProof`, `row.newPayment`
 
 ## Validation Gate
 ```bash
 pnpm --filter ./apps/web exec vitest run components/pack
-pnpm --filter ./apps/web exec playwright test e2e/proof-pack.spec.ts
+pnpm --filter ./apps/web exec playwright test e2e/proof-pack.spec.ts e2e/dashboard-proof.spec.ts
 pnpm --filter ./apps/web run typecheck && pnpm --filter ./apps/web run lint
 ./scripts/landing-checks.sh --fast
 ```
