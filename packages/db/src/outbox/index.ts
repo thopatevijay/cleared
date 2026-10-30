@@ -35,5 +35,6 @@ export {
   RELAY_QUEUE,
   relayOutbox,
   type RelayDeps,
+  type RelayFailure,
   type RelayResult,
 } from "./relay.ts";

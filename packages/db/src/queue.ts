@@ -11,6 +11,7 @@ export const QUEUE_SCHEMA = "pgboss";
 export const QUEUE_POOL_MAX = 4;
 
 export type Queue = PgBoss;
+export type { Job, JobWithMetadata } from "pg-boss";
 
 type DrizzleTx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 

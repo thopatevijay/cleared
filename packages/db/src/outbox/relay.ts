@@ -28,20 +28,33 @@ export interface RelayResult {
   readonly stale: number;
   /** Jobs actually created (a still-existing job is not doubled). */
   readonly enqueued: number;
+  readonly failed: readonly RelayFailure[];
+}
+
+export interface RelayFailure {
+  readonly outboxId: string;
+  readonly topic: string;
+  readonly error: string;
 }
 
 export async function relayOutbox(deps: RelayDeps): Promise<RelayResult> {
   const cutoff = new Date(deps.now().getTime() - RELAY_AFTER_MS);
   const rows = await outboxRepo(deps.db).listUnpublishedBefore(cutoff, deps.limit ?? 100);
   let enqueued = 0;
+  const failed: RelayFailure[] = [];
   for (const row of rows) {
     const event = DomainEventSchema.safeParse(row.payload);
     const envelope = buildEnvelope(row.payload, deps.correlation, {
       messageId: row.id,
       ...(event.success ? { workspaceId: event.data.workspaceId } : {}),
     });
-    const jobId = await withTransaction(deps.db, (tx) => sendOutboxRow(deps.boss, tx, row, envelope));
-    if (jobId !== null) enqueued += 1;
+    try {
+      const jobId = await withTransaction(deps.db, (tx) => sendOutboxRow(deps.boss, tx, row, envelope));
+      if (jobId !== null) enqueued += 1;
+    } catch (error) {
+      // One bad row (e.g. a topic with no queue) must not stall the rows behind it.
+      failed.push({ outboxId: row.id, topic: row.topic, error: String(error) });
+    }
   }
-  return { stale: rows.length, enqueued };
+  return { stale: rows.length, enqueued, failed };
 }

@@ -118,12 +118,12 @@ describe.skipIf(!dbAvailable)("outbox (compose Postgres)", () => {
     const relay = (at: number) =>
       relayOutbox({ db, boss, correlation: () => "corr-relay", now: () => new Date(at) });
 
-    expect(await relay(created + RELAY_AFTER_MS - 1_000)).toEqual({ stale: 0, enqueued: 0 });
+    expect(await relay(created + RELAY_AFTER_MS - 1_000)).toEqual({ stale: 0, enqueued: 0, failed: [] });
     expect(await boss.findJobs(TOPIC, { id: row.id })).toEqual([]);
 
-    expect(await relay(created + RELAY_AFTER_MS + 1_000)).toEqual({ stale: 1, enqueued: 1 });
+    expect(await relay(created + RELAY_AFTER_MS + 1_000)).toEqual({ stale: 1, enqueued: 1, failed: [] });
     // Still unpublished a minute later (nothing consumed it): the existing job is not doubled.
-    expect(await relay(created + RELAY_AFTER_MS + 61_000)).toEqual({ stale: 1, enqueued: 0 });
+    expect(await relay(created + RELAY_AFTER_MS + 61_000)).toEqual({ stale: 1, enqueued: 0, failed: [] });
 
     const jobs = await boss.findJobs(TOPIC, { id: row.id });
     expect(jobs).toHaveLength(1);
