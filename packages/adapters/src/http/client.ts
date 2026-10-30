@@ -2,7 +2,9 @@
 // per-call timeout, retries only on timeout / 5xx / 429 with full-jitter backoff and Retry-After,
 // one circuit breaker counting only those failures, a correlation-id header, the PayPal debug id
 // captured on every response, and an `onExchange` hook (the fixture recorder).
-import { randomUUID } from "node:crypto";
+import { correlationIdOrNew } from "../obs/context.ts";
+import { logOutboundAttempt, type OutboundAttempt } from "../obs/http-logging.ts";
+import { getProcessLogger, type Logger } from "../obs/log.ts";
 import { createBreaker, type Breaker, type BreakerOptions } from "./breaker.ts";
 import { CircuitOpenError, HttpNetworkError, HttpStatusError, HttpTimeoutError } from "./errors.ts";
 
@@ -74,6 +76,11 @@ export interface HttpClientOptions {
   readonly maxRetryAfterMs?: number;
   readonly breaker?: Partial<BreakerOptions>;
   readonly onExchange?: (exchange: Exchange) => void;
+  /**
+   * Where each attempt is logged (vendor, route template, status, duration, attempt, correlation id,
+   * PayPal debug id). Defaults to the process logger (M1-08); `false` turns it off (fixture recorder).
+   */
+  readonly log?: Logger | false;
   readonly fetch?: typeof fetch;
   readonly sleep?: (ms: number) => Promise<void>;
   readonly random?: () => number;
@@ -110,6 +117,10 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     now: options.now ?? Date.now,
   };
   const breaker = createBreaker({ now: cfg.now, ...options.breaker });
+  const logAttempt = (a: Omit<OutboundAttempt, "vendor">): void => {
+    if (options.log === false) return;
+    logOutboundAttempt(options.log ?? getProcessLogger(), { vendor: options.vendor, ...a });
+  };
 
   async function attemptOnce(req: HttpRequest, correlationId: string, attempt: number): Promise<Attempt> {
     const timeoutMs = req.timeoutMs ?? options.timeoutMs;
@@ -130,6 +141,8 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
         redirect: req.redirect ?? "follow",
       });
     } catch (err) {
+      const failed = { method: req.method, url: req.url, attempt, correlationId };
+      logAttempt({ ...failed, durationMs: cfg.now() - started, failure: isTimeout(err) ? "timeout" : "network" });
       if (isTimeout(err)) {
         return {
           kind: "timeout",
@@ -143,6 +156,15 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     }
     const bodyText = await raw.text();
     const resHeaders = Object.fromEntries(raw.headers.entries());
+    logAttempt({
+      method: req.method,
+      url: req.url,
+      attempt,
+      correlationId,
+      durationMs: cfg.now() - started,
+      status: raw.status,
+      debugId: resHeaders[PAYPAL_DEBUG_HEADER],
+    });
     options.onExchange?.({
       vendor: options.vendor,
       attempt,
@@ -162,7 +184,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
   }
 
   async function request(req: HttpRequest): Promise<HttpResponse> {
-    const correlationId = req.correlationId ?? randomUUID();
+    const correlationId = req.correlationId ?? correlationIdOrNew();
     const idempotent = req.idempotent ?? (req.method === "GET" || req.method === "HEAD");
     for (let attempt = 1; ; attempt++) {
       const gate = breaker.allow();
