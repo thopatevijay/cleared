@@ -24,6 +24,8 @@ Pillar P2 (held-money inbox) answers the opacity pain ("frozen with little expla
 - REST: `GET /api/holds`, `GET /api/holds/:id`. Workspace-scoped, zod response schema, ownership checked against `paypal_resource_owner`.
 - UI (to `docs/design/`): a held-money inbox (total held per currency, list) and a hold detail page (amount, reason, estimated release with a "Source" disclosure showing the quote + link, the dispute link if any). A "Sample scenarios" section holds the three badged explainers. Empty, loading and error states; mobile-first; EN/HI message keys; SWR refresh every 5 s.
 
+- **Dashboard elements** (`docs/design/screens/dashboard.md`, elements 3a derived holds, 7, 8, 9, 10, 13): held `PaymentRow`s with the `held` badge, reason and `EstimatedDate` ("Free by 29 Oct · estimated · Source"; an undated "~" is not allowed); the secondary button "Why?" opening the hold detail at the explanation section (text from M3-02); the advice line "Don't ship yet: PayPal is reviewing this payment" + Source, shown only when the cited rule source carries it; "Tracking can help release this" on goods holds (M3-03 adds the tracking action); the "Sample scenarios: limitation, reserve, new-seller hold" link at the end of the list; the `SummaryBar` held total now includes derived holds, per currency, never summed across currencies
+
 ## Out of scope
 - AI explanation text: M3-02
 - Tracking and route advice: M3-03
@@ -41,13 +43,17 @@ Pillar P2 (held-money inbox) answers the opacity pain ("frozen with little expla
 - [ ] Replaying the M0-05 dispute fixtures (chargeback → `PENDING/BUYER_COMPLAINT` → `COMPLETED`) produces exactly one `hold.opened` and one `hold.released` outbox row; replaying twice adds none
 - [ ] `GET /api/holds` from another workspace returns 404 for a foreign hold (integration test)
 - [ ] Playwright: the inbox and detail render with fixture data; the empty, loading and error states render; axe shows no WCAG 2.2 AA violations; layout works at 360 px
+- [ ] Playwright `dashboard-holds.spec.ts`: a `PENDING_REVIEW` capture shows a held row with the `held` badge, `PENDING_REVIEW`, "Free by … · estimated · Source" and no bare "~" date; the Source disclosure shows the rule quote and link
+- [ ] "Why?" on a held row opens the hold detail with focus on the explanation section; the row has exactly one row action
+- [ ] "Don't ship yet" shows only for a rule whose source carries that advice (component test with a rule that does and one that does not)
+- [ ] The dashboard held total is per currency and counts only derived holds (a sample scenario never adds to it); the "Sample scenarios" link at the end of the list opens the badged explainers and no $700 row exists
 - [ ] `ui-reviewer` passes against `docs/design/`
 
 ## Deliverables
 - `packages/core/src/holds/{derive.ts,rules.ts,state.ts,index.ts}`, `packages/core/src/holds/*.test.ts`
 - `apps/worker/src/consumers/holds.ts` (+ tests)
 - `apps/web/app/api/holds/**`, `apps/web/app/[locale]/holds/**`, `apps/web/components/holds/**`
-- `apps/web/messages/{en,hi}.json` (hold keys), `apps/web/e2e/holds.spec.ts`
+- `apps/web/messages/{en,hi}.json` (hold keys), `apps/web/e2e/holds.spec.ts`, `apps/web/e2e/dashboard-holds.spec.ts`, dashboard additions in `apps/web/components/payments/` (held row, `EstimatedDate`, "Why?", advice line, samples link)
 - `fixtures/paypal/captures/{pending-review.json,pending-review-released.json,PROVENANCE.md}`
 - Migration under `packages/db/` if a column is missing
 
@@ -57,7 +63,7 @@ cd "$(git rev-parse --show-toplevel)"
 pnpm --filter ./packages/core test -- holds
 pnpm --filter ./apps/worker test -- holds
 pnpm --filter ./apps/web test -- holds
-pnpm --filter ./apps/web exec playwright test e2e/holds.spec.ts --reporter=line > "$TMPDIR/m3-01-e2e.txt"; tail -5 "$TMPDIR/m3-01-e2e.txt"
+pnpm --filter ./apps/web exec playwright test e2e/holds.spec.ts e2e/dashboard-holds.spec.ts --reporter=line > "$TMPDIR/m3-01-e2e.txt"; tail -5 "$TMPDIR/m3-01-e2e.txt"
 grep -c "retrieved_at" packages/core/src/holds/rules.ts
 ./scripts/landing-checks.sh --fast
 ```
