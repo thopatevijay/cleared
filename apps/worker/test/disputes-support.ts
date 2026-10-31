@@ -9,7 +9,7 @@ import {
   type PayPalDisputesClient,
 } from "@cleared/adapters";
 import { http, HttpResponse } from "msw";
-import type { SetupServerApi } from "msw/node";
+import type { SetupServer } from "msw/node";
 import { loadFixture, responseText } from "../../../packages/adapters/src/testing/fixture.ts";
 
 export const FULL = "paypal/disputes/full";
@@ -33,13 +33,16 @@ export function freshIds(): Ids {
 }
 
 /** Serves one dispute GET from `fixture` with the ids (and `custom`) replaced. */
-export function serveDispute(server: SetupServerApi, fixture: string, ids: Ids, custom: string | null): void {
+export function serveDispute(server: SetupServer, fixture: string, ids: Ids, custom: string | null): void {
   const f = loadFixture(fixture);
   const body = JSON.parse(responseText(f)) as Record<string, unknown> & {
     disputed_transactions: Record<string, unknown>[];
   };
   body["dispute_id"] = ids.disputeId;
-  const tx = { ...body.disputed_transactions[0], seller_transaction_id: ids.captureId };
+  const tx: Record<string, unknown> = {
+    ...body.disputed_transactions[0],
+    seller_transaction_id: ids.captureId,
+  };
   if (custom === null) delete tx["custom"];
   else tx["custom"] = custom;
   body.disputed_transactions = [tx];
@@ -52,7 +55,7 @@ export function serveDispute(server: SetupServerApi, fixture: string, ids: Ids, 
   );
 }
 
-export function disputesClient(server: SetupServerApi): PayPalDisputesClient {
+export function disputesClient(server: SetupServer): PayPalDisputesClient {
   const h = createHttpClient({ vendor: "paypal", timeoutMs: 2_000, maxRetries: 0, log: false });
   const tokens = createTokenProvider({
     http: h,

@@ -105,7 +105,7 @@ const webhook = (disputeId: string, eventId?: string): DisputeSyncInput => ({
 
 describe.skipIf(!dbAvailable)("paypal.dispute.sync (dispute-sync)", () => {
   beforeAll(async () => {
-    server.listen({ onUnhandledRequest: "error" });
+    server.listen({ onUnhandledFrame: "error" });
     boss = await createQueue(db, { background: false, max: 2 });
   });
   afterEach(() => {
