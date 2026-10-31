@@ -80,7 +80,7 @@ export function ScenarioTimeline({
               ))}
               {offered ? (
                 <p className="text-sm">{t("offered")}</p>
-              ) : s.observed !== null ? (
+              ) : s.observed !== null && s.key !== "decision" ? (
                 <p className="text-sm">
                   <span className="text-text-muted">{t("observed")}: </span>
                   <span className="font-mono text-xs break-words">{s.observed.replace(" / ", " /​ ")}</span>
