@@ -24,7 +24,7 @@ For goods, PayPal help129 says: "Use one of our approved shipping carriers, and 
 - **Route advice:** `adviseRoute(country, chosenCode?)` returns the approved carriers for that country (e.g. IN → IND_DELHIVERY, DTDC_IN, EKART, BLUEDART; NG → NIPOST_NG; ID → IDN_JNE; PK → TCS). If the chosen carrier is tier `accepted`/`other`, it flags the carrier and suggests approved alternatives. It is shown on goods payments before tracking is filed, and as a prevention nudge.
 - **Tracking action:** ProposedAction `add_tracking` (payload: order id, capture id, carrier code or OTHER + name, tracking number, notify_payer=false), prefilled from `extracted_facts` of `shipment` evidence (M2-03). The seller approves it; the approval is bound to the payload sha256 (M2-08). Execution:
   - re-checks ownership and the kill switch
-  - calls `POST /v2/checkout/orders/{id}/track` via `@paypal/paypal-server-sdk` through the shared token provider/HTTP client, with an idempotency key
+  - calls `POST /v2/checkout/orders/{id}/track` via our typed PayPal client (`PayPalOrdersClient.trackOrder`, no PayPal SDK, ADR 0011 addendum) on the shared token provider/HTTP client, with an idempotency key
   - stores `executions` + `paypal_debug_id`
   - writes the audit log
   - Unknown outcome → reconcile by reading the order's trackers.
