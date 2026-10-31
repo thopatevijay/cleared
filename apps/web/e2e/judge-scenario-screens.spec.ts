@@ -1,0 +1,220 @@
+// M2-10 screens and states for the ui-reviewer (local only, like skeleton.spec.ts's): the scenario page in
+// each state the ticket defines, seeded straight into the local database (no PayPal call), captured at
+// 375 / 768 / 1440 in light and dark with axe (zero serious/critical). Shots go to .review/M2-10/
+// (gitignored). The states' PayPal values are the recorded M0-05 ones.
+import { mkdirSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import AxeBuilder from "@axe-core/playwright";
+import { WorkspaceIdSchema } from "@cleared/core";
+import { closeDb, createDb, databaseUrl, forWorkspace, platform, type Db } from "@cleared/db";
+import { expect, test, type Page } from "@playwright/test";
+
+const local = process.env["E2E_BASE_URL"] === undefined && process.env["E2E_LIVE"] !== "1";
+const shots = local && process.env["E2E_SCREENSHOTS"] !== "0";
+const REVIEW = fileURLToPath(new URL("../../../.review/M2-10/", import.meta.url));
+
+async function axe(page: Page, name: string): Promise<void> {
+  const result = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  mkdirSync(`${REVIEW}axe`, { recursive: true });
+  writeFileSync(`${REVIEW}axe/${name}.json`, JSON.stringify(result.violations, null, 2));
+  const blocking = result.violations
+    .filter((v) => v.impact === "serious" || v.impact === "critical")
+    .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
+  expect(blocking, `axe serious/critical on ${name}`).toEqual([]);
+}
+
+async function capture(page: Page, name: string): Promise<void> {
+  for (const theme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+    for (const width of [375, 768, 1440]) {
+      await page.setViewportSize({ width, height: width < 768 ? 800 : 900 });
+      const { sw, cw } = await page.evaluate(() => ({
+        sw: document.documentElement.scrollWidth,
+        cw: document.documentElement.clientWidth,
+      }));
+      expect(sw, `horizontal scroll on ${name}-${String(width)}`).toBeLessThanOrEqual(cw);
+      await page.screenshot({ path: `${REVIEW}${name}-${String(width)}-${theme}.png`, fullPage: true });
+      if (width !== 768) await axe(page, `${name}-${String(width)}-${theme}`);
+    }
+  }
+  await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
+  await page.setViewportSize({ width: 1280, height: 900 });
+}
+
+const NOW = Date.now();
+const at = (minutes: number): Date => new Date(NOW - (30 - minutes) * 60_000);
+const ID = { order: "5O190127TN364715T", capture: "3C679366HH908993F" };
+
+interface Seed {
+  readonly state: "capturing" | "polling" | "resolved" | "timed_out";
+  readonly dispute?: { status: string; links: string[]; outcome?: boolean };
+  readonly capture?: { status: string; reason: string | null };
+  readonly evidence?: boolean;
+  readonly requested?: boolean;
+}
+
+async function seed(db: Db, ws: string, s: Seed): Promise<string> {
+  const r = forWorkspace(db, WorkspaceIdSchema.parse(ws));
+  const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+  const disputeId = `PP-R-UVC-${suffix}`;
+  const captureId = `${ID.capture.slice(0, 11)}${suffix}`;
+  const withDispute = s.dispute !== undefined;
+  const run = await r.scenarioRuns.insert({
+    state: s.state,
+    orderId: s.state === "capturing" ? null : ID.order,
+    captureId: s.state === "capturing" ? null : captureId,
+    disputeId: withDispute ? disputeId : null,
+    pollStartedAt: withDispute ? at(1) : null,
+    lastPolledAt: withDispute ? at(29) : null,
+    decisionRequestedAt: s.requested === true ? at(12) : null,
+    finishedAt: s.state === "resolved" || s.state === "timed_out" ? at(29) : null,
+    failure: s.state === "timed_out" ? "poll_limit" : null,
+    steps:
+      s.state === "capturing"
+        ? {}
+        : {
+            capture: {
+              at: at(0).toISOString(),
+              orderId: ID.order,
+              captureId,
+              status: "COMPLETED",
+              merchantId: "M",
+            },
+            seed_pack: { at: at(0.2).toISOString(), packId: "p", evidenceItemIds: [] },
+            chargeback: { at: at(0.5).toISOString(), disputeId, adopted: false },
+          },
+  });
+  if (s.capture !== undefined) {
+    await r.payments.insert({
+      captureId,
+      orderId: ID.order,
+      amount: "120.00",
+      currency: "USD",
+      status: s.capture.status,
+      statusReason: s.capture.reason,
+      source: "poll",
+    });
+  }
+  if (s.dispute !== undefined) {
+    await r.disputes.insert({
+      disputeId,
+      status: s.dispute.status,
+      reason: "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+      allowedActions: s.dispute.links,
+      paypalUpdatedAt: at(4),
+      outcome:
+        s.dispute.outcome === true
+          ? {
+              outcome_code: "RESOLVED_WITH_PAYOUT",
+              outcome_reason: "REPRESENTED_BY_PAYPAL",
+              amount_refunded: null,
+            }
+          : null,
+    });
+    await platform(db).resourceOwners.claim({
+      resourceType: "dispute",
+      resourceId: disputeId,
+      workspaceId: ws,
+    });
+  }
+  if (s.evidence === true) {
+    const action = await r.proposedActions.insert({
+      kind: "provide_evidence",
+      payload: { dispute_id: disputeId },
+      payloadSha256: "0".repeat(64),
+      state: "succeeded",
+      risk: "high",
+    });
+    await r.auditLog.insert({ actor: "system", action: "action.succeeded", detail: { actionId: action.id } });
+  }
+  return run.id;
+}
+
+const STATES: Record<string, Seed> = {
+  started: { state: "capturing" },
+  "waiting-evidence-step": {
+    state: "polling",
+    dispute: { status: "UNDER_REVIEW", links: ["provide_supporting_info"] },
+    capture: { status: "COMPLETED", reason: null },
+  },
+  "decision-not-ready": {
+    state: "polling",
+    dispute: { status: "UNDER_REVIEW", links: ["provide_supporting_info"] },
+    capture: { status: "PENDING", reason: "BUYER_COMPLAINT" },
+    evidence: true,
+  },
+  "decision-ready": {
+    state: "polling",
+    dispute: { status: "UNDER_REVIEW", links: ["adjudicate", "provide_supporting_info", "require_evidence"] },
+    capture: { status: "PENDING", reason: "BUYER_COMPLAINT" },
+    evidence: true,
+  },
+  resolved: {
+    state: "resolved",
+    dispute: { status: "RESOLVED", links: [], outcome: true },
+    capture: { status: "COMPLETED", reason: null },
+    evidence: true,
+    requested: true,
+  },
+  "timed-out": {
+    state: "timed_out",
+    dispute: { status: "WAITING_FOR_SELLER_RESPONSE", links: ["accept_claim", "provide_evidence"] },
+    capture: { status: "PENDING", reason: "BUYER_COMPLAINT" },
+  },
+};
+
+test("M2-10 scenario screens and states for ui-reviewer (local)", async ({ page }) => {
+  test.skip(!shots, "screenshots are local-only");
+  test.setTimeout(600_000);
+  mkdirSync(REVIEW, { recursive: true });
+  const db = createDb(databaseUrl());
+  try {
+    for (const locale of ["en", "hi"] as const) {
+      await page.context().clearCookies();
+      await page.goto(`/${locale}`);
+      await page.getByTestId("demo-cta").click();
+      await page.waitForURL(`**/${locale}/payments`);
+      await page.getByTestId("scenario-entry").waitFor();
+      await capture(page, `${locale}-dashboard-entry`);
+      const ws = ((await (await page.request.get("/api/workspace")).json()) as { workspace: { id: string } })
+        .workspace.id;
+      for (const [name, s] of Object.entries(STATES)) {
+        if (locale === "hi" && name !== "decision-ready" && name !== "resolved") continue;
+        // one active run per workspace: finish the previous one first
+        await db.$client.query(
+          "update scenario_runs set state = 'failed' where workspace_id = $1 and state in ('capturing','seeding','charging_back','polling')",
+          [ws],
+        );
+        const id = await seed(db, ws, s);
+        await page.goto(`/${locale}/scenario/${id}`);
+        await page.getByTestId("scenario-timeline").waitFor();
+        await capture(page, `${locale}-${name}`);
+        if (name === "decision-ready" && locale === "en") {
+          await page.getByTestId("sandbox-decision").getByRole("button").first().click();
+          await page.getByRole("dialog").waitFor();
+          await page.setViewportSize({ width: 375, height: 800 });
+          await page.screenshot({ path: `${REVIEW}${locale}-confirm-dialog-375-light.png` });
+          await axe(page, `${locale}-confirm-dialog-375-light`);
+          await page.keyboard.press("Escape");
+        }
+      }
+      if (locale === "en") {
+        await page.route("**/api/scenarios/*", (route) => route.fulfill({ status: 500, body: "{}" }));
+        await page.goto(`/${locale}/scenario/00000000-0000-4000-8000-000000000000`);
+        await page.getByTestId("error-panel").waitFor();
+        await capture(page, `${locale}-error`);
+        await page.unroute("**/api/scenarios/*");
+        await page.route("**/api/scenarios/*", () => undefined);
+        await page.goto(`/${locale}/scenario/00000000-0000-4000-8000-000000000000`);
+        await page.getByTestId("loading").waitFor();
+        await page.waitForTimeout(3_500);
+        await capture(page, `${locale}-loading`);
+        await page.unroute("**/api/scenarios/*");
+      }
+    }
+  } finally {
+    await closeDb(db);
+  }
+});
