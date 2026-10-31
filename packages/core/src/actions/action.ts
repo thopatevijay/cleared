@@ -1,46 +1,10 @@
 // Actions: the agent only proposes; a seller approval bound to the payload sha256 is required to
-// execute (ADR 0010). `unknown` = sent but no answer; reconciled against PayPal to succeeded/failed.
-import type { DomainError } from "../errors.ts";
+// execute (ADR 0010). The state machine is in state.ts; approval policy in policy.ts; execution checks
+// in checks.ts.
 import type { ActionId, DisputeId, Sha256, WorkspaceId } from "../ids.ts";
-import { transition, type Machine } from "../machine.ts";
-import type { Result } from "../result.ts";
 import type { Instant } from "../time.ts";
 import type { JsonValue } from "./canonical-json.ts";
-
-export const ACTION_STATES = [
-  "proposed",
-  "approved",
-  "rejected",
-  "executing",
-  "succeeded",
-  "failed",
-  "unknown",
-] as const;
-export type ActionState = (typeof ACTION_STATES)[number];
-
-export const ACTION_EVENTS = ["approve", "reject", "start", "succeed", "fail", "time_out"] as const;
-export type ActionEvent = (typeof ACTION_EVENTS)[number];
-
-export const proposedActionMachine: Machine<ActionState, ActionEvent> = {
-  name: "ProposedAction",
-  initial: "proposed",
-  states: ACTION_STATES,
-  events: ACTION_EVENTS,
-  table: {
-    proposed: { approve: "approved", reject: "rejected" },
-    approved: { start: "executing" },
-    rejected: {},
-    executing: { succeed: "succeeded", fail: "failed", time_out: "unknown" },
-    // reconcile against PayPal
-    unknown: { succeed: "succeeded", fail: "failed" },
-    succeeded: {},
-    failed: {},
-  },
-};
-
-export function transitionAction(state: ActionState, event: ActionEvent): Result<ActionState, DomainError> {
-  return transition(proposedActionMachine, state, event);
-}
+import type { ActionState } from "./state.ts";
 
 /** One approved PayPal write each. Goods tracking is PayPal's product; ours is one approved action. */
 export const ACTION_KINDS = [

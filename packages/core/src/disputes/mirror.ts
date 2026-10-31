@@ -16,6 +16,7 @@ export const PayPalDisputeSchema = z.object({
   status: z.string().min(1),
   dispute_life_cycle_stage: z.string().min(1).optional(),
   seller_response_due_date: z.string().optional(),
+  dispute_amount: z.object({ currency_code: z.string(), value: z.string() }).optional(),
   dispute_outcome: z
     .object({
       outcome_code: z.string().min(1),
@@ -45,6 +46,8 @@ export interface DisputeMirror {
   readonly reason: string | null;
   readonly state: DisputeMirrorState;
   readonly sellerResponseDueDate: Instant | null;
+  /** `dispute_amount` verbatim (M2-08: the amount a seller types to accept a claim); null when absent */
+  readonly amount: { readonly currency_code: string; readonly value: string } | null;
   readonly outcome: DisputeOutcomeRecord | null;
   /** sorted, de-duplicated link rels other than `self` */
   readonly allowedActions: readonly string[];
@@ -85,6 +88,10 @@ export function mapDispute(body: unknown): Result<DisputeMirror, DomainError> {
       outcomeCode: o?.outcome_code ?? null,
     }),
     sellerResponseDueDate: due === null ? null : due.value,
+    amount:
+      d.dispute_amount === undefined
+        ? null
+        : { currency_code: d.dispute_amount.currency_code, value: d.dispute_amount.value },
     outcome:
       o === undefined
         ? null
