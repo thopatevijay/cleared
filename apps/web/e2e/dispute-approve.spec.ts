@@ -95,7 +95,7 @@ test("review the draft, revise, approve, filed, outcome (EN)", async ({ page, co
   await expect(page.getByTestId("dispute-outcome")).toContainText("Hold released: payment is Completed", {
     timeout: 60_000,
   });
-  await expect(page.locator("body")).not.toContainText(/seller won|you won/i);
+  await expect(page.locator("body")).not.toContainText(/\bwon\b/i);
   await expect(page.getByTestId("approve")).toHaveCount(0);
   await capture(page, "en-detail-resolved");
 });
