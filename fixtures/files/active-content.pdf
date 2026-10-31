@@ -1,0 +1,88 @@
+%PDF-1.7
+%
+
+1 0 obj
+<<
+/Type /Pages
+/Kids [ 4 0 R ]
+/Count 1
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Catalog
+/Pages 1 0 R
+/OpenAction 6 0 R
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+/Encoding /WinAnsiEncoding
+>>
+endobj
+
+4 0 obj
+<<
+/Type /Page
+/Parent 1 0 R
+/Resources <<
+/Font <<
+/Helvetica-7098480789 3 0 R
+>>
+/XObject <<
+>>
+/ExtGState <<
+>>
+>>
+/MediaBox [ 0 0 300 200 ]
+/Annots [ ]
+/Contents [ 5 0 R ]
+>>
+endobj
+
+5 0 obj
+<<
+/Filter /FlateDecode
+/Length 114
+>>
+stream
+xœŠA
+AïıŠœ1ÉÌ$3 „^„|@dEŠøşİY
+šªö¦¾ï›ãøú¿Çõ²vn5WöÚH”âÍ'È’
+éŒÂol³XòlÍÍŠ²%;Ø0ÿÒ©ìlbŞM’Å±Â8c£ÉŒ
+endstream
+endobj
+
+6 0 obj
+<<
+/Type /Action
+/S /JavaScript
+/JS (app.alert('x'))
+>>
+endobj
+
+xref
+0 7
+0000000000 65535 f 
+0000000016 00000 n 
+0000000076 00000 n 
+0000000144 00000 n 
+0000000242 00000 n 
+0000000437 00000 n 
+0000000624 00000 n 
+
+trailer
+<<
+/Size 7
+/Root 2 0 R
+>>
+
+startxref
+696
+%%EOF
+<script>alert(2)</script>
