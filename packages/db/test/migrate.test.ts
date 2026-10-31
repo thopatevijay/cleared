@@ -2,6 +2,7 @@
 // are no-ops the second time.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { afterAll, describe, expect, it } from "vitest";
 import { closeDb, createDb } from "../src/client.ts";
 import { MIGRATIONS_FOLDER, runMigrations } from "../src/migrate.ts";
@@ -128,11 +129,17 @@ describe.skipIf(!dbAvailable)("migrations and seed (compose Postgres)", () => {
       SEED_USER_EMAIL,
     ]);
     expect(users).toHaveLength(1);
-    const paypal = await q(
-      "select 1 from payments where workspace_id = $1 union all select 1 from disputes where workspace_id = $1",
-      [SEED_WORKSPACE_ID],
-    );
-    expect(paypal).toEqual([]);
+    // "No PayPal data" is a property of what seed() writes, not of the shared database: a live proof
+    // run in the seed workspace (M1-04 gate) legitimately adds payments there (BL-01 6530006070).
+    // seed() issues its inserts on every run (ON CONFLICT DO NOTHING), so its SQL shows every table
+    // it can write, whatever the database already holds.
+    const statements: string[] = [];
+    const logged = drizzle({ client: db.$client, logger: { logQuery: (sql) => statements.push(sql) } });
+    await seed(logged);
+    const written = statements
+      .filter((s) => !/^\s*(begin|commit)\s*;?\s*$/i.test(s))
+      .map((s) => /^\s*(?:insert into|update|delete from)\s+"(\w+)"/i.exec(s)?.[1]);
+    expect(written.sort()).toEqual(["users", "workspaces"]);
   });
 
   it("keeps pgcrypto enabled", async () => {

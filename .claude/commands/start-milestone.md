@@ -105,7 +105,9 @@ Each worker gets exactly this prompt (fill the `<>`):
 > first blocker, revert that attempt, and update the BL-01 entries you touched. Never let it delay
 > your report. Report the PR number, its checks status, and the Backlog pass table.
 >
-> - Local stack: `PORT_OFFSET=<n>`. Never use another worker's ports.
+> - Local stack: `export PORT_OFFSET=<n> DATABASE_URL=postgres://cleared:cleared@localhost:<5432+n>/cleared`
+>   before any gate line, so a bare `make reset` and the `pnpm … test` lines run verbatim on your
+>   own stack (WORKFLOW.md, *Running Validation Gates from a worktree*). Never use another worker's ports.
 > - Exclusive resources you hold: `<list or none>`. Resources you do not hold must not be used
 >   (no deploys / applies / quota-bound calls); use recorded responses instead.
 > - Budget: `<per budgeted resource>`; report actual spend.

@@ -18,6 +18,22 @@
 - `/gate <n>`: the milestone gate from a clean state (fresh stack, migrations, seed); the last gate runs after `M5-CLEANUP` from a clean clone
 - `/backlog`: log and triage `BL-01` entries
 
+## Running Validation Gates from a worktree
+Gates are written to run verbatim from a fresh shell. Two things make that work in a parallel worktree:
+- **Local stack.** Export your offset and URL once, before the first gate line:
+  `export PORT_OFFSET=<n> DATABASE_URL=postgres://cleared:cleared@localhost:$((5432 + <n>))/cleared`.
+  The Makefile reads `PORT_OFFSET` from the environment (`?=`), so a bare `make reset` in the gate
+  then binds `5432 + n` and never touches the manager's 5432; the `pnpm … test` lines that follow use
+  the same `DATABASE_URL`. Compose names the project after the worktree folder, so `make reset` drops
+  only your own volume.
+- **Live lines (PayPal credentials).** Node 24 refuses `--env-file` inside `NODE_OPTIONS` (exit 9),
+  and a worktree has no `.env` (it must not get one). Put the live lines verbatim in a file and run
+  them under a parent that loads the main checkout's `.env` by path, so the credentials are inherited
+  and never read or printed:
+  `node --env-file=<main checkout>/.env -e 'require("node:child_process").execFileSync("bash", process.argv.slice(1), {stdio:"inherit"})' gate-lines.sh`.
+  Variables already in your shell win over the file (Node's `--env-file` never overrides them), so the
+  exported `DATABASE_URL` above still points at your own stack.
+
 ## Design review
 Every ticket labelled `frontend` passes the `ui-reviewer` agent (independent of the builder) against `docs/design/` before merge.
 
