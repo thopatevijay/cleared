@@ -102,11 +102,6 @@ export async function scenarioView(deps: Deps, ws: WorkspaceId, run: ScenarioRun
     timeline: scenarioTimeline({
       state,
       steps: ScenarioStepsSchema.parse(run.steps),
-      dispute:
-        dispute === null
-          ? null
-          : { status: dispute.status, allowedActions, updatedAt: iso(dispute.paypalUpdatedAt) },
-      capture: payment === null ? null : { status: payment.status, reason: payment.statusReason },
       evidenceFiledAt: iso(filedAt),
       decisionRequestedAt: iso(run.decisionRequestedAt ?? run.decisionSentAt),
       finishedAt: iso(run.finishedAt),

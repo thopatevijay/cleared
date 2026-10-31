@@ -99,8 +99,56 @@ export const ScenarioStepsSchema = z.object({
       captureReason: z.string().nullable(),
     })
     .optional(),
+  /**
+   * Milestones as PayPal first showed them, recorded by the poll at that moment (never re-derived from
+   * the current state, so each timeline step keeps the time and status it was observed with).
+   */
+  seen: z
+    .object({
+      evidence_step: z.object({ at: z.string(), status: z.string() }).optional(),
+      decision_offered: z.object({ at: z.string() }).optional(),
+      hold: z.object({ at: z.string(), status: z.string() }).optional(),
+      resolved: z.object({ at: z.string(), outcomeCode: z.string().nullable() }).optional(),
+      released: z.object({ at: z.string(), status: z.string() }).optional(),
+    })
+    .optional(),
 });
 export type ScenarioSteps = z.infer<typeof ScenarioStepsSchema>;
+export type ScenarioSeen = NonNullable<ScenarioSteps["seen"]>;
+
+export interface PollSnapshot {
+  readonly disputeStatus: string | null;
+  readonly allowedActions: readonly string[];
+  readonly outcomeCode: string | null;
+  readonly captureStatus: string | null;
+  readonly captureReason: string | null;
+}
+
+const withReason = (status: string, reason: string | null): string =>
+  reason === null ? status : `${status} / ${reason}`;
+
+/** Adds the milestones this poll observed for the first time; earlier records are never rewritten. */
+export function recordMilestones(seen: ScenarioSeen, o: PollSnapshot, at: string): ScenarioSeen {
+  const next: { -readonly [K in keyof ScenarioSeen]: ScenarioSeen[K] } = { ...seen };
+  const evidenceOpen =
+    o.disputeStatus === "WAITING_FOR_SELLER_RESPONSE" || o.allowedActions.includes("provide_evidence");
+  if (next.evidence_step === undefined && evidenceOpen && o.disputeStatus !== null) {
+    next.evidence_step = { at, status: o.disputeStatus };
+  }
+  if (next.decision_offered === undefined && o.allowedActions.includes("adjudicate")) {
+    next.decision_offered = { at };
+  }
+  if (next.hold === undefined && o.captureStatus === "PENDING") {
+    next.hold = { at, status: withReason(o.captureStatus, o.captureReason) };
+  }
+  if (next.resolved === undefined && o.disputeStatus === "RESOLVED") {
+    next.resolved = { at, outcomeCode: o.outcomeCode };
+  }
+  if (next.released === undefined && next.hold !== undefined && o.captureStatus === "COMPLETED") {
+    next.released = { at, status: o.captureStatus };
+  }
+  return next;
+}
 
 export interface PollObservation {
   readonly disputeStatus: string | null;
@@ -235,23 +283,10 @@ export interface TimelineStep {
 export interface TimelineInput {
   readonly state: ScenarioState;
   readonly steps: ScenarioSteps;
-  readonly dispute: {
-    readonly status: string;
-    readonly allowedActions: readonly string[];
-    readonly updatedAt: string | null;
-  } | null;
-  readonly capture: { readonly status: string; readonly reason: string | null } | null;
+  /** when M2-08 recorded our `provide_evidence` as succeeded */
   readonly evidenceFiledAt: string | null;
   readonly decisionRequestedAt: string | null;
   readonly finishedAt: string | null;
-}
-
-/** States in which PayPal has opened the evidence step (or gone past it). */
-const PAST_EVIDENCE_STEP = new Set(["WAITING_FOR_SELLER_RESPONSE", "UNDER_REVIEW", "RESOLVED"]);
-
-function captureObserved(c: TimelineInput["capture"]): string | null {
-  if (c === null) return null;
-  return c.reason === null ? c.status : `${c.status} / ${c.reason}`;
 }
 
 /** Marks the first not-done step active (or failed when the run ended without finishing it). */
@@ -269,20 +304,24 @@ function withProgress(
   });
 }
 
+/**
+ * The timeline from what was recorded when each step happened (`steps`, `seen`), so times run in order
+ * and each step shows the status PayPal reported at that point. `decision.observed` is `adjudicate` once
+ * PayPal has offered the step; `outcome.observed` is the hold once PayPal placed one.
+ */
 export function scenarioTimeline(i: TimelineInput): TimelineStep[] {
   const { capture, seed_pack, chargeback } = i.steps;
-  const d = i.dispute;
-  const evidenceStepOpen = d !== null && (PAST_EVIDENCE_STEP.has(d.status) || i.evidenceFiledAt !== null);
-  const resolved = d?.status === "RESOLVED";
+  const seen = i.steps.seen ?? {};
   const done = new Set<TimelineKey>();
   if (capture) done.add("capture");
   if (seed_pack) done.add("seed_pack");
   if (chargeback) done.add("chargeback");
-  if (evidenceStepOpen) done.add("evidence_step");
+  if (seen.evidence_step || i.evidenceFiledAt !== null) done.add("evidence_step");
   if (i.evidenceFiledAt !== null) done.add("evidence_filed");
-  if (i.decisionRequestedAt !== null || resolved) done.add("decision");
+  if (i.decisionRequestedAt !== null || seen.resolved) done.add("decision");
   if (i.state === "resolved") done.add("outcome");
   const disputeIds = chargeback ? [chargeback.disputeId] : [];
+  const outcome = seen.released ?? seen.hold;
   const steps: Omit<TimelineStep, "status">[] = [
     {
       key: "capture",
@@ -294,22 +333,22 @@ export function scenarioTimeline(i: TimelineInput): TimelineStep[] {
     { key: "chargeback", at: chargeback?.at ?? null, paypalIds: disputeIds, observed: null },
     {
       key: "evidence_step",
-      at: evidenceStepOpen ? d.updatedAt : null,
+      at: seen.evidence_step?.at ?? null,
       paypalIds: disputeIds,
-      observed: d?.status ?? null,
+      observed: seen.evidence_step?.status ?? null,
     },
     { key: "evidence_filed", at: i.evidenceFiledAt, paypalIds: disputeIds, observed: null },
     {
       key: "decision",
       at: i.decisionRequestedAt,
       paypalIds: disputeIds,
-      observed: d !== null && d.allowedActions.includes("adjudicate") ? "adjudicate" : null,
+      observed: seen.decision_offered ? "adjudicate" : null,
     },
     {
       key: "outcome",
-      at: i.state === "resolved" ? i.finishedAt : null,
+      at: i.state === "resolved" ? (seen.released?.at ?? seen.resolved?.at ?? i.finishedAt) : null,
       paypalIds: capture ? [capture.captureId] : [],
-      observed: captureObserved(i.capture),
+      observed: outcome?.status ?? null,
     },
   ];
   return withProgress(steps, done, i.state);

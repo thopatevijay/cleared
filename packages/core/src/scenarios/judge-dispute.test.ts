@@ -8,6 +8,7 @@ import {
   isTerminal,
   pollExpired,
   pollVerdict,
+  recordMilestones,
   SCENARIO_POLL_LIMIT_MS,
   SCENARIO_STALE_MS,
   SCENARIO_STATES,
@@ -133,29 +134,72 @@ describe("outcome wording", () => {
   });
 });
 
-describe("timeline", () => {
+describe("milestones and timeline", () => {
+  const snap = (p: Partial<Parameters<typeof recordMilestones>[1]> = {}) => ({
+    disputeStatus: "OPEN",
+    allowedActions: [] as string[],
+    outcomeCode: null,
+    captureStatus: "COMPLETED",
+    captureReason: null,
+    ...p,
+  });
+
+  it("records each milestone once, when PayPal first shows it (M0-05 order)", () => {
+    let seen = recordMilestones(
+      {},
+      snap({ disputeStatus: "UNDER_REVIEW", allowedActions: ["provide_supporting_info"] }),
+      "t1",
+    );
+    expect(seen).toEqual({});
+    seen = recordMilestones(
+      seen,
+      snap({ captureStatus: "PENDING", captureReason: "BUYER_COMPLAINT", disputeStatus: "UNDER_REVIEW" }),
+      "t2",
+    );
+    expect(seen.hold).toEqual({ at: "t2", status: "PENDING / BUYER_COMPLAINT" });
+    seen = recordMilestones(
+      seen,
+      snap({
+        disputeStatus: "WAITING_FOR_SELLER_RESPONSE",
+        allowedActions: ["accept_claim", "provide_evidence"],
+        captureStatus: "PENDING",
+      }),
+      "t3",
+    );
+    expect(seen.evidence_step).toEqual({ at: "t3", status: "WAITING_FOR_SELLER_RESPONSE" });
+    seen = recordMilestones(
+      seen,
+      snap({ disputeStatus: "UNDER_REVIEW", allowedActions: ["adjudicate"], captureStatus: "PENDING" }),
+      "t4",
+    );
+    expect(seen.decision_offered).toEqual({ at: "t4" });
+    expect(seen.evidence_step?.at).toBe("t3");
+    seen = recordMilestones(
+      seen,
+      snap({ disputeStatus: "RESOLVED", outcomeCode: "RESOLVED_WITH_PAYOUT", captureStatus: "PENDING" }),
+      "t5",
+    );
+    expect(seen.resolved).toEqual({ at: "t5", outcomeCode: "RESOLVED_WITH_PAYOUT" });
+    expect(seen.released).toBeUndefined();
+    seen = recordMilestones(seen, snap({ disputeStatus: "RESOLVED", captureStatus: "COMPLETED" }), "t6");
+    expect(seen.released).toEqual({ at: "t6", status: "COMPLETED" });
+    expect(recordMilestones(seen, snap({ disputeStatus: "RESOLVED" }), "t7")).toEqual(seen);
+  });
+
   const steps = ScenarioStepsSchema.parse({
-    capture: {
-      at: "2026-10-31T12:00:00Z",
-      orderId: "O1",
-      captureId: "C1",
-      status: "COMPLETED",
-      merchantId: "M1",
-    },
-    seed_pack: { at: "2026-10-31T12:00:05Z", packId: "p", evidenceItemIds: ["a", "b", "c"] },
-    chargeback: { at: "2026-10-31T12:00:10Z", disputeId: "PP-R-1", adopted: false },
+    capture: { at: "t0", orderId: "O1", captureId: "C1", status: "COMPLETED", merchantId: "M1" },
+    seed_pack: { at: "t0", packId: "p", evidenceItemIds: ["a", "b", "c"] },
+    chargeback: { at: "t1", disputeId: "PP-R-1", adopted: false },
   });
   const base: TimelineInput = {
     state: "polling",
     steps,
-    dispute: { status: "OPEN", allowedActions: [], updatedAt: "2026-10-31T12:00:11Z" },
-    capture: { status: "COMPLETED", reason: null },
     evidenceFiledAt: null,
     decisionRequestedAt: null,
     finishedAt: null,
   };
 
-  it("shows real ids and marks the first unfinished step active", () => {
+  it("shows real ids and marks the first unfinished step active; UNDER_REVIEW alone is not the evidence step", () => {
     const t = scenarioTimeline(base);
     expect(t.map((s) => s.status)).toEqual([
       "done",
@@ -168,45 +212,45 @@ describe("timeline", () => {
     ]);
     expect(t[0]?.paypalIds).toEqual(["O1", "C1"]);
     expect(t[2]?.paypalIds).toEqual(["PP-R-1"]);
-    expect(t[3]?.observed).toBe("OPEN");
+    expect(t[3]?.observed).toBeNull();
+    expect(t[6]?.observed).toBeNull();
   });
 
-  it("evidence step open → filed → decision → outcome with the hold observed", () => {
-    const waiting = scenarioTimeline({
-      ...base,
-      dispute: {
-        status: "WAITING_FOR_SELLER_RESPONSE",
-        allowedActions: ["accept_claim", "provide_evidence"],
-        updatedAt: "x",
-      },
-      capture: { status: "PENDING", reason: "BUYER_COMPLAINT" },
-    });
-    expect(waiting[3]?.status).toBe("done");
-    expect(waiting[4]?.status).toBe("active");
-    const ready = scenarioTimeline({
-      ...base,
-      dispute: { status: "UNDER_REVIEW", allowedActions: ["adjudicate"], updatedAt: "y" },
-      evidenceFiledAt: "2026-10-31T12:05:00Z",
-    });
-    expect(ready[5]).toMatchObject({ status: "active", observed: "adjudicate" });
+  it("each step keeps the time and status it was observed with", () => {
+    const seen = {
+      evidence_step: { at: "t3", status: "WAITING_FOR_SELLER_RESPONSE" },
+      hold: { at: "t2", status: "PENDING / BUYER_COMPLAINT" },
+      decision_offered: { at: "t5" },
+    };
+    const waiting = scenarioTimeline({ ...base, steps: { ...steps, seen }, evidenceFiledAt: "t4" });
+    expect(waiting[3]).toMatchObject({ status: "done", at: "t3", observed: "WAITING_FOR_SELLER_RESPONSE" });
+    expect(waiting[4]).toMatchObject({ status: "done", at: "t4" });
+    expect(waiting[5]).toMatchObject({ status: "active", observed: "adjudicate" });
+    expect(waiting[6]).toMatchObject({ status: "pending", observed: "PENDING / BUYER_COMPLAINT" });
     const done = scenarioTimeline({
       ...base,
       state: "resolved",
-      dispute: { status: "RESOLVED", allowedActions: [], updatedAt: "z" },
-      evidenceFiledAt: "a",
-      decisionRequestedAt: "b",
-      finishedAt: "c",
+      steps: {
+        ...steps,
+        seen: {
+          ...seen,
+          resolved: { at: "t7", outcomeCode: "X" },
+          released: { at: "t8", status: "COMPLETED" },
+        },
+      },
+      evidenceFiledAt: "t4",
+      decisionRequestedAt: "t6",
+      finishedAt: "t9",
     });
     expect(done.every((s) => s.status === "done")).toBe(true);
-    expect(done[6]).toMatchObject({ at: "c", observed: "COMPLETED", paypalIds: ["C1"] });
+    expect(done[6]).toMatchObject({ at: "t8", observed: "COMPLETED", paypalIds: ["C1"] });
   });
 
   it("a run that ended early marks its unfinished step failed", () => {
     const t = scenarioTimeline({ ...base, state: "timed_out" });
     expect(t[3]?.status).toBe("failed");
     expect(t[4]?.status).toBe("pending");
-    const first = scenarioTimeline({ ...base, state: "failed", steps: {}, dispute: null, capture: null });
+    const first = scenarioTimeline({ ...base, state: "failed", steps: {} });
     expect(first[0]?.status).toBe("failed");
-    expect(first[6]?.observed).toBeNull();
   });
 });

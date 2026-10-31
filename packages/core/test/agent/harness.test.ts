@@ -91,7 +91,11 @@ describe("runWorkflow: limits", () => {
 
   it("a call abandoned at the wall clock still has its billed usage recorded when it lands (BL-01)", async () => {
     const slow = () =>
-      new Promise<ReturnType<typeof okResult>>((r) => setTimeout(() => { r(okResult(ANSWER, 0.004)); }, 80));
+      new Promise<ReturnType<typeof okResult>>((r) =>
+        setTimeout(() => {
+          r(okResult(ANSWER, 0.004));
+        }, 80),
+      );
     const store = fakeStore();
     const cfg = config();
     const out = await runWorkflow(testWorkflow, INPUT, {

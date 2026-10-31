@@ -6,6 +6,7 @@
 import {
   pollExpired,
   pollVerdict,
+  recordMilestones,
   SCENARIO_POLL_INTERVAL_MS,
   WorkspaceIdSchema,
   type PollVerdict,
@@ -54,6 +55,7 @@ export async function runPollStep(
   const dispute = await ws.disputes.getByDisputeId(run.disputeId, ctx.tx);
   const payment = await ws.payments.getByCaptureId(run.captureId, ctx.tx);
   const observed = { disputeStatus: dispute?.status ?? null, captureStatus: payment?.status ?? null };
+  const captureReason = payment?.statusReason ?? null;
   const now = deps.now();
   const verdict = pollVerdict(startedMs, now.getTime(), observed);
   const polls = run.polls + 1;
@@ -65,12 +67,17 @@ export async function runPollStep(
       lastPolledAt: now,
       steps: {
         ...steps,
-        poll: {
-          at: now.toISOString(),
-          count: polls,
-          ...observed,
-          captureReason: payment?.statusReason ?? null,
-        },
+        poll: { at: now.toISOString(), count: polls, ...observed, captureReason },
+        seen: recordMilestones(
+          steps.seen ?? {},
+          {
+            ...observed,
+            captureReason,
+            allowedActions: (dispute?.allowedActions ?? []) as string[],
+            outcomeCode: (dispute?.outcome as { outcome_code?: string } | null)?.outcome_code ?? null,
+          },
+          now.toISOString(),
+        ),
       },
       ...(verdict === "continue" ? {} : { finishedAt: now }),
       ...(verdict === "timed_out" ? { failure: "poll_limit" } : {}),

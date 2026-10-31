@@ -186,6 +186,16 @@ describe.skipIf(!dbAvailable)("judge scenario (fixture replay)", () => {
     expect(await deliver(runPollStep, job)).toBe("resolved");
     run = await runRow(job);
     expect(run).toMatchObject({ state: "resolved", polls: 5 });
+    // each milestone recorded once, as PayPal first showed it
+    expect(run.steps).toMatchObject({
+      seen: {
+        evidence_step: { status: "WAITING_FOR_SELLER_RESPONSE" },
+        hold: { status: "PENDING / BUYER_COMPLAINT" },
+        decision_offered: {},
+        resolved: { outcomeCode: "RESOLVED_WITH_PAYOUT" },
+        released: { status: "COMPLETED" },
+      },
+    });
     expect(run.finishedAt).not.toBeNull();
     const dispute = await forWorkspace(db, WorkspaceIdSchema.parse(ws)).disputes.getByDisputeId(pp.disputeId);
     expect(dispute).toMatchObject({

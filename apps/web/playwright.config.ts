@@ -10,7 +10,8 @@ import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
-const deployed = process.env["E2E_BASE_URL"];
+// An empty E2E_BASE_URL (as in .env.example, inherited by live runs) means local, not deployed.
+const deployed = process.env["E2E_BASE_URL"] === "" ? undefined : process.env["E2E_BASE_URL"];
 const port = Number(process.env["E2E_PORT"] ?? 3100);
 const local = `http://localhost:${String(port)}`;
 const stub = fileURLToPath(new URL("./e2e/support/paypal-stub.ts", import.meta.url));
