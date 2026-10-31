@@ -107,3 +107,11 @@ export {
   type ScopeCheckRow,
   type ScopeChecksRepo,
 } from "./repositories/scope-checks.ts";
+export {
+  disputeDraftsRepo,
+  DRAFT_AUDIT_ACTIONS,
+  type DisputeDraftRow,
+  type DisputeDraftsRepo,
+  type NewDisputeDraft,
+  type StoredFactRef,
+} from "./repositories/dispute-drafts.ts";

@@ -55,7 +55,9 @@ const extractPack: WorkflowDef<PackInput, Pack> = {
     await ctx.proposeAction("provide_evidence", {
       dispute_id: "PP-R-UVC-10195076",
       notes: "See E1, E2.",
-      evidence_item_ids: [],
+      evidence_type: "PROOF_OF_FULFILLMENT",
+      compiled_blob_sha256: "a".repeat(64),
+      draft_id: "0b6a3f5e-6d0f-4c61-9a3e-2f0f3c1d9b10",
     });
     return { items };
   },
