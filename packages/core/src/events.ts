@@ -49,6 +49,13 @@ export const EvidenceAddedEvent = event("evidence.added", {
   kind: z.enum(EVIDENCE_KINDS),
   sha256: Sha256Schema,
 });
+/** M2-03: an item's facts were written (with this row, same tx); M2-04's scope check runs on it. */
+export const PackExtractedEvent = event("pack.extracted", {
+  packId: ProofPackIdSchema,
+  evidenceItemId: EvidenceItemIdSchema,
+  factsId: z.uuid(),
+  runId: z.uuid(),
+});
 export const PackCheckedEvent = event("pack.checked", {
   packId: ProofPackIdSchema,
   checkedAt: InstantSchema,
@@ -103,6 +110,7 @@ export const DomainEventSchema = z.discriminatedUnion("type", [
   PaymentCapturedEvent,
   PaymentStatusChangedEvent,
   EvidenceAddedEvent,
+  PackExtractedEvent,
   PackCheckedEvent,
   HoldOpenedEvent,
   HoldReleasedEvent,

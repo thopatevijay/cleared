@@ -7,7 +7,9 @@
     ".": "./src/index.ts",
     "./files": "./src/files/index.ts",
     "./testing/fixture": "./src/testing/fixture.ts",
+    "./testing/record": "./src/testing/record.ts",
     "./testing/replay": "./src/testing/replay.ts",
+    "./testing/scrub": "./src/testing/scrub.ts",
     "./testing/sentry-capture": "./src/testing/sentry-capture.ts"
   },
   "scripts": {

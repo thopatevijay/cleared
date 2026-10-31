@@ -1,5 +1,6 @@
 // Runs with Node's built-in type stripping: `node src/index.ts [--dry-run]`.
 import { createLogger, setProcessLogger } from "@cleared/adapters";
+import { aiFromEnv } from "./ai.ts";
 import { makeConnect } from "./connect.ts";
 import { dryRun, start } from "./main.ts";
 import { defaultRegistry } from "./registry.ts";
@@ -15,8 +16,9 @@ if (process.argv.includes("--dry-run")) {
 } else {
   log.info({ sentry: initSentry() }, "worker observability ready");
   const paypal = paypalClientsFromEnv(process.env);
+  const ai = aiFromEnv(process.env);
   main(
-    () => start(process.env, log, makeConnect({ log, registry: (rt) => defaultRegistry(rt, paypal) })),
+    () => start(process.env, log, makeConnect({ log, registry: (rt) => defaultRegistry(rt, paypal, ai) })),
     log,
   );
 }

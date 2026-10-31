@@ -87,3 +87,9 @@ export {
   type ActionAuditEntry,
   type ActionAuditRow,
 } from "./repositories/audit-log.ts";
+export {
+  extractedFactsRepo,
+  type ExtractedFactsRepo,
+  type ExtractedFactsRow,
+  type NewExtractedFacts,
+} from "./repositories/extracted-facts.ts";

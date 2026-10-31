@@ -67,9 +67,11 @@ export const extractedFacts = pgTable(
     facts: jsonb("facts").notNull(),
     model: text("model").notNull(),
     runId: uuid("run_id").references(() => agentRuns.id),
+    /** M2-03: the extract prompt (`extract@v1`); one row per item and prompt version */
+    promptVersion: text("prompt_version").notNull(),
   },
   (t) => [
-    index("extracted_facts_evidence_item_idx").on(t.evidenceItemId),
+    uniqueIndex("extracted_facts_item_prompt_key").on(t.evidenceItemId, t.promptVersion),
     index("extracted_facts_workspace_created_idx").on(t.workspaceId, t.createdAt),
   ],
 );

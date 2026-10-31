@@ -81,10 +81,13 @@ export const COMMAND_QUEUES: readonly QueueSpec[] = [
   { name: ACTION_RECONCILE_QUEUE, expireInSeconds: 60, retryLimit: 8 },
 ];
 
+/** M2-03: `evidence.added` runs an extraction (120 s wall clock per agent run), so its job may live longer. */
+const EVENT_EXPIRE_SECONDS: Readonly<Record<string, number>> = { "evidence.added": 300 };
+
 /** Every domain event type is a queue (M1-03: queue = outbox topic = `event.type`). */
 export const EVENT_QUEUES: readonly QueueSpec[] = DOMAIN_EVENT_TYPES.map((name) => ({
   name,
-  expireInSeconds: 60,
+  expireInSeconds: EVENT_EXPIRE_SECONDS[name] ?? 60,
 }));
 
 export const KNOWN_QUEUES: readonly QueueSpec[] = [...COMMAND_QUEUES, ...EVENT_QUEUES];
