@@ -14,26 +14,43 @@ import type { ActionState } from "./state.ts";
 const DisputeRef = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/);
 const Notes = z.string().min(1).max(2000);
 
-/** M2-07's filing payload: notes plus one compiled PDF, both bound by the approval hash. */
-export const ProvideEvidencePayloadSchema = z.object({
+const provideEvidenceShape = {
   dispute_id: DisputeRef,
   evidence_type: z.string().regex(/^[A-Z_]{1,64}$/),
   notes: Notes,
   compiled_blob_sha256: Sha256Schema,
   draft_id: z.uuid(),
-});
+};
+const provideSupportingInfoShape = {
+  dispute_id: DisputeRef,
+  notes: Notes,
+  compiled_blob_sha256: Sha256Schema.optional(),
+  draft_id: z.uuid().optional(),
+};
+const blobFieldsTogether = (p: {
+  compiled_blob_sha256?: string | undefined;
+  draft_id?: string | undefined;
+}): boolean => (p.compiled_blob_sha256 === undefined) === (p.draft_id === undefined);
+const BLOB_FIELDS_MESSAGE = { message: "compiled_blob_sha256 and draft_id go together" };
+
+/** M2-07's filing payload: notes plus one compiled PDF, both bound by the approval hash. */
+export const ProvideEvidencePayloadSchema = z.object(provideEvidenceShape);
 
 /** Supporting info: notes, optionally with the compiled PDF (both blob fields, or neither). */
 export const ProvideSupportingInfoPayloadSchema = z
-  .object({
-    dispute_id: DisputeRef,
-    notes: Notes,
-    compiled_blob_sha256: Sha256Schema.optional(),
-    draft_id: z.uuid().optional(),
-  })
-  .refine((p) => (p.compiled_blob_sha256 === undefined) === (p.draft_id === undefined), {
-    message: "compiled_blob_sha256 and draft_id go together",
-  });
+  .object(provideSupportingInfoShape)
+  .refine(blobFieldsTogether, BLOB_FIELDS_MESSAGE);
+
+/**
+ * The same two filing payloads, strict (unknown keys refused). The agent's proposal guardrail (M2-02) uses
+ * them, so a proposal that passes the guardrail also passes `checkApproval` (BL-01 6537330886, M2-07).
+ */
+export const STRICT_FILING_PAYLOAD_SCHEMAS = {
+  provide_evidence: z.strictObject(provideEvidenceShape),
+  provide_supporting_info: z
+    .strictObject(provideSupportingInfoShape)
+    .refine(blobFieldsTogether, BLOB_FIELDS_MESSAGE),
+} as const;
 
 /** Seller-created only. `amount` is the dispute amount the seller confirms by typing it. */
 export const AcceptClaimPayloadSchema = z.object({

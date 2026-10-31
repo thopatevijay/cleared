@@ -18,6 +18,7 @@
     "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest"
   },
   "dependencies": {
+    "@cantoo/fontkit": "2.0.12",
     "@cantoo/pdf-lib": "2.11.1",
     "@cleared/core": "workspace:*",
     "@cleared/db": "workspace:*",
