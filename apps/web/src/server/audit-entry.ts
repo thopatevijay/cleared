@@ -63,7 +63,8 @@ export function auditEntry(r: AuditPageRow): AuditEntry {
     actor: r.actor,
     sandbox: d["sandbox_decision"] === true,
     action: r.action,
-    detail: safeDetail(d),
+    // the proposal's kind names the action ("reply with evidence") on rows that don't carry it themselves
+    detail: { ...(r.actionKind === null ? {} : { actionKind: r.actionKind }), ...safeDetail(d) },
     refs: {
       disputeId: r.paypalDisputeId ?? str(d["paypalDisputeId"]),
       debugId: str(d["debugId"]),

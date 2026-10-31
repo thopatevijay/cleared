@@ -10,9 +10,9 @@ import { MoneyCell } from "../MoneyCell.tsx";
 import { StatusBadge } from "../StatusBadge.tsx";
 import { useDisputeText, useUiLocale } from "./text.ts";
 
-function Pair({ label, children }: { label: string; children: ReactNode }) {
+function Pair({ label, children, wide = false }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className={`flex flex-col gap-0.5 ${wide ? "md:col-span-2" : ""}`}>
       <dt className="text-sm text-text-muted">{label}</dt>
       <dd>{children}</dd>
     </div>
@@ -100,13 +100,11 @@ export function PaypalFacts({ d, timeZone }: { d: DisputeDetail["dispute"]; time
             <span className="tabular">{formatTime(locale, d.dueDate, timeZone)}</span>
           )}
         </Pair>
-        <div className="md:col-span-2">
-          <Pair label={t("allowed")}>
-            <span data-testid="allowed-actions">
-              {d.allowedActions.length === 0 ? t("allowedNone") : d.allowedActions.map(text.link).join(", ")}
-            </span>
-          </Pair>
-        </div>
+        <Pair label={t("allowed")} wide>
+          <span data-testid="allowed-actions">
+            {d.allowedActions.length === 0 ? t("allowedNone") : d.allowedActions.map(text.link).join(", ")}
+          </span>
+        </Pair>
       </dl>
     </section>
   );
