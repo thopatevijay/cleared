@@ -163,8 +163,12 @@
           "name": "magic_links_workspace_id_workspaces_id_fk",
           "tableFrom": "magic_links",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -172,8 +176,12 @@
           "name": "magic_links_user_id_users_id_fk",
           "tableFrom": "magic_links",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -293,8 +301,12 @@
           "name": "notifications_workspace_id_workspaces_id_fk",
           "tableFrom": "notifications",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -404,8 +416,12 @@
           "name": "sessions_workspace_id_workspaces_id_fk",
           "tableFrom": "sessions",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -413,8 +429,12 @@
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -505,8 +525,12 @@
           "name": "users_workspace_id_workspaces_id_fk",
           "tableFrom": "users",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -724,8 +748,12 @@
           "name": "approvals_workspace_id_workspaces_id_fk",
           "tableFrom": "approvals",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -733,8 +761,12 @@
           "name": "approvals_action_id_proposed_actions_id_fk",
           "tableFrom": "approvals",
           "tableTo": "proposed_actions",
-          "columnsFrom": ["action_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "action_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -825,8 +857,12 @@
           "name": "audit_log_workspace_id_workspaces_id_fk",
           "tableFrom": "audit_log",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -957,8 +993,12 @@
           "name": "executions_workspace_id_workspaces_id_fk",
           "tableFrom": "executions",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -966,8 +1006,12 @@
           "name": "executions_action_id_proposed_actions_id_fk",
           "tableFrom": "executions",
           "tableTo": "proposed_actions",
-          "columnsFrom": ["action_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "action_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1077,8 +1121,12 @@
           "name": "proposed_actions_workspace_id_workspaces_id_fk",
           "tableFrom": "proposed_actions",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1086,8 +1134,12 @@
           "name": "proposed_actions_created_by_run_id_agent_runs_id_fk",
           "tableFrom": "proposed_actions",
           "tableTo": "agent_runs",
-          "columnsFrom": ["created_by_run_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "created_by_run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1253,8 +1305,12 @@
           "name": "agent_runs_workspace_id_workspaces_id_fk",
           "tableFrom": "agent_runs",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1422,8 +1478,12 @@
           "name": "agent_steps_workspace_id_workspaces_id_fk",
           "tableFrom": "agent_steps",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1431,8 +1491,12 @@
           "name": "agent_steps_run_id_agent_runs_id_fk",
           "tableFrom": "agent_steps",
           "tableTo": "agent_runs",
-          "columnsFrom": ["run_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1550,8 +1614,12 @@
           "name": "dispute_drafts_workspace_id_workspaces_id_fk",
           "tableFrom": "dispute_drafts",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1559,8 +1627,12 @@
           "name": "dispute_drafts_dispute_id_disputes_id_fk",
           "tableFrom": "dispute_drafts",
           "tableTo": "disputes",
-          "columnsFrom": ["dispute_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "dispute_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1568,8 +1640,12 @@
           "name": "dispute_drafts_compiled_blob_id_blobs_id_fk",
           "tableFrom": "dispute_drafts",
           "tableTo": "blobs",
-          "columnsFrom": ["compiled_blob_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "compiled_blob_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1750,8 +1826,12 @@
           "name": "disputes_workspace_id_workspaces_id_fk",
           "tableFrom": "disputes",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1759,8 +1839,12 @@
           "name": "disputes_payment_id_payments_id_fk",
           "tableFrom": "disputes",
           "tableTo": "payments",
-          "columnsFrom": ["payment_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1800,7 +1884,10 @@
       "compositePrimaryKeys": {
         "consumer_receipts_pkey": {
           "name": "consumer_receipts_pkey",
-          "columns": ["consumer", "message_id"]
+          "columns": [
+            "consumer",
+            "message_id"
+          ]
         }
       },
       "uniqueConstraints": {},
@@ -1877,7 +1964,11 @@
       "compositePrimaryKeys": {
         "idempotency_keys_pkey": {
           "name": "idempotency_keys_pkey",
-          "columns": ["session_id", "route", "key"]
+          "columns": [
+            "session_id",
+            "route",
+            "key"
+          ]
         }
       },
       "uniqueConstraints": {},
@@ -2012,8 +2103,12 @@
           "name": "paypal_resource_owner_workspace_id_workspaces_id_fk",
           "tableFrom": "paypal_resource_owner",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2021,7 +2116,10 @@
       "compositePrimaryKeys": {
         "paypal_resource_owner_pkey": {
           "name": "paypal_resource_owner_pkey",
-          "columns": ["resource_type", "resource_id"]
+          "columns": [
+            "resource_type",
+            "resource_id"
+          ]
         }
       },
       "uniqueConstraints": {},
@@ -2313,8 +2411,12 @@
           "name": "explanations_workspace_id_workspaces_id_fk",
           "tableFrom": "explanations",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2322,8 +2424,12 @@
           "name": "explanations_hold_id_holds_id_fk",
           "tableFrom": "explanations",
           "tableTo": "holds",
-          "columnsFrom": ["hold_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "hold_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2452,8 +2558,12 @@
           "name": "holds_workspace_id_workspaces_id_fk",
           "tableFrom": "holds",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2461,8 +2571,12 @@
           "name": "holds_payment_id_payments_id_fk",
           "tableFrom": "holds",
           "tableTo": "payments",
-          "columnsFrom": ["payment_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2609,8 +2723,12 @@
           "name": "payments_workspace_id_workspaces_id_fk",
           "tableFrom": "payments",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2719,8 +2837,12 @@
           "name": "blobs_workspace_id_workspaces_id_fk",
           "tableFrom": "blobs",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2829,8 +2951,12 @@
           "name": "client_acks_workspace_id_workspaces_id_fk",
           "tableFrom": "client_acks",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2838,8 +2964,12 @@
           "name": "client_acks_pack_id_proof_packs_id_fk",
           "tableFrom": "client_acks",
           "tableTo": "proof_packs",
-          "columnsFrom": ["pack_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "pack_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2949,8 +3079,12 @@
           "name": "evidence_items_workspace_id_workspaces_id_fk",
           "tableFrom": "evidence_items",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2958,8 +3092,12 @@
           "name": "evidence_items_pack_id_proof_packs_id_fk",
           "tableFrom": "evidence_items",
           "tableTo": "proof_packs",
-          "columnsFrom": ["pack_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "pack_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -2967,8 +3105,12 @@
           "name": "evidence_items_blob_id_blobs_id_fk",
           "tableFrom": "evidence_items",
           "tableTo": "blobs",
-          "columnsFrom": ["blob_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "blob_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3083,8 +3225,12 @@
           "name": "extracted_facts_workspace_id_workspaces_id_fk",
           "tableFrom": "extracted_facts",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3092,8 +3238,12 @@
           "name": "extracted_facts_evidence_item_id_evidence_items_id_fk",
           "tableFrom": "extracted_facts",
           "tableTo": "evidence_items",
-          "columnsFrom": ["evidence_item_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "evidence_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3101,8 +3251,12 @@
           "name": "extracted_facts_run_id_agent_runs_id_fk",
           "tableFrom": "extracted_facts",
           "tableTo": "agent_runs",
-          "columnsFrom": ["run_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3201,8 +3355,12 @@
           "name": "proof_packs_workspace_id_workspaces_id_fk",
           "tableFrom": "proof_packs",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3210,8 +3368,12 @@
           "name": "proof_packs_payment_id_payments_id_fk",
           "tableFrom": "proof_packs",
           "tableTo": "payments",
-          "columnsFrom": ["payment_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3316,8 +3478,12 @@
           "name": "scope_checks_workspace_id_workspaces_id_fk",
           "tableFrom": "scope_checks",
           "tableTo": "workspaces",
-          "columnsFrom": ["workspace_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -3325,8 +3491,12 @@
           "name": "scope_checks_pack_id_proof_packs_id_fk",
           "tableFrom": "scope_checks",
           "tableTo": "proof_packs",
-          "columnsFrom": ["pack_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "pack_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3342,82 +3512,160 @@
     "public.action_kind": {
       "name": "action_kind",
       "schema": "public",
-      "values": ["add_tracking", "provide_evidence", "provide_supporting_info", "accept_claim"]
+      "values": [
+        "add_tracking",
+        "provide_evidence",
+        "provide_supporting_info",
+        "accept_claim"
+      ]
     },
     "public.action_risk": {
       "name": "action_risk",
       "schema": "public",
-      "values": ["low", "medium", "high"]
+      "values": [
+        "low",
+        "medium",
+        "high"
+      ]
     },
     "public.action_state": {
       "name": "action_state",
       "schema": "public",
-      "values": ["proposed", "approved", "rejected", "executing", "succeeded", "failed", "unknown"]
+      "values": [
+        "proposed",
+        "approved",
+        "rejected",
+        "executing",
+        "succeeded",
+        "failed",
+        "unknown"
+      ]
     },
     "public.audit_actor": {
       "name": "audit_actor",
       "schema": "public",
-      "values": ["seller", "agent", "system"]
+      "values": [
+        "seller",
+        "agent",
+        "system"
+      ]
     },
     "public.deadline_state": {
       "name": "deadline_state",
       "schema": "public",
-      "values": ["ok", "t72", "t24", "closed_for_action"]
+      "values": [
+        "ok",
+        "t72",
+        "t24",
+        "closed_for_action"
+      ]
     },
     "public.draft_state": {
       "name": "draft_state",
       "schema": "public",
-      "values": ["draft_ready", "approved", "filed"]
+      "values": [
+        "draft_ready",
+        "approved",
+        "filed"
+      ]
     },
     "public.evidence_kind": {
       "name": "evidence_kind",
       "schema": "public",
-      "values": ["scope", "delivery", "communication", "shipment", "invoice", "scope_snapshot", "client_ack"]
+      "values": [
+        "scope",
+        "delivery",
+        "communication",
+        "shipment",
+        "invoice",
+        "scope_snapshot",
+        "client_ack"
+      ]
     },
     "public.hold_state": {
       "name": "hold_state",
       "schema": "public",
-      "values": ["open", "explained", "action_proposed", "approved", "filed", "released", "still_held"]
+      "values": [
+        "open",
+        "explained",
+        "action_proposed",
+        "approved",
+        "filed",
+        "released",
+        "still_held"
+      ]
     },
     "public.locale": {
       "name": "locale",
       "schema": "public",
-      "values": ["en", "hi"]
+      "values": [
+        "en",
+        "hi"
+      ]
     },
     "public.pack_state": {
       "name": "pack_state",
       "schema": "public",
-      "values": ["empty", "collecting", "checked", "ready", "stale"]
+      "values": [
+        "empty",
+        "collecting",
+        "checked",
+        "ready",
+        "stale"
+      ]
     },
     "public.paypal_resource_type": {
       "name": "paypal_resource_type",
       "schema": "public",
-      "values": ["order", "capture", "dispute"]
+      "values": [
+        "order",
+        "capture",
+        "dispute"
+      ]
     },
     "public.session_kind": {
       "name": "session_kind",
       "schema": "public",
-      "values": ["seller", "demo"]
+      "values": [
+        "seller",
+        "demo"
+      ]
     },
     "public.sync_source": {
       "name": "sync_source",
       "schema": "public",
-      "values": ["webhook", "poll"]
+      "values": [
+        "webhook",
+        "poll"
+      ]
     },
     "public.verdict": {
       "name": "verdict",
       "schema": "public",
-      "values": ["met", "partial", "missing", "unverifiable"]
+      "values": [
+        "met",
+        "partial",
+        "missing",
+        "unverifiable"
+      ]
     },
     "public.webhook_event_status": {
       "name": "webhook_event_status",
       "schema": "public",
-      "values": ["received", "processed", "quarantined", "failed"]
+      "values": [
+        "received",
+        "processed",
+        "quarantined",
+        "failed"
+      ]
     },
     "public.workspace_kind": {
       "name": "workspace_kind",
       "schema": "public",
-      "values": ["seller", "demo"]
+      "values": [
+        "seller",
+        "demo"
+      ]
     }
   },
   "schemas": {},
