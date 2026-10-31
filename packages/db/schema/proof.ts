@@ -85,10 +85,31 @@ export const scopeChecks = pgTable(
       .references(() => proofPacks.id),
     line: text("line").notNull(),
     verdict: verdict("verdict").notNull(),
-    /** [{ evidence_item_id, quote, offsets }], quotes verified verbatim */
+    /** [{ evidence_item_id, quote, offsets: {start, end}, sha256 }], quotes verified verbatim */
     citations: jsonb("citations").notNull().default([]),
+    // M2-04: a check is a version of the pack's verdicts, one row per scope line. Append-only (migration
+    // 0008): new evidence writes a new version and never edits an old row.
+    /** 1, 2, … per pack; the newest version is the pack's current check */
+    checkVersion: integer("check_version").notNull(),
+    /** canonical hash of the pack's items (id, sha256, facts row) the check read */
+    evidenceSetHash: sha256("evidence_set_hash").notNull(),
+    /** the scope-check prompt (`check_scope@v1`) */
+    promptVersion: text("prompt_version").notNull(),
+    runId: uuid("run_id").references(() => agentRuns.id),
+    /** the line's id inside its check (`C1`, …) */
+    lineId: text("line_id").notNull(),
+    /** the verified scope quote the line came from (same shape as one citation), or null */
+    lineCitation: jsonb("line_citation"),
+    /** what the model answered; `verdict` is what the verbatim check and the rules left of it */
+    modelVerdict: verdict("model_verdict").notNull(),
+    /** why the line is unverifiable (`no_valid_citation`, `image_only_support`, …), else null */
+    note: text("note"),
+    /** the model's rationale: data, rendered as plain text */
+    rationale: text("rationale").notNull(),
   },
   (t) => [
+    uniqueIndex("scope_checks_idempotency_key").on(t.packId, t.evidenceSetHash, t.promptVersion, t.lineId),
+    uniqueIndex("scope_checks_version_line_key").on(t.packId, t.checkVersion, t.lineId),
     index("scope_checks_pack_idx").on(t.packId),
     index("scope_checks_workspace_created_idx").on(t.workspaceId, t.createdAt),
   ],

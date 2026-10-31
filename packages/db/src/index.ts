@@ -93,3 +93,10 @@ export {
   type ExtractedFactsRow,
   type NewExtractedFacts,
 } from "./repositories/extracted-facts.ts";
+export {
+  scopeChecksRepo,
+  type NewScopeCheck,
+  type NewScopeLine,
+  type ScopeCheckRow,
+  type ScopeChecksRepo,
+} from "./repositories/scope-checks.ts";

@@ -98,3 +98,23 @@ export type CheckedLine = z.infer<typeof CheckedLineSchema>;
 /** The workflow's output (stored in `agent_runs.output`; the job writes one `scope_checks` row per line). */
 export const ScopeCheckResultSchema = z.object({ lines: z.array(CheckedLineSchema).min(1) });
 export type ScopeCheckResult = z.infer<typeof ScopeCheckResultSchema>;
+
+/** A citation as stored in `scope_checks.citations` / `line_citation` (the block ref mapped to the item uuid). */
+export const StoredCitationSchema = z.object({
+  evidence_item_id: z.uuid(),
+  quote: z.string().min(1),
+  /** into the item's normalised text (`normaliseForQuote`), end exclusive */
+  offsets: z.object({ start: z.number().int().nonnegative(), end: z.number().int().nonnegative() }),
+  sha256: z.string().regex(/^[0-9a-f]{64}$/),
+});
+export type StoredCitation = z.infer<typeof StoredCitationSchema>;
+
+/** Maps a checked citation's block ref to its item's uuid. */
+export function storedCitation(c: Citation, itemIdOf: (ref: string) => string): StoredCitation {
+  return {
+    evidence_item_id: itemIdOf(c.evidence_ref),
+    quote: c.quote,
+    offsets: { start: c.start, end: c.end },
+    sha256: c.sha256,
+  };
+}
