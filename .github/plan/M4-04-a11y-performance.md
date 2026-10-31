@@ -52,9 +52,9 @@ The Design criterion rewards a coherent, accessible, mobile-first journey (PROJE
 
 - `apps/web/e2e/{a11y,keyboard-judge-path,target-size,reflow}.spec.ts`
 - `lighthouserc.json`, a CI job `lhci` in the PR CI workflow (hot file `.github/workflows/*`)
-- `apps/web/src/app/web-vitals.tsx`
+- `apps/web/app/web-vitals.tsx`
 - `docs/evidence/a11y-report.md`, `docs/evidence/perf-report.md`
-- Fixes in `apps/web/src/**`
+- Fixes in `apps/web/app/**` and `apps/web/src/**`
 
 ## Validation Gate
 
