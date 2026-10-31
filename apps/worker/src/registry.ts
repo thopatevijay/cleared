@@ -14,12 +14,14 @@ import {
   type Db,
   type Queue,
 } from "@cleared/db";
+import type { AiRuntime } from "./ai.ts";
 import type { Handler } from "./consume.ts";
 import { captureSyncHandler } from "./jobs/capture-sync.ts";
 import { killSwitchFromEnv } from "./jobs/action-runtime.ts";
 import { disputeSyncHandler } from "./jobs/dispute-sync.ts";
 import { executeActionHandler } from "./jobs/execute-action.ts";
 import { reconcileActionHandler } from "./jobs/reconcile-action.ts";
+import { extractEvidenceHandler } from "./jobs/extract-evidence.ts";
 import { testPaymentHandler } from "./jobs/test-payment.ts";
 import type { PayPalClients } from "./paypal.ts";
 import type { QueueSpec } from "./queues.ts";
@@ -38,7 +40,7 @@ export interface Runtime {
 }
 
 /** The production registry. The outbox relay is not listed: `boss.ts` schedules it on every worker. */
-export function defaultRegistry(rt: Runtime, paypal: PayPalClients): Registry {
+export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntime): Registry {
   const publisher = createPublisher(rt.db, rt.boss, correlationIdOrNew);
   return [
     {
@@ -83,6 +85,12 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients): Registry {
       queue: queueSpec(SANDBOX_TEST_PAYMENT_QUEUE),
       handler: testPaymentHandler({ db: rt.db, orders: paypal.orders }),
     },
+    // M2-03: extract facts from each new evidence item. `pack.extracted` is recorded until M2-04 consumes it.
+    {
+      queue: queueSpec("evidence.added"),
+      handler: extractEvidenceHandler({ db: rt.db, publisher, ...ai, now: () => new Date() }),
+    },
+    { queue: queueSpec("pack.extracted"), handler: recordEvent },
     // The events capture sync emits. Consuming them marks the outbox row published (so the relay does
     // not re-send it); M3-01 replaces these with hold derivation.
     { queue: queueSpec("payment.captured"), handler: recordEvent },

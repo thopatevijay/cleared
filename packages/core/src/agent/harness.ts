@@ -21,6 +21,7 @@ import {
   guardInput,
   type CheckedProposal,
   type EvidenceInput,
+  type InjectionFlag,
   type OutputValidator,
   type ProposalCheck,
 } from "./guardrails.ts";
@@ -114,6 +115,11 @@ export interface CallSpec<S extends z.ZodType> {
   /** defaults to the workflow's model */
   readonly model?: "small" | "large";
   readonly reasoningEffort?: ReasoningEffort;
+  /**
+   * BL-01 6537070412: instruction-like text the model reported in a valid answer (e.g. inside an image the
+   * input scan cannot read), recorded on the call step as `detail.reportedFlags`. Reported, never obeyed.
+   */
+  readonly reportedFlags?: (output: z.infer<S>) => readonly InjectionFlag[];
 }
 
 export interface WorkflowContext {
@@ -421,7 +427,9 @@ class Run<I extends JsonValue, O> {
       throw e instanceof RunHalt ? this.halt(e.status, e.message) : e;
     });
     const outcome = res.ok ? checkOutput(spec.schema, res.output, spec.validators ?? []) : null;
-    await this.recordCall(name, request, res, guarded.flags, outcome, Math.round(this.now() - started));
+    const reported = outcome?.ok && spec.reportedFlags ? spec.reportedFlags(outcome.value) : [];
+    const latency = Math.round(this.now() - started);
+    await this.recordCall(name, request, res, guarded.flags, outcome, latency, reported);
     if (!res.ok) return this.onFailure(name, res.error);
     return outcome?.ok
       ? { ok: true, value: outcome.value }
@@ -466,6 +474,7 @@ class Run<I extends JsonValue, O> {
     flags: readonly { evidenceId: string; pattern: string; match: string }[],
     outcome: { ok: boolean } | "late" | null,
     latencyMs: number,
+    reported: readonly InjectionFlag[] = [],
   ): Promise<void> {
     const tokensIn = res.usage?.inputTokens ?? 0;
     const tokensOut = res.usage?.outputTokens ?? 0;
@@ -500,6 +509,7 @@ class Run<I extends JsonValue, O> {
         blocks: req.dataBlocks.map((b) => ({ id: b.id, sha256: b.sha256, flagged: b.flagged })),
         maxOutputTokens: req.maxOutputTokens,
         error: res.ok ? null : res.error.detail.slice(0, 500),
+        ...(reported.length > 0 ? { reportedFlags: reported.map((f) => ({ ...f })) } : {}),
       },
       correlationId: this.deps.correlationId,
     });

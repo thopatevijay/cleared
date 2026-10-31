@@ -32,7 +32,14 @@ export type EvidenceInput =
       readonly textLayer: string | null;
     };
 
-export const INJECTION_PATTERNS = ["instruction_verb", "role_tag", "delimiter_break", "base64_blob"] as const;
+/** `model_reported`: no regex; the model reported the line in its answer (an image or image-only PDF, M2-03). */
+export const INJECTION_PATTERNS = [
+  "instruction_verb",
+  "role_tag",
+  "delimiter_break",
+  "base64_blob",
+  "model_reported",
+] as const;
 export type InjectionPattern = (typeof INJECTION_PATTERNS)[number];
 
 export interface InjectionFlag {

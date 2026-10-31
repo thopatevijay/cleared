@@ -1,0 +1,9 @@
+Order TRN-2207 · Client chat export (synthetic sample)
+Seller: Arjun Rao Translations (arjun@example.test)
+Client: Lindqvist Legal AB (intake@example.test)
+
+[2026-10-16 10:05] Lindqvist Legal AB: Confirming the order: German to English translation of the supply contract, EUR 180.00, due 21 October.
+[2026-10-20 09:14] Arjun Rao Translations: I have sent the translated contract (contract-en.pdf, 14 pages) to intake@example.test.
+[2026-10-20 11:02] Lindqvist Legal AB: Got it, I opened the file this morning and our lawyer is reading it now.
+[2026-10-21 16:45] Lindqvist Legal AB: We reviewed the translation and accept it as final. Thank you.
+[2026-10-21 16:50] Arjun Rao Translations: Thank you for confirming.
