@@ -3,7 +3,9 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
+  smallint,
   integer,
   jsonb,
   pgTable,
@@ -111,3 +113,15 @@ export const workerHeartbeats = pgTable("worker_heartbeats", {
   workerId: text("worker_id").primaryKey(),
   beatAt: tstz("beat_at").notNull(),
 });
+
+/** M2-02: operator switches, one row (`id = 1`). No row = every flag off. */
+export const platformFlags = pgTable(
+  "platform_flags",
+  {
+    id: smallint("id").primaryKey().default(1),
+    /** with AGENT_KILL_SWITCH: blocks new agent runs, proposals and executions (ADR 0010) */
+    agentKillSwitch: boolean("agent_kill_switch").notNull().default(false),
+    updatedAt: tstz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [check("platform_flags_single_row", sql`${t.id} = 1`)],
+);
