@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { canonicalHash, sha256Hex } from "../../src/agent/canonical-hash.ts";
+import { checkApproval } from "../../src/actions/policy.ts";
 import { checkOutput, checkProposal, PROPOSAL_PAYLOAD_SCHEMAS } from "../../src/agent/guardrails.ts";
 import {
   atOrOverCap,
@@ -128,13 +129,28 @@ describe("action guardrail", () => {
   });
 
   it("validates the payload per kind (strict: no extra keys; notes ≤ 2000)", () => {
-    const base = { dispute_id: "PP-R-UVC-10195076", notes: "n", evidence_item_ids: [] };
+    const info = {
+      dispute_id: "PP-R-UVC-10195076",
+      notes: "n",
+      compiled_blob_sha256: "a".repeat(64),
+      draft_id: "0b6a3f5e-6d0f-4c61-9a3e-2f0f3c1d9b10",
+    };
+    const base = { ...info, evidence_type: "PROOF_OF_FULFILLMENT" };
     expect(checkProposal("provide_evidence", base).ok).toBe(true);
     expect(checkProposal("provide_evidence", { ...base, extra: 1 })).toMatchObject({
       ok: false,
       reason: "invalid_payload",
     });
-    expect(checkProposal("provide_supporting_info", { ...base, notes: "x".repeat(2001) })).toMatchObject({
+    // M2-02's old shape is refused: the executor would refuse it at approval (BL-01 6537330886)
+    expect(
+      checkProposal("provide_evidence", { dispute_id: info.dispute_id, notes: "n", evidence_item_ids: [] }),
+    ).toMatchObject({ ok: false, reason: "invalid_payload" });
+    expect(checkProposal("provide_supporting_info", info).ok).toBe(true);
+    expect(checkProposal("provide_supporting_info", { dispute_id: info.dispute_id, notes: "n" }).ok).toBe(
+      true,
+    );
+    expect(checkProposal("provide_supporting_info", { ...info, draft_id: undefined }).ok).toBe(false);
+    expect(checkProposal("provide_supporting_info", { ...info, notes: "x".repeat(2001) })).toMatchObject({
       ok: false,
     });
     const tracking = {
@@ -153,6 +169,34 @@ describe("action guardrail", () => {
       "provide_evidence",
       "provide_supporting_info",
     ]);
+  });
+
+  it("BL-01 6537330886: a filing proposal that passes the guardrail passes checkApproval (no INVALID_PAYLOAD)", () => {
+    const payload = {
+      dispute_id: "PP-R-UVC-10195076",
+      evidence_type: "PROOF_OF_FULFILLMENT",
+      notes: "Delivered on 18 October; approved in writing on 19 October.",
+      compiled_blob_sha256: "b".repeat(64),
+      draft_id: "0b6a3f5e-6d0f-4c61-9a3e-2f0f3c1d9b10",
+    };
+    for (const [kind, p] of [
+      ["provide_evidence", payload],
+      ["provide_supporting_info", { ...payload, evidence_type: undefined }],
+    ] as const) {
+      const checked = checkProposal(kind, JSON.parse(JSON.stringify(p)));
+      if (!checked.ok) throw new Error(checked.detail);
+      const decision = checkApproval(
+        {
+          kind,
+          state: "proposed",
+          payload: checked.proposal.payload,
+          payloadSha256: checked.proposal.payloadSha256,
+          createdByRunId: "run-1",
+        },
+        { payloadSha256: checked.proposal.payloadSha256 },
+      );
+      expect(decision.kind).toBe("allow");
+    }
   });
 });
 

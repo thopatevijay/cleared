@@ -28,7 +28,13 @@ import { dbAvailable, TEST_DATABASE_URL } from "./db-available.ts";
 
 const Out = z.object({ answer: z.string() });
 type Out = z.infer<typeof Out>;
-const PAYLOAD = { dispute_id: "PP-R-UVC-10195076", notes: "Delivered on 2 Oct.", evidence_item_ids: [] };
+const PAYLOAD = {
+  dispute_id: "PP-R-UVC-10195076",
+  notes: "Delivered on 2 Oct.",
+  evidence_type: "OTHER",
+  compiled_blob_sha256: "a".repeat(64),
+  draft_id: "0b6a3f5e-6d0f-4c61-9a3e-2f0f3c1d9b10",
+};
 
 function provider(costUsd = 0.0004): AiProvider & { calls: number } {
   const p = {

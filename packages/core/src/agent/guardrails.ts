@@ -7,6 +7,7 @@
 import { z } from "zod";
 import { ACTION_KINDS, type ActionKind, type ActionRisk } from "../actions/action.ts";
 import type { JsonValue } from "../actions/canonical-json.ts";
+import { STRICT_FILING_PAYLOAD_SCHEMAS } from "../actions/policy.ts";
 import type { Sha256 } from "../ids.ts";
 import type { DataBlock } from "../ports/ai-provider.ts";
 import { canonicalHash, sha256Hex } from "./canonical-hash.ts";
@@ -191,23 +192,21 @@ export const AGENT_PROPOSABLE_KINDS = [
 ] as const;
 export type AgentProposableKind = (typeof AGENT_PROPOSABLE_KINDS)[number];
 
-const disputeId = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/);
-const notes = z.string().min(1).max(2000);
-const evidenceItemIds = z.array(z.uuid()).max(20);
+const captureId = z.string().regex(/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/);
 
+/**
+ * Strict per kind. The two dispute filings are the payloads M2-08 approves and executes (core
+ * `actions/policy.ts`), so the guardrail and the approval can never disagree (BL-01 6537330886).
+ */
 export const PROPOSAL_PAYLOAD_SCHEMAS = {
   add_tracking: z.strictObject({
-    capture_id: disputeId,
+    capture_id: captureId,
     carrier: z.string().min(1).max(64),
     tracking_number: z.string().min(1).max(64),
     notify_payer: z.literal(false),
   }),
-  provide_evidence: z.strictObject({ dispute_id: disputeId, notes, evidence_item_ids: evidenceItemIds }),
-  provide_supporting_info: z.strictObject({
-    dispute_id: disputeId,
-    notes,
-    evidence_item_ids: evidenceItemIds,
-  }),
+  provide_evidence: STRICT_FILING_PAYLOAD_SCHEMAS.provide_evidence,
+  provide_supporting_info: STRICT_FILING_PAYLOAD_SCHEMAS.provide_supporting_info,
 } as const satisfies Record<AgentProposableKind, z.ZodType>;
 
 export const ACTION_RISK_BY_KIND: Readonly<Record<ActionKind, ActionRisk>> = {

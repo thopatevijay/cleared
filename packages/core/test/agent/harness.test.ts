@@ -224,7 +224,9 @@ describe("runWorkflow: kill switch", () => {
 const VALID_PAYLOAD = {
   dispute_id: "PP-R-UVC-10195076",
   notes: "Delivered on 2 Oct; see E1.",
-  evidence_item_ids: [],
+  evidence_type: "PROOF_OF_FULFILLMENT",
+  compiled_blob_sha256: "a".repeat(64),
+  draft_id: "0b6a3f5e-6d0f-4c61-9a3e-2f0f3c1d9b10",
 };
 
 function proposingWorkflow(
@@ -307,7 +309,9 @@ describe("runWorkflow: action guardrail", () => {
     const store = fakeStore();
     const wf = proposingWorkflow(async (ctx) => {
       await ctx.proposeAction("provide_evidence", {
-        evidence_item_ids: [],
+        evidence_type: "PROOF_OF_FULFILLMENT",
+        compiled_blob_sha256: "a".repeat(64),
+        draft_id: "0b6a3f5e-6d0f-4c61-9a3e-2f0f3c1d9b10",
         notes: VALID_PAYLOAD.notes,
         dispute_id: VALID_PAYLOAD.dispute_id,
       });
