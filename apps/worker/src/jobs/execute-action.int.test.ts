@@ -45,7 +45,7 @@ const EVIDENCE_422 = "paypal/disputes/errors/provide-evidence-not-allowed";
 
 function deps(over: Partial<ExecuteActionDeps> = {}) {
   const { http, disputes } = disputesWithHttp(server);
-  const d: ExecuteActionDeps = { db, publisher, disputes, now: () => NOW, killSwitchEnv: () => false, writeTimeoutMs: 300, ...over };
+  const d: ExecuteActionDeps = { db, publisher, disputes, now: () => NOW, killSwitchEnv: () => false, writeTimeoutMs: 1_500, ...over };
   return { d, http };
 }
 
@@ -57,6 +57,9 @@ async function evidenceScene() {
   const actionId = await approvedAction(db, publisher, s, "provide_evidence", evidencePayload(s.ids, s.draftId));
   return { ...s, actionId };
 }
+
+/** Lets the delayed (timed-out) msw response finish, so it cannot reset the next test's connection. */
+const settleLateResponse = (): Promise<void> => new Promise((r) => setTimeout(r, 1_500));
 
 async function stateOf(ws: string, id: string) {
   const row = await getProposedAction(db, ws, id);
@@ -229,7 +232,7 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
     serveDispute(server, STATE.waiting, s.ids, s.ws);
     serveWrite(server, s.ids, "provide-evidence", EVIDENCE_OK, 1_500); // answers after the 300 ms write timeout
 
-    expect(await execute(deps().d, s.actionId, s.ws)).toBe("unknown");
+    expect(await execute(deps({ writeTimeoutMs: 300 }).d, s.actionId, s.ws)).toBe("unknown");
     expect(await stateOf(s.ws, s.actionId)).toEqual({ state: "unknown", code: null });
     expect(writes(calls)).toHaveLength(1);
     const [job] = await jobs("action.reconcile", s.actionId);
@@ -239,6 +242,7 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
     });
     expect((job?.start_after.getTime() ?? 0) - Date.now()).toBeGreaterThan(100_000);
     expect((await actionAuditTrail(db, s.ws, s.actionId)).at(-1)).toMatchObject({ action: "action.unknown" });
+    await settleLateResponse();
   });
 
   it("job re-delivery sends at most once: one executions row, the same PayPal-Request-Id", async () => {

@@ -147,7 +147,7 @@ export function ctxFor(tx: ConsumeContext["tx"], data: unknown): ConsumeContext 
   const job = { id: randomUUID(), retryCount: 0, createdOn: NOW } as JobWithMetadata<unknown>;
   return {
     tx,
-    log: createLogger({ service: "worker-test", level: "silent" }),
+    log: createLogger({ service: "worker-test", level: (process.env["TEST_LOG"] ?? "silent") as "silent" }),
     job,
     envelope: { messageId: randomUUID(), correlationId: randomUUID(), data },
   };
