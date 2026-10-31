@@ -346,7 +346,7 @@ export function scenarioTimeline(i: TimelineInput): TimelineStep[] {
     },
     {
       key: "outcome",
-      at: i.state === "resolved" ? (seen.released?.at ?? seen.resolved?.at ?? i.finishedAt) : null,
+      at: i.state === "resolved" ? (seen.resolved?.at ?? seen.released?.at ?? i.finishedAt) : null,
       paypalIds: capture ? [capture.captureId] : [],
       observed: outcome?.status ?? null,
     },

@@ -243,7 +243,7 @@ describe("milestones and timeline", () => {
       finishedAt: "t9",
     });
     expect(done.every((s) => s.status === "done")).toBe(true);
-    expect(done[6]).toMatchObject({ at: "t8", observed: "COMPLETED", paypalIds: ["C1"] });
+    expect(done[6]).toMatchObject({ at: "t7", observed: "COMPLETED", paypalIds: ["C1"] });
   });
 
   it("a run that ended early marks its unfinished step failed", () => {
