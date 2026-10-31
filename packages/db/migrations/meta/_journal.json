@@ -36,6 +36,13 @@
       "when": 1793406263724,
       "tag": "0004_dispute_deadline",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793409426866,
+      "tag": "0005_agent_harness",
+      "breakpoints": true
     }
   ]
 }
