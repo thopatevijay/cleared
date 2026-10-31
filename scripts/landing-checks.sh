@@ -34,9 +34,11 @@ if [ -f package.json ]; then
   fi
   if [ "$FAST" = 1 ] && [ -n "$base" ] && [ "$root_changed" = 0 ]; then
     echo "landing-checks --fast: packages changed since $base (and dependants)"
-    pnpm -r --filter "...[$base]" --if-present run typecheck
-    pnpm -r --filter "...[$base]" --if-present run lint
-    pnpm -r --filter "...[$base]" --if-present run test
+    # `!{.}` drops the workspace root: a root-level change (fixtures/, docs/) would otherwise run its
+    # `pnpm -r run test` alongside the filtered run, two suites on one database at once (M2-02).
+    pnpm -r --filter "...[$base]" --filter '!{.}' --if-present run typecheck
+    pnpm -r --filter "...[$base]" --filter '!{.}' --if-present run lint
+    pnpm -r --filter "...[$base]" --filter '!{.}' --if-present run test
   else
     pnpm -r --if-present run typecheck
     pnpm -r --if-present run lint

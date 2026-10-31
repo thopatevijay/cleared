@@ -1,5 +1,5 @@
 // AiProvider on the openai SDK (ADR 0009): Responses API, strict structured output from a zod
-// schema (z.toJSONSchema), the output re-validated with zod, usage -> cost from prices.ts.
+// schema (z.toJSONSchema), the output re-validated with zod, usage -> cost from pricing.ts.
 // Evidence travels in a delimited data channel in the user message; `instructions` carries only
 // our own text (CLAUDE.md: evidence is data, never instructions).
 // Transport: the SDK's fetch is routed through the shared HTTP client (ADR 0011: OpenAI 60 s
@@ -16,25 +16,33 @@ import {
   type HttpMethod,
 } from "../http/client.ts";
 import { CircuitOpenError, HttpStatusError, HttpTimeoutError } from "../http/errors.ts";
-import { costUsd, type TokenUsage } from "./prices.ts";
+import { costUsd, type TokenUsage } from "./pricing.ts";
 import { ResponseUsage } from "./schemas.ts";
 
-export type EvidencePart =
-  | { readonly kind: "text"; readonly evidenceId: string; readonly label: string; readonly text: string }
-  | {
-      readonly kind: "image";
-      readonly evidenceId: string;
-      readonly label: string;
-      readonly mimeType: "image/png" | "image/jpeg" | "image/gif";
-      readonly base64: string;
-    }
-  | {
-      readonly kind: "pdf";
-      readonly evidenceId: string;
-      readonly label: string;
-      readonly filename: string;
-      readonly base64: string;
-    };
+/** M2-02: the item's sha256 and injection flag, rendered as attributes of the evidence tag. */
+interface PartTags {
+  readonly sha256?: string;
+  readonly flagged?: boolean;
+}
+
+export type EvidencePart = PartTags &
+  (
+    | { readonly kind: "text"; readonly evidenceId: string; readonly label: string; readonly text: string }
+    | {
+        readonly kind: "image";
+        readonly evidenceId: string;
+        readonly label: string;
+        readonly mimeType: "image/png" | "image/jpeg" | "image/gif";
+        readonly base64: string;
+      }
+    | {
+        readonly kind: "pdf";
+        readonly evidenceId: string;
+        readonly label: string;
+        readonly filename: string;
+        readonly base64: string;
+      }
+  );
 
 export type ReasoningEffort = "none" | "low" | "medium" | "high";
 
@@ -64,7 +72,8 @@ export type AiResult<T> =
   | ({ readonly ok: true; readonly value: T } & AiMeta)
   | ({
       readonly ok: false;
-      readonly error: { readonly kind: AiErrorKind; readonly detail: string };
+      /** `status`: the HTTP status for `http` errors (M2-02 tells a 4xx from a 5xx/429), else null */
+      readonly error: { readonly kind: AiErrorKind; readonly detail: string; readonly status: number | null };
     } & AiMeta);
 
 export interface AiProvider {
@@ -100,7 +109,7 @@ export function createOpenAiProvider(opts: OpenAiProviderOptions): AiProvider {
         return interpret(req, res, performance.now() - started);
       } catch (err) {
         const ms = performance.now() - started;
-        return failure(req.model, transportKind(err), errorDetail(err), ms, null, null);
+        return failure(req.model, transportKind(err), errorDetail(err), ms, null, null, httpStatus(err));
       }
     },
   };
@@ -154,7 +163,8 @@ function fence(text: string): string {
 export function evidenceContent(parts: readonly EvidencePart[]): ResponseInputContent[] {
   const out: ResponseInputContent[] = [];
   for (const p of parts) {
-    const open = `<evidence id="${p.evidenceId}" kind="${p.kind}" label="${fence(p.label).replaceAll('"', "'")}">`;
+    const tags = `${p.sha256 ? ` sha256="${p.sha256}"` : ""}${p.flagged ? ' flagged="true"' : ""}`;
+    const open = `<evidence id="${p.evidenceId}"${tags} kind="${p.kind}" label="${fence(p.label).replaceAll('"', "'")}">`;
     if (p.kind === "text") {
       out.push({ type: "input_text", text: `${open}\n${fence(p.text)}\n</evidence>` });
     } else if (p.kind === "image") {
@@ -256,8 +266,13 @@ function failure<T>(
   latencyMs: number,
   usage: TokenUsage | null,
   responseId: string | null,
+  status: number | null = null,
 ): AiResult<T> {
-  return { ok: false, error: { kind, detail }, ...meta(model, usage, latencyMs, responseId) };
+  return { ok: false, error: { kind, detail, status }, ...meta(model, usage, latencyMs, responseId) };
+}
+
+function httpStatus(err: unknown): number | null {
+  return err instanceof OpenAI.APIError && typeof err.status === "number" ? err.status : null;
 }
 
 function transportKind(err: unknown): AiErrorKind {

@@ -19,7 +19,7 @@ import {
 import type { Exchange } from "../../packages/adapters/src/http/client.ts";
 import { createRecorder, toFixture } from "../../packages/adapters/src/testing/record.ts";
 import { createScrubber } from "../../packages/adapters/src/testing/scrub.ts";
-import { priceFor } from "../../packages/adapters/src/ai/prices.ts";
+import { priceFor } from "../../packages/adapters/src/ai/pricing.ts";
 import { ExtractResult, ScopeClaims, ScopeVerdicts } from "../../packages/adapters/src/ai/schemas.ts";
 import { checkQuotes, type QuoteCheck } from "../../packages/core/src/proof/verbatim.ts";
 import { EXTRACT_INSTRUCTIONS, PASS1_INSTRUCTIONS, PASS2_INSTRUCTIONS, pass2Task } from "./openai-prompts.ts";

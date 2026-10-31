@@ -128,7 +128,7 @@ stateDiagram-v2
   unknown --> failed: reconcile against PayPal
 ```
 
-**Events** (outbox, each with a `version` field): `payment.captured`, `payment.status_changed`, `evidence.added`, `pack.checked`, `hold.opened`, `hold.released`, `dispute.opened`, `dispute.status_changed`, `action.approved`, `action.executed`, `action.failed`, `action.unknown`.
+**Events** (outbox, each with a `version` field): `payment.captured`, `payment.status_changed`, `evidence.added`, `pack.checked`, `hold.opened`, `hold.released`, `dispute.opened`, `dispute.status_changed`, `action.proposed` (M2-02), `action.approved`, `action.executed`, `action.failed`, `action.unknown`.
 
 ## 3. Decisions
 

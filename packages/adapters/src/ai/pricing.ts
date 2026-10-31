@@ -31,7 +31,7 @@ export interface TokenUsage {
 export class UnknownModelPriceError extends Error {
   readonly model: string;
   constructor(model: string) {
-    super(`no price for model "${model}" in prices.ts`);
+    super(`no price for model "${model}" in pricing.ts`);
     this.model = model;
     this.name = "UnknownModelPriceError";
   }

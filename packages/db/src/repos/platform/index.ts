@@ -3,6 +3,7 @@
 import type { Db } from "../../client.ts";
 import { identityRepo, idempotencyKeysRepo, workspacesRepo } from "./accounts.ts";
 import { authRepo } from "./auth.ts";
+import { platformFlagsRepo } from "./flags.ts";
 import { resourceOwnersRepo, webhookEventsRepo } from "./ingest.ts";
 import { consumerReceiptsRepo, outboxRepo, workerHeartbeatsRepo } from "./messaging.ts";
 import { disputeDeadlinesRepo } from "../workspace/disputes.ts";
@@ -19,6 +20,7 @@ export function platform(db: Db) {
     consumerReceipts: consumerReceiptsRepo(db),
     workerHeartbeats: workerHeartbeatsRepo(db),
     disputeDeadlines: disputeDeadlinesRepo(db),
+    flags: platformFlagsRepo(db),
   };
 }
 
@@ -28,3 +30,4 @@ export type * from "./accounts.ts";
 export type * from "./auth.ts";
 export type * from "./ingest.ts";
 export type * from "./messaging.ts";
+export type * from "./flags.ts";

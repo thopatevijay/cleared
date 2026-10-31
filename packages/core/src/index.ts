@@ -27,3 +27,4 @@ export * from "./disputes/deadline.ts";
 export * from "./actions/action.ts";
 export * from "./actions/canonical-json.ts";
 export * from "./actions/policy.ts";
+export * from "./agent/index.ts";

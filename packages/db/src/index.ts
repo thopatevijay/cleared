@@ -50,3 +50,9 @@ export { seed, SEED_USER_EMAIL, SEED_USER_ID, SEED_WORKSPACE_ID } from "./seed.t
 export { WEBHOOK_EVENT_STATUSES, type WebhookEventStatus } from "../schema/enums.ts";
 export * from "./outbox/index.ts";
 export { pingDb, pingQueue } from "./health.ts";
+export { createRunStore } from "./repositories/agent-runs.ts";
+export {
+  insertProposedAction,
+  insertProposedActions,
+  type NewProposal,
+} from "./repositories/proposed-actions.ts";

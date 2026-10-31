@@ -77,6 +77,12 @@ export const DisputeStatusChangedEvent = event("dispute.status_changed", {
   updateTime: InstantSchema,
 });
 const actionRef = { actionId: ActionIdSchema, kind: z.enum(ACTION_KINDS) };
+/** M2-02: the agent harness wrote a proposal (with this outbox row, one transaction). */
+export const ActionProposedEvent = event("action.proposed", {
+  ...actionRef,
+  payloadSha256: Sha256Schema,
+  runId: z.uuid(),
+});
 export const ActionApprovedEvent = event("action.approved", {
   ...actionRef,
   payloadSha256: Sha256Schema,
@@ -102,6 +108,7 @@ export const DomainEventSchema = z.discriminatedUnion("type", [
   HoldReleasedEvent,
   DisputeOpenedEvent,
   DisputeStatusChangedEvent,
+  ActionProposedEvent,
   ActionApprovedEvent,
   ActionExecutedEvent,
   ActionFailedEvent,
