@@ -115,7 +115,15 @@ export async function listDisputes(deps: Deps, ws: string): Promise<DisputeList>
   return { items, summary: { inDispute: inDispute(items) }, workspace: { timezone: w?.timezone ?? "UTC" } };
 }
 
-async function draftItems(deps: Deps, ws: string, d: DraftWithAction["draft"]): Promise<DraftItem[]> {
+type ItemSource = Pick<DraftWithAction["draft"], "packId" | "evidenceItemIds">;
+
+/** The pack's items (oldest first, E1…), ticked when selected, each linked to its file and its pack entry. */
+async function draftItems(
+  deps: Deps,
+  ws: string,
+  d: ItemSource,
+  paymentId: string | null,
+): Promise<DraftItem[]> {
   const ev = evidenceRepo(deps.db, ws as WorkspaceId);
   const items =
     d.packId === null
@@ -133,6 +141,7 @@ async function draftItems(deps: Deps, ws: string, d: DraftWithAction["draft"]): 
     addedAt: i.createdAt.toISOString(),
     selected: selected.has(i.id),
     fileUrl: i.blobId === null ? null : `/api/evidence/${i.id}/file`,
+    packUrl: paymentId === null ? null : `/payments/${paymentId}/pack#evidence-${i.id}`,
   }));
 }
 
@@ -142,13 +151,14 @@ async function draftView(
   disputeRowId: string,
   cur: DraftWithAction,
   allowed: readonly string[],
+  paymentId: string | null,
 ): Promise<Draft | null> {
   const d = cur.draft;
   const kind = d.actionKind;
   // a pre-M2-07 row has no filing action to approve
   if (kind !== "provide_evidence" && kind !== "provide_supporting_info") return null;
   const [items, pdf, action] = await Promise.all([
-    draftItems(deps, ws, d),
+    draftItems(deps, ws, d, paymentId),
     d.compiledBlobId === null ? null : blobMeta(deps.db, ws, d.compiledBlobId),
     d.proposedActionId === null ? null : getProposedAction(deps.db, ws, d.proposedActionId),
   ]);
@@ -164,6 +174,13 @@ async function draftView(
     action: action === null ? null : await view(deps, action),
     allowed: allowed.includes(kind),
   };
+}
+
+/** Without a draft, the payment's pack items (the seller can still reply in PayPal with them). */
+async function packItems(deps: Deps, ws: string, paymentId: string | null): Promise<DraftItem[]> {
+  if (paymentId === null) return [];
+  const pack = await forWorkspace(deps.db, ws as WorkspaceId).proofPacks.getByPaymentId(paymentId);
+  return pack === null ? [] : draftItems(deps, ws, { packId: pack.id, evidenceItemIds: [] }, paymentId);
 }
 
 function killSwitchFromEnv(): boolean {
@@ -188,7 +205,7 @@ export async function disputeDetail(deps: Deps, ws: string, id: string): Promise
   const allowed = Links.parse(d.allowedActions);
   const cur = currentDraft(drafts, allowed);
   const [draft, outcome, accept, flag, scenarioId, audit, w] = await Promise.all([
-    cur === null ? null : draftView(deps, ws, d.id, cur, allowed),
+    cur === null ? null : draftView(deps, ws, d.id, cur, allowed, d.paymentId),
     cur === null ? latestDraftOutcome(deps.db, ws, d.id) : null,
     latestAcceptClaim(deps.db, ws, d.disputeId),
     platform(deps.db).flags.agentKillSwitch(),
@@ -203,6 +220,7 @@ export async function disputeDetail(deps: Deps, ws: string, id: string): Promise
       paypalUpdatedAt: d.paypalUpdatedAt?.toISOString() ?? null,
     },
     draft,
+    packItems: cur === null ? await packItems(deps, ws, d.paymentId) : [],
     draftOutcome:
       outcome === null
         ? null

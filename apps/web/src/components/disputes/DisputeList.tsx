@@ -118,7 +118,7 @@ export function DisputeList() {
   return (
     <section aria-labelledby="disputes-heading" className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="disputes-heading" className="text-xl font-semibold">
+        <h2 id="disputes-heading" className="sr-only">
           {t("listHeading")}
         </h2>
         <span className="text-sm text-text-muted">{t("order")}</span>

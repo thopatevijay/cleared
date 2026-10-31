@@ -1,7 +1,9 @@
 "use client";
 // The ApprovalCard's parts (components.md): the notes with their live count, the evidence items with their
 // checkboxes and file links, and the draft fingerprint. Model output and seller text are plain text only.
+import { Quote } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Link } from "../../i18n/navigation.ts";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   codePointCount,
@@ -57,7 +59,7 @@ export function NotesField({
       />
       <p
         id={`${id}-count`}
-        className={`tabular sticky bottom-0 bg-surface py-1 text-sm ${over ? "font-semibold text-danger" : "text-text-muted"}`}
+        className={`tabular py-1 text-sm ${over ? "font-semibold text-danger" : "text-text-muted"}`}
         data-testid="notes-count"
         data-over={over}
       >
@@ -111,16 +113,28 @@ export function EvidenceItems({
                 {t("item", { ref: i.ref, kind: i.kind, date: formatTime(locale, i.addedAt, timeZone) })}
               </span>
             </label>
-            {i.fileUrl === null ? (
-              <span className="text-sm text-text-muted">{t("noFile")}</span>
-            ) : (
-              <a
-                href={i.fileUrl}
-                className="inline-flex min-h-11 items-center text-sm text-accent underline underline-offset-2"
-              >
-                {t("openItem", { ref: i.ref })}
-              </a>
-            )}
+            <span className="flex flex-wrap items-center gap-x-3 pl-9">
+              {i.packUrl === null ? null : (
+                <Link
+                  href={i.packUrl}
+                  className="inline-flex min-h-11 items-center gap-1 rounded-sm bg-surface-sunken px-2 text-sm text-accent underline underline-offset-2"
+                  data-testid="evidence-citation"
+                >
+                  <Quote aria-hidden="true" size={14} strokeWidth={1.75} />
+                  {t("packLink", { ref: i.ref })}
+                </Link>
+              )}
+              {i.fileUrl === null ? (
+                <span className="text-sm text-text-muted">{t("noFile")}</span>
+              ) : (
+                <a
+                  href={i.fileUrl}
+                  className="inline-flex min-h-11 items-center text-sm text-accent underline underline-offset-2"
+                >
+                  {t("openItem", { ref: i.ref })}
+                </a>
+              )}
+            </span>
           </li>
         ))}
       </ul>
@@ -152,7 +166,7 @@ export function Fingerprint({ sha, previous }: { sha: string; previous: string |
               setCopied(true);
             });
           }}
-          className="min-h-11 rounded-md border border-border px-3 text-sm text-accent md:min-h-8"
+          className="min-h-11 rounded-md border border-border px-3 text-sm text-accent"
         >
           {copied ? tc("copied") : t("copyHash")}
         </button>

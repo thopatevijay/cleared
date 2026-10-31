@@ -66,7 +66,7 @@ describe("audit list states", () => {
   it("filtered empty: 'No entries match these filters.' with 'Clear filters'", () => {
     const out = body({ filtersActive: true });
     expect(out).toContain("No entries match these filters.");
-    expect(out).toMatch(/<button[^>]*>Clear filters<\/button>/);
+    expect(out).toContain(`>${en.auditLog.filters.clear}</button>`);
   });
 
   it("groups rows by day and offers 'Load older' while a next cursor exists", () => {
@@ -74,7 +74,7 @@ describe("audit list states", () => {
     const out = body({ data: page(rows, "c1"), rows, next: "c1" });
     expect(out.match(/data-testid="audit-day"/g)).toHaveLength(1);
     expect(out.match(/data-testid="audit-row"/g)).toHaveLength(3);
-    expect(out).toMatch(/data-testid="load-older"[^>]*>Load older</);
+    expect(out).toMatch(new RegExp(`data-testid="load-older"[^>]*>${en.auditLog.loadOlder}<`));
   });
 
   it("a failed 'Load older' keeps the loaded rows and offers Retry with the reference", () => {
@@ -87,7 +87,7 @@ describe("audit list states", () => {
     });
     expect(out.match(/data-testid="audit-row"/g)).toHaveLength(2);
     expect(out).toContain("Couldn&#x27;t load older entries. The entries above are kept.");
-    expect(out).toMatch(/<button[^>]*>Retry<\/button>/);
+    expect(out).toContain(`>${en.common.retry}</button>`);
     expect(out).toContain("c0ffee00-5ce7-4d1e-9a7a-000000000500");
     expect(out).not.toContain('data-testid="load-older"');
   });

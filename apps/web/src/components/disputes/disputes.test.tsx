@@ -58,6 +58,7 @@ function detail(notes: string, patch: Partial<DisputeDetail> = {}): DisputeDetai
         addedAt: "2026-10-18T10:00:00.000Z",
         selected: true,
         fileUrl: "/api/evidence/00000000-0000-4000-8000-000000000003/file",
+        packUrl: "/payments/p/pack#evidence-00000000-0000-4000-8000-000000000003",
       },
     ],
     pdf: { url: "/api/disputes/x/draft/pdf?draft=y", bytes: 129_619 },
@@ -81,6 +82,7 @@ function detail(notes: string, patch: Partial<DisputeDetail> = {}): DisputeDetai
       paypalUpdatedAt: null,
     },
     draftOutcome: null,
+    packItems: [],
     acceptClaim: null,
     killSwitch: false,
     scenarioId: null,
@@ -131,7 +133,7 @@ describe("DraftReview character count (AC 3)", () => {
   });
 
   it("shows the draft fingerprint the approval binds to", () => {
-    expect(review(detail("ok"))).toMatch(/data-testid="fingerprint"[^>]*>9f3c1a7e</);
+    expect(review(detail("ok"))).toMatch(new RegExp(`data-testid="fingerprint"[^>]*>${SHA.slice(0, 8)}<`));
   });
 });
 

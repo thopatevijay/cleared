@@ -31,7 +31,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
           setCopied(true);
         });
       }}
-      className="min-h-11 min-w-11 rounded-md border border-border px-3 text-sm text-accent md:min-h-8"
+      className="min-h-11 min-w-11 rounded-md border border-border px-3 text-sm text-accent"
     >
       {copied ? t("copied") : t("copy")}
     </button>

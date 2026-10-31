@@ -356,7 +356,6 @@
     },
     "due": "Reply due {date}",
     "dueNone": "PayPal gives no reply date",
-    "replyDueIn": "Reply {countdown}",
     "reason": {
       "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED": "Item not as described",
       "MERCHANDISE_OR_SERVICE_NOT_RECEIVED": "Item not received",
@@ -453,7 +452,11 @@
         "provide_evidence": "Provide evidence",
         "provide_supporting_info": "Send supporting information",
         "accept_claim": "Accept claim"
-      }
+      },
+      "packLink": "{ref} in the proof pack",
+      "headingFiled": "Reply sent to PayPal",
+      "approvedSub": "Approved by you. This reply can't change now.",
+      "failedHint": "This reply wasn't sent. Edit it here, or use “Review and approve again” to propose it again."
     },
     "confirm": {
       "title": "Send this reply to PayPal?",
@@ -562,6 +565,10 @@
       "changed": "Dispute status: {status}",
       "filed": "Reply filed with PayPal",
       "approved": "Reply approved"
+    },
+    "band": {
+      "days": "Reply due in {n, plural, one {# day} other {# days}}",
+      "hours": "Reply due in {n, plural, one {# hour} other {# hours}}"
     }
   },
   "auditLog": {
@@ -589,7 +596,8 @@
       "clear": "Clear filters",
       "active": "Active filters",
       "noMatch": "No entries match these filters.",
-      "invalid": "Use letters, digits, - or _ (2 to 64 characters)."
+      "invalid": "Use letters, digits, - or _ (2 to 64 characters).",
+      "chip": "{label}: {value}"
     },
     "columns": {
       "time": "Time",

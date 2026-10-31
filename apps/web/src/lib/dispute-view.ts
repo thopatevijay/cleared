@@ -73,6 +73,8 @@ export const DraftItemSchema = z.object({
   selected: z.boolean(),
   /** the item's file (an evidence item without a file has text only) */
   fileUrl: z.string().nullable(),
+  /** the item in its proof pack (M2-05's pack page), the citation link */
+  packUrl: z.string().nullable(),
 });
 export type DraftItem = z.infer<typeof DraftItemSchema>;
 
@@ -127,6 +129,8 @@ export const DisputeDetailSchema = z.object({
   draftOutcome: z
     .object({ kind: z.enum(["unavailable", "too_late"]), code: z.string().nullable() })
     .nullable(),
+  /** the pack's items when no draft exists ("draft unavailable": the seller can still download them) */
+  packItems: z.array(DraftItemSchema),
   acceptClaim: ActionViewSchema.nullable(),
   killSwitch: z.boolean(),
   scenarioId: z.uuid().nullable(),

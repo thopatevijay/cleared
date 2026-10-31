@@ -3,7 +3,7 @@
 // sent row; no row offers edit or delete. Filters narrow it; "Clear filters" restores it. /hi/audit renders
 // the HI strings (the M1-07 placeholder is gone) and the empty state's sentence. axe and 360 px on each.
 import { expect, test } from "@playwright/test";
-import { approveByKeyboard, capture, demoWorkspace, local, seed } from "./support/disputes.ts";
+import { approveByKeyboard, capture, demoWorkspace, local, seed, sql } from "./support/disputes.ts";
 
 test.describe.configure({ mode: "serial" });
 test.skip(!local, "local only: the msw stub stands in for PayPal");
@@ -120,5 +120,69 @@ test("/hi/audit renders the HI strings; the empty state's sentence (EN and HI)",
     "Nothing yet. Every proposal, approval and PayPal call will be recorded here.",
   );
   await capture(page, "en-audit-empty");
+  await page.unroute("**/api/audit*");
+});
+
+test("audit log states: loading, error, partial (Load older fails), the 375 filter sheet", async ({
+  page,
+}) => {
+  test.setTimeout(240_000);
+  const ws = await demoWorkspace(page);
+  await sql(
+    "insert into audit_log (workspace_id, actor, action, detail, at) select $1, 'system', 'action.check', jsonb_build_object('check','deadline','ok',true), clock_timestamp() from generate_series(1,55)",
+    [ws],
+  );
+  // partial: the first page loads, "Load older" fails, the loaded rows stay with Retry
+  await page.route(/\/api\/audit\?.*cursor=/, (route) =>
+    route.fulfill({
+      status: 500,
+      headers: {
+        "content-type": "application/json",
+        "x-correlation-id": "c0ffee00-5ce7-4d1e-9a7a-000000000502",
+      },
+      body: JSON.stringify({ error: { code: "internal", message: "Something went wrong." } }),
+    }),
+  );
+  await page.goto("/en/audit");
+  await expect(page.getByTestId("audit-row")).toHaveCount(50);
+  await page.getByTestId("load-older").click();
+  await expect(page.getByTestId("older-error")).toContainText(
+    "Couldn't load older entries. The entries above are kept.",
+  );
+  await expect(page.getByTestId("audit-row")).toHaveCount(50);
+  await expect(page.getByTestId("older-error").getByRole("button", { name: "Retry" })).toBeVisible();
+  await capture(page, "en-audit-partial");
+  await page.unroute(/\/api\/audit\?.*cursor=/);
+  await page.getByTestId("older-error").getByRole("button", { name: "Retry" }).click();
+  await expect(page.getByTestId("audit-row")).toHaveCount(56);
+
+  // the 375 filter sheet, opened, with an active-filter chip
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.getByRole("button", { name: "Filter" }).click();
+  await page.getByTestId("filter-kind").selectOption("disputes");
+  await expect(page.getByText("Kind: Disputes")).toBeVisible();
+  await capture(page, "en-audit-filter-sheet");
+
+  // error and loading
+  await page.route("**/api/audit*", (route) =>
+    route.fulfill({
+      status: 500,
+      headers: {
+        "content-type": "application/json",
+        "x-correlation-id": "c0ffee00-5ce7-4d1e-9a7a-000000000503",
+      },
+      body: JSON.stringify({ error: { code: "internal", message: "Something went wrong." } }),
+    }),
+  );
+  await page.goto("/en/audit");
+  await expect(page.getByTestId("error-panel")).toContainText("Couldn't load the audit log");
+  await capture(page, "en-audit-error");
+  await page.unroute("**/api/audit*");
+  await page.route("**/api/audit*", () => undefined);
+  await page.goto("/en/audit");
+  await expect(page.getByTestId("loading")).toBeVisible();
+  await page.waitForTimeout(3_500);
+  await expect(page.getByText("Loading the audit log…")).toBeVisible();
+  await capture(page, "en-audit-loading");
   await page.unroute("**/api/audit*");
 });

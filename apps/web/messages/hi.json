@@ -356,7 +356,6 @@
     },
     "due": "जवाब की आख़िरी तारीख़ {date}",
     "dueNone": "PayPal ने जवाब की कोई तारीख़ नहीं दी",
-    "replyDueIn": "जवाब: {countdown}",
     "reason": {
       "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED": "सामान बताए अनुसार नहीं",
       "MERCHANDISE_OR_SERVICE_NOT_RECEIVED": "सामान नहीं मिला",
@@ -453,7 +452,11 @@
         "provide_evidence": "सबूत देना",
         "provide_supporting_info": "सहायक जानकारी भेजना",
         "accept_claim": "दावा मानना"
-      }
+      },
+      "packLink": "सबूत पैक में {ref}",
+      "headingFiled": "जवाब PayPal को भेजा गया",
+      "approvedSub": "आपने मंज़ूर किया। यह जवाब अब बदला नहीं जा सकता।",
+      "failedHint": "यह जवाब नहीं भेजा गया। इसे यहाँ बदलें, या “फिर से देखें और मंज़ूर करें” से दोबारा प्रस्तावित करें।"
     },
     "confirm": {
       "title": "यह जवाब PayPal को भेजें?",
@@ -562,6 +565,10 @@
       "changed": "विवाद की स्थिति: {status}",
       "filed": "जवाब PayPal में दर्ज हुआ",
       "approved": "जवाब मंज़ूर हुआ"
+    },
+    "band": {
+      "days": "{n} दिन में जवाब देना है",
+      "hours": "{n} घंटे में जवाब देना है"
     }
   },
   "auditLog": {
@@ -589,7 +596,8 @@
       "clear": "फ़िल्टर हटाएँ",
       "active": "चालू फ़िल्टर",
       "noMatch": "इन फ़िल्टर से कोई प्रविष्टि नहीं मिली।",
-      "invalid": "अक्षर, अंक, - या _ लिखें (2 से 64 तक)।"
+      "invalid": "अक्षर, अंक, - या _ लिखें (2 से 64 तक)।",
+      "chip": "{label}: {value}"
     },
     "columns": {
       "time": "समय",

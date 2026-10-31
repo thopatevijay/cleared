@@ -86,7 +86,7 @@ export function FilingStatus({
                 <span className={active ? "font-semibold" : i > current ? "text-text-muted" : ""}>
                   {t(s)}
                 </span>
-                {active || (done && s !== "proposed") ? (
+                {(active && s !== "failed") || (done && (s === "approved" || s === "succeeded")) ? (
                   <span className="text-sm text-text-muted">{detail(s)}</span>
                 ) : null}
               </span>

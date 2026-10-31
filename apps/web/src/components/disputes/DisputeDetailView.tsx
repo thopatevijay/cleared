@@ -14,6 +14,7 @@ import { countdown, formatAmount } from "../../lib/format.ts";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 import { AuditTrail } from "./AuditTrail.tsx";
 import { DisputeScenario } from "./DisputeScenario.tsx";
+import { EvidenceItems } from "./DraftParts.tsx";
 import { DraftReview } from "./DraftReview.tsx";
 import { FilingStatus } from "./FilingStatus.tsx";
 import { Outcome } from "./Outcome.tsx";
@@ -60,6 +61,15 @@ function NoDraft({ d }: { d: DisputeDetail }) {
       >
         {t("resolutionCenter")}
       </a>
+      {d.packItems.length === 0 ? null : (
+        <EvidenceItems
+          items={d.packItems}
+          selected={new Set()}
+          readOnly
+          timeZone={d.workspace.timezone}
+          onToggle={() => undefined}
+        />
+      )}
     </div>
   );
 }
@@ -71,13 +81,13 @@ function DueBand({ d, now }: { d: DisputeDetail["dispute"]; now: number }) {
   const label =
     d.deadlineState === "closed_for_action"
       ? t("deadline.closed")
-      : t(c.unit === "hours" ? "deadline.t24" : "deadline.t72", { n: c.n });
+      : t(c.unit === "hours" ? "band.hours" : "band.days", { n: c.n });
   return (
     <p
       className="sticky top-14 z-10 -mx-4 border-b border-border bg-bg px-4 py-2 text-sm font-medium xl:static xl:mx-0 xl:border-0 xl:p-0"
       data-testid="due-band"
     >
-      {t("replyDueIn", { countdown: label })}
+      {label}
     </p>
   );
 }

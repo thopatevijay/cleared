@@ -30,9 +30,13 @@ export function AuditFilters({
   const [q, setQ] = useState(value.q);
   const [invalid, setInvalid] = useState(false);
   const chips = [
-    value.actor === null ? null : t(`actor.${value.actor}`),
-    value.kind === null ? null : t(`filters.kinds.${value.kind}`),
-    value.q === "" ? null : value.q,
+    value.actor === null
+      ? null
+      : t("filters.chip", { label: t("filters.actor"), value: t(`actor.${value.actor}`) }),
+    value.kind === null
+      ? null
+      : t("filters.chip", { label: t("filters.kind"), value: t(`filters.kinds.${value.kind}`) }),
+    value.q === "" ? null : t("filters.chip", { label: t("filters.search"), value: value.q }),
   ].filter((c): c is string => c !== null);
   const select = "min-h-11 rounded-md border border-border-strong bg-surface px-3";
   return (

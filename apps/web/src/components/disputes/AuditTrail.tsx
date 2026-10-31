@@ -20,7 +20,7 @@ export function AuditTrail({ entries, timeZone }: { entries: readonly AuditEntry
       ) : (
         <ul className="overflow-hidden rounded-lg border border-border">
           {entries.map((e) => (
-            <AuditRow key={e.id} e={e} locale={locale} timeZone={timeZone} />
+            <AuditRow key={e.id} e={e} locale={locale} timeZone={timeZone} compact />
           ))}
         </ul>
       )}

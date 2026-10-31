@@ -60,7 +60,11 @@ export function DraftReview({
   const [approving, setApproving] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
   const tooLate = d.deadlineState === "closed_for_action";
-  const readOnly = action === null || action.state !== "proposed" || tooLate || !draft.allowed;
+  // a failed filing stays editable: an edit (or "Review and approve again") makes a new proposal
+  const state = action?.state ?? null;
+  const readOnly = (state !== "proposed" && state !== "failed") || tooLate || !draft.allowed;
+  const sentOrSending =
+    state === "approved" || state === "executing" || state === "unknown" || state === "succeeded";
   const over = codePointCount(local.notes) > NOTES_MAX;
 
   async function commit(): Promise<void> {
@@ -128,9 +132,12 @@ export function DraftReview({
       ) : null}
       <div className="flex flex-col gap-1">
         <h2 id="approval-heading" className="text-xl font-semibold">
-          {t("heading")} <code className="font-mono text-sm font-normal break-all">{d.disputeId}</code>
+          {state === "succeeded" ? t("headingFiled") : t("heading")}{" "}
+          <code className="font-mono text-sm font-normal break-all">{d.disputeId}</code>
         </h2>
-        <p className="text-sm text-text-muted">{action?.createdBy === "seller" ? t("seller") : t("agent")}</p>
+        <p className="text-sm text-text-muted">
+          {sentOrSending ? t("approvedSub") : action?.createdBy === "seller" ? t("seller") : t("agent")}
+        </p>
       </div>
       <h3 className="font-semibold">{t("receives")}</h3>
       <dl className="flex flex-col gap-3">
@@ -219,9 +226,15 @@ export function DraftReview({
           {text.refusal(refusal)}
         </p>
       )}
-      {readOnly ? (
-        <p className="text-text-muted">
-          {tooLate ? t("tooLate") : !draft.allowed ? t("notAllowed") : t("readOnly")}
+      {readOnly || state === "failed" ? (
+        <p className="text-text-muted" data-testid="approve-unavailable">
+          {tooLate
+            ? t("tooLate")
+            : !draft.allowed
+              ? t("notAllowed")
+              : state === "failed"
+                ? t("failedHint")
+                : t("readOnly")}
         </p>
       ) : (
         <div className="flex flex-col gap-1">

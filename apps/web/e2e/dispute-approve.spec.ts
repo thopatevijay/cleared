@@ -8,15 +8,11 @@ import { expect, test } from "@playwright/test";
 import { recordedNotes } from "../test/support/dispute-seed.ts";
 import {
   approveByKeyboard,
-  axe,
   capture,
   demoWorkspace,
-  fits,
   local,
   PAYOUT_EN,
-  REVIEW,
   seed,
-  shots,
   sql,
 } from "./support/disputes.ts";
 
@@ -77,10 +73,7 @@ test("review the draft, revise, approve, filed, outcome (EN)", async ({ page, co
   await expect(page.getByTestId("notes-count")).toContainText("Over the 2000-character limit");
   await expect(page.getByTestId("approve")).toBeDisabled();
   await expect(page.getByTestId("fingerprint")).toHaveText(newFp);
-  await page.setViewportSize({ width: 375, height: 800 });
-  await page.getByTestId("notes-count").scrollIntoViewIfNeeded();
-  if (shots) await page.screenshot({ path: `${REVIEW}en-detail-over-limit-375-light.png` });
-  await page.setViewportSize({ width: 1280, height: 900 });
+  await capture(page, "en-detail-over-limit");
 
   // back to the recorded notes → a fresh fingerprint, Approve enabled again
   await page.getByTestId("notes").fill(recordedNotes());
@@ -121,6 +114,10 @@ test("dispute screens in HI, the 'drafting' state and a failed filing (ui-review
     "PayPal didn't record the reply. Review and approve again.",
   );
   await capture(page, "en-detail-failed");
+  await page.goto(`/hi/disputes/${s.disputeRowId}`);
+  await expect(page.getByTestId("filing-refusal")).toBeVisible();
+  await capture(page, "hi-detail-failed");
+  await page.goto(`/en/disputes/${s.disputeRowId}`);
   await page.getByTestId("repropose").click();
   await expect(page.getByTestId("filing-status")).toHaveAttribute("data-state", "proposed", {
     timeout: 20_000,
@@ -151,8 +148,7 @@ test("dispute screens in HI, the 'drafting' state and a failed filing (ui-review
   await page.goto(`/en/disputes/${s.disputeRowId}`);
   await expect(page.getByTestId("loading")).toBeVisible();
   await page.waitForTimeout(3_500);
-  await fits(page, "loading");
-  await axe(page, "en-detail-loading");
+  await capture(page, "en-detail-loading");
   await page.unroute("**/api/disputes/**");
 
   // empty list
@@ -161,4 +157,103 @@ test("dispute screens in HI, the 'drafting' state and a failed filing (ui-review
   await expect(page.getByTestId("empty-state")).toContainText("No disputes");
   await capture(page, "en-list-empty");
   expect(PAYOUT_EN).not.toMatch(/won/);
+});
+
+test("the remaining spec states: confirm dialog, accept claim, kill switch, too late, unavailable, sending, checking, deadline badges", async ({
+  page,
+}) => {
+  test.setTimeout(400_000);
+  const ws = await demoWorkspace(page);
+  const s = await seed(ws);
+  const url = `/en/disputes/${s.disputeRowId}`;
+
+  // the Approve confirm alertdialog (initial focus "Go back")
+  await page.goto(url);
+  await page.getByTestId("approve").click();
+  await expect(page.getByTestId("approve-dialog")).toBeVisible();
+  await expect(page.getByTestId("approve-dialog").getByRole("button", { name: "Go back" })).toBeFocused();
+  await capture(page, "en-detail-confirm-dialog");
+  await page.keyboard.press("Escape");
+
+  // "Other options" → Accept claim, behind the typed confirmation
+  await page.getByText("Other options").click();
+  await page.getByRole("button", { name: "Accept claim…" }).click();
+  await expect(page.getByText("Type 120.00 USD to confirm")).toBeVisible();
+  await expect(page.getByTestId("accept-confirm")).toBeDisabled();
+  await page.getByTestId("accept-typed").fill("120.00 usd");
+  await expect(page.getByTestId("accept-confirm")).toBeDisabled();
+  await capture(page, "en-detail-accept-claim");
+  await page.getByTestId("accept-typed").fill("120.00 USD");
+  await expect(page.getByTestId("accept-confirm")).toBeEnabled();
+  await page.keyboard.press("Escape");
+
+  // kill switch on (local database only; reset at once)
+  await sql(
+    "insert into platform_flags (id, agent_kill_switch) values (1, true) on conflict (id) do update set agent_kill_switch = true",
+    [],
+  );
+  try {
+    await page.goto(url);
+    await expect(page.getByTestId("kill-banner")).toHaveText(
+      "Sending to PayPal is paused. Your draft is saved.",
+    );
+    await expect(page.getByTestId("approve")).toBeDisabled();
+    await capture(page, "en-detail-kill-switch");
+  } finally {
+    await sql("update platform_flags set agent_kill_switch = false where id = 1", []);
+  }
+
+  // Cleared's own in-flight states, mirrored in the stepper
+  await sql("update proposed_actions set state = 'executing' where id = $1", [s.actionId]);
+  await page.goto(url);
+  await expect(page.getByTestId("filing-status")).toHaveAttribute("data-state", "executing");
+  await capture(page, "en-detail-sending");
+  await sql("update proposed_actions set state = 'unknown' where id = $1", [s.actionId]);
+  await page.goto(url);
+  await expect(page.getByTestId("filing-status")).toContainText(
+    "Checking with PayPal: the reply may have been received.",
+  );
+  await capture(page, "en-detail-checking");
+
+  // too late: closed_for_action makes the draft read only
+  const late = await seed(ws);
+  await sql(
+    "update disputes set deadline_state = 'closed_for_action', seller_response_due_date = now() + interval '30 minutes' where id = $1",
+    [late.disputeRowId],
+  );
+  await page.goto(`/en/disputes/${late.disputeRowId}`);
+  await expect(page.getByTestId("approve-unavailable")).toHaveText("Too late to reply here.");
+  await capture(page, "en-detail-too-late");
+
+  // draft unavailable (budget reached): the PayPal link and the pack's items
+  const none = await seed(ws, { draft: false });
+  await sql(
+    "insert into audit_log (workspace_id, actor, action, detail) values ($1, 'system', 'dispute_draft.unavailable', jsonb_build_object('disputeId', $2::text, 'code', 'budget_exceeded'))",
+    [ws, none.disputeRowId],
+  );
+  await page.goto(`/en/disputes/${none.disputeRowId}`);
+  await expect(page.getByTestId("draft-unavailable")).toContainText(
+    "Draft unavailable. You can still reply in PayPal yourself.",
+  );
+  await expect(page.getByTestId("draft-unavailable").getByTestId("evidence-citation")).toHaveCount(3);
+  await capture(page, "en-detail-unavailable");
+
+  // the list's deadline badges: t72, t24, closed_for_action
+  await sql(
+    "update disputes set deadline_state = 't72', seller_response_due_date = now() + interval '50 hours' where id = $1",
+    [s.disputeRowId],
+  );
+  await sql(
+    "update disputes set deadline_state = 't24', seller_response_due_date = now() + interval '18 hours' where id = $1",
+    [none.disputeRowId],
+  );
+  await page.goto("/en/disputes");
+  await expect(page.locator('[data-testid="deadline-badge"][data-state="t72"]')).toHaveText("Due in 2 days");
+  await expect(page.locator('[data-testid="deadline-badge"][data-state="t24"]')).toContainText("hours");
+  await expect(page.locator('[data-testid="deadline-badge"][data-state="closed_for_action"]')).toHaveText(
+    "Too late to reply here",
+  );
+  await capture(page, "en-list-deadlines");
+  await page.goto("/hi/disputes");
+  await capture(page, "hi-list-deadlines");
 });

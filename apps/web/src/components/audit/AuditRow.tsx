@@ -45,7 +45,7 @@ function CopyId({ label, value }: { label: string; value: string }) {
           setCopied(true);
         });
       }}
-      className="min-h-11 min-w-11 rounded-md px-2 text-sm text-accent underline underline-offset-2 md:min-h-6"
+      className="min-h-11 min-w-11 rounded-md border border-border px-3 text-sm text-accent"
     >
       {copied ? t("copied") : <span>{t("copyId", { label })}</span>}
     </button>
@@ -73,12 +73,15 @@ export function AuditRow({
   locale,
   timeZone,
   disputeHref,
+  compact = false,
 }: {
   e: AuditEntry;
   locale: string;
   timeZone: string;
   /** the dispute page for a PayPal dispute id, when the row names one */
   disputeHref?: (paypalId: string) => string;
+  /** always the stacked layout (the dispute page's narrow audit-trail column) */
+  compact?: boolean;
 }) {
   const t = useTranslations("auditLog");
   const text = useAuditText();
@@ -94,7 +97,13 @@ export function AuditRow({
       data-testid="audit-row"
       data-action={e.action}
     >
-      <div className="flex flex-col gap-1 md:grid md:grid-cols-[minmax(0,7rem)_minmax(0,9rem)_1fr] md:gap-x-4 xl:grid-cols-[7rem_10rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.4fr)]">
+      <div
+        className={
+          compact
+            ? "flex flex-col gap-1"
+            : "flex flex-col gap-1 md:grid md:grid-cols-[minmax(0,7rem)_minmax(0,9rem)_1fr] md:items-start md:gap-x-4 xl:grid-cols-[7rem_10rem_minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1.4fr)]"
+        }
+      >
         <time dateTime={e.at} className="tabular text-sm text-text-muted">
           {formatClock(locale, e.at, timeZone)}
         </time>
@@ -107,7 +116,7 @@ export function AuditRow({
           <ToneIcon aria-hidden="true" size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
           <span className="text-text">{r.text}</span>
         </span>
-        <span className="flex flex-wrap gap-x-3 md:col-span-3 xl:col-span-1">
+        <span className={`flex min-w-0 flex-wrap gap-x-3 ${compact ? "" : "md:col-span-3 xl:col-span-1"}`}>
           {e.refs.disputeId === null ? null : (
             <Ref label={t("ref.dispute")} value={e.refs.disputeId} href={disputeHref?.(e.refs.disputeId)} />
           )}
@@ -126,7 +135,7 @@ export function AuditRow({
             onClick={() => {
               setOpen((o) => !o);
             }}
-            className="inline-flex min-h-11 items-center gap-1 text-sm text-accent md:min-h-6"
+            className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-sm text-accent"
           >
             <ChevronDown aria-hidden="true" size={16} className={open ? "rotate-180" : ""} />
             {open ? t("hideDetails") : t("details")}
