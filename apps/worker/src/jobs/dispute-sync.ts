@@ -6,6 +6,7 @@
 //   a Sentry warning. A `custom` that disagrees with the owner → quarantine at once.
 // - mirror: `applyMirror` on PayPal's `update_time` (an older one never overwrites a newer one); a first
 //   insert emits `dispute.opened`, a status change `dispute.status_changed` (version 1), same tx.
+// - a status change also writes the audit row `dispute.status_changed` (M2-09's audit log), same tx.
 // - then: the deadline position (state + one-time alert), and on any change a capture re-sync, so the
 //   linked hold (PENDING / BUYER_COMPLAINT) appears.
 // Targeted use (M2-10's scenario poll, M2-08 after an execution): enqueue `{disputeId, source: "poll"}`.
@@ -21,6 +22,7 @@ import {
 } from "@cleared/core";
 import { reportQuarantine, type PayPalDisputesClient } from "@cleared/adapters";
 import {
+  DISPUTE_STATUS_AUDIT,
   forWorkspace,
   PAYPAL_CAPTURE_SYNC_QUEUE,
   platform,
@@ -227,6 +229,21 @@ async function mirrorDispute(run: Run, workspaceId: WorkspaceId): Promise<Disput
           updateTime: mirror.updateTime,
         },
       });
+      // M2-09: the workspace audit log shows each mirrored PayPal status (and the outcome once resolved)
+      await ws.auditLog.insert(
+        {
+          actor: "system",
+          action: DISPUTE_STATUS_AUDIT,
+          detail: {
+            paypalDisputeId: mirror.disputeId,
+            from: prev.status,
+            to: values.status,
+            outcomeCode: values.outcome?.outcome_code ?? null,
+            outcomeReason: values.outcome?.outcome_reason ?? null,
+          },
+        },
+        tx,
+      );
     }
   }
   await applyDeadline(deps.db, row, deps.now(), tx);

@@ -38,6 +38,16 @@ export interface NewDisputeDraft {
   readonly proposedActionId: string;
 }
 
+/** M2-09: what a seller's revision replaces (notes, selection, PDF, hash and the new proposal). */
+export interface DraftRevision {
+  readonly notes: string;
+  readonly evidenceItemIds: readonly string[];
+  readonly factRefs: unknown;
+  readonly compiledBlobId: string;
+  readonly sha256: string;
+  readonly proposedActionId: string;
+}
+
 /** The outcomes recorded without a draft row (`audit_log.action`). */
 export const DRAFT_AUDIT_ACTIONS = {
   tooLate: "dispute_draft.too_late",
@@ -103,6 +113,26 @@ export function disputeDraftsRepo(db: Db, workspaceId: WorkspaceId) {
       const row = rows[0];
       if (!row) throw new Error("dispute_drafts insert returned no row");
       return row;
+    },
+
+    /**
+     * M2-09: a seller's edit, in place (the row's key stays one per dispute, check version and action).
+     * The caller holds `lockDispute` and writes the new blob and proposal in the same transaction.
+     */
+    async revise(id: string, r: DraftRevision, tx: Tx): Promise<DisputeDraftRow | null> {
+      const rows = await tx
+        .update(disputeDrafts)
+        .set({
+          notes: r.notes,
+          evidenceItemIds: [...r.evidenceItemIds],
+          factRefs: r.factRefs,
+          compiledBlobId: r.compiledBlobId,
+          sha256: r.sha256,
+          proposedActionId: r.proposedActionId,
+        })
+        .where(and(eq(disputeDrafts.workspaceId, ws), eq(disputeDrafts.id, id)))
+        .returning();
+      return rows[0] ?? null;
     },
 
     /** Newest first. */

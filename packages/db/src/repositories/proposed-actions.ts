@@ -131,13 +131,16 @@ export interface SellerProposal {
   readonly workspaceId: string;
   /** user id, or the demo session id */
   readonly proposedBy: string;
-  readonly kind: "accept_claim";
+  /** `accept_claim` (M2-08), or a filing the seller revised from an agent draft (M2-09) */
+  readonly kind: "accept_claim" | "provide_evidence" | "provide_supporting_info";
   readonly payload: JsonValue;
+  /** extra audit detail (M2-09: `revisionOf` = the superseded action) */
+  readonly detail?: Readonly<Record<string, JsonValue>>;
 }
 
 /**
- * A seller-created proposal (`created_by_run_id` null): today only `accept_claim`, which the agent may
- * never create. It still needs its own approval with the typed confirmation.
+ * A seller-created proposal (`created_by_run_id` null): `accept_claim`, which the agent may never create,
+ * or a draft the seller revised (M2-09). It still needs its own approval (accept_claim: typed confirmation).
  */
 export async function insertSellerProposal(db: Db, p: SellerProposal, tx: Tx): Promise<ProposedActionRow> {
   const sha = canonicalHash(p.payload);
@@ -160,7 +163,7 @@ export async function insertSellerProposal(db: Db, p: SellerProposal, tx: Tx): P
       actionId: row.id,
       actor: "seller",
       action: "action.proposed",
-      detail: { kind: p.kind, payloadSha256: sha, proposedBy: p.proposedBy },
+      detail: { ...p.detail, kind: p.kind, payloadSha256: sha, proposedBy: p.proposedBy },
     },
     tx,
   );

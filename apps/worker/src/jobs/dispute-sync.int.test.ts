@@ -165,6 +165,23 @@ describe.skipIf(!dbAvailable)("paypal.dispute.sync (dispute-sync)", () => {
     expect(row?.sellerResponseDueDate?.toISOString()).toBe(RECORDED_DUE);
     expect(row?.paypalUpdatedAt?.toISOString()).toBe("2026-10-29T05:20:34.178Z");
     expect(await topics(ids.disputeId)).toEqual(["dispute.opened", "dispute.status_changed"]);
+    // M2-09: the status change is also an audit row (the workspace audit log's "mirrored PayPal status")
+    const audit = await db.$client.query<{ actor: string; detail: Record<string, unknown> }>(
+      "select actor, detail from audit_log where workspace_id = $1 and action = 'dispute.status_changed'",
+      [ws],
+    );
+    expect(audit.rows).toEqual([
+      {
+        actor: "system",
+        detail: {
+          paypalDisputeId: ids.disputeId,
+          from: "UNDER_REVIEW",
+          to: "WAITING_FOR_SELLER_RESPONSE",
+          outcomeCode: null,
+          outcomeReason: null,
+        },
+      },
+    ]);
     // owner inherited from the capture and claimed for the dispute; the hold is re-fetched on each change
     expect(await platform(db).resourceOwners.get("dispute", ids.disputeId)).toMatchObject({
       workspaceId: ws,

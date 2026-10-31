@@ -59,7 +59,7 @@ export function ErrorPanel({
                   setCopied(true);
                 });
               }}
-              className="min-h-11 min-w-11 rounded-md px-2 text-accent underline underline-offset-2"
+              className="min-h-11 min-w-11 rounded-md border border-border-strong bg-surface px-3 font-medium text-accent hover:bg-surface-sunken"
             >
               {copied ? t("copied") : t("copy")}
             </button>

@@ -1,5 +1,6 @@
 // Summary bar (components.md): the held total per currency (from mirrored PENDING captures, M1-07), the
-// dispute fact ("—" until M2-09) and the proof-ready count (M2-05). One fact per line at 375 px.
+// "in dispute" total per currency (M2-09; "—" when disputes fail to load) and the proof-ready count
+// (M2-05). One fact per line at 375 px.
 import type { Amount } from "@cleared/core";
 import { FileCheck, Hourglass, Scale, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -31,6 +32,40 @@ function Fact({
   );
 }
 
+/**
+ * dashboard.md 3b (M2-09): "{amount} in dispute" per currency, a link that filters the list
+ * (`?filter=dispute`). `null` = disputes failed to load ("—"; the list shows the inline band);
+ * `undefined` = still loading.
+ */
+function DisputeFact({
+  inDispute,
+  active,
+}: {
+  inDispute: readonly Amount[] | null | undefined;
+  active: boolean;
+}) {
+  const t = useTranslations("dashboard");
+  const td = useTranslations("disputes.dashboard");
+  const raw = useLocale();
+  const locale = intlLocale(isAppLocale(raw) ? raw : "en");
+  if (inDispute === undefined || inDispute === null) return <Fact icon={Scale}>{t("inDisputeNone")}</Fact>;
+  if (inDispute.length === 0) return <Fact icon={Scale}>{td("noneInDispute")}</Fact>;
+  const text = inDispute.map((a) => `${formatAmount(locale, a).text} ${a.currency}`).join(" + ");
+  return (
+    <Link
+      href={{ pathname: "/payments", query: { filter: "dispute" } }}
+      aria-current={active ? "true" : undefined}
+      className="inline-flex min-h-11 items-start gap-2 underline decoration-border-strong underline-offset-4 hover:decoration-accent"
+      data-testid="summary-dispute"
+    >
+      <span className="flex h-[1lh] shrink-0 items-center">
+        <Scale aria-hidden="true" size={22} strokeWidth={1.75} className="text-text-muted" />
+      </span>
+      <span>{td("inDispute", { amount: text })}</span>
+    </Link>
+  );
+}
+
 /** dashboard.md 3c (M2-05): the proof-ready count, a link that filters the list (`?filter=proof-ready`). */
 function ProofReadyFact({ count, active }: { count: number; active: boolean }) {
   const t = useTranslations("dashboard.summary");
@@ -54,10 +89,13 @@ export function SummaryBar({
   held,
   proofReady,
   filter,
+  inDispute,
 }: {
   held: readonly Amount[];
   proofReady: number;
   filter: string | null;
+  /** M2-09: open disputes per currency; null when they failed to load */
+  inDispute?: readonly Amount[] | null | undefined;
 }) {
   const t = useTranslations("dashboard");
   const raw = useLocale();
@@ -74,9 +112,7 @@ export function SummaryBar({
       data-testid="summary"
     >
       <Fact icon={Hourglass}>{held.length === 0 ? t("nothingHeld") : t("held", { amount: heldText })}</Fact>
-      <Fact icon={Scale} pending={t("pendingDispute")}>
-        {t("inDisputeNone")}
-      </Fact>
+      <DisputeFact inDispute={inDispute} active={filter === "dispute"} />
       <ProofReadyFact count={proofReady} active={filter === "proof-ready"} />
     </p>
   );

@@ -98,8 +98,85 @@ function deliver(o: Order): void {
   }, DELIVERY_DELAY_MS);
 }
 
+// M2-09: the seeded E2E disputes (`PP-D-E2E-…`, test/support/dispute-seed.ts) replay the recorded M0-05
+// lifecycle (fixtures/paypal/disputes/full): WAITING_FOR_SELLER_RESPONSE (evidence + accept_claim links)
+// until the evidence write, which answers with the recorded 200 (paypal-debug-id ca51fc56edb2d); after it,
+// GETs return the recorded RESOLVED state (RESOLVED_WITH_PAYOUT / REPRESENTED_BY_PAYPAL) and the capture
+// reads COMPLETED. COMPRESSED on purpose: the sandbox's own review step (adjudicate, M2-10's live spec)
+// is skipped here. Ids, the dispute amount ($120.00 USD) and times are rewritten; `custom` is dropped, so
+// ownership comes from the seeded owner rows.
+const E2E_DISPUTE = /^PP-D-E2E-[0-9A-F]{10}$/;
+const FULL = "paypal/disputes/full";
+/** E2E disputes PayPal refuses the evidence for (`e2eDisputeIds("FA11")`) */
+const E2E_REJECTED = "PP-D-E2E-FA11";
+const filed = new Set<string>();
+const e2eCapture = (disputeId: string): string => `E2E${disputeId.slice(-10)}CAP0`;
+const nowIso = (): string => new Date().toISOString();
+
+function disputeBody(id: string): Response {
+  const resolved = filed.has(id);
+  const f = loadFixture(`${FULL}/${resolved ? "state-6-resolved" : "state-3-waiting_for_seller_response"}`);
+  const rec = JSON.parse(responseText(f)) as Record<string, unknown> & {
+    dispute_id: string;
+    disputed_transactions: Record<string, unknown>[];
+  };
+  const body = JSON.parse(responseText(f).replaceAll(rec.dispute_id, id)) as typeof rec;
+  body.disputed_transactions = body.disputed_transactions.map((t) => {
+    const rest = { ...t };
+    delete rest["custom"];
+    return {
+      ...rest,
+      seller_transaction_id: e2eCapture(id),
+      gross_amount: { currency_code: "USD", value: "120.00" },
+    };
+  });
+  body["dispute_amount"] = { currency_code: "USD", value: "120.00" };
+  body["update_time"] = nowIso();
+  if (!resolved) body["seller_response_due_date"] = new Date(Date.now() + 5 * 86_400_000).toISOString();
+  return HttpResponse.json(body, {
+    status: 200,
+    headers: { "paypal-debug-id": `e2e${id.slice(-6).toLowerCase()}` },
+  });
+}
+
+function captureBody(id: string, disputeId: string): Response {
+  const f = loadFixture(`${FULL}/${filed.has(disputeId) ? "capture-3-completed" : "capture-2-pending"}`);
+  const rec = JSON.parse(responseText(f)) as { id: string };
+  const body = JSON.parse(responseText(f).replaceAll(rec.id, id)) as Record<string, unknown>;
+  delete body["custom_id"];
+  body["amount"] = { currency_code: "USD", value: "120.00" };
+  body["update_time"] = nowIso().replace(/\.\d{3}Z$/, "Z");
+  return HttpResponse.json(body, { status: 200 });
+}
+
+const disputeHandlers = [
+  http.get(`${API}/v1/customer/disputes/:id`, ({ params }) => {
+    const id = String(params["id"]);
+    return E2E_DISPUTE.test(id) ? disputeBody(id) : HttpResponse.error();
+  }),
+  http.post(`${API}/v1/customer/disputes/:id/provide-evidence`, ({ params }) => {
+    const id = String(params["id"]);
+    if (!E2E_DISPUTE.test(id)) return HttpResponse.error();
+    if (id.startsWith(E2E_REJECTED)) {
+      // the recorded refusal (422 UNPROCESSABLE_ENTITY, debug_id ca51fb6196f52): nothing is filed
+      const r = loadFixture("paypal/disputes/errors/provide-evidence-not-allowed");
+      return new HttpResponse(responseText(r).replaceAll("PP-R-VFE-10195075", id), {
+        status: r.response.status,
+        headers: r.response.headers,
+      });
+    }
+    filed.add(id);
+    const f = loadFixture(`${FULL}/write-evidence.2`);
+    return new HttpResponse(responseText(f).replaceAll("PP-R-UVC-10195076", id), {
+      status: f.response.status,
+      headers: f.response.headers,
+    });
+  }),
+];
+
 const workerHandlers = [
   http.post(`${API}/v1/oauth2/token`, token),
+  ...disputeHandlers,
   http.post(`${API}/v2/checkout/orders`, async ({ request }) => {
     const body = (await request.json()) as { purchase_units: { custom_id: string }[] };
     const o = { orderId: paypalId(), captureId: paypalId(), ws: body.purchase_units[0]?.custom_id ?? "" };
@@ -118,6 +195,8 @@ const workerHandlers = [
     return replay("paypal/orders/test-payment/capture", o);
   }),
   http.get(`${API}/v2/payments/captures/:id`, ({ params }) => {
+    const e2e = /^E2E([0-9A-F]{10})CAP0$/.exec(String(params["id"]));
+    if (e2e !== null) return captureBody(String(params["id"]), `PP-D-E2E-${e2e[1] ?? ""}`);
     const o = captures.get(String(params["id"]));
     const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
     return o

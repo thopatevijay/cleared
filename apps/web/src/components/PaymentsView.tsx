@@ -16,6 +16,8 @@ import { attentionRank, captureStatusKey, formatAmount } from "../lib/format.ts"
 import { EmptyState } from "./EmptyState.tsx";
 import { ErrorPanel } from "./ErrorPanel.tsx";
 import { PaymentRow, WaitingRow } from "./PaymentRow.tsx";
+import { DisputesBand } from "./payments/DisputeLines.tsx";
+import { DisputeFilterChip, useDisputes } from "./payments/useDashboardDisputes.tsx";
 import { ScenarioEntry } from "./scenario/ScenarioEntry.tsx";
 import { SummaryBar, SummarySkeleton } from "./SummaryBar.tsx";
 import { TestPaymentButton } from "./TestPaymentButton.tsx";
@@ -137,6 +139,8 @@ export function PaymentsView() {
     );
   }, [fresh, data, locale, t]);
 
+  const disputes = useDisputes();
+
   let body;
   if (data === undefined && error === undefined) {
     body = <Loading />;
@@ -153,15 +157,28 @@ export function PaymentsView() {
       />
     );
   } else {
+    const byPayment = disputes.byPayment;
     const proofOnly = filter === "proof-ready";
+    const disputeOnly = filter === "dispute";
     const items = [...data.items]
       .filter((p) => !proofOnly || p.pack?.proofReady === true)
-      .sort((a, b) => attentionRank(a.status) - attentionRank(b.status));
-    const waiting = data.testPayments.waiting;
+      .filter((p) => !disputeOnly || byPayment.has(p.id))
+      .sort(
+        (a, b) =>
+          (byPayment.has(a.id) ? -1 : attentionRank(a.status)) -
+          (byPayment.has(b.id) ? -1 : attentionRank(b.status)),
+      );
+    const waiting = proofOnly || disputeOnly ? 0 : data.testPayments.waiting;
     const capped = data.testPayments.usedToday >= data.testPayments.limit;
     body = (
       <div className="flex flex-col gap-6">
-        <SummaryBar held={data.summary.held} proofReady={data.summary.proofReady} filter={filter} />
+        <SummaryBar
+          held={data.summary.held}
+          proofReady={data.summary.proofReady}
+          filter={filter}
+          inDispute={disputes.error ? null : disputes.data?.summary.inDispute}
+        />
+        {disputes.error ? <DisputesBand reference={disputes.reference} onRetry={disputes.retry} /> : null}
         {/* M2-10: "Run the dispute scenario" (sandbox; demo and owner workspaces) */}
         <ScenarioEntry />
         {error !== undefined ? (
@@ -189,7 +206,8 @@ export function PaymentsView() {
             ) : null}
           </div>
           {proofOnly ? <FilterChip empty={items.length === 0} /> : null}
-          {proofOnly && items.length === 0 ? null : items.length === 0 && waiting === 0 ? (
+          {disputeOnly ? <DisputeFilterChip empty={items.length === 0} /> : null}
+          {(proofOnly || disputeOnly) && items.length === 0 ? null : items.length === 0 && waiting === 0 ? (
             <EmptyState icon={Inbox} title={t("empty.title")} body={t("empty.body")} headingLevel={3}>
               <TestPaymentButton capped={capped} onQueued={() => void mutate()} />
             </EmptyState>
@@ -199,7 +217,13 @@ export function PaymentsView() {
                 <WaitingRow key={`w${String(i)}`} />
               ))}
               {items.map((p) => (
-                <PaymentRow key={p.id} p={p} timeZone={data.workspace.timezone} flash={fresh.has(p.id)} />
+                <PaymentRow
+                  key={p.id}
+                  p={p}
+                  timeZone={data.workspace.timezone}
+                  flash={fresh.has(p.id)}
+                  dispute={byPayment.get(p.id) ?? null}
+                />
               ))}
             </ul>
           )}
