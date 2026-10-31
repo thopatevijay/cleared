@@ -5,6 +5,7 @@ import { identityRepo, idempotencyKeysRepo, workspacesRepo } from "./accounts.ts
 import { authRepo } from "./auth.ts";
 import { resourceOwnersRepo, webhookEventsRepo } from "./ingest.ts";
 import { consumerReceiptsRepo, outboxRepo, workerHeartbeatsRepo } from "./messaging.ts";
+import { disputeDeadlinesRepo } from "../workspace/disputes.ts";
 
 export function platform(db: Db) {
   return {
@@ -17,6 +18,7 @@ export function platform(db: Db) {
     outbox: outboxRepo(db),
     consumerReceipts: consumerReceiptsRepo(db),
     workerHeartbeats: workerHeartbeatsRepo(db),
+    disputeDeadlines: disputeDeadlinesRepo(db),
   };
 }
 

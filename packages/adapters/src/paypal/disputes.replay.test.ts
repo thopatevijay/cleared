@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createHttpClient, type HttpClient } from "../http/client.ts";
 import { FIXTURES_DIR, loadFixture } from "../testing/fixture.ts";
 import { startReplay, type Replay } from "../testing/replay.ts";
-import { DisputeSchema, DisputeWriteResponseSchema, type Dispute } from "./dispute-schemas.ts";
+import { DisputeSchema, DisputeWriteResponseSchema, type Dispute } from "./disputes.schemas.ts";
 import {
   allowedActions,
   buildMultipart,

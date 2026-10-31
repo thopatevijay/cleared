@@ -1,6 +1,7 @@
 // POST /api/webhooks/paypal (M1-04, ADR 0012). Raw body (1 MB cap) → authenticate (self-verify, API
 // fallback) → envelope → ONE transaction: the raw `webhook_events` row (ON CONFLICT DO NOTHING) and,
-// only when this request inserted it and it is routable, the `paypal.capture.sync` job. 200 on insert
+// only when this request inserted it and it is routable, the `paypal.capture.sync` job (and for a dispute
+// event the `paypal.dispute.sync` job, M2-06). 200 on insert
 // and on a duplicate; no PayPal fetch inside the request. A rejected delivery → 401, nothing stored, a
 // warning with the transmission id only.
 import {
@@ -16,7 +17,14 @@ import {
   type WebhookHeaders,
   verificationFailureAlert,
 } from "@cleared/adapters";
-import { PAYPAL_CAPTURE_SYNC_QUEUE, platform, withTransaction, type Db, type Publisher } from "@cleared/db";
+import {
+  PAYPAL_CAPTURE_SYNC_QUEUE,
+  PAYPAL_DISPUTE_SYNC_QUEUE,
+  platform,
+  withTransaction,
+  type Db,
+  type Publisher,
+} from "@cleared/db";
 import { apiError, CORRELATION_HEADER, json } from "../respond.ts";
 
 export interface PayPalWebhookDeps {
@@ -90,6 +98,16 @@ export async function postPayPalWebhook(req: Request, deps: PayPalWebhookDeps): 
           ...(route.marksEvent ? { eventId: row.id } : {}),
         };
         await deps.publisher.enqueue(tx, PAYPAL_CAPTURE_SYNC_QUEUE, job);
+      } else if (route.kind === "dispute_sync") {
+        await deps.publisher.enqueue(tx, PAYPAL_DISPUTE_SYNC_QUEUE, {
+          disputeId: route.disputeId,
+          eventId: row.id,
+        });
+        // the chargeback hold shows without waiting for the dispute (BL-01 6489621553)
+        if (route.captureId !== null) {
+          const capture: CaptureSyncJob = { captureId: route.captureId };
+          await deps.publisher.enqueue(tx, PAYPAL_CAPTURE_SYNC_QUEUE, capture);
+        }
       }
       return "stored";
     }),

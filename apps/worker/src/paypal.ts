@@ -4,17 +4,21 @@
 import {
   createHttpClient,
   createPayPalCapturesClient,
+  createPayPalDisputesClient,
   createPayPalOrdersClient,
   createTokenProvider,
   PAYPAL_SANDBOX_BASE_URL,
   VENDOR_TIMEOUTS_MS,
   type PayPalCapturesClient,
+  type PayPalDisputesClient,
   type PayPalOrdersClient,
 } from "@cleared/adapters";
 
 export interface PayPalClients {
   readonly orders: PayPalOrdersClient;
   readonly captures: PayPalCapturesClient;
+  /** M2-06: dispute reads for `paypal.dispute.sync`; M2-08 adds the guarded writes. */
+  readonly disputes: Pick<PayPalDisputesClient, "getDispute" | "listDisputes">;
 }
 
 export function paypalClientsFromEnv(env: NodeJS.ProcessEnv): PayPalClients {
@@ -27,6 +31,7 @@ export function paypalClientsFromEnv(env: NodeJS.ProcessEnv): PayPalClients {
       Promise.reject(new Error("PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET are not set"));
     return {
       captures: { getCapture: missing },
+      disputes: { getDispute: missing, listDisputes: missing },
       orders: {
         createOrder: missing,
         captureOrder: missing,
@@ -47,5 +52,6 @@ export function paypalClientsFromEnv(env: NodeJS.ProcessEnv): PayPalClients {
   return {
     orders: createPayPalOrdersClient({ http, tokens }),
     captures: createPayPalCapturesClient({ http, tokens }),
+    disputes: createPayPalDisputesClient({ http, tokens }),
   };
 }

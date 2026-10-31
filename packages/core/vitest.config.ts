@@ -2,7 +2,6 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    // M2-01: tests may sit next to their module (src/**/*.test.ts) as well as under test/.
     include: ["test/**/*.test.ts", "src/**/*.test.ts"],
     coverage: {
       provider: "v8",

@@ -56,12 +56,12 @@ describe("routeWebhook over every recorded delivery", () => {
     "simulator/payment-capture-refunded.json": "capture_sync:5LK72275CG489890D",
     // v1 reversal sample has no capture reference at all: stored only
     "simulator/payment-capture-reversed.json": "store_only",
-    // disputes re-fetch the disputed capture without marking the event (BL-01 6489621553)
-    "deliveries/customer-dispute-created.json": "capture_sync:0M327451J9579884Y",
-    "deliveries/customer-dispute-updated.json": "capture_sync:0M327451J9579884Y",
-    "simulator/customer-dispute-created.json": "capture_sync:00D10444LD479031K",
-    "simulator/customer-dispute-resolved.json": "capture_sync:00D10444LD479031K",
-    "simulator/customer-dispute-updated.json": "capture_sync:00D10444LD479031K",
+    // disputes: re-fetch the dispute (M2-06) and the disputed capture (BL-01 6489621553)
+    "deliveries/customer-dispute-created.json": "dispute_sync:PP-R-YKI-10195086:0M327451J9579884Y",
+    "deliveries/customer-dispute-updated.json": "dispute_sync:PP-R-YKI-10195086:0M327451J9579884Y",
+    "simulator/customer-dispute-created.json": "dispute_sync:PP-000-042-663-135:00D10444LD479031K",
+    "simulator/customer-dispute-resolved.json": "dispute_sync:PP-000-042-663-135:00D10444LD479031K",
+    "simulator/customer-dispute-updated.json": "dispute_sync:PP-000-042-663-135:00D10444LD479031K",
   };
   const all = [
     ...envelopes("deliveries").map(([f, e]) => [`deliveries/${f}`, e] as const),
@@ -69,7 +69,12 @@ describe("routeWebhook over every recorded delivery", () => {
   ];
   it.each(all)("%s", (name, e) => {
     const r = routeWebhook(e);
-    const got = r.kind === "capture_sync" ? `capture_sync:${r.captureId}` : r.kind;
+    const got =
+      r.kind === "capture_sync"
+        ? `capture_sync:${r.captureId}`
+        : r.kind === "dispute_sync"
+          ? `dispute_sync:${r.disputeId}:${r.captureId ?? "none"}`
+          : r.kind;
     expect(got).toBe(expected[name] ?? "store_only");
     if (r.kind === "capture_sync") {
       expect(r.marksEvent).toBe(!e.event_type.startsWith("CUSTOMER.DISPUTE."));
@@ -85,6 +90,29 @@ describe("routeWebhook over every recorded delivery", () => {
       ],
     };
     expect(captureIdOf("PAYMENT.CAPTURE.REFUNDED", resource)).toBe("2GG279541U471931P");
+  });
+  it("a dispute event without a usable dispute_id falls back to the capture re-fetch (event unmarked)", () => {
+    const resource = {
+      dispute_id: "../x",
+      disputed_transactions: [{ seller_transaction_id: "0M327451J9579884Y" }],
+    };
+    const e = {
+      id: "WH-1",
+      event_type: "CUSTOMER.DISPUTE.UPDATED",
+      create_time: "2026-10-31T00:00:00Z",
+      resource,
+    };
+    expect(routeWebhook(e)).toEqual({
+      kind: "capture_sync",
+      captureId: "0M327451J9579884Y",
+      marksEvent: false,
+    });
+    expect(routeWebhook({ ...e, resource: { dispute_id: "PP-R-1" } })).toEqual({
+      kind: "dispute_sync",
+      disputeId: "PP-R-1",
+      captureId: null,
+    });
+    expect(routeWebhook({ ...e, resource: {} })).toEqual({ kind: "store_only" });
   });
   it("an id that is not a PayPal id is not routed", () => {
     expect(captureIdOf("PAYMENT.CAPTURE.COMPLETED", { id: "../../x" })).toBeNull();

@@ -6,6 +6,7 @@ import {
   ACTION_RISKS,
   ACTION_STATES,
   AUDIT_ACTORS,
+  DEADLINE_STATES,
   DRAFT_STATES,
   EVIDENCE_KINDS,
   HOLD_STATES,
@@ -37,3 +38,4 @@ export const actionState = pgEnum("action_state", ACTION_STATES);
 export const actionKind = pgEnum("action_kind", ACTION_KINDS);
 export const actionRisk = pgEnum("action_risk", ACTION_RISKS);
 export const auditActor = pgEnum("audit_actor", AUDIT_ACTORS);
+export const deadlineState = pgEnum("deadline_state", DEADLINE_STATES);

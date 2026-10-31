@@ -110,6 +110,15 @@ export const notifications = pgTable(
     sentVia: text("sent_via"),
     sentAt: tstz("sent_at"),
     readAt: tstz("read_at"),
+    /**
+     * M2-06: the dispute (`disputes.id`) a deadline alert is about; null for other notifications. No FK
+     * here: `disputes` imports this module (`scoped`), so a reference would be a circular import.
+     */
+    disputeId: uuid("dispute_id"),
   },
-  (t) => [index("notifications_workspace_created_idx").on(t.workspaceId, t.createdAt)],
+  (t) => [
+    index("notifications_workspace_created_idx").on(t.workspaceId, t.createdAt),
+    // one alert per dispute and kind (dispute_deadline_72h / _24h); NULL dispute ids never collide
+    uniqueIndex("notifications_dispute_kind_key").on(t.disputeId, t.kind),
+  ],
 );
