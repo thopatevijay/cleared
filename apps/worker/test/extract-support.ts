@@ -58,7 +58,7 @@ const created: string[] = [];
  */
 export async function deleteTestJobs(db: Db): Promise<void> {
   await db.$client.query(
-    "delete from pgboss.job where name = 'pack.extracted' and data->>'workspaceId' = any($1)",
+    "delete from pgboss.job where name in ('pack.extracted', 'pack.checked') and data->>'workspaceId' = any($1)",
     [created],
   );
 }
@@ -80,6 +80,18 @@ export async function newPack(db: Db, ws: WorkspaceId): Promise<string> {
 /** Stores one sample the way M2-01's intake does and returns the evidence item id. */
 export async function addSample(db: Db, ws: WorkspaceId, packId: string, name: SampleName): Promise<string> {
   const { file, kind } = SAMPLES[name];
+  return addFile(db, ws, packId, file, kind);
+}
+
+/** Any file of fixtures/samples/evidence (M2-04 also stores the translation and website packs). */
+export async function addFile(
+  db: Db,
+  ws: WorkspaceId,
+  packId: string,
+  file: string,
+  kind: SellerEvidenceKind,
+): Promise<string> {
+  const name = file;
   const raw = readFileSync(join(FIXTURES_DIR, "samples/evidence", file));
   const repo = evidenceRepo(db, ws);
   return withTransaction(db, async (tx) => {

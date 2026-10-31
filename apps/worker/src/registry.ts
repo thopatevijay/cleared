@@ -21,6 +21,7 @@ import { killSwitchFromEnv } from "./jobs/action-runtime.ts";
 import { disputeSyncHandler } from "./jobs/dispute-sync.ts";
 import { executeActionHandler } from "./jobs/execute-action.ts";
 import { reconcileActionHandler } from "./jobs/reconcile-action.ts";
+import { checkScopeHandler } from "./jobs/check-scope.ts";
 import { extractEvidenceHandler } from "./jobs/extract-evidence.ts";
 import { testPaymentHandler } from "./jobs/test-payment.ts";
 import type { PayPalClients } from "./paypal.ts";
@@ -85,12 +86,17 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
       queue: queueSpec(SANDBOX_TEST_PAYMENT_QUEUE),
       handler: testPaymentHandler({ db: rt.db, orders: paypal.orders }),
     },
-    // M2-03: extract facts from each new evidence item. `pack.extracted` is recorded until M2-04 consumes it.
+    // M2-03: extract facts from each new evidence item; M2-04: check the pack's scope once every item is extracted.
     {
       queue: queueSpec("evidence.added"),
       handler: extractEvidenceHandler({ db: rt.db, publisher, ...ai, now: () => new Date() }),
     },
-    { queue: queueSpec("pack.extracted"), handler: recordEvent },
+    {
+      queue: queueSpec("pack.extracted"),
+      handler: checkScopeHandler({ db: rt.db, publisher, ...ai, now: () => new Date() }),
+    },
+    // M2-05 / M2-07 consume it for real.
+    { queue: queueSpec("pack.checked"), handler: recordEvent },
     // The events capture sync emits. Consuming them marks the outbox row published (so the relay does
     // not re-send it); M3-01 replaces these with hold derivation.
     { queue: queueSpec("payment.captured"), handler: recordEvent },
