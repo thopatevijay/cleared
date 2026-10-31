@@ -98,7 +98,7 @@ export function ScenarioScreen({ id, timeZone }: { id: string; timeZone: string 
               <TriangleAlert aria-hidden="true" size={20} strokeWidth={1.75} className="mt-0.5 shrink-0" />
               <span>{data.state === "timed_out" ? t("timedOut") : t("failed")}</span>
             </p>
-            <ScenarioEntry />
+            <ScenarioEntry showOpen={false} />
           </>
         ) : null}
         <section aria-labelledby="timeline-heading" className="flex flex-col gap-3">

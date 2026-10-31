@@ -17,7 +17,8 @@ async function fetchIndex(path: string): Promise<ScenarioIndex> {
 
 const isActive = (state: string): boolean => (SCENARIO_ACTIVE_STATES as readonly string[]).includes(state);
 
-export function ScenarioEntry() {
+/** `showOpen = false` on the scenario page itself, where "Open the dispute scenario" would loop back. */
+export function ScenarioEntry({ showOpen = true }: { showOpen?: boolean }) {
   const t = useTranslations("scenario");
   const router = useRouter();
   const reasonId = useId();
@@ -28,7 +29,7 @@ export function ScenarioEntry() {
   if (data === undefined) return null;
   const latest = data.latest;
   const openLink =
-    latest === null ? null : (
+    latest === null || !showOpen ? null : (
       <Link
         href={`/scenario/${latest.id}`}
         className="inline-flex min-h-11 items-center text-accent underline underline-offset-2"
