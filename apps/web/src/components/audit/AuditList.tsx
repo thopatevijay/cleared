@@ -143,9 +143,100 @@ function Loading() {
   );
 }
 
-export function AuditList() {
+export interface AuditBodyProps {
+  readonly data: AuditPageData | undefined;
+  readonly error: unknown;
+  readonly isValidating: boolean;
+  readonly rows: readonly AuditEntry[];
+  readonly filtersActive: boolean;
+  readonly next: string | null;
+  readonly olderError: ApiError | null;
+  readonly olderBusy: boolean;
+  readonly onRetry: () => void;
+  readonly onClear: () => void;
+  readonly onLoadOlder: (cursor: string) => void;
+}
+
+/** The list's states: loading, error, empty, filtered empty, rows (+ load older / its partial failure). */
+export function AuditBody(p: AuditBodyProps) {
   const t = useTranslations("auditLog");
   const tp = useTranslations("audit");
+  let body;
+  if (p.data === undefined && p.error === undefined) body = <Loading />;
+  else if (p.data === undefined)
+    body = (
+      <ErrorPanel
+        title={t("errorTitle")}
+        body={t("errorBody")}
+        reference={p.error instanceof ApiError ? p.error.correlationId : null}
+        busy={p.isValidating}
+        onRetry={p.onRetry}
+      />
+    );
+  else if (p.rows.length === 0 && p.filtersActive)
+    body = (
+      <div
+        className="flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-6"
+        data-testid="filtered-empty"
+      >
+        <p>{t("filters.noMatch")}</p>
+        <button
+          type="button"
+          onClick={p.onClear}
+          className="min-h-11 rounded-md border border-border-strong px-4 font-medium text-accent"
+        >
+          {t("filters.clear")}
+        </button>
+      </div>
+    );
+  else if (p.rows.length === 0)
+    body = (
+      <div
+        className="flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-6"
+        data-testid="empty-state"
+      >
+        <ScrollText aria-hidden="true" size={32} strokeWidth={1.75} className="text-text-muted" />
+        <p>{tp("empty")}</p>
+      </div>
+    );
+  else
+    body = (
+      <>
+        <Groups rows={p.rows} timeZone={p.data.workspace.timezone} />
+        {p.olderError === null ? null : (
+          <div className="flex flex-col gap-2" data-testid="older-error">
+            <ErrorPanel
+              title={t("olderError")}
+              reference={p.olderError.correlationId}
+              busy={p.olderBusy}
+              onRetry={() => {
+                if (p.next !== null) p.onLoadOlder(p.next);
+              }}
+            />
+          </div>
+        )}
+        {p.next === null ? (
+          <p className="text-sm text-text-muted">{t("end")}</p>
+        ) : p.olderError === null ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (p.next !== null) p.onLoadOlder(p.next);
+            }}
+            disabled={p.olderBusy}
+            aria-busy={p.olderBusy || undefined}
+            className="min-h-11 self-start rounded-md border border-border-strong px-4 font-medium text-accent"
+            data-testid="load-older"
+          >
+            {p.olderBusy ? t("loadingOlder") : t("loadOlder")}
+          </button>
+        ) : null}
+      </>
+    );
+  return body;
+}
+
+export function AuditList() {
   const [filters, setFilters] = useState<AuditFilterValue>(NO_FILTERS);
   const [formKey, setFormKey] = useState(0);
   const { data, error, isValidating, mutate } = useSWR<AuditPageData, unknown>(
@@ -170,76 +261,21 @@ export function AuditList() {
     setFilters(NO_FILTERS);
     setFormKey((k) => k + 1);
   };
-  let body;
-  if (data === undefined && error === undefined) body = <Loading />;
-  else if (data === undefined)
-    body = (
-      <ErrorPanel
-        title={t("errorTitle")}
-        body={t("errorBody")}
-        reference={error instanceof ApiError ? error.correlationId : null}
-        busy={isValidating}
-        onRetry={() => void mutate()}
-      />
-    );
-  else if (rows.length === 0 && hasFilters(filters))
-    body = (
-      <div
-        className="flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-6"
-        data-testid="filtered-empty"
-      >
-        <p>{t("filters.noMatch")}</p>
-        <button
-          type="button"
-          onClick={clear}
-          className="min-h-11 rounded-md border border-border-strong px-4 font-medium text-accent"
-        >
-          {t("filters.clear")}
-        </button>
-      </div>
-    );
-  else if (rows.length === 0)
-    body = (
-      <div
-        className="flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-6"
-        data-testid="empty-state"
-      >
-        <ScrollText aria-hidden="true" size={32} strokeWidth={1.75} className="text-text-muted" />
-        <p>{tp("empty")}</p>
-      </div>
-    );
-  else
-    body = (
-      <>
-        <Groups rows={rows} timeZone={data.workspace.timezone} />
-        {older.error === null ? null : (
-          <div className="flex flex-col gap-2" data-testid="older-error">
-            <ErrorPanel
-              title={t("olderError")}
-              reference={older.error.correlationId}
-              busy={older.busy}
-              onRetry={() => {
-                if (next !== null) void older.load(next);
-              }}
-            />
-          </div>
-        )}
-        {next === null ? (
-          <p className="text-sm text-text-muted">{t("end")}</p>
-        ) : older.error === null ? (
-          <button
-            type="button"
-            onClick={() => void older.load(next)}
-            disabled={older.busy}
-            aria-busy={older.busy || undefined}
-            className="min-h-11 self-start rounded-md border border-border-strong px-4 font-medium text-accent"
-            data-testid="load-older"
-          >
-            {older.busy ? t("loadingOlder") : t("loadOlder")}
-          </button>
-        ) : null}
-      </>
-    );
+  const body = (
+    <AuditBody
+      data={data}
+      error={error}
+      isValidating={isValidating}
+      rows={rows}
+      filtersActive={hasFilters(filters)}
+      next={next}
+      olderError={older.error}
+      olderBusy={older.busy}
+      onRetry={() => void mutate()}
+      onClear={clear}
+      onLoadOlder={(c) => void older.load(c)}
+    />
+  );
   return (
     <div className="flex flex-col gap-4">
       <AuditFilters key={formKey} value={filters} onChange={setFilters} />

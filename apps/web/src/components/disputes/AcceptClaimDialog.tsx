@@ -5,7 +5,7 @@
 // (M2-08) and approves it with the typed text; the server checks the same match again.
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
 import { ActionViewSchema } from "../../lib/dispute-view.ts";
 import { refusalOf, useDisputeText } from "./text.ts";
@@ -44,7 +44,7 @@ export function AcceptClaimDialog({
     } else if (!open && d.open) d.close();
   }, [open]);
 
-  const matches = expected !== null && typed === expected;
+  const matches = canAcceptClaim(typed, expected);
 
   async function accept(): Promise<void> {
     if (!matches) return;
@@ -103,55 +103,91 @@ export function AcceptClaimDialog({
         }}
         className="m-auto w-[calc(100%-32px)] max-w-[480px] rounded-lg border border-border bg-surface p-5 text-text backdrop:bg-black/40"
       >
-        <h2 id={`${id}-title`} className="mb-2 text-lg font-semibold">
-          {t("heading")}
-        </h2>
-        <p id={`${id}-body`} className="mb-4">
-          {t("body", { amount: amountText })}
-        </p>
-        <label htmlFor={`${id}-typed`} className="mb-1 block font-medium">
-          {t("label", { expected })}
-        </label>
-        <input
-          id={`${id}-typed`}
-          value={typed}
-          onChange={(e) => {
-            setTyped(e.target.value);
+        <AcceptClaimBody
+          id={id}
+          expected={expected}
+          amountText={amountText}
+          typed={typed}
+          onTyped={setTyped}
+          busy={busy}
+          error={error === null ? null : text.refusal(error)}
+          cancelRef={cancel}
+          onCancel={() => {
+            setOpen(false);
           }}
-          autoComplete="off"
-          spellCheck={false}
-          className="tabular mb-2 min-h-12 w-full rounded-md border border-border-strong bg-surface px-3"
-          data-testid="accept-typed"
+          onAccept={() => void accept()}
         />
-        {error === null ? null : (
-          <p role="alert" className="mb-2 text-sm text-danger">
-            {text.refusal(error)}
-          </p>
-        )}
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button
-            ref={cancel}
-            type="button"
-            onClick={() => {
-              setOpen(false);
-            }}
-            className="min-h-12 rounded-md border border-border-strong px-4 font-medium"
-          >
-            {t("cancel")}
-          </button>
-          <button
-            type="button"
-            onClick={() => void accept()}
-            disabled={!matches || busy}
-            aria-busy={busy || undefined}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-danger px-4 font-semibold text-on-danger disabled:bg-surface-sunken disabled:text-text-muted"
-            data-testid="accept-confirm"
-          >
-            {busy ? <Loader2 aria-hidden="true" size={16} className="spin" /> : null}
-            {busy ? t("busy") : t("button")}
-          </button>
-        </div>
       </dialog>
     </div>
+  );
+}
+
+/** Accept claim stays disabled until the typed text equals the amount + currency exactly. */
+export const canAcceptClaim = (typed: string, expected: string | null): boolean =>
+  expected !== null && typed === expected;
+
+export function AcceptClaimBody(p: {
+  id: string;
+  expected: string;
+  amountText: string;
+  typed: string;
+  onTyped: (v: string) => void;
+  busy: boolean;
+  /** the localised refusal, if the last attempt was refused */
+  error: string | null;
+  cancelRef?: RefObject<HTMLButtonElement | null>;
+  onCancel: () => void;
+  onAccept: () => void;
+}) {
+  const t = useTranslations("disputes.accept");
+  return (
+    <>
+      <h2 id={`${p.id}-title`} className="mb-2 text-lg font-semibold">
+        {t("heading")}
+      </h2>
+      <p id={`${p.id}-body`} className="mb-4">
+        {t("body", { amount: p.amountText })}
+      </p>
+      <label htmlFor={`${p.id}-typed`} className="mb-1 block font-medium">
+        {t("label", { expected: p.expected })}
+      </label>
+      <input
+        id={`${p.id}-typed`}
+        value={p.typed}
+        onChange={(e) => {
+          p.onTyped(e.target.value);
+        }}
+        autoComplete="off"
+        spellCheck={false}
+        className="tabular mb-2 min-h-12 w-full rounded-md border border-border-strong bg-surface px-3"
+        data-testid="accept-typed"
+      />
+      {p.error === null ? null : (
+        <p role="alert" className="mb-2 text-sm text-danger">
+          {p.error}
+        </p>
+      )}
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <button
+          ref={p.cancelRef}
+          type="button"
+          onClick={p.onCancel}
+          className="min-h-12 rounded-md border border-border-strong px-4 font-medium"
+        >
+          {t("cancel")}
+        </button>
+        <button
+          type="button"
+          onClick={p.onAccept}
+          disabled={!canAcceptClaim(p.typed, p.expected) || p.busy}
+          aria-busy={p.busy || undefined}
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-danger px-4 font-semibold text-on-danger disabled:bg-surface-sunken disabled:text-text-muted"
+          data-testid="accept-confirm"
+        >
+          {p.busy ? <Loader2 aria-hidden="true" size={16} className="spin" /> : null}
+          {p.busy ? t("busy") : t("button")}
+        </button>
+      </div>
+    </>
   );
 }
