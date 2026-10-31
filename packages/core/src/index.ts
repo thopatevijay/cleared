@@ -11,6 +11,7 @@ export * from "./mirror.ts";
 export * from "./events.ts";
 export * from "./contracts/error-envelope.ts";
 export * from "./contracts/payments.ts";
+export * from "./contracts/evidence.ts";
 
 export * from "./accounts/workspace.ts";
 export * from "./accounts/ownership.ts";
@@ -18,6 +19,7 @@ export * from "./payments/capture.ts";
 export * from "./payments/payment.ts";
 export * from "./proof/pack.ts";
 export * from "./proof/evidence.ts";
+export * from "./ports/blob-store.ts";
 export * from "./holds/hold.ts";
 export * from "./disputes/dispute.ts";
 export * from "./disputes/mirror.ts";
