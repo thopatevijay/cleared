@@ -58,7 +58,8 @@ export function extractInputFor(item: StoredEvidence, ref = EXTRACT_REF): Extrac
   return null;
 }
 
-function evidenceOf(input: ExtractInput): EvidenceInput {
+/** One item as a harness data block (`<kind> evidence`); M2-04 reuses it for the scope check. */
+export function evidenceBlockOf(input: Pick<ExtractInput, "ref" | "kind" | "content">): EvidenceInput {
   const head = { id: input.ref, label: `${input.kind} evidence` };
   const c = input.content;
   if (c.type === "text") return { ...head, kind: "text", text: c.text };
@@ -75,7 +76,7 @@ export const extractWorkflow: WorkflowDef<ExtractInput, Facts> = {
     return ctx.call({
       name: "extract",
       task: EXTRACT_V1_TASK,
-      evidence: [evidenceOf(input)],
+      evidence: [evidenceBlockOf(input)],
       schemaName: "facts_v1",
       schema: FactsSchema,
       maxOutputTokens: EXTRACT_MAX_OUTPUT_TOKENS,

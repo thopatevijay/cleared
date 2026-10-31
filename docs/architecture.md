@@ -74,10 +74,12 @@ stateDiagram-v2
   direction LR
   [*] --> empty
   empty --> collecting
+  collecting --> collecting: new evidence
   collecting --> checked
   checked --> ready
   checked --> stale: new evidence
   ready --> stale: new evidence
+  stale --> checked: re-check
 ```
 
 *Hold*

@@ -21,6 +21,8 @@ export * from "./proof/pack.ts";
 export * from "./proof/evidence.ts";
 export * from "./proof/facts-schema.ts";
 export * from "./proof/extract.ts";
+export * from "./proof/scope-schema.ts";
+export * from "./proof/scope-check.ts";
 export * from "./ports/blob-store.ts";
 export * from "./holds/hold.ts";
 export * from "./disputes/dispute.ts";

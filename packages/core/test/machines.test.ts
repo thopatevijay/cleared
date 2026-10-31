@@ -55,15 +55,18 @@ function exhaustive<S extends string, E extends string>(m: Machine<S, E>, allowe
 describe("ProofPack machine", () => {
   exhaustive(proofPackMachine, [
     ["empty", "evidence_added", "collecting"],
+    ["collecting", "evidence_added", "collecting"],
     ["collecting", "check_completed", "checked"],
     ["checked", "marked_ready", "ready"],
     ["checked", "evidence_added", "stale"],
     ["ready", "evidence_added", "stale"],
+    ["stale", "check_completed", "checked"],
   ]);
   it("starts empty; the typed wrapper delegates", () => {
     expect(proofPackMachine.initial).toBe("empty");
     expect(transitionPack("empty", "evidence_added")).toEqual({ ok: true, value: "collecting" });
-    expect(transitionPack("stale", "check_completed").ok).toBe(false);
+    expect(transitionPack("stale", "check_completed")).toEqual({ ok: true, value: "checked" });
+    expect(transitionPack("collecting", "evidence_added")).toEqual({ ok: true, value: "collecting" });
   });
 });
 
