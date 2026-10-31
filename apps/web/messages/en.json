@@ -418,7 +418,7 @@
       "itemsHint": "Untick an item to leave it out. The PDF and fingerprint update.",
       "item": "{ref} · {kind} · added {date}",
       "openItem": "Open {ref}",
-      "noFile": "text only",
+      "noFile": "Text only (no file)",
       "pdf": "Reply evidence.pdf, {size}",
       "pdfDownload": "Download PDF",
       "pdfNone": "No PDF compiled yet",
@@ -456,7 +456,25 @@
       "packLink": "{ref} in the proof pack",
       "headingFiled": "Reply sent to PayPal",
       "approvedSub": "Approved by you. This reply can't change now.",
-      "failedHint": "This reply wasn't sent. Edit it here, or use “Review and approve again” to propose it again."
+      "failedHint": "This reply wasn't sent. Edit it here, or use “Review and approve again” to propose it again.",
+      "downloadHint": "Reply in PayPal yourself with these: open each in your proof pack or download its file.",
+      "kinds": {
+        "scope": "scope",
+        "delivery": "delivery",
+        "communication": "messages",
+        "client_ack": "client sign-off",
+        "scope_snapshot": "scope snapshot",
+        "invoice": "invoice",
+        "shipment": "shipment"
+      },
+      "unavailableWhy": {
+        "budget_exceeded": "Today's AI drafting budget is used up.",
+        "kill_switch": "Drafting is paused by the operator.",
+        "pdf_too_large": "The evidence would make a PDF of 10 MB or more.",
+        "no_items": "The proof pack has no items to attach.",
+        "degraded": "The AI service was unavailable.",
+        "other": "The agent couldn't draft a reply that passed Cleared's checks."
+      }
     },
     "confirm": {
       "title": "Send this reply to PayPal?",

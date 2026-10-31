@@ -5,11 +5,12 @@
 // PayPal's debug_id → the mirrored outcome reads exactly "Resolved; you keep the money (PayPal covered the
 // case)". Also: axe, 360 px, HI, the list, and the ui-reviewer captures of each state.
 import { expect, test } from "@playwright/test";
-import { recordedNotes } from "../test/support/dispute-seed.ts";
+import { e2eDisputeIds, recordedNotes } from "../test/support/dispute-seed.ts";
 import {
   approveByKeyboard,
   capture,
   demoWorkspace,
+  inFlight,
   local,
   PAYOUT_EN,
   seed,
@@ -104,20 +105,20 @@ test("dispute screens in HI, the 'drafting' state and a failed filing (ui-review
   await expect(page.getByTestId("approve")).toHaveText("मंज़ूर करें और भेजें");
   await capture(page, "hi-detail-proposed");
 
-  // a failed filing: the localised refusal, PayPal's debug_id and "review and approve again"
-  await sql(
-    "update proposed_actions set state = 'failed', refusal_code = 'RECONCILE_NOT_APPLIED' where id = $1",
-    [s.actionId],
-  );
-  await page.goto(`/en/disputes/${s.disputeRowId}`);
-  await expect(page.getByTestId("filing-refusal")).toHaveText(
-    "PayPal didn't record the reply. Review and approve again.",
-  );
+  // a failed filing, for real: PayPal refuses the evidence (recorded 422, debug_id ca51fb6196f52); the trail
+  // shows the approval, the checks and the refused send; "Review and approve again" proposes it again
+  const rejected = await seed(ws, { ids: e2eDisputeIds("FA11") });
+  await page.goto(`/en/disputes/${rejected.disputeRowId}`);
+  await approveByKeyboard(page, "failed");
+  await expect(page.getByTestId("filing-refusal")).toHaveText("PayPal refused the reply.");
+  await expect(page.getByTestId("filing-status")).toContainText("ca51fb6196f52");
+  await expect(page.locator('[data-testid="audit-trail"] [data-action="action.approved"]')).toHaveCount(1);
+  await expect(page.locator('[data-testid="audit-trail"] [data-action="action.failed"]')).toHaveCount(1);
   await capture(page, "en-detail-failed");
-  await page.goto(`/hi/disputes/${s.disputeRowId}`);
+  await page.goto(`/hi/disputes/${rejected.disputeRowId}`);
   await expect(page.getByTestId("filing-refusal")).toBeVisible();
   await capture(page, "hi-detail-failed");
-  await page.goto(`/en/disputes/${s.disputeRowId}`);
+  await page.goto(`/en/disputes/${rejected.disputeRowId}`);
   await page.getByTestId("repropose").click();
   await expect(page.getByTestId("filing-status")).toHaveAttribute("data-state", "proposed", {
     timeout: 20_000,
@@ -204,12 +205,13 @@ test("the remaining spec states: confirm dialog, accept claim, kill switch, too 
   }
 
   // Cleared's own in-flight states, mirrored in the stepper
-  await sql("update proposed_actions set state = 'executing' where id = $1", [s.actionId]);
+  await inFlight(ws, s, "executing");
   await page.goto(url);
   await expect(page.getByTestId("filing-status")).toHaveAttribute("data-state", "executing");
   await capture(page, "en-detail-sending");
-  await sql("update proposed_actions set state = 'unknown' where id = $1", [s.actionId]);
-  await page.goto(url);
+  const checking = await seed(ws);
+  await inFlight(ws, checking, "unknown");
+  await page.goto(`/en/disputes/${checking.disputeRowId}`);
   await expect(page.getByTestId("filing-status")).toContainText(
     "Checking with PayPal: the reply may have been received.",
   );

@@ -73,32 +73,96 @@ export function NotesField({
   );
 }
 
+/** One item's links: its entry in the proof pack (citation) and its file, when it has one. */
+function ItemLinks({ i }: { i: DraftItem }) {
+  const t = useTranslations("disputes.draft");
+  return (
+    <span className="flex flex-wrap items-center gap-x-3">
+      {i.packUrl === null ? null : (
+        <Link
+          href={i.packUrl}
+          className="inline-flex min-h-11 items-center gap-1 rounded-sm bg-surface-sunken px-2 text-sm text-accent underline underline-offset-2"
+          data-testid="evidence-citation"
+        >
+          <Quote aria-hidden="true" size={14} strokeWidth={1.75} />
+          {t("packLink", { ref: i.ref })}
+        </Link>
+      )}
+      {i.fileUrl === null ? (
+        <span className="text-sm text-text-muted">{t("noFile")}</span>
+      ) : (
+        <a
+          href={i.fileUrl}
+          download
+          className="inline-flex min-h-11 items-center text-sm text-accent underline underline-offset-2"
+          data-testid="evidence-download"
+        >
+          {t("openItem", { ref: i.ref })}
+        </a>
+      )}
+    </span>
+  );
+}
+
+function useItemLabel(timeZone: string) {
+  const t = useTranslations("disputes.draft");
+  const locale = useUiLocale();
+  return (i: DraftItem): string =>
+    t("item", {
+      ref: i.ref,
+      kind: t.has(`kinds.${i.kind}`) ? t(`kinds.${i.kind}`) : i.kind,
+      date: formatTime(locale, i.addedAt, timeZone),
+    });
+}
+
+/**
+ * The evidence items. `select`: checkboxes (the draft's selection; the helper only while editable).
+ * `download`: a read-only list to reply in PayPal yourself ("draft unavailable").
+ */
 export function EvidenceItems({
   items,
   selected,
   readOnly,
   timeZone,
   onToggle,
+  mode = "select",
 }: {
   items: readonly DraftItem[];
   selected: ReadonlySet<string>;
   readOnly: boolean;
   timeZone: string;
   onToggle: (id: string) => void;
+  mode?: "select" | "download";
 }) {
   const t = useTranslations("disputes.draft");
-  const locale = useUiLocale();
+  const label = useItemLabel(timeZone);
+  if (mode === "download") {
+    return (
+      <section className="flex flex-col gap-1" data-testid="evidence-download-list">
+        <h3 className="font-medium">{t("items")}</h3>
+        <p className="text-sm text-text-muted">{t("downloadHint")}</p>
+        <ul className="flex flex-col">
+          {items.map((i) => (
+            <li key={i.id} className="flex flex-col gap-1 border-b border-border py-2 last:border-b-0">
+              <span>{label(i)}</span>
+              <ItemLinks i={i} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+  }
   return (
     <fieldset className="flex flex-col gap-1">
       <legend className="font-medium">{t("items")}</legend>
-      <p className="text-sm text-text-muted">{t("itemsHint")}</p>
+      {readOnly ? null : <p className="text-sm text-text-muted">{t("itemsHint")}</p>}
       <ul className="flex flex-col" data-testid="evidence-items">
         {items.map((i) => (
           <li
             key={i.id}
-            className="flex min-h-14 flex-wrap items-center gap-x-3 border-b border-border py-1 last:border-b-0"
+            className="flex min-h-14 flex-col gap-1 border-b border-border py-1 last:border-b-0 md:flex-row md:flex-wrap md:items-center md:gap-x-3"
           >
-            <label className="flex min-h-11 flex-1 items-center gap-3">
+            <label className="flex min-h-11 items-center gap-3 md:flex-1">
               <input
                 type="checkbox"
                 checked={selected.has(i.id)}
@@ -109,31 +173,10 @@ export function EvidenceItems({
                 className="h-6 w-6 shrink-0 accent-[var(--color-accent)]"
                 data-testid="evidence-toggle"
               />
-              <span>
-                {t("item", { ref: i.ref, kind: i.kind, date: formatTime(locale, i.addedAt, timeZone) })}
-              </span>
+              <span>{label(i)}</span>
             </label>
-            <span className="flex flex-wrap items-center gap-x-3 pl-9">
-              {i.packUrl === null ? null : (
-                <Link
-                  href={i.packUrl}
-                  className="inline-flex min-h-11 items-center gap-1 rounded-sm bg-surface-sunken px-2 text-sm text-accent underline underline-offset-2"
-                  data-testid="evidence-citation"
-                >
-                  <Quote aria-hidden="true" size={14} strokeWidth={1.75} />
-                  {t("packLink", { ref: i.ref })}
-                </Link>
-              )}
-              {i.fileUrl === null ? (
-                <span className="text-sm text-text-muted">{t("noFile")}</span>
-              ) : (
-                <a
-                  href={i.fileUrl}
-                  className="inline-flex min-h-11 items-center text-sm text-accent underline underline-offset-2"
-                >
-                  {t("openItem", { ref: i.ref })}
-                </a>
-              )}
+            <span className="pl-9 md:pl-0">
+              <ItemLinks i={i} />
             </span>
           </li>
         ))}

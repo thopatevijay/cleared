@@ -34,7 +34,7 @@ export function DeadlineBadge({
   const { icon: Icon, pill } = STYLE[key];
   return (
     <span
-      className={`inline-flex min-h-6 items-center gap-1 rounded-pill px-2 text-sm font-medium ${pill}`}
+      className={`inline-flex min-h-6 items-center self-start md:self-end gap-1 rounded-pill px-2 text-sm font-medium ${pill}`}
       data-testid="deadline-badge"
       data-state={state}
     >

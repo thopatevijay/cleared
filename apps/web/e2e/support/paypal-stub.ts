@@ -107,6 +107,8 @@ function deliver(o: Order): void {
 // ownership comes from the seeded owner rows.
 const E2E_DISPUTE = /^PP-D-E2E-[0-9A-F]{10}$/;
 const FULL = "paypal/disputes/full";
+/** E2E disputes PayPal refuses the evidence for (`e2eDisputeIds("FA11")`) */
+const E2E_REJECTED = "PP-D-E2E-FA11";
 const filed = new Set<string>();
 const e2eCapture = (disputeId: string): string => `E2E${disputeId.slice(-10)}CAP0`;
 const nowIso = (): string => new Date().toISOString();
@@ -155,6 +157,14 @@ const disputeHandlers = [
   http.post(`${API}/v1/customer/disputes/:id/provide-evidence`, ({ params }) => {
     const id = String(params["id"]);
     if (!E2E_DISPUTE.test(id)) return HttpResponse.error();
+    if (id.startsWith(E2E_REJECTED)) {
+      // the recorded refusal (422 UNPROCESSABLE_ENTITY, debug_id ca51fb6196f52): nothing is filed
+      const r = loadFixture("paypal/disputes/errors/provide-evidence-not-allowed");
+      return new HttpResponse(responseText(r).replaceAll("PP-R-VFE-10195075", id), {
+        status: r.response.status,
+        headers: r.response.headers,
+      });
+    }
     filed.add(id);
     const f = loadFixture(`${FULL}/write-evidence.2`);
     return new HttpResponse(responseText(f).replaceAll("PP-R-UVC-10195076", id), {

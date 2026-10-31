@@ -32,6 +32,32 @@ export async function seed(ws: string, o: SeedOptions = {}): Promise<SeededDispu
   }
 }
 
+/**
+ * Screen state only: the approval and pre-send audit rows the worker writes for an action that is
+ * `executing` (and, for `unknown`, the send that got no answer), so the trail matches the stepper.
+ */
+export async function inFlight(ws: string, s: SeededDispute, state: "executing" | "unknown"): Promise<void> {
+  await sql(
+    "insert into approvals (workspace_id, action_id, approved_by, approved_at, payload_sha256) values ($1, $2, 'e2e-seller', now(), $3)",
+    [ws, s.actionId, s.payloadSha256],
+  );
+  await sql(
+    "insert into audit_log (workspace_id, actor, action, detail, at) values ($1, 'seller', 'action.approved', jsonb_build_object('actionId', $2::text, 'payloadSha256', $3::text), clock_timestamp())",
+    [ws, s.actionId, s.payloadSha256],
+  );
+  await sql(
+    "insert into audit_log (workspace_id, actor, action, detail, at) select $1, 'system', 'action.check', jsonb_build_object('actionId', $2::text, 'check', c, 'ok', true), clock_timestamp() from unnest(array['kill_switch','payload_hash','blob_hash','ownership','action_link','deadline']) c",
+    [ws, s.actionId],
+  );
+  if (state === "unknown") {
+    await sql(
+      "insert into audit_log (workspace_id, actor, action, detail, at) values ($1, 'system', 'action.sent', jsonb_build_object('actionId', $2::text, 'status', null), clock_timestamp()), ($1, 'system', 'action.unknown', jsonb_build_object('actionId', $2::text), clock_timestamp())",
+      [ws, s.actionId],
+    );
+  }
+  await sql("update proposed_actions set state = $2 where id = $1", [s.actionId, state]);
+}
+
 /** Runs SQL against the local E2E database (state set-up for screens only). */
 export async function sql(text: string, params: unknown[]): Promise<void> {
   const db = createDb(databaseUrl());
@@ -82,7 +108,10 @@ export async function capture(page: Page, name: string): Promise<void> {
 }
 
 /** Keyboard-only approve on the open dispute page, then PayPal's states up to the mirrored outcome. */
-export async function approveByKeyboard(page: Page): Promise<void> {
+export async function approveByKeyboard(
+  page: Page,
+  end: "succeeded" | "failed" = "succeeded",
+): Promise<void> {
   const approve = page.getByTestId("approve");
   await expect(approve).toBeEnabled();
   await approve.focus();
@@ -95,13 +124,12 @@ export async function approveByKeyboard(page: Page): Promise<void> {
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("filing-status")).toHaveAttribute(
     "data-state",
-    /approved|executing|succeeded/,
+    /approved|executing|succeeded|failed/,
     {
       timeout: 20_000,
     },
   );
-  await expect(page.getByTestId("filing-status")).toHaveAttribute("data-state", "succeeded", {
-    timeout: 90_000,
-  });
-  await expect(page.getByTestId("outcome-text")).toHaveText(PAYOUT_EN, { timeout: 90_000 });
+  await expect(page.getByTestId("filing-status")).toHaveAttribute("data-state", end, { timeout: 90_000 });
+  if (end === "succeeded")
+    await expect(page.getByTestId("outcome-text")).toHaveText(PAYOUT_EN, { timeout: 90_000 });
 }

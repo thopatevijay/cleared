@@ -51,8 +51,13 @@ function NoDraft({ d }: { d: DisputeDetail }) {
         {d.draftOutcome.kind === "too_late" ? t("tooLate") : t("unavailable")}
       </p>
       {d.draftOutcome.code === null ? null : (
-        <p className="font-mono text-xs text-text-muted">
-          {t("unavailableCode", { code: d.draftOutcome.code })}
+        <p className="text-sm">
+          {t.has(`unavailableWhy.${d.draftOutcome.code}`)
+            ? t(`unavailableWhy.${d.draftOutcome.code}`)
+            : t("unavailableWhy.other")}{" "}
+          <span className="font-mono text-xs text-text-muted">
+            {t("unavailableCode", { code: d.draftOutcome.code })}
+          </span>
         </p>
       )}
       <a
@@ -68,6 +73,7 @@ function NoDraft({ d }: { d: DisputeDetail }) {
           readOnly
           timeZone={d.workspace.timezone}
           onToggle={() => undefined}
+          mode="download"
         />
       )}
     </div>

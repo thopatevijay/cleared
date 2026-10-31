@@ -32,8 +32,8 @@ export function recordedNotes(): string {
 }
 
 /** E2E ids the local PayPal stub recognises (`PP-D-E2E-…`); the capture id is derived from it. */
-export function e2eDisputeIds(): { disputeId: string; captureId: string } {
-  const hex = randomBytes(5).toString("hex").toUpperCase();
+export function e2eDisputeIds(prefix = ""): { disputeId: string; captureId: string } {
+  const hex = (prefix + randomBytes(5).toString("hex").toUpperCase()).slice(0, 10);
   return { disputeId: `PP-D-E2E-${hex}`, captureId: captureIdFor(`PP-D-E2E-${hex}`) };
 }
 export const captureIdFor = (disputeId: string): string => `E2E${disputeId.slice(-10)}CAP0`;

@@ -7,6 +7,9 @@ import type { AuditEntry } from "../../lib/dispute-view.ts";
 import { AuditRow } from "../audit/AuditRow.tsx";
 import { useUiLocale } from "./text.ts";
 
+/** The panel shows the newest entries; the full audit log has the rest. */
+const TRAIL_MAX = 12;
+
 export function AuditTrail({ entries, timeZone }: { entries: readonly AuditEntry[]; timeZone: string }) {
   const t = useTranslations("disputes.audit");
   const locale = useUiLocale();
@@ -19,7 +22,7 @@ export function AuditTrail({ entries, timeZone }: { entries: readonly AuditEntry
         <p className="text-text-muted">{t("empty")}</p>
       ) : (
         <ul className="overflow-hidden rounded-lg border border-border">
-          {entries.map((e) => (
+          {entries.slice(0, TRAIL_MAX).map((e) => (
             <AuditRow key={e.id} e={e} locale={locale} timeZone={timeZone} compact />
           ))}
         </ul>
