@@ -55,7 +55,10 @@ async function seedAccounts(r: WorkspaceRepos): Promise<Ids & { users: string; a
     status: "succeeded",
   });
   const audit = await r.auditLog.insert({ actor: "system", action: "test.seeded" });
+  // M2-10: a finished run, so the one-active-run index never collides between graphs
+  const scenario = await r.scenarioRuns.insert({ state: "resolved" });
   return {
+    scenarioRuns: scenario.id,
     users: user.id,
     sessions: session.id,
     magicLinks: link.id,

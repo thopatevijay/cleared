@@ -8,3 +8,4 @@ export * from "./payments.ts";
 export * from "./proof.ts";
 export * from "./disputes.ts";
 export * from "./actions.ts";
+export * from "./scenarios.ts";
