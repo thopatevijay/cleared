@@ -17,6 +17,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "../../i18n/navigation.ts";
 import { ApiError, getJson } from "../../lib/api.ts";
+import { useOnline } from "../../lib/use-online.ts";
+import { PackLoading } from "./PackLoading.tsx";
 import { EmptyState } from "../EmptyState.tsx";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 import { EvidenceIntake } from "./EvidenceIntake.tsx";
@@ -76,39 +78,73 @@ function Verdicts({ view, kindOf }: { view: PackView; kindOf: (id: string) => st
   );
 }
 
-export function PackScreen({ initial, focusIntake }: { initial: PackView; focusIntake: boolean }) {
+/**
+ * Loads the pack client-side (the page has already checked it is this workspace's): loading skeleton,
+ * full-page error with Retry and Reference, then the pack, polled while the agent works.
+ */
+export function PackScreen({ packId, focusIntake }: { packId: string; focusIntake: boolean }) {
   const t = useTranslations("pack");
   const router = useRouter();
-  const path = `/api/packs/${initial.pack.id}`;
-  const { data, error, mutate } = useSWR<PackView, unknown>(path, fetchPack, {
-    fallbackData: initial,
+  const online = useOnline();
+  const { data, error, isValidating, mutate } = useSWR<PackView, unknown>(`/api/packs/${packId}`, fetchPack, {
     refreshInterval: (d) => (d === undefined || !packViewSettled(d.pack.view) ? PACK_POLL_MS : 0),
     refreshWhenHidden: false,
-    revalidateOnMount: false,
+    refreshWhenOffline: false,
     keepPreviousData: true,
   });
-  const view = data ?? initial;
+  useEffect(() => {
+    if (error instanceof ApiError && error.status === 401) router.replace("/?ended=1");
+  }, [error, router]);
+  if (data === undefined && error === undefined) return <PackLoading />;
+  if (data === undefined) {
+    return (
+      <ErrorPanel
+        title={t("errorTitle")}
+        body={t("errorBody")}
+        reference={error instanceof ApiError ? error.correlationId : null}
+        busy={isValidating}
+        onRetry={() => void mutate()}
+      />
+    );
+  }
+  // offline: the last data stays; polling pauses and the intake says why it is disabled
+  const refreshFailed = online && error !== undefined && !(error instanceof ApiError && error.status === 401);
+  return (
+    <PackBody
+      view={data}
+      focusIntake={focusIntake}
+      refreshError={refreshFailed ? error : undefined}
+      reload={() => void mutate()}
+    />
+  );
+}
+
+function PackBody({
+  view,
+  focusIntake,
+  refreshError,
+  reload,
+}: {
+  view: PackView;
+  focusIntake: boolean;
+  refreshError: unknown;
+  reload: () => void;
+}) {
+  const t = useTranslations("pack");
   const announcement = useVerdictAnnouncement(view);
   const kinds = useMemo(() => new Map(view.evidence.map((e) => [e.id, t(`kind.${e.kind}`)])), [view, t]);
   const kindOf = (id: string): string => kinds.get(id) ?? t("kind.delivery");
   const tz = view.workspace.timezone;
-
-  useEffect(() => {
-    if (error instanceof ApiError && error.status === 401) router.replace("/?ended=1");
-  }, [error, router]);
-
-  const intake = (
-    <EvidenceIntake packId={view.pack.id} focusOnMount={focusIntake} onAdded={() => void mutate()} />
-  );
+  const intake = <EvidenceIntake packId={view.pack.id} focusOnMount={focusIntake} onAdded={reload} />;
   return (
     <div className="flex flex-col gap-6 xl:grid xl:grid-cols-12 xl:items-start xl:gap-8">
       <div className="flex flex-col gap-6 xl:col-span-8">
         <PaymentHeader payment={view.payment} timeZone={tz} />
-        {error !== undefined && !(error instanceof ApiError && error.status === 401) ? (
+        {refreshError !== undefined ? (
           <ErrorPanel
             title={t("refreshError")}
-            reference={error instanceof ApiError ? error.correlationId : null}
-            onRetry={() => void mutate()}
+            reference={refreshError instanceof ApiError ? refreshError.correlationId : null}
+            onRetry={reload}
           />
         ) : null}
         <PackStateBanner

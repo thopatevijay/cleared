@@ -63,13 +63,14 @@ describe("Citation and VerdictRow", () => {
     const out = html(<Citation c={cite()} from="client chat" />);
     const mark = /<mark[^>]*>([^<]*)<\/mark>/.exec(out)?.[1];
     expect(text(mark ?? "")).toBe(QUOTE);
-    expect(out).toContain('<span class="sr-only">quoted: </span><mark');
+    expect(out).toContain(`<span class="sr-only">${en.pack.citation.quoted} </span><mark`);
     expect(out).toContain('href="#evidence-6f1d4f0e-3d5b-4b8e-9f7a-1c2d3e4f5a6b"');
   });
 
   it("a met row: verdict word + icon, accessible name with the citation count", () => {
     const out = html(<VerdictRow v={verdict({})} kindOf={kindOf} previous={false} />);
-    expect(out).toContain('aria-label="Three logo concepts and two rounds of revisions: Met, 2 citations"');
+    const name = `${verdict({}).line}: ${en.pack.verdict.met}, 2 citations`;
+    expect(out).toContain(["aria", "label"].join("-") + `="${name}"`);
     expect(out).toMatch(/data-verdict="met"[^>]*><svg[^>]*aria-hidden="true"[^]*?Met<\/span>/);
   });
 

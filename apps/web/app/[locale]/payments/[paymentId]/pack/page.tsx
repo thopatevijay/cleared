@@ -1,6 +1,7 @@
-// Payment detail and proof pack (M2-05, payment-detail.md). The server reads the pack for the first render
-// (the same view GET /api/packs/:packId serves); the client polls it while the agent works and adds
-// evidence. A payment of another workspace, or an unknown one, renders the not-found page.
+// Payment detail and proof pack (M2-05, payment-detail.md). The server resolves the payment to its pack in
+// this workspace (another workspace's payment, or an unknown one, renders the not-found page with a 404);
+// the client loads GET /api/packs/:packId (loading and error states), polls it while the agent works and
+// adds evidence.
 import type { WorkspaceId } from "@cleared/core";
 import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
@@ -10,7 +11,7 @@ import { DashboardFooter } from "../../../../../src/components/SiteFooter.tsx";
 import { Link } from "../../../../../src/i18n/navigation.ts";
 import { pageTitle } from "../../../../../src/lib/site.ts";
 import { getDeps } from "../../../../../src/server/deps.ts";
-import { loadPackView, packIdForPayment } from "../../../../../src/server/handlers/packs.ts";
+import { packIdForPayment } from "../../../../../src/server/handlers/packs.ts";
 import { pageSession } from "../../../../../src/server/page-session.ts";
 
 export const dynamic = "force-dynamic";
@@ -33,8 +34,7 @@ export default async function PackPage({
   const deps = getDeps();
   const ws = session.workspaceId as WorkspaceId;
   const packId = await packIdForPayment(deps, ws, paymentId);
-  const view = packId === null ? null : await loadPackView(deps, ws, packId);
-  if (view === null) notFound();
+  if (packId === null) notFound();
   const focusIntake = (await searchParams)["intake"] === "1";
   const t = await getTranslations("pack");
   return (
@@ -51,7 +51,7 @@ export default async function PackPage({
         >
           {t("back")}
         </Link>
-        <PackScreen initial={view} focusIntake={focusIntake} />
+        <PackScreen packId={packId} focusIntake={focusIntake} />
       </main>
       <DashboardFooter />
     </>

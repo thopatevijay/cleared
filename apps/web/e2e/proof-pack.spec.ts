@@ -2,6 +2,7 @@
 // call). The happy path drives the real pipeline: M2-01 intake → M2-03 extract → M2-04 check, each AI step
 // answered by the recorded logo-pack responses. The other states are seeded into the local database as
 // those tickets leave them. Review screenshots and axe results go to .review/M2-05/ (gitignored).
+import { fileURLToPath } from "node:url";
 import { normaliseForQuote } from "@cleared/core/proof/verbatim";
 import { closeDb, createDb, databaseUrl, type Db } from "@cleared/db";
 import { expect, test, type Page } from "@playwright/test";
@@ -15,7 +16,7 @@ import {
   seedChecked,
   seedPayment,
 } from "./support/pack-seed.ts";
-import { capture, local } from "./support/review.ts";
+import { capture, local, REVIEW } from "./support/review.ts";
 
 const XSS = "<img src=x onerror=alert(1)>";
 let db: Db;
@@ -131,10 +132,18 @@ test("AC 3 + 5: unverifiable reasons; AI unavailable shows facts and no verdicts
     ],
     delivery_events: (["sent", "opened", "accepted"] as const).map((event) => ({
       event,
-      description: `Final files ${event}`,
+      description: {
+        sent: "Final files sent",
+        opened: "Client reviewed draft 1",
+        accepted: "Client approved revision 1",
+      }[event],
       occurred_at: "2026-10-18",
       evidence_item_id: chatId,
-      source_quote: "Final files are uploaded",
+      source_quote: {
+        sent: "Final files are uploaded",
+        opened: "We like direction B.",
+        accepted: "Perfect, approved.",
+      }[event],
     })),
   });
   const lines = LOGO_LINES.map((l, i) => (i === 0 ? { ...l, rationale: `${l.rationale ?? ""} ${XSS}` } : l));
@@ -179,19 +188,27 @@ test("AC 4: an 11 MB upload shows the localised EVIDENCE_TOO_LARGE message and a
   const big = {
     name: "delivery-scan.pdf",
     mimeType: "application/pdf",
-    buffer: Buffer.alloc(11_000_000, 0x20),
+    buffer: Buffer.alloc(11_200_000, 0x20),
   };
   for (const [locale, message] of [
-    ["en", "This file is 11 MB. Files must be under 10 MB."],
-    ["hi", "यह फ़ाइल 11 MB की है। फ़ाइल 10 MB से छोटी होनी चाहिए।"],
+    ["en", "This file is 11.2 MB. Files must be under 10 MB."],
+    ["hi", "यह फ़ाइल 11.2 MB की है। फ़ाइल 10 MB से छोटी होनी चाहिए।"],
   ] as const) {
     await gotoPack(page, packUrl(locale, paymentId));
     await page.getByTestId("intake-file").setInputFiles(big);
     await expect(page.getByTestId("intake-error")).toHaveText(message);
-    await page.getByTestId("intake-add").click();
     await expect(page.getByTestId("intake-added")).toBeEmpty();
     if (locale === "en") await capture(page, "en-upload-rejected");
   }
+  // the server's typed refusal (an HTML file named .png passes the browser's check): same localised copy
+  await gotoPack(page, packUrl("en", paymentId));
+  await page
+    .getByTestId("intake-file")
+    .setInputFiles(fileURLToPath(new URL("../../../fixtures/files/html-named.png", import.meta.url)));
+  await page.getByTestId("intake-kind").selectOption("delivery");
+  await page.getByTestId("intake-add").click();
+  await expect(page.getByTestId("intake-error")).toHaveText("Only JPG, PNG, GIF and PDF files can be added.");
+  await capture(page, "en-upload-rejected-server");
   const n = await db.$client.query<{ n: string }>(
     "select count(*)::text n from evidence_items where pack_id = $1",
     [packId],
@@ -276,7 +293,40 @@ test("AC 7: every state axe-clean at 360–1440 px light/dark; keyboard-only int
   await gotoPack(page, packUrl("en", collecting.paymentId));
   await expect(page.getByTestId("error-panel")).toBeVisible({ timeout: 20_000 });
   await capture(page, "en-refresh-error");
+
+  // the first load fails: the full-page error with Retry and Reference
+  await page.goto(packUrl("en", stale.paymentId));
+  await expect(page.getByTestId("error-panel")).toContainText("Couldn't load this payment");
+  await capture(page, "en-error");
   await page.unroute("**/api/packs/**");
+
+  // loading: the read never answers; after 3 s the line appears
+  await page.route("**/api/packs/**", () => undefined);
+  await page.goto(packUrl("en", stale.paymentId));
+  await expect(page.getByTestId("loading")).toBeVisible();
+  await expect(page.getByTestId("loading")).toContainText("Loading the proof pack…", { timeout: 6_000 });
+  await capture(page, "en-loading");
+  await page.unroute("**/api/packs/**");
+
+  // offline: the last data stays, the intake is disabled and says why
+  await gotoPack(page, packUrl("en", stale.paymentId));
+  await page.context().setOffline(true);
+  await expect(page.getByTestId("intake")).toContainText(
+    "You're offline. Evidence can be added when you reconnect.",
+  );
+  await expect(page.getByTestId("intake-add")).toBeDisabled();
+  await expect(page.getByTestId("verdict-row").first()).toBeVisible();
+  await capture(page, "en-offline");
+  await page.context().setOffline(false);
+
+  // 375 px: the intake opened, and a citation expanded in place
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.getByTestId("intake-open").click();
+  await page.getByTestId("intake").screenshot({ path: `${REVIEW}en-intake-open-375-light.png` });
+  const chip = page.getByTestId("citation").first();
+  await chip.getByRole("button").click();
+  await chip.screenshot({ path: `${REVIEW}en-citation-expanded-375-light.png` });
+  await page.setViewportSize({ width: 1280, height: 900 });
 });
 
 test("AC 8: /hi renders every string from hi.json (no missing-key warnings)", async ({ page }) => {
@@ -297,5 +347,12 @@ test("AC 8: /hi renders every string from hi.json (no missing-key warnings)", as
     expect(body, "a raw message key on the page").not.toMatch(/\b(pack|row|dashboard)\.[a-zA-Z]+/);
     await capture(page, name);
   }
+  // the dashboard's pack strings in Hindi (summary count, sub-line, Add proof)
+  await page.goto("/hi/payments");
+  await expect(page.getByTestId("summary-proof-ready")).toContainText("0 भुगतान सबूत के साथ तैयार");
+  await expect(page.getByTestId("pack-line")).toContainText("सबूत पैक:");
+  await expect(page.getByTestId("add-proof")).toHaveText("सबूत जोड़ें");
+  expect(await page.locator("body").innerText()).not.toMatch(/\b(pack|row|dashboard)\.[a-zA-Z]+/);
+  await capture(page, "hi-dashboard");
   expect(problems).toEqual([]);
 });

@@ -56,7 +56,7 @@ export function EvidenceIntake({
   const ids = { file: useId(), hint: useId(), kind: useId(), text: useId(), textHint: useId(), err: useId() };
   const heading = useRef<HTMLHeadingElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(focusOnMount);
+  const [opened, setOpen] = useState(focusOnMount);
   const [file, setFile] = useState<File | null>(null);
   const [kind, setKind] = useState<SellerEvidenceKind>("communication");
   const [text, setText] = useState("");
@@ -108,6 +108,8 @@ export function EvidenceIntake({
         ? t("intake.nothing")
         : t(`errors.${failure.code}`, { size: formatBytes(locale, failure.size ?? 0) });
   const disabled = busy || !online;
+  // a chosen file, an error or offline keep the panel open at 375 px, so the field state is visible
+  const shown = opened || file !== null || failure !== null || !online;
 
   return (
     <section
@@ -120,8 +122,8 @@ export function EvidenceIntake({
       <button
         id="intake-open"
         type="button"
-        className={`${open ? "hidden" : "flex"} min-h-12 w-full items-center justify-center gap-2 rounded-md border border-border-strong bg-surface px-4 font-medium md:hidden`}
-        aria-expanded={open}
+        className={`${shown ? "hidden" : "flex"} min-h-12 w-full items-center justify-center gap-2 rounded-md border border-border-strong bg-surface px-4 font-medium md:hidden`}
+        aria-expanded={shown}
         aria-controls="intake-form"
         onClick={() => {
           setOpen(true);
@@ -134,7 +136,7 @@ export function EvidenceIntake({
       </button>
       <form
         id="intake-form"
-        className={`${open ? "flex" : "hidden md:flex"} flex-col gap-4`}
+        className={`${shown ? "flex" : "hidden md:flex"} flex-col gap-4`}
         onSubmit={(e) => void submit(e)}
         noValidate
       >
