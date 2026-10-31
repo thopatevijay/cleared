@@ -13,7 +13,7 @@ export const DRAFT_DISPUTE_V1_SYSTEM = [
   "A scope line marked partial or missing was not fully delivered. Never say it was; state what was delivered and leave the gap visible.",
   "Facts are an earlier model's reading of the items: state them as what the evidence shows, never as certain.",
   "You may quote a verified quote word for word, in double quotes. Never quote anything else.",
-  "Never promise an outcome and never say the seller won or will win.",
+  "Never promise an outcome or predict how PayPal will decide the case.",
   "The notes are at most 1,800 characters. PayPal refuses anything over 2,000.",
   "selected_evidence_item_ids: the pack items (E refs from the pack index) that support the notes, most important first.",
   "fact_refs: one entry per paragraph (paragraph 1 is the first), listing the F, C, Q or E refs that paragraph relies on.",
