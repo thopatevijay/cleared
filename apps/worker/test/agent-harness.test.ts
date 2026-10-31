@@ -185,9 +185,7 @@ describe.skipIf(!dbAvailable)("agent harness end to end (msw replay + compose Po
     const out = await runWorkflow(
       extractPack,
       input(1),
-      // a cent under the seeded $0.25: `x + 0.25` in floating point can land above the exact decimal sum the
-      // store reads back (seen in CI once M2-04's replays added odd-cent costs to the shared database)
-      deps(provider(), seller, { dailyCapUsd: today.globalTodayUsd + 0.24 }),
+      deps(provider(), seller, { dailyCapUsd: today.globalTodayUsd + 0.25 }),
     );
     expect(out).toMatchObject({
       status: "budget_exceeded",

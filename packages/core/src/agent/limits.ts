@@ -87,12 +87,25 @@ export function workspaceCap(s: SpendSnapshot, config: AgentConfig): number | nu
   return s.workspaceKind === "demo" ? config.workspaceCapUsd : null;
 }
 
+/**
+ * USD as integer micro-dollars, so float summation order cannot move a sum across a cap. A difference under
+ * half a micro-dollar is float noise, not spend (a whole call costs far more).
+ */
+export function toMicroUsd(usd: number): number {
+  return Math.round(usd * 1_000_000);
+}
+
+/** Spend at or over the cap, compared exactly in micro-dollars (BL-01, found by M2-04's replays in CI). */
+export function atOrOverCap(spentUsd: number, capUsd: number): boolean {
+  return toMicroUsd(spentUsd) >= toMicroUsd(capUsd);
+}
+
 /** At or over a cap → no call. */
 export function checkBudget(s: SpendSnapshot, config: AgentConfig): BudgetDecision {
   const wsCap = workspaceCap(s, config);
-  if (wsCap !== null && s.workspaceUsd >= wsCap)
+  if (wsCap !== null && atOrOverCap(s.workspaceUsd, wsCap))
     return { ok: false, cap: "workspace", spentUsd: s.workspaceUsd, capUsd: wsCap };
-  if (s.globalTodayUsd >= config.dailyCapUsd)
+  if (atOrOverCap(s.globalTodayUsd, config.dailyCapUsd))
     return { ok: false, cap: "daily", spentUsd: s.globalTodayUsd, capUsd: config.dailyCapUsd };
   return { ok: true };
 }

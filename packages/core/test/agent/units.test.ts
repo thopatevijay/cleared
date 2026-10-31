@@ -4,7 +4,14 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { canonicalHash, sha256Hex } from "../../src/agent/canonical-hash.ts";
 import { checkOutput, checkProposal, PROPOSAL_PAYLOAD_SCHEMAS } from "../../src/agent/guardrails.ts";
-import { checkBudget, DEFAULT_RUN_LIMITS, parseAgentConfig, utcDayStart } from "../../src/agent/limits.ts";
+import {
+  atOrOverCap,
+  checkBudget,
+  DEFAULT_RUN_LIMITS,
+  parseAgentConfig,
+  toMicroUsd,
+  utcDayStart,
+} from "../../src/agent/limits.ts";
 import { createPromptRegistry, definePrompt, PROMPTS } from "../../src/agent/prompts.ts";
 
 describe("canonicalHash", () => {
@@ -89,6 +96,28 @@ describe("limits", () => {
       ok: false,
       cap: "daily",
     });
+  });
+
+  it("budget: spend exactly at a cap is refused whatever the float summation order (CI numbers, M2-04)", () => {
+    // the cap is built in floating point, the spend is the exact decimal sum the store reads back
+    const cap = 0.017846 + 0.012517 + 0.25;
+    expect(cap).toBe(0.28036300000000003); // above the exact 0.280363: the old `>=` let this run through
+    expect(0.280363 >= cap).toBe(false);
+    const c = { ...parseAgentConfig({}), dailyCapUsd: cap };
+    const seller = { workspaceKind: "seller" as const, workspaceCapUsd: null, workspaceUsd: 0 };
+    expect(checkBudget({ ...seller, globalTodayUsd: 0.280363 }, c)).toMatchObject({
+      ok: false,
+      cap: "daily",
+    });
+    expect(checkBudget({ ...seller, globalTodayUsd: 0.280362 }, c)).toEqual({ ok: true });
+    const demo = { workspaceKind: "demo" as const, workspaceCapUsd: cap, globalTodayUsd: 0 };
+    expect(checkBudget({ ...demo, workspaceUsd: 0.280363 }, c)).toMatchObject({
+      ok: false,
+      cap: "workspace",
+    });
+    expect(checkBudget({ ...demo, workspaceUsd: 0.280362 }, c)).toEqual({ ok: true });
+    expect(atOrOverCap(0.1 + 0.2, 0.3)).toBe(true);
+    expect(toMicroUsd(0.28036300000000003)).toBe(280_363);
   });
 });
 
