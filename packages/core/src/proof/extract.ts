@@ -3,7 +3,7 @@
 // harness data block: text items (and PDFs with a text layer) as text, images and image-only PDFs as image /
 // PDF parts. The input names the item by its block ref (`E1`), never its uuid, so identical canned evidence
 // hits the content-hash cache; the caller maps the ref back to the item's uuid (`withEvidenceIds`).
-import type { EvidenceInput } from "../agent/guardrails.ts";
+import type { EvidenceInput, InjectionFlag } from "../agent/guardrails.ts";
 import type { WorkflowDef } from "../agent/harness.ts";
 import { definePrompt, PROMPTS } from "../agent/prompts.ts";
 import type { EvidenceKind } from "./evidence.ts";
@@ -81,6 +81,19 @@ export const extractWorkflow: WorkflowDef<ExtractInput, Facts> = {
       maxOutputTokens: EXTRACT_MAX_OUTPUT_TOKENS,
       reasoningEffort: "none",
       validators: [(facts) => factProblems(facts, [input.ref])],
+      // the input scan reads text only: for an image or image-only PDF, what the model reports is the flag
+      ...(input.content.type === "text"
+        ? {}
+        : { reportedFlags: (facts: Facts) => reportedFlags(input.ref, facts) }),
     });
   },
 };
+
+/** BL-01 6537070412: the item's `instruction_like_lines`, as step flags (`model_reported`, ≤ 80 chars each). */
+export function reportedFlags(ref: string, facts: Facts): InjectionFlag[] {
+  return facts.instruction_like_lines.map((line) => ({
+    evidenceId: ref,
+    pattern: "model_reported",
+    match: line.slice(0, 80),
+  }));
+}
