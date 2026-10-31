@@ -57,11 +57,20 @@ async function upsertQueue(boss: Queue, name: string, settings: QueueSettings): 
 /** Commands (not domain events) and their per-queue policy. */
 export const PAYPAL_CAPTURE_SYNC_QUEUE = "paypal.capture.sync";
 export const SANDBOX_TEST_PAYMENT_QUEUE = "sandbox.test_payment";
+/** M2-06: re-fetch one dispute and upsert its mirror (`{disputeId, eventId?, source?}`). */
+export const PAYPAL_DISPUTE_SYNC_QUEUE = "paypal.dispute.sync";
+/** M2-06: the deadline watcher, scheduled every 15 minutes. */
+export const DISPUTE_DEADLINE_WATCH_QUEUE = "dispute.deadline_watch";
+export const DISPUTE_DEADLINE_WATCH_CRON = "*/15 * * * *";
 
 export const COMMAND_QUEUES: readonly QueueSpec[] = [
   // 12 retries with the 300 s cap ≈ 28 min minimum: longer than the 10-minute unowned-capture window.
   { name: PAYPAL_CAPTURE_SYNC_QUEUE, expireInSeconds: 60, retryLimit: 12 },
   { name: SANDBOX_TEST_PAYMENT_QUEUE, expireInSeconds: 120, retryLimit: 3 },
+  // Same 12 retries as capture sync: an unowned dispute waits out the 10-minute owner window.
+  { name: PAYPAL_DISPUTE_SYNC_QUEUE, expireInSeconds: 60, retryLimit: 12 },
+  // A missed tick is covered by the next one 15 minutes later (and by every sync).
+  { name: DISPUTE_DEADLINE_WATCH_QUEUE, expireInSeconds: 120, retryLimit: 2 },
 ];
 
 /** Every domain event type is a queue (M1-03: queue = outbox topic = `event.type`). */

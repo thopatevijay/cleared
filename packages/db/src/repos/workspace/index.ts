@@ -4,6 +4,7 @@ import { WorkspaceIdSchema, type WorkspaceId } from "@cleared/core";
 import type { Db } from "../../client.ts";
 import * as s from "../../../schema/index.ts";
 import type { Executor } from "../../tx.ts";
+import { disputesRepo } from "./disputes.ts";
 import { paymentsListRepo, testPaymentRequestsRepo } from "./payments-list.ts";
 import { findOneInScope, mutableScopedRepo, scopedRepo, type Row } from "./scoped.ts";
 
@@ -31,11 +32,7 @@ function repos(db: Db, ws: string) {
     extractedFacts: m(s.extractedFacts),
     scopeChecks: m(s.scopeChecks),
     clientAcks: m(s.clientAcks),
-    disputes: {
-      ...m(s.disputes),
-      getByDisputeId: (disputeId: string, tx?: Executor): Promise<Row<typeof s.disputes> | null> =>
-        findOneInScope(tx ?? db, s.disputes, ws, s.disputes.disputeId, disputeId),
-    },
+    disputes: disputesRepo(db, ws),
     disputeDrafts: m(s.disputeDrafts),
     proposedActions: m(s.proposedActions),
     approvals: m(s.approvals),

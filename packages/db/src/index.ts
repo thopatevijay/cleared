@@ -34,6 +34,7 @@ export {
   type WorkspaceRepos,
 } from "./repos/workspace/index.ts";
 export { TEST_PAYMENT_REQUESTED, type CurrencyTotal } from "./repos/workspace/payments-list.ts";
+export type { DisputeRow, WatchedDispute } from "./repos/workspace/disputes.ts";
 export { platform, type PlatformRepos } from "./repos/platform/index.ts";
 export type * from "./repos/platform/index.ts";
 export { seed, SEED_USER_EMAIL, SEED_USER_ID, SEED_WORKSPACE_ID } from "./seed.ts";

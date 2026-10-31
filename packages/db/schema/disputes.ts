@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { check, index, jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { scoped } from "./accounts.ts";
 import { sha256, tstz } from "./columns.ts";
-import { draftState } from "./enums.ts";
+import { deadlineState, draftState } from "./enums.ts";
 import { payments } from "./payments.ts";
 import { blobs } from "./proof.ts";
 
@@ -23,6 +23,8 @@ export const disputes = pgTable(
     allowedActions: jsonb("allowed_actions").notNull().default([]),
     paypalUpdatedAt: tstz("paypal_updated_at"),
     syncedAt: tstz("synced_at").notNull().defaultNow(),
+    /** M2-06: position against `seller_response_due_date` (deadline watcher; core `deadlineState`) */
+    deadlineState: deadlineState("deadline_state").notNull().default("ok"),
   },
   (t) => [
     uniqueIndex("disputes_dispute_id_key").on(t.disputeId),
