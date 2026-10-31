@@ -50,6 +50,13 @@
       "when": 1793409957201,
       "tag": "0006_action_governance",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793411595818,
+      "tag": "0007_extracted_facts_prompt_version",
+      "breakpoints": true
     }
   ]
 }
