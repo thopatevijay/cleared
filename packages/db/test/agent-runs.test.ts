@@ -143,7 +143,8 @@ describe.skipIf(!dbAvailable)("agent RunStore (compose Postgres)", () => {
     expect(after.workspaceKind).toBe("demo");
     expect(after.workspaceCapUsd).toBeNull();
     expect(after.workspaceUsd - before.workspaceUsd).toBeCloseTo(0.0125, 8);
-    expect(after.globalTodayUsd - before.globalTodayUsd).toBeCloseTo(0.0125, 8);
+    // other runs may write concurrently on a shared database: the global sum grows by at least this run
+    expect(after.globalTodayUsd - before.globalTodayUsd).toBeGreaterThanOrEqual(0.0125 - 1e-9);
     const future = await store.spend(ws, new Date(Date.now() + 86_400_000));
     expect(future.globalTodayUsd).toBe(0);
   });
