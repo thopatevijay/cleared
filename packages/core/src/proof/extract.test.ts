@@ -1,9 +1,9 @@
 // M2-03: extract@v1 through runWorkflow with the in-memory ports. The model's answers are the recorded
 // `fixtures/openai/extract-v1/*` responses (live gpt-6-luna, 2026-10-31) replayed through a scripted
 // provider; the msw replay of the same fixtures over HTTP + Postgres is apps/worker's extract-evidence tests.
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { config, failResult, fakeProvider, fakeStore, okResult, WS } from "../../test/agent/fakes.ts";
+import { recordedFacts, sampleBase64, sampleText } from "../../test/helpers/extract-fixtures.ts";
 import { runWorkflow } from "../agent/harness.ts";
 import {
   EXTRACT_MAX_OUTPUT_TOKENS,
@@ -21,29 +21,18 @@ import {
   type Facts,
 } from "./facts-schema.ts";
 
-const ROOT = new URL("../../../../", import.meta.url);
 const SHA = "a".repeat(64);
-
-function recorded(name: string): Facts {
-  const fx = JSON.parse(readFileSync(new URL(`fixtures/openai/extract-v1/${name}.json`, ROOT), "utf8")) as {
-    response: { body: { output: { type: string; content?: { type: string; text?: string }[] }[] } };
-  };
-  const text = fx.response.body.output
-    .flatMap((o) => (o.type === "message" ? (o.content ?? []) : []))
-    .find((c) => c.type === "output_text")?.text;
-  return JSON.parse(text ?? "null") as Facts;
-}
+const recorded = recordedFacts;
 
 function sample(name: string): ExtractInput {
-  const path = new URL(`fixtures/samples/evidence/${name}`, ROOT);
   const input = name.endsWith(".png")
     ? extractInputFor({
         kind: "shipment",
         sha256: SHA,
         text: null,
-        file: { mime: "image/png", base64: readFileSync(path).toString("base64") },
+        file: { mime: "image/png", base64: sampleBase64(name) },
       })
-    : extractInputFor({ kind: "communication", sha256: SHA, text: readFileSync(path, "utf8"), file: null });
+    : extractInputFor({ kind: "communication", sha256: SHA, text: sampleText(name), file: null });
   if (!input) throw new Error(`no input for ${name}`);
   return input;
 }
