@@ -81,6 +81,10 @@ async function workspace(): Promise<string> {
 }
 
 async function forget(captureId: string, orderId: string | null): Promise<void> {
+  await db.$client.query(
+    "delete from proof_packs where payment_id in (select id from payments where capture_id = $1)",
+    [captureId],
+  );
   await db.$client.query("delete from payments where capture_id = $1", [captureId]);
   await db.$client.query("delete from paypal_resource_owner where resource_id = any($1)", [
     [captureId, orderId].filter((x) => x !== null),
@@ -175,6 +179,9 @@ describe.skipIf(!dbAvailable)("paypal.capture.sync (capture-sync)", () => {
     expect(await platform(db).resourceOwners.get("capture", captureId)).toMatchObject({ workspaceId: ws });
     expect(await platform(db).webhookEvents.get(eventId)).toMatchObject({ status: "processed" });
     expect(await events(captureId)).toEqual(["payment.captured"]);
+    // M2-05 (BL-01 6536606046): the pack is born with the payment, empty
+    const pack = await forWorkspace(db, WorkspaceIdSchema.parse(ws)).proofPacks.getByPaymentId(p?.id ?? "");
+    expect(pack).toMatchObject({ state: "empty", checkedAt: null });
   });
 
   it("status follows PayPal (COMPLETED → PENDING/BUYER_COMPLAINT); an older update_time changes nothing; a repeat emits nothing", async () => {

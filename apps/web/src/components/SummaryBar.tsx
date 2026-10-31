@@ -1,9 +1,10 @@
-// Summary bar (components.md, M1): the held total per currency (from mirrored PENDING captures); the
-// dispute and proof-ready facts show "—" until M2-09 / M2-05 deliver them. One fact per line at 375 px.
+// Summary bar (components.md): the held total per currency (from mirrored PENDING captures, M1-07), the
+// dispute fact ("—" until M2-09) and the proof-ready count (M2-05). One fact per line at 375 px.
 import type { Amount } from "@cleared/core";
 import { FileCheck, Hourglass, Scale, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
+import { Link } from "../i18n/navigation.ts";
 import { intlLocale, isAppLocale } from "../i18n/routing.ts";
 import { formatAmount } from "../lib/format.ts";
 
@@ -30,7 +31,34 @@ function Fact({
   );
 }
 
-export function SummaryBar({ held }: { held: readonly Amount[] }) {
+/** dashboard.md 3c (M2-05): the proof-ready count, a link that filters the list (`?filter=proof-ready`). */
+function ProofReadyFact({ count, active }: { count: number; active: boolean }) {
+  const t = useTranslations("dashboard.summary");
+  return (
+    <Link
+      href={{ pathname: "/payments", query: { filter: "proof-ready" } }}
+      aria-label={t("proofReadyName", { count })}
+      aria-current={active ? "true" : undefined}
+      className="inline-flex min-h-11 items-start gap-2 underline decoration-border-strong underline-offset-4 hover:decoration-accent"
+      data-testid="summary-proof-ready"
+    >
+      <span className="flex h-[1lh] shrink-0 items-center">
+        <FileCheck aria-hidden="true" size={22} strokeWidth={1.75} className="text-text-muted" />
+      </span>
+      <span>{t("proofReady", { count })}</span>
+    </Link>
+  );
+}
+
+export function SummaryBar({
+  held,
+  proofReady,
+  filter,
+}: {
+  held: readonly Amount[];
+  proofReady: number;
+  filter: string | null;
+}) {
   const t = useTranslations("dashboard");
   const raw = useLocale();
   const locale = intlLocale(isAppLocale(raw) ? raw : "en");
@@ -49,9 +77,7 @@ export function SummaryBar({ held }: { held: readonly Amount[] }) {
       <Fact icon={Scale} pending={t("pendingDispute")}>
         {t("inDisputeNone")}
       </Fact>
-      <Fact icon={FileCheck} pending={t("pendingProof")}>
-        {t("proofReadyNone")}
-      </Fact>
+      <ProofReadyFact count={proofReady} active={filter === "proof-ready"} />
     </p>
   );
 }

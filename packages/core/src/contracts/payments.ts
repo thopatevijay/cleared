@@ -3,6 +3,8 @@
 // list mirrors PayPal and never rejects a value PayPal adds later.
 import { z } from "zod";
 import { SYNC_SOURCES } from "../payments/payment.ts";
+import { VERDICTS } from "../proof/pack.ts";
+import { PACK_VIEW_STATES } from "../proof/pack-view.ts";
 
 /** Offset pagination; at most 50 rows per page. */
 export const PAYMENTS_PAGE_MAX = 50;
@@ -28,6 +30,25 @@ export const AmountSchema = z.object({
 });
 export type Amount = z.infer<typeof AmountSchema>;
 
+/** The payment's proof pack as the dashboard row shows it (M2-05, dashboard.md elements 6 and 16). */
+export const PaymentPackSchema = z.object({
+  id: z.uuid(),
+  view: z.enum(PACK_VIEW_STATES),
+  /** the pack holds at least one evidence item ("Add proof" shows only while it does not) */
+  hasEvidence: z.boolean(),
+  /** checked (or marked ready) with no `missing` line in its latest check */
+  proofReady: z.boolean(),
+  /** the latest check in one line; null before the first check */
+  summary: z
+    .object({
+      scope: z.enum(VERDICTS),
+      delivery: z.enum(VERDICTS),
+      sources: z.number().int().min(0),
+    })
+    .nullable(),
+});
+export type PaymentPack = z.infer<typeof PaymentPackSchema>;
+
 export const PaymentItemSchema = z.object({
   id: z.uuid(),
   captureId: z.string().min(1),
@@ -41,6 +62,8 @@ export const PaymentItemSchema = z.object({
   source: z.enum(SYNC_SOURCES),
   /** PayPal's update time (else when Cleared stored it), ISO 8601 */
   updatedAt: z.iso.datetime({ offset: true }),
+  /** null only for a payment stored before packs were created with it (migration 0010 backfills them) */
+  pack: PaymentPackSchema.nullable(),
 });
 export type PaymentItem = z.infer<typeof PaymentItemSchema>;
 
@@ -54,8 +77,8 @@ export const PaymentsResponseSchema = z.object({
     held: z.array(AmountSchema),
     /** null until dispute support (M2-09) */
     inDispute: z.null(),
-    /** null until proof packs (M2-05) */
-    proofReady: z.null(),
+    /** packs checked with no `missing` verdict in their latest check (M2-05, dashboard.md 3c) */
+    proofReady: z.number().int().min(0),
   }),
   workspace: z.object({ kind: z.enum(["seller", "demo"]), timezone: z.string().min(1) }),
   testPayments: z.object({
