@@ -1,4 +1,5 @@
-// canonicalJson: the hash input for an approval (sorted keys, no whitespace). Hashing is in adapters.
+// canonicalJson: the hash input for an approval (sorted keys, no whitespace). canonicalHash
+// (agent/canonical-hash.ts) is sha256 over it.
 // The same value always yields the same string, whatever order its keys were built in.
 
 export type JsonValue =
