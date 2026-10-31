@@ -1,4 +1,4 @@
-// M2-04: `scope_checks`, one row per scope line of one check version. Append-only (migration 0008 trigger):
+// M2-04: `scope_checks`, one row per scope line of one check version. Append-only (migration 0009 trigger):
 // a re-delivered `pack.extracted` finds its rows by (pack, evidence set hash, prompt version) and writes
 // nothing; new evidence writes the next version. Reads re-validate the citation jsonb.
 import {

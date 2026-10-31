@@ -20,7 +20,14 @@ export interface PayPalClients {
   /** M2-06: dispute reads for `paypal.dispute.sync`; M2-08: the guarded writes `action.execute` makes. */
   readonly disputes: Pick<
     PayPalDisputesClient,
-    "getDispute" | "listDisputes" | "provideEvidence" | "provideSupportingInfo" | "acceptClaim"
+    | "getDispute"
+    | "listDisputes"
+    | "provideEvidence"
+    | "provideSupportingInfo"
+    | "acceptClaim"
+    // M2-10: the judge scenario's sandbox-only chargeback and decision
+    | "processChargeback"
+    | "adjudicate"
   >;
 }
 
@@ -40,6 +47,8 @@ export function paypalClientsFromEnv(env: NodeJS.ProcessEnv): PayPalClients {
         provideEvidence: missing,
         provideSupportingInfo: missing,
         acceptClaim: missing,
+        processChargeback: missing,
+        adjudicate: missing,
       },
       orders: {
         createOrder: missing,

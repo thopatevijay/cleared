@@ -15,12 +15,18 @@ import {
   type SellerEvidenceKind,
   type WorkspaceId,
 } from "@cleared/core";
-import { createPostgresBlobStore, evidenceSha256, prepareEvidenceFile } from "@cleared/adapters/files";
+import {
+  addEvidence,
+  createPostgresBlobStore,
+  evidenceSha256,
+  prepareEvidenceFile,
+  type IntakeFailure,
+  type NewEvidence,
+} from "@cleared/adapters/files";
 import { evidenceRepo, type EvidenceItemRow, type Publisher } from "@cleared/db";
 import { checkMutation } from "../csrf.ts";
 import type { Deps } from "../deps.ts";
 import { parseMultipart, readBodyCapped } from "../evidence/body.ts";
-import { addEvidence, type IntakeFailure, type NewEvidence } from "../evidence/intake.ts";
 import { withIdempotency } from "../idempotency.ts";
 import { apiError, CORRELATION_HEADER, correlationId, json } from "../respond.ts";
 import { requireSession, withRenewal, type Session } from "../session.ts";

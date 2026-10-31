@@ -67,6 +67,14 @@ export const ACTION_EXECUTE_QUEUE = "action.execute";
 /** M2-08: re-read the dispute after an `unknown` send (`{actionId, workspaceId, attempt, before}`). */
 export const ACTION_RECONCILE_QUEUE = "action.reconcile";
 
+/** M2-10: the judge scenario's step jobs (`{scenarioId, workspaceId}`); each acts only in its run state. */
+export const SCENARIO_CAPTURE_QUEUE = "scenario.capture";
+export const SCENARIO_SEED_PACK_QUEUE = "scenario.seed_pack";
+export const SCENARIO_CHARGEBACK_QUEUE = "scenario.chargeback";
+export const SCENARIO_POLL_QUEUE = "scenario.poll";
+/** M2-10: the sandbox decision (adjudicate SELLER_FAVOR); never retried (Disputes writes aren't idempotent). */
+export const SCENARIO_DECIDE_QUEUE = "scenario.decide";
+
 export const COMMAND_QUEUES: readonly QueueSpec[] = [
   // 12 retries with the 300 s cap ≈ 28 min minimum: longer than the 10-minute unowned-capture window.
   { name: PAYPAL_CAPTURE_SYNC_QUEUE, expireInSeconds: 60, retryLimit: 12 },
@@ -79,6 +87,13 @@ export const COMMAND_QUEUES: readonly QueueSpec[] = [
   { name: ACTION_EXECUTE_QUEUE, expireInSeconds: 120, retryLimit: 3 },
   // Each try schedules the next itself (2, 4, 8, 16 min); these retries only cover a failed re-read.
   { name: ACTION_RECONCILE_QUEUE, expireInSeconds: 60, retryLimit: 8 },
+  // Orders replay a repeated PayPal-Request-Id; the run's state guard makes a re-delivery a no-op.
+  { name: SCENARIO_CAPTURE_QUEUE, expireInSeconds: 120, retryLimit: 3 },
+  { name: SCENARIO_SEED_PACK_QUEUE, expireInSeconds: 120, retryLimit: 3 },
+  // A retry lists the capture's disputes first, so it adopts a chargeback that landed before a failure.
+  { name: SCENARIO_CHARGEBACK_QUEUE, expireInSeconds: 120, retryLimit: 3 },
+  { name: SCENARIO_POLL_QUEUE, expireInSeconds: 60, retryLimit: 5 },
+  { name: SCENARIO_DECIDE_QUEUE, expireInSeconds: 60, retryLimit: 0 },
 ];
 
 /** `evidence.added` (M2-03 extract) and `pack.extracted` (M2-04 scope check) run an agent (120 s wall clock). */

@@ -58,7 +58,7 @@ export function formatTime(locale: string, iso: string, timeZone: string): strin
   }
 }
 
-export type StatusKey = "completed" | "held" | "refunded" | "failed" | "info";
+export type StatusKey = "completed" | "held" | "refunded" | "failed" | "info" | "resolved";
 
 /**
  * PayPal capture status → badge (components.md "Status badge"). Unknown or unmapped values (e.g.

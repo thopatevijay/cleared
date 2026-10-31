@@ -105,5 +105,76 @@
     "emptyTitle": "Nothing here yet",
     "empty": "The audit log fills in as the agent proposes actions and you approve them. Arrives with dispute support.",
     "back": "Back to your PayPal money"
+  },
+  "scenario": {
+    "title": "Dispute scenario",
+    "intro": "A real PayPal sandbox run: a card payment, a chargeback from the buyer's bank, and PayPal's own states as they change. Only the decision step is simulated, and it is labelled.",
+    "cta": "Run the dispute scenario",
+    "ctaName": "Run the dispute scenario (sandbox only)",
+    "busy": "Starting…",
+    "open": "Open the dispute scenario",
+    "running": "A dispute scenario is running in this workspace.",
+    "llmCap": "Today's AI budget for the demo is used up, so a new scenario can't start. Try again after 00:00 UTC.",
+    "back": "Back to your PayPal money",
+    "timelineTitle": "What PayPal did",
+    "lastChecked": "Last checked with PayPal: {time}",
+    "paypalId": "PayPal ID",
+    "observed": "PayPal reports",
+    "stepStatus": {
+      "done": "Done",
+      "active": "In progress",
+      "pending": "Not yet",
+      "failed": "Stopped"
+    },
+    "step": {
+      "capture": "Card payment captured ($120.00 USD)",
+      "seed_pack": "Proof pack filled: agreed scope, delivery and the client's acceptance",
+      "chargeback": "The buyer's bank opened a chargeback",
+      "evidence_step": "PayPal opens the evidence step",
+      "evidence_filed": "Your evidence is filed with PayPal",
+      "decision": "PayPal's decision (sandbox stand-in)",
+      "outcome": "Outcome and hold"
+    },
+    "wait": {
+      "evidence_step": "Waiting for PayPal to open the evidence step. It usually opens within ~15 min.",
+      "evidence_filed": "Waiting for your approved reply. Reviewing and approving the drafted reply arrives with dispute support.",
+      "decision": "PayPal usually offers the decision step within ~5 min of your evidence.",
+      "outcome": "PayPal usually resolves the case within ~10 min of the decision."
+    },
+    "outcomePayout": "Resolved; seller keeps the money (PayPal covered the case)",
+    "outcomeOther": "Resolved: {code}",
+    "holdReleased": "Hold released: payment is Completed",
+    "holdStill": "Payment still held: {status}",
+    "timedOut": "PayPal didn't reach a final state within 60 minutes. Start a new scenario to try again.",
+    "failed": "The scenario stopped before it finished.",
+    "decide": "Simulate PayPal's decision (sandbox only)",
+    "decideHelp": "Stands in for PayPal's own review. Only available in the sandbox, after your evidence is filed.",
+    "decideConfirm": "This asks the PayPal sandbox to decide the case in your favour, standing in for PayPal's review. Real PayPal never offers this.",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "sending": "Sending…",
+    "blocked": {
+      "no_adjudicate_link": "PayPal isn't ready yet: it hasn't offered the decision step.",
+      "evidence_not_filed": "File your evidence first.",
+      "no_dispute": "Available once PayPal has opened the dispute.",
+      "not_owned": "This dispute doesn't belong to your workspace.",
+      "finished": "This scenario has finished.",
+      "already_requested": "Decision requested. The outcome shows here once PayPal reports it."
+    },
+    "decisionError": "PayPal didn't take the decision ({code}). Try again once PayPal offers the step.",
+    "loading": "Loading the scenario from PayPal…",
+    "errorTitle": "Couldn't load this scenario",
+    "errorBody": "Check your connection and retry.",
+    "startError": "Couldn't start the scenario.",
+    "idLabel": {
+      "order": "Order",
+      "capture": "Capture",
+      "dispute": "Dispute"
+    },
+    "offered": "PayPal now offers the decision step (adjudicate). Use the sandbox control to stand in for PayPal's review.",
+    "sandboxHeading": "Sandbox decision",
+    "ctaHint": "A card payment, a chargeback and PayPal's real states: about 25 minutes.",
+    "timedOutAgain": "Run a new scenario",
+    "stillWaiting": "Still waiting. PayPal or our server may be slow."
   }
 }

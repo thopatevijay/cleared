@@ -1,0 +1,8 @@
+Order LOGO-1042 · Client chat export (synthetic sample, judge scenario)
+
+[2026-10-02 09:40] Northwind Tea Co.: Confirming the scope for USD 120.00: one primary logo (SVG and PNG), black and white variants, and a one-page brand guide with the colour codes.
+[2026-10-02 09:52] Meera Studio: Confirmed. Up to two revision rounds, final files by 20 October.
+[2026-10-09 16:40] Meera Studio: Draft 1 is attached. Three directions, all in the teal palette.
+[2026-10-10 09:05] Northwind Tea Co.: We like direction B. Can the leaf be a little thinner?
+[2026-10-14 18:22] Meera Studio: Done, revision 1 uploaded with the thinner leaf.
+[2026-10-18 20:10] Meera Studio: Final files are uploaded: SVG, PNG, the black and white variants and the brand guide.

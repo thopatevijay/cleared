@@ -88,7 +88,7 @@ export const scopeChecks = pgTable(
     /** [{ evidence_item_id, quote, offsets: {start, end}, sha256 }], quotes verified verbatim */
     citations: jsonb("citations").notNull().default([]),
     // M2-04: a check is a version of the pack's verdicts, one row per scope line. Append-only (migration
-    // 0008): new evidence writes a new version and never edits an old row.
+    // 0009): new evidence writes a new version and never edits an old row.
     /** 1, 2, … per pack; the newest version is the pack's current check */
     checkVersion: integer("check_version").notNull(),
     /** canonical hash of the pack's items (id, sha256, facts row) the check read */

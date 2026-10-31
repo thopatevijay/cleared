@@ -1,5 +1,5 @@
 {
-  "id": "ec8d8b08-37dc-4b4f-8678-2164c1b257e4",
+  "id": "cc518c5c-a16b-4b1d-9c42-bfc83543e929",
   "prevId": "5b48f257-b53e-4dc3-ab85-1ab69bd92221",
   "version": "7",
   "dialect": "postgresql",
@@ -3433,124 +3433,9 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'[]'::jsonb"
-        },
-        "check_version": {
-          "name": "check_version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "evidence_set_hash": {
-          "name": "evidence_set_hash",
-          "type": "char(64)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "prompt_version": {
-          "name": "prompt_version",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "run_id": {
-          "name": "run_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "line_id": {
-          "name": "line_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "line_citation": {
-          "name": "line_citation",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "model_verdict": {
-          "name": "model_verdict",
-          "type": "verdict",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "note": {
-          "name": "note",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "rationale": {
-          "name": "rationale",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
         }
       },
       "indexes": {
-        "scope_checks_idempotency_key": {
-          "name": "scope_checks_idempotency_key",
-          "columns": [
-            {
-              "expression": "pack_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "evidence_set_hash",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "prompt_version",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "line_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "scope_checks_version_line_key": {
-          "name": "scope_checks_version_line_key",
-          "columns": [
-            {
-              "expression": "pack_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "check_version",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "line_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "scope_checks_pack_idx": {
           "name": "scope_checks_pack_idx",
           "columns": [
@@ -3614,13 +3499,195 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.scenario_runs": {
+      "name": "scenario_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
-        "scope_checks_run_id_agent_runs_id_fk": {
-          "name": "scope_checks_run_id_agent_runs_id_fk",
-          "tableFrom": "scope_checks",
-          "tableTo": "agent_runs",
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'judge_dispute'"
+        },
+        "state": {
+          "name": "state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'capturing'"
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "capture_id": {
+          "name": "capture_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dispute_id": {
+          "name": "dispute_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "steps": {
+          "name": "steps",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "poll_started_at": {
+          "name": "poll_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_polled_at": {
+          "name": "last_polled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "polls": {
+          "name": "polls",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "decision_requested_at": {
+          "name": "decision_requested_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision_sent_at": {
+          "name": "decision_sent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decision_error": {
+          "name": "decision_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "failure": {
+          "name": "failure",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "scenario_runs_one_active_key": {
+          "name": "scenario_runs_one_active_key",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"scenario_runs\".\"state\" in ('capturing','seeding','charging_back','polling')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "scenario_runs_workspace_created_idx": {
+          "name": "scenario_runs_workspace_created_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "scenario_runs_dispute_idx": {
+          "name": "scenario_runs_dispute_idx",
+          "columns": [
+            {
+              "expression": "dispute_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "scenario_runs_workspace_id_workspaces_id_fk": {
+          "name": "scenario_runs_workspace_id_workspaces_id_fk",
+          "tableFrom": "scenario_runs",
+          "tableTo": "workspaces",
           "columnsFrom": [
-            "run_id"
+            "workspace_id"
           ],
           "columnsTo": [
             "id"
@@ -3632,7 +3699,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "scenario_runs_state_check": {
+          "name": "scenario_runs_state_check",
+          "value": "\"scenario_runs\".\"state\" in ('capturing','seeding','charging_back','polling','resolved','timed_out','failed')"
+        }
+      },
       "isRLSEnabled": false
     }
   },

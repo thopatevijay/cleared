@@ -14,7 +14,7 @@ Judges have no keys and no PayPal buyer login, yet the demo must be functional w
 ## Scope
 - "Run the dispute scenario" on the demo dashboard (demo workspaces and the owner's workspace only), one active scenario per workspace; a `scenario_runs` row tracks steps (added via migration)
 - Steps, each a pg-boss job (nothing slow in the request), each step's state + outbox in one transaction:
-  1. **Card capture**: Orders create + capture (SDK, shared HTTP client) for $120.00 USD with a PayPal-published sandbox test card and a synthetic buyer; `purchase_units[].custom_id = workspace_id`. In the same transaction as the `payments` row: `paypal_resource_owner` rows for the order and the capture; outbox `payment.captured`
+  1. **Card capture**: Orders create + capture (our typed PayPal client on the shared HTTP client; no PayPal SDK, ADR 0011 addendum) for $120.00 USD with a PayPal-published sandbox test card and a synthetic buyer; `purchase_units[].custom_id = workspace_id`. In the same transaction as the `payments` row: `paypal_resource_owner` rows for the order and the capture; outbox `payment.captured`
   2. **Seed the pack** with the canned synthetic evidence set (scope chat, delivery PDF, acceptance message) through the M2-01 path; identical bytes → content-hash AI cache hits after the first run
   3. **Sandbox chargeback**: `POST /v2/customer-support/process-chargeback` on the capture; the dispute id is written to `paypal_resource_owner` on creation (ingest also inherits it)
   4. **Scenario poll**: targeted `dispute.sync` + capture sync every 30 s for this scenario's ids only, bounded to 60 min, stopping at a terminal state (works without webhooks, e.g. on a local stack)
