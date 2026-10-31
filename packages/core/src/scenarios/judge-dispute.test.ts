@@ -135,7 +135,13 @@ describe("outcome wording", () => {
 
 describe("timeline", () => {
   const steps = ScenarioStepsSchema.parse({
-    capture: { at: "2026-10-31T12:00:00Z", orderId: "O1", captureId: "C1", status: "COMPLETED", merchantId: "M1" },
+    capture: {
+      at: "2026-10-31T12:00:00Z",
+      orderId: "O1",
+      captureId: "C1",
+      status: "COMPLETED",
+      merchantId: "M1",
+    },
     seed_pack: { at: "2026-10-31T12:00:05Z", packId: "p", evidenceItemIds: ["a", "b", "c"] },
     chargeback: { at: "2026-10-31T12:00:10Z", disputeId: "PP-R-1", adopted: false },
   });
