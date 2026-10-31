@@ -9,15 +9,26 @@ export type MutationCheck =
   | { readonly ok: true; readonly idempotencyKey: string }
   | { readonly ok: false; readonly response: Response };
 
-export function checkMutation(req: Request, appOrigin: string): MutationCheck {
+/**
+ * `multipart/form-data` (M2-01, file uploads) is a type a cross-site form *can* send, so for it the
+ * Origin check and the required `Idempotency-Key` header carry the protection: a custom header cannot be
+ * set by a form, and a cross-origin fetch that sets one needs a CORS preflight this app never grants.
+ */
+export type MutationBodyType = "application/json" | "multipart/form-data";
+
+export function checkMutation(
+  req: Request,
+  appOrigin: string,
+  bodyType: MutationBodyType = "application/json",
+): MutationCheck {
   const cid = correlationId(req);
   const fail = (status: number, code: string, message: string): MutationCheck => ({
     ok: false,
     response: apiError(status, code, message, cid),
   });
   const contentType = (req.headers.get("content-type") ?? "").split(";")[0]?.trim().toLowerCase();
-  if (contentType !== "application/json") {
-    return fail(415, "unsupported_media_type", "Send the request as application/json.");
+  if (contentType !== bodyType) {
+    return fail(415, "unsupported_media_type", `Send the request as ${bodyType}.`);
   }
   if (req.headers.get("origin") !== appOrigin) {
     return fail(403, "forbidden_origin", "This request did not come from Cleared.");

@@ -166,7 +166,18 @@ function packs(db: Db, ws: string) {
 /** Evidence storage for one workspace. Throws on a non-uuid workspace id; a foreign row id reads `null`. */
 export function evidenceRepo(db: Db, workspaceId: WorkspaceId) {
   const ws = WorkspaceIdSchema.parse(workspaceId);
-  return { blobs: blobStore(db, ws), items: evidenceItems(db, ws), packs: packs(db, ws) };
+  return {
+    /**
+     * Serialises evidence writes per workspace inside the caller's transaction, so the per-pack count and
+     * the 200 MB workspace quota are checked race-free. Take it before any blob lock (one lock order).
+     */
+    async lockWorkspace(tx: Tx): Promise<void> {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`evidence:${ws}`}, 0))`);
+    },
+    blobs: blobStore(db, ws),
+    items: evidenceItems(db, ws),
+    packs: packs(db, ws),
+  };
 }
 
 export type EvidenceRepo = ReturnType<typeof evidenceRepo>;
