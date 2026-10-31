@@ -26,6 +26,13 @@ Gates are written to run verbatim from a fresh shell. Two things make that work 
   then binds `5432 + n` and never touches the manager's 5432; the `pnpm … test` lines that follow use
   the same `DATABASE_URL`. Compose names the project after the worktree folder, so `make reset` drops
   only your own volume.
+- **Live lines (PayPal credentials).** Node 24 refuses `--env-file` inside `NODE_OPTIONS` (exit 9),
+  and a worktree has no `.env` (it must not get one). Put the live lines verbatim in a file and run
+  them under a parent that loads the main checkout's `.env` by path, so the credentials are inherited
+  and never read or printed:
+  `node --env-file=<main checkout>/.env -e 'require("node:child_process").execFileSync("bash", process.argv.slice(1), {stdio:"inherit"})' gate-lines.sh`.
+  Variables already in your shell win over the file (Node's `--env-file` never overrides them), so the
+  exported `DATABASE_URL` above still points at your own stack.
 
 ## Design review
 Every ticket labelled `frontend` passes the `ui-reviewer` agent (independent of the builder) against `docs/design/` before merge.
