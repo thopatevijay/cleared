@@ -81,7 +81,10 @@ export async function addSample(db: Db, ws: WorkspaceId, packId: string, name: S
     if (!prepared.ok) throw new Error(`sample ${name}: ${prepared.error.code}`);
     const p = prepared.value;
     const blob = await createPostgresBlobStore(db).put({ workspaceId: ws, bytes: p.bytes, mime: p.mime }, tx);
-    const item = await repo.items.insert({ packId, kind, blobId: blob.id, sha256: p.sha256, text: p.text }, tx);
+    const item = await repo.items.insert(
+      { packId, kind, blobId: blob.id, sha256: p.sha256, text: p.text },
+      tx,
+    );
     return item.id;
   });
 }

@@ -84,7 +84,10 @@ describe.skipIf(KEY === "" || !dbAvailable)("extract-evidence LIVE (M2-03, OPENA
       for (const name of SAMPLE_NAMES) {
         if (spent >= STOP_USD) throw new Error(`spend guard: $${spent.toFixed(5)} ≥ $${String(STOP_USD)}`);
         const itemId = await addSample(db, ws, packId, name);
-        recorder.label(`extract-v1/${name}`, `M2-03: extract@v1 on fixtures/samples/evidence/${SAMPLES[name].file}`);
+        recorder.label(
+          `extract-v1/${name}`,
+          `M2-03: extract@v1 on fixtures/samples/evidence/${SAMPLES[name].file}`,
+        );
         const out = await withTransaction(db, (tx) =>
           extractEvidence(deps, addedEvent(ws, packId, itemId, SAMPLES[name].kind), {
             tx,
@@ -97,7 +100,13 @@ describe.skipIf(KEY === "" || !dbAvailable)("extract-evidence LIVE (M2-03, OPENA
         const cost = Number(run?.costUsd ?? 0);
         spent += cost;
         spendLog.info(
-          { call: `extract:${name}`, tokensIn: run?.tokensIn, tokensOut: run?.tokensOut, costUsd: cost, spentUsd: spent },
+          {
+            call: `extract:${name}`,
+            tokensIn: run?.tokensIn,
+            tokensOut: run?.tokensOut,
+            costUsd: cost,
+            spentUsd: spent,
+          },
           "openai live spend",
         );
         expect(out.status, name).toBe("written");
