@@ -34,11 +34,15 @@ describe.skipIf(!dbAvailable)("audit_log grants (M2-08)", () => {
     ["UPDATE audit_log", "update audit_log set action = 'x'"],
     ["DELETE FROM audit_log", "delete from audit_log"],
   ])("%s as the app role fails", async (_label, statement) => {
-    await expect(client.query(statement)).rejects.toThrow(/permission denied for table audit_log|append-only/);
+    await expect(client.query(statement)).rejects.toThrow(
+      /permission denied for table audit_log|append-only/,
+    );
   });
 
   it("as a non-superuser owner the grants alone refuse UPDATE and DELETE (rolled back)", async () => {
-    const su = await client.query<{ rolsuper: boolean }>("select rolsuper from pg_roles where rolname = current_user");
+    const su = await client.query<{ rolsuper: boolean }>(
+      "select rolsuper from pg_roles where rolname = current_user",
+    );
     if (su.rows[0]?.rolsuper !== true) {
       // Already a non-superuser (Render's shape): the statement above failed on the grants.
       await expect(client.query("delete from audit_log")).rejects.toThrow(/permission denied/);
@@ -59,7 +63,9 @@ describe.skipIf(!dbAvailable)("audit_log grants (M2-08)", () => {
         await client.query("rollback");
       }
     };
-    expect(await failsWith("update audit_log set action = 'x'")).toBe("permission denied for table audit_log");
+    expect(await failsWith("update audit_log set action = 'x'")).toBe(
+      "permission denied for table audit_log",
+    );
     expect(await failsWith("delete from audit_log")).toBe("permission denied for table audit_log");
     expect(await failsWith("insert into audit_log (actor, action) values ('system', 'audit.probe')")).toBe(
       "succeeded",

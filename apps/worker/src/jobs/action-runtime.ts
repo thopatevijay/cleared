@@ -43,7 +43,11 @@ export const DisputeSnapshotSchema = z.object({
 });
 
 export function snapshotOf(d: Dispute): DisputeSnapshot {
-  return { status: d.status, allowedActions: allowedActionsFromLinks(d.links), sellerSubmissions: sellerSubmissions(d) };
+  return {
+    status: d.status,
+    allowedActions: allowedActionsFromLinks(d.links),
+    sellerSubmissions: sellerSubmissions(d),
+  };
 }
 
 const kindOf = (row: ProposedActionRow) => z.enum(ACTION_KINDS).parse(row.kind);
@@ -72,16 +76,30 @@ export async function endAction(
   const code = end.to === "failed" ? { code: end.code } : {};
   await appendActionAudit(
     rt.db,
-    { workspaceId: row.workspaceId, actionId: row.id, actor: "system", action: `action.${end.to}`, detail: { ...detail, ...code } },
+    {
+      workspaceId: row.workspaceId,
+      actionId: row.id,
+      actor: "system",
+      action: `action.${end.to}`,
+      detail: { ...detail, ...code },
+    },
     tx,
   );
-  const base = { version: 1 as const, workspaceId: row.workspaceId, occurredAt: fromEpochMs(rt.now().getTime()) };
+  const base = {
+    version: 1 as const,
+    workspaceId: row.workspaceId,
+    occurredAt: fromEpochMs(rt.now().getTime()),
+  };
   const ref = { actionId: row.id, kind: kindOf(row) };
   const event =
     end.to === "succeeded"
       ? { ...base, type: "action.executed" as const, data: { ...ref, paypalDebugId: end.debugId } }
       : end.to === "failed"
-        ? { ...base, type: "action.failed" as const, data: { ...ref, paypalDebugId: end.debugId, reason: end.code } }
+        ? {
+            ...base,
+            type: "action.failed" as const,
+            data: { ...ref, paypalDebugId: end.debugId, reason: end.code },
+          }
         : { ...base, type: "action.unknown" as const, data: ref };
   await rt.publisher.emit(tx, event as Parameters<Publisher["emit"]>[1]);
 }
@@ -93,7 +111,12 @@ export interface ReconcileInput {
   readonly before: DisputeSnapshot;
 }
 
-export async function enqueueReconcile(rt: ActionRuntime, tx: Tx, input: ReconcileInput, delaySeconds: number): Promise<void> {
+export async function enqueueReconcile(
+  rt: ActionRuntime,
+  tx: Tx,
+  input: ReconcileInput,
+  delaySeconds: number,
+): Promise<void> {
   await rt.publisher.enqueue(tx, ACTION_RECONCILE_QUEUE, input, {
     workspaceId: input.workspaceId,
     startAfter: delaySeconds,

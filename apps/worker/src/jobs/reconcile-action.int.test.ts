@@ -45,13 +45,21 @@ const POST_EVIDENCE = `${FULL}/state-4-under_review`;
 /** An approved provide_evidence whose write timed out: `unknown`, with its first reconcile job queued. */
 async function unknownAction() {
   const s = await sceneWithDispute(db, created);
-  const actionId = await approvedAction(db, publisher, s, "provide_evidence", evidencePayload(s.ids, s.draftId));
+  const actionId = await approvedAction(
+    db,
+    publisher,
+    s,
+    "provide_evidence",
+    evidencePayload(s.ids, s.draftId),
+  );
   const { disputes } = disputesWithHttp(server);
   serveDispute(server, STATE.waiting, s.ids, s.ws);
   serveDispute(server, STATE.waiting, s.ids, s.ws);
   serveWrite(server, s.ids, "provide-evidence", "paypal/disputes/full/write-evidence.2", 1_500);
   const d = { db, publisher, disputes, now: () => NOW, killSwitchEnv: () => false, writeTimeoutMs: 300 };
-  const out = await withTransaction(db, (tx) => executeAction(d, { actionId, workspaceId: s.ws }, ctxFor(tx, {})));
+  const out = await withTransaction(db, (tx) =>
+    executeAction(d, { actionId, workspaceId: s.ws }, ctxFor(tx, {})),
+  );
   expect(out).toBe("unknown");
   // let the delayed (timed-out) msw response finish before the next PayPal call
   await new Promise((r) => setTimeout(r, 1_500));
@@ -97,12 +105,19 @@ describe.skipIf(!dbAvailable)("action.reconcile (reconcile-action)", () => {
     serveDispute(server, POST_EVIDENCE, a.ids, a.ws);
     const input = await reconcileJob(a.actionId, 1);
     const deps = { db, publisher, disputes: a.disputes, now: () => NOW };
-    const out: ReconcileOutcome = await withTransaction(db, (tx) => reconcileAction(deps, input, ctxFor(tx, input)));
+    const out: ReconcileOutcome = await withTransaction(db, (tx) =>
+      reconcileAction(deps, input, ctxFor(tx, input)),
+    );
     expect(out).toBe("succeeded");
     expect((await getProposedAction(db, a.ws, a.actionId))?.state).toBe("succeeded");
     expect(writes(calls)).toHaveLength(1); // the original send only
     const trail = (await actionAuditTrail(db, a.ws, a.actionId)).map((r) => r.action);
-    expect(trail.slice(-4)).toEqual(["action.sent", "action.unknown", "action.reconcile", "action.succeeded"]);
+    expect(trail.slice(-4)).toEqual([
+      "action.sent",
+      "action.unknown",
+      "action.reconcile",
+      "action.succeeded",
+    ]);
     // the mirror follows the re-read
     const m = await db.$client.query("select status from disputes where dispute_id = $1", [a.ids.disputeId]);
     expect(m.rows[0]).toEqual({ status: "UNDER_REVIEW" });
@@ -117,11 +132,19 @@ describe.skipIf(!dbAvailable)("action.reconcile (reconcile-action)", () => {
       const input = await reconcileJob(a.actionId, attempt);
       outcomes.push(await withTransaction(db, (tx) => reconcileAction(deps, input, ctxFor(tx, input))));
     }
-    expect(outcomes).toEqual(["retry_scheduled", "retry_scheduled", "retry_scheduled", "retry_scheduled", "failed"]);
+    expect(outcomes).toEqual([
+      "retry_scheduled",
+      "retry_scheduled",
+      "retry_scheduled",
+      "retry_scheduled",
+      "failed",
+    ]);
     const row = await getProposedAction(db, a.ws, a.actionId);
     expect(row).toMatchObject({ state: "failed", refusalCode: "RECONCILE_NOT_APPLIED" });
     expect(writes(calls)).toHaveLength(1);
-    const reconciles = (await actionAuditTrail(db, a.ws, a.actionId)).filter((r) => r.action === "action.reconcile");
+    const reconciles = (await actionAuditTrail(db, a.ws, a.actionId)).filter(
+      (r) => r.action === "action.reconcile",
+    );
     expect(reconciles.map((r) => r.detail["attempt"])).toEqual([1, 2, 3, 4, 5]);
     // a job delivered again after the action settled does nothing
     const late = await reconcileJob(a.actionId, 5);

@@ -72,7 +72,12 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients): Registry {
     },
     {
       queue: queueSpec(ACTION_RECONCILE_QUEUE),
-      handler: reconcileActionHandler({ db: rt.db, publisher, disputes: paypal.disputes, now: () => new Date() }),
+      handler: reconcileActionHandler({
+        db: rt.db,
+        publisher,
+        disputes: paypal.disputes,
+        now: () => new Date(),
+      }),
     },
     {
       queue: queueSpec(SANDBOX_TEST_PAYMENT_QUEUE),

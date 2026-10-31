@@ -112,8 +112,7 @@ interface Run {
 }
 
 type Claim =
-  | { readonly mode: "skip" }
-  | { readonly mode: "run" | "recover"; readonly row: ProposedActionRow };
+  { readonly mode: "skip" } | { readonly mode: "run" | "recover"; readonly row: ProposedActionRow };
 
 /** Own transaction, committed before anything is sent. */
 async function claimAction(deps: ExecuteActionDeps, input: ExecuteActionInput): Promise<Claim> {
@@ -145,7 +144,10 @@ async function recoverUnknown(deps: ExecuteActionDeps, row: ProposedActionRow): 
 
 async function mirrorOf(deps: ExecuteActionDeps, row: ProposedActionRow, tx: Tx): Promise<DisputeSnapshot> {
   const disputeId = z.object({ dispute_id: z.string() }).safeParse(row.payload).data?.dispute_id ?? "";
-  const m = await forWorkspace(deps.db, WorkspaceIdSchema.parse(row.workspaceId)).disputes.getByDisputeId(disputeId, tx);
+  const m = await forWorkspace(deps.db, WorkspaceIdSchema.parse(row.workspaceId)).disputes.getByDisputeId(
+    disputeId,
+    tx,
+  );
   return {
     status: m?.status ?? "",
     allowedActions: z.array(z.string()).catch([]).parse(m?.allowedActions),
@@ -190,7 +192,11 @@ async function runChecks(run: Run): Promise<Prepared | { readonly kind: "refused
   if (!(await record(run, checkKillSwitch(killSwitch)))) return refused;
   const approval = await approvalForAction(deps.db, row.workspaceId, row.id);
   const recomputed = canonicalHash(row.payload as JsonValue);
-  const hash = checkPayloadHash({ recomputed, approved: approval?.payloadSha256 ?? "", stored: row.payloadSha256 });
+  const hash = checkPayloadHash({
+    recomputed,
+    approved: approval?.payloadSha256 ?? "",
+    stored: row.payloadSha256,
+  });
   if (!(await record(run, hash, { recomputed }))) return refused;
   const executable = parseExecutablePayload(row.kind, row.payload);
   if (executable === null) {
@@ -208,7 +214,10 @@ async function checkDispute(run: Run, executable: ExecutablePayload, pdf: Uint8A
   const { deps, row } = run;
   const disputeId = executable.payload.dispute_id;
   const owner = await platform(deps.db).resourceOwners.get("dispute", disputeId);
-  const owned = checkOwnership({ actionWorkspaceId: row.workspaceId, ownerWorkspaceId: owner?.workspaceId ?? null });
+  const owned = checkOwnership({
+    actionWorkspaceId: row.workspaceId,
+    ownerWorkspaceId: owner?.workspaceId ?? null,
+  });
   if (!(await record(run, owned))) return refused;
   let fetched: Dispute;
   try {
@@ -220,7 +229,11 @@ async function checkDispute(run: Run, executable: ExecutablePayload, pdf: Uint8A
   await withTransaction(deps.db, (tx) => mirrorFetched(deps, tx, fetched, run.ctx));
   const mapped = mapDispute(fetched);
   const allowed = mapped.ok ? mapped.value.allowedActions : [];
-  if (!(await record(run, checkActionLink({ kind: row.kind, allowedActions: allowed }), { links: [...allowed] })))
+  if (
+    !(await record(run, checkActionLink({ kind: row.kind, allowedActions: allowed }), {
+      links: [...allowed],
+    }))
+  )
     return refused;
   const dueDate = mapped.ok ? mapped.value.sellerResponseDueDate : null;
   const now = fromEpochMs(deps.now().getTime());
@@ -236,7 +249,11 @@ interface BlobCheck {
 
 /** The compiled PDF the payload names (draft → compiled blob), hashed from its bytes now. */
 async function loadBlob(run: Run, e: ExecutablePayload): Promise<BlobCheck> {
-  if (e.kind === "accept_claim" || e.payload.compiled_blob_sha256 === undefined || e.payload.draft_id === undefined) {
+  if (
+    e.kind === "accept_claim" ||
+    e.payload.compiled_blob_sha256 === undefined ||
+    e.payload.draft_id === undefined
+  ) {
     return { expected: null, actual: null, bytes: null };
   }
   const ws = forWorkspace(run.deps.db, WorkspaceIdSchema.parse(run.row.workspaceId));
@@ -249,9 +266,17 @@ async function loadBlob(run: Run, e: ExecutablePayload): Promise<BlobCheck> {
 
 // ---- send ------------------------------------------------------------------------------------------
 
-function write(run: Run, p: Prepared, onResponse: (m: WriteResponseMeta) => void): Promise<DisputeWriteResponse> {
+function write(
+  run: Run,
+  p: Prepared,
+  onResponse: (m: WriteResponseMeta) => void,
+): Promise<DisputeWriteResponse> {
   const { deps, row } = run;
-  const o = { requestId: row.id, onResponse, ...(deps.writeTimeoutMs === undefined ? {} : { timeoutMs: deps.writeTimeoutMs }) };
+  const o = {
+    requestId: row.id,
+    onResponse,
+    ...(deps.writeTimeoutMs === undefined ? {} : { timeoutMs: deps.writeTimeoutMs }),
+  };
   const e = p.executable;
   const files = p.pdf === null ? [] : [{ name: `evidence-${e.payload.dispute_id}.pdf`, bytes: p.pdf }];
   if (e.kind === "provide_evidence") {
@@ -283,13 +308,26 @@ async function succeeded(
 ): Promise<ExecuteOutcome> {
   const { deps, row } = run;
   await withTransaction(deps.db, async (tx) => {
-    await recordExecutionOutcome(deps.db, row.workspaceId, row.id, {
-      paypalStatus: String(r.status),
-      paypalDebugId: r.debugId,
-      response: r.response,
-    }, tx);
+    await recordExecutionOutcome(
+      deps.db,
+      row.workspaceId,
+      row.id,
+      {
+        paypalStatus: String(r.status),
+        paypalDebugId: r.debugId,
+        response: r.response,
+      },
+      tx,
+    );
     await appendActionAudit(deps.db, sent(row, { status: r.status, debugId: r.debugId }), tx);
-    await endAction(deps, tx, row, "executing", { to: "succeeded", debugId: r.debugId }, { debugId: r.debugId });
+    await endAction(
+      deps,
+      tx,
+      row,
+      "executing",
+      { to: "succeeded", debugId: r.debugId },
+      { debugId: r.debugId },
+    );
     await deps.publisher.enqueue(
       tx,
       PAYPAL_DISPUTE_SYNC_QUEUE,
@@ -300,7 +338,10 @@ async function succeeded(
   return "succeeded";
 }
 
-function sent(row: ProposedActionRow, detail: { status: number | null; debugId: string | null; outcome?: string }) {
+function sent(
+  row: ProposedActionRow,
+  detail: { status: number | null; debugId: string | null; outcome?: string },
+) {
   return {
     workspaceId: row.workspaceId,
     actionId: row.id,
@@ -330,24 +371,45 @@ async function failedSend(run: Run, p: Prepared, error: unknown): Promise<Execut
   const outcome = classifySendFailure(f);
   const status = f.kind === "status" ? f.status : null;
   const debugId = error instanceof HttpStatusError ? (error.debugId ?? null) : null;
-  run.ctx.log.warn({ actionId: row.id, failure: f.kind, status, debugId, error: String(error) }, "action send failed");
+  run.ctx.log.warn(
+    { actionId: row.id, failure: f.kind, status, debugId, error: String(error) },
+    "action send failed",
+  );
   await withTransaction(deps.db, async (tx) => {
     const body = error instanceof HttpStatusError ? error.bodyText.slice(0, 4000) : null;
     if (f.kind === "status" || f.kind === "no_answer") {
-      await recordExecutionOutcome(deps.db, row.workspaceId, row.id, {
-        paypalStatus: status === null ? null : String(status),
-        paypalDebugId: debugId,
-        response: body === null ? null : { body },
-      }, tx);
+      await recordExecutionOutcome(
+        deps.db,
+        row.workspaceId,
+        row.id,
+        {
+          paypalStatus: status === null ? null : String(status),
+          paypalDebugId: debugId,
+          response: body === null ? null : { body },
+        },
+        tx,
+      );
       await appendActionAudit(deps.db, sent(row, { status, debugId, outcome: f.kind }), tx);
     }
     if (outcome.next === "failed") {
-      await endAction(deps, tx, row, "executing", { to: "failed", code: outcome.code, debugId }, { failure: f.kind });
+      await endAction(
+        deps,
+        tx,
+        row,
+        "executing",
+        { to: "failed", code: outcome.code, debugId },
+        { failure: f.kind },
+      );
       return;
     }
     await endAction(deps, tx, row, "executing", { to: "unknown" }, { failure: f.kind });
     const before = snapshotOf(p.before);
-    await enqueueReconcile(deps, tx, { actionId: row.id, workspaceId: row.workspaceId, attempt: 1, before }, RECONCILE_FIRST_DELAY_SECONDS);
+    await enqueueReconcile(
+      deps,
+      tx,
+      { actionId: row.id, workspaceId: row.workspaceId, attempt: 1, before },
+      RECONCILE_FIRST_DELAY_SECONDS,
+    );
   });
   return outcome.next;
 }

@@ -112,7 +112,10 @@ export async function setProposedActionState(
 ): Promise<boolean> {
   const rows = await (tx ?? db)
     .update(proposedActions)
-    .set({ state: change.to, ...(change.refusalCode === undefined ? {} : { refusalCode: change.refusalCode }) })
+    .set({
+      state: change.to,
+      ...(change.refusalCode === undefined ? {} : { refusalCode: change.refusalCode }),
+    })
     .where(
       and(
         eq(proposedActions.workspaceId, workspaceId),
@@ -140,7 +143,13 @@ export async function insertSellerProposal(db: Db, p: SellerProposal, tx: Tx): P
   const sha = canonicalHash(p.payload);
   const rows = await tx
     .insert(proposedActions)
-    .values({ workspaceId: p.workspaceId, kind: p.kind, payload: p.payload, payloadSha256: sha, risk: "high" })
+    .values({
+      workspaceId: p.workspaceId,
+      kind: p.kind,
+      payload: p.payload,
+      payloadSha256: sha,
+      risk: "high",
+    })
     .returning();
   const row = rows[0];
   if (!row) throw new Error("proposed_actions insert returned no row");

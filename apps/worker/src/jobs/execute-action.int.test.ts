@@ -45,7 +45,15 @@ const EVIDENCE_422 = "paypal/disputes/errors/provide-evidence-not-allowed";
 
 function deps(over: Partial<ExecuteActionDeps> = {}) {
   const { http, disputes } = disputesWithHttp(server);
-  const d: ExecuteActionDeps = { db, publisher, disputes, now: () => NOW, killSwitchEnv: () => false, writeTimeoutMs: 1_500, ...over };
+  const d: ExecuteActionDeps = {
+    db,
+    publisher,
+    disputes,
+    now: () => NOW,
+    killSwitchEnv: () => false,
+    writeTimeoutMs: 1_500,
+    ...over,
+  };
   return { d, http };
 }
 
@@ -54,7 +62,13 @@ const execute = (d: ExecuteActionDeps, actionId: string, ws: string): Promise<Ex
 
 async function evidenceScene() {
   const s = await sceneWithDispute(db, created);
-  const actionId = await approvedAction(db, publisher, s, "provide_evidence", evidencePayload(s.ids, s.draftId));
+  const actionId = await approvedAction(
+    db,
+    publisher,
+    s,
+    "provide_evidence",
+    evidencePayload(s.ids, s.draftId),
+  );
   return { ...s, actionId };
 }
 
@@ -109,14 +123,24 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
     expect(await execute(d, s.actionId, s.ws)).toBe("succeeded");
     expect(await stateOf(s.ws, s.actionId)).toEqual({ state: "succeeded", code: null });
     expect(writes(calls)).toEqual([
-      { method: "POST", path: `/v1/customer/disputes/${s.ids.disputeId}/provide-evidence`, requestId: s.actionId },
+      {
+        method: "POST",
+        path: `/v1/customer/disputes/${s.ids.disputeId}/provide-evidence`,
+        requestId: s.actionId,
+      },
     ]);
     const exec = await executionForAction(db, s.ws, s.actionId);
-    expect(exec).toMatchObject({ idempotencyKey: s.actionId, paypalStatus: "200", paypalDebugId: "ca51fc56edb2d" });
+    expect(exec).toMatchObject({
+      idempotencyKey: s.actionId,
+      paypalStatus: "200",
+      paypalDebugId: "ca51fc56edb2d",
+    });
     expect(http.breaker.state()).toBe("closed");
 
     const trail = await actionAuditTrail(db, s.ws, s.actionId);
-    expect(trail.map((r) => (r.action === "action.check" ? `check:${String(r.detail["check"])}` : r.action))).toEqual([
+    expect(
+      trail.map((r) => (r.action === "action.check" ? `check:${String(r.detail["check"])}` : r.action)),
+    ).toEqual([
       "action.proposed",
       "action.approved",
       "check:kill_switch",
@@ -129,9 +153,15 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
       "action.succeeded",
     ]);
     expect(trail.map((r) => r.actor)).toEqual(["agent", "seller", ...Array<string>(8).fill("system")]);
-    expect(trail.find((r) => r.action === "action.sent")?.detail).toMatchObject({ debugId: "ca51fc56edb2d", status: 200 });
+    expect(trail.find((r) => r.action === "action.sent")?.detail).toMatchObject({
+      debugId: "ca51fc56edb2d",
+      status: 200,
+    });
     // a targeted dispute re-sync follows the write
-    const sync = await db.$client.query("select 1 from pgboss.job where name = 'paypal.dispute.sync' and data->'data'->>'disputeId' = $1", [s.ids.disputeId]);
+    const sync = await db.$client.query(
+      "select 1 from pgboss.job where name = 'paypal.dispute.sync' and data->'data'->>'disputeId' = $1",
+      [s.ids.disputeId],
+    );
     expect(sync.rowCount).toBe(1);
   });
 
@@ -145,7 +175,10 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
     expect(await execute(d, s.actionId, s.ws)).toBe("failed");
     expect(await stateOf(s.ws, s.actionId)).toEqual({ state: "failed", code: "PAYPAL_REJECTED" });
     expect(writes(calls)).toHaveLength(1);
-    expect(await executionForAction(db, s.ws, s.actionId)).toMatchObject({ paypalStatus: "422", paypalDebugId: "ca51fb6196f52" });
+    expect(await executionForAction(db, s.ws, s.actionId)).toMatchObject({
+      paypalStatus: "422",
+      paypalDebugId: "ca51fb6196f52",
+    });
     expect(http.breaker.state()).toBe("closed");
     expect(await jobs("action.reconcile", s.actionId)).toHaveLength(0);
   });
@@ -180,7 +213,11 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
       expect(await stateOf(s.ws, s.actionId)).toEqual({ state: "failed", code: "PAYLOAD_CHANGED" });
       expect(calls).toEqual([]);
       const trail = await actionAuditTrail(db, s.ws, s.actionId);
-      expect(trail.at(-2)?.detail).toMatchObject({ check: "payload_hash", ok: false, code: "PAYLOAD_CHANGED" });
+      expect(trail.at(-2)?.detail).toMatchObject({
+        check: "payload_hash",
+        ok: false,
+        code: "PAYLOAD_CHANGED",
+      });
       expect(trail.at(-1)).toMatchObject({ action: "action.failed", detail: { code: "PAYLOAD_CHANGED" } });
     });
 
@@ -197,7 +234,12 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
 
     it("dispute owned by another workspace → NOT_OWNED, no PayPal request at all", async () => {
       const s = await evidenceScene();
-      const other = await platform(db).workspaces.create({ kind: "demo", locale: "en", timezone: "UTC", baseCurrency: "USD" });
+      const other = await platform(db).workspaces.create({
+        kind: "demo",
+        locale: "en",
+        timezone: "UTC",
+        baseCurrency: "USD",
+      });
       created.push(other.id);
       await db.$client.query(
         "update paypal_resource_owner set workspace_id = $1 where resource_type = 'dispute' and resource_id = $2",
@@ -238,7 +280,11 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
     const [job] = await jobs("action.reconcile", s.actionId);
     expect(job?.data.data).toMatchObject({
       attempt: 1,
-      before: { status: "WAITING_FOR_SELLER_RESPONSE", allowedActions: ["accept_claim", "provide_evidence"], sellerSubmissions: 1 },
+      before: {
+        status: "WAITING_FOR_SELLER_RESPONSE",
+        allowedActions: ["accept_claim", "provide_evidence"],
+        sellerSubmissions: 1,
+      },
     });
     expect((job?.start_after.getTime() ?? 0) - Date.now()).toBeGreaterThan(100_000);
     expect((await actionAuditTrail(db, s.ws, s.actionId)).at(-1)).toMatchObject({ action: "action.unknown" });
@@ -255,7 +301,9 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
     expect(await execute(d, s.actionId, s.ws)).toBe("succeeded");
     expect(await execute(d, s.actionId, s.ws)).toBe("skipped");
     expect(writes(calls).map((c) => c.requestId)).toEqual([s.actionId]);
-    const n = await db.$client.query("select idempotency_key from executions where action_id = $1", [s.actionId]);
+    const n = await db.$client.query("select idempotency_key from executions where action_id = $1", [
+      s.actionId,
+    ]);
     expect(n.rows).toEqual([{ idempotency_key: s.actionId }]);
   });
 
@@ -271,14 +319,21 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
     expect(await execute(deps().d, s.actionId, s.ws)).toBe("unknown");
     expect(calls).toEqual([]);
     const [job] = await jobs("action.reconcile", s.actionId);
-    expect(job?.data.data).toMatchObject({ attempt: 1, before: { status: "WAITING_FOR_SELLER_RESPONSE", sellerSubmissions: null } });
+    expect(job?.data.data).toMatchObject({
+      attempt: 1,
+      before: { status: "WAITING_FOR_SELLER_RESPONSE", sellerSubmissions: null },
+    });
   });
 
   it("the multipart body carries the approved notes and the compiled PDF (by sha256)", async () => {
     const s = await evidenceScene();
     let body = "";
     server.events.on("request:start", ({ request }) => {
-      if (request.method === "POST") void request.clone().text().then((t) => (body = t));
+      if (request.method === "POST")
+        void request
+          .clone()
+          .text()
+          .then((t) => (body = t));
     });
     serveDispute(server, STATE.waiting, s.ids, s.ws);
     serveDispute(server, STATE.waiting, s.ids, s.ws);

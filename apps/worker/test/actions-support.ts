@@ -2,7 +2,12 @@
 // approved action on it (through the real approve path), msw serving the recorded M0-05 dispute GETs and
 // write responses, and a record of every PayPal request (method, path, PayPal-Request-Id).
 import { createHash, randomUUID } from "node:crypto";
-import { createLogger, createHttpClient, createPayPalDisputesClient, createTokenProvider } from "@cleared/adapters";
+import {
+  createLogger,
+  createHttpClient,
+  createPayPalDisputesClient,
+  createTokenProvider,
+} from "@cleared/adapters";
 import { canonicalHash, WorkspaceIdSchema, type JsonValue } from "@cleared/core";
 import {
   appendActionAudit,
@@ -39,7 +44,11 @@ export function recordCalls(server: SetupServer): PayPalCall[] {
   server.events.on("request:start", ({ request }) => {
     const u = new URL(request.url);
     if (u.origin !== BASE || u.pathname.startsWith("/v1/oauth2")) return;
-    calls.push({ method: request.method, path: u.pathname, requestId: request.headers.get("paypal-request-id") });
+    calls.push({
+      method: request.method,
+      path: u.pathname,
+      requestId: request.headers.get("paypal-request-id"),
+    });
   });
   return calls;
 }
@@ -57,7 +66,10 @@ export function disputesWithHttp(server: SetupServer) {
   });
   const token = loadFixture("paypal/oauth/token");
   server.use(
-    http.post(token.request.url, () => new HttpResponse(responseText(token), { status: 200, headers: token.response.headers })),
+    http.post(
+      token.request.url,
+      () => new HttpResponse(responseText(token), { status: 200, headers: token.response.headers }),
+    ),
   );
   return { http: h, disputes: createPayPalDisputesClient({ http: h, tokens, env: () => "sandbox" }) };
 }
@@ -85,8 +97,16 @@ export interface Scene {
 }
 
 /** A workspace owning a fresh dispute (mirror row WAITING_FOR_SELLER_RESPONSE) with a compiled-PDF draft. */
-export async function sceneWithDispute(db: Db, created: string[]): Promise<Omit<Scene, "actionId" | "payload"> & { draftId: string }> {
-  const w = await platform(db).workspaces.create({ kind: "demo", locale: "en", timezone: "UTC", baseCurrency: "USD" });
+export async function sceneWithDispute(
+  db: Db,
+  created: string[],
+): Promise<Omit<Scene, "actionId" | "payload"> & { draftId: string }> {
+  const w = await platform(db).workspaces.create({
+    kind: "demo",
+    locale: "en",
+    timezone: "UTC",
+    baseCurrency: "USD",
+  });
   created.push(w.id);
   const ids = freshIds();
   const owners = platform(db).resourceOwners;
@@ -100,8 +120,18 @@ export async function sceneWithDispute(db: Db, created: string[]): Promise<Omit<
     sellerResponseDueDate: new Date("2026-11-09T04:59:59.000Z"),
     paypalUpdatedAt: new Date("2026-10-29T05:00:00.000Z"),
   });
-  const blob = await repos.blobs.insert({ mime: "application/pdf", bytes: Buffer.from(PDF), size: PDF.byteLength, sha256: PDF_SHA });
-  const draft = await repos.disputeDrafts.insert({ disputeId: dispute.id, notes: "n", compiledBlobId: blob.id, sha256: PDF_SHA });
+  const blob = await repos.blobs.insert({
+    mime: "application/pdf",
+    bytes: Buffer.from(PDF),
+    size: PDF.byteLength,
+    sha256: PDF_SHA,
+  });
+  const draft = await repos.disputeDrafts.insert({
+    disputeId: dispute.id,
+    notes: "n",
+    compiledBlobId: blob.id,
+    sha256: PDF_SHA,
+  });
   return { ws: w.id, ids, draftId: draft.id };
 }
 
@@ -109,7 +139,8 @@ export function evidencePayload(ids: Ids, draftId: string): JsonValue {
   return {
     dispute_id: ids.disputeId,
     evidence_type: "PROOF_OF_FULFILLMENT",
-    notes: "Evidence. Synthetic sandbox case: the item was dispatched with tracking and delivered; the delivery note is attached.",
+    notes:
+      "Evidence. Synthetic sandbox case: the item was dispatched with tracking and delivered; the delivery note is attached.",
     compiled_blob_sha256: PDF_SHA,
     draft_id: draftId,
   };
@@ -125,7 +156,13 @@ export async function approvedAction(
 ): Promise<string> {
   const id = await propose(db, scene.ws, kind, payload);
   const sha = canonicalHash(payload);
-  const r = await approveProposedAction(db, publisher, { workspaceId: scene.ws, actionId: id, actor: "seller-test", now: NOW, payloadSha256: sha });
+  const r = await approveProposedAction(db, publisher, {
+    workspaceId: scene.ws,
+    actionId: id,
+    actor: "seller-test",
+    now: NOW,
+    payloadSha256: sha,
+  });
   if (!r.ok) throw new Error(`approve refused: ${r.code}`);
   return id;
 }
@@ -137,7 +174,11 @@ export async function propose(db: Db, ws: string, kind: string, payload: JsonVal
       { kind: kind as never, payload, payloadSha256: sha, state: "proposed", risk: "high" },
       tx,
     );
-    await appendActionAudit(db, { workspaceId: ws, actionId: row.id, actor: "agent", action: "action.proposed", detail: { kind } }, tx);
+    await appendActionAudit(
+      db,
+      { workspaceId: ws, actionId: row.id, actor: "agent", action: "action.proposed", detail: { kind } },
+      tx,
+    );
     return row.id;
   });
 }
@@ -147,7 +188,7 @@ export function ctxFor(tx: ConsumeContext["tx"], data: unknown): ConsumeContext 
   const job = { id: randomUUID(), retryCount: 0, createdOn: NOW } as JobWithMetadata<unknown>;
   return {
     tx,
-    log: createLogger({ service: "worker-test", level: (process.env["TEST_LOG"] ?? "silent") as "silent" }),
+    log: createLogger({ service: "worker-test", level: (process.env["TEST_LOG"] ?? "silent") }),
     job,
     envelope: { messageId: randomUUID(), correlationId: randomUUID(), data },
   };

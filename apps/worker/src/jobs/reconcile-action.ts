@@ -83,7 +83,14 @@ async function settle(
   if (verdict === "landed") {
     const execution = await executionForAction(deps.db, row.workspaceId, row.id, tx);
     const debugId = execution?.paypalDebugId ?? null;
-    await endAction(deps, tx, row, "unknown", { to: "succeeded", debugId }, { reconciledOnAttempt: input.attempt });
+    await endAction(
+      deps,
+      tx,
+      row,
+      "unknown",
+      { to: "succeeded", debugId },
+      { reconciledOnAttempt: input.attempt },
+    );
     return "succeeded";
   }
   if (input.attempt < RECONCILE_MAX_TRIES) {

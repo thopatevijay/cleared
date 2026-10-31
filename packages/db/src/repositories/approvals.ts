@@ -8,7 +8,6 @@ import {
   fromEpochMs,
   Sha256Schema,
   WorkspaceIdSchema,
-  type ActionKind,
   type ApprovalRefusal,
 } from "@cleared/core";
 import type { Db } from "../client.ts";
@@ -73,27 +72,54 @@ export type DecisionResult =
   | { readonly ok: false; readonly code: ApprovalRefusal | "NOT_FOUND" };
 
 /** Approves under a row lock. A refusal changes nothing but its own audit row (actor seller). */
-export function approveProposedAction(db: Db, publisher: Publisher, r: ApproveRequest): Promise<DecisionResult> {
+export function approveProposedAction(
+  db: Db,
+  publisher: Publisher,
+  r: ApproveRequest,
+): Promise<DecisionResult> {
   return withTransaction(db, async (tx): Promise<DecisionResult> => {
     const row = await getProposedAction(db, r.workspaceId, r.actionId, { tx, lock: true });
     if (row === null) return { ok: false, code: "NOT_FOUND" };
-    const decision = checkApproval(row, { payloadSha256: r.payloadSha256, typedConfirmation: r.typedConfirmation });
+    const decision = checkApproval(row, {
+      payloadSha256: r.payloadSha256,
+      typedConfirmation: r.typedConfirmation,
+    });
     if (decision.kind === "refuse") {
-      await sellerAudit(db, tx, row, "action.approval_refused", { code: decision.code, by: r.actor, payloadSha256: r.payloadSha256 });
+      await sellerAudit(db, tx, row, "action.approval_refused", {
+        code: decision.code,
+        by: r.actor,
+        payloadSha256: r.payloadSha256,
+      });
       return { ok: false, code: decision.code };
     }
-    const approval = { workspaceId: row.workspaceId, actionId: row.id, approvedBy: r.actor, approvedAt: r.now };
+    const approval = {
+      workspaceId: row.workspaceId,
+      actionId: row.id,
+      approvedBy: r.actor,
+      approvedAt: r.now,
+    };
     await insertApproval(db, { ...approval, payloadSha256: row.payloadSha256 }, tx);
     await setProposedActionState(db, row.workspaceId, row.id, { from: "proposed", to: "approved" }, tx);
-    await sellerAudit(db, tx, row, "action.approved", { approvedBy: r.actor, payloadSha256: row.payloadSha256 });
+    await sellerAudit(db, tx, row, "action.approved", {
+      approvedBy: r.actor,
+      payloadSha256: row.payloadSha256,
+    });
     await emitApproved(publisher, tx, row, r);
     const job = { actionId: row.id, workspaceId: row.workspaceId };
-    await publisher.enqueue(tx, ACTION_EXECUTE_QUEUE, job, { workspaceId: row.workspaceId, singletonKey: row.id });
+    await publisher.enqueue(tx, ACTION_EXECUTE_QUEUE, job, {
+      workspaceId: row.workspaceId,
+      singletonKey: row.id,
+    });
     return { ok: true, action: { ...row, state: "approved" } };
   });
 }
 
-async function emitApproved(publisher: Publisher, tx: Tx, row: ProposedActionRow, r: ApproveRequest): Promise<void> {
+async function emitApproved(
+  publisher: Publisher,
+  tx: Tx,
+  row: ProposedActionRow,
+  r: ApproveRequest,
+): Promise<void> {
   await publisher.emit(tx, {
     type: "action.approved",
     version: 1,
@@ -101,7 +127,7 @@ async function emitApproved(publisher: Publisher, tx: Tx, row: ProposedActionRow
     occurredAt: fromEpochMs(r.now.getTime()),
     data: {
       actionId: ActionIdSchema.parse(row.id),
-      kind: row.kind as ActionKind,
+      kind: row.kind,
       payloadSha256: Sha256Schema.parse(row.payloadSha256),
       approvedBy: r.actor,
     },
@@ -115,7 +141,11 @@ async function sellerAudit(
   action: string,
   detail: Record<string, string>,
 ): Promise<void> {
-  await appendActionAudit(db, { workspaceId: row.workspaceId, actionId: row.id, actor: "seller", action, detail }, tx);
+  await appendActionAudit(
+    db,
+    { workspaceId: row.workspaceId, actionId: row.id, actor: "seller", action, detail },
+    tx,
+  );
 }
 
 /** `proposed` → `rejected` with its audit row; anything else is ACTION_NOT_PROPOSED. */
@@ -123,7 +153,9 @@ export function rejectProposedAction(db: Db, r: Decision): Promise<DecisionResul
   return withTransaction(db, async (tx): Promise<DecisionResult> => {
     const row = await getProposedAction(db, r.workspaceId, r.actionId, { tx, lock: true });
     if (row === null) return { ok: false, code: "NOT_FOUND" };
-    if (!(await setProposedActionState(db, row.workspaceId, row.id, { from: "proposed", to: "rejected" }, tx))) {
+    if (
+      !(await setProposedActionState(db, row.workspaceId, row.id, { from: "proposed", to: "rejected" }, tx))
+    ) {
       await sellerAudit(db, tx, row, "action.reject_refused", { code: "ACTION_NOT_PROPOSED", by: r.actor });
       return { ok: false, code: "ACTION_NOT_PROPOSED" };
     }
