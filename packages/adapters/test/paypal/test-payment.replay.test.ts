@@ -67,6 +67,7 @@ describe("createOwnedTestPayment (sandbox recording, M1-04)", () => {
       orderId: "662632381Y533430H",
       captureId: "2FB27654CR016344S",
       status: "COMPLETED",
+      merchantId: "MERCHANT-1",
     });
     expect(steps).toEqual([
       `claim:662632381Y533430H:${workspaceId ?? ""}`,

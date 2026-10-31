@@ -76,6 +76,8 @@ export const PurchaseUnitSchema = z.object({
   reference_id: z.string().optional(),
   custom_id: z.string().optional(),
   amount: MoneySchema.optional(),
+  /** M2-10: the seller; `merchant_id` is what the sandbox chargeback needs (M0-05) */
+  payee: z.object({ merchant_id: z.string().optional() }).optional(),
   payments: z.object({ captures: z.array(CaptureSchema).optional() }).optional(),
   shipping: z.object({ trackers: z.array(OrderTrackerSchema).optional() }).optional(),
 });

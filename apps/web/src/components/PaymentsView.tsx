@@ -15,6 +15,7 @@ import { attentionRank, captureStatusKey, formatAmount } from "../lib/format.ts"
 import { EmptyState } from "./EmptyState.tsx";
 import { ErrorPanel } from "./ErrorPanel.tsx";
 import { PaymentRow, WaitingRow } from "./PaymentRow.tsx";
+import { ScenarioEntry } from "./scenario/ScenarioEntry.tsx";
 import { SummaryBar, SummarySkeleton } from "./SummaryBar.tsx";
 import { TestPaymentButton } from "./TestPaymentButton.tsx";
 
@@ -134,6 +135,8 @@ export function PaymentsView() {
     body = (
       <div className="flex flex-col gap-6">
         <SummaryBar held={data.summary.held} />
+        {/* M2-10: "Run the dispute scenario" (sandbox; demo and owner workspaces) */}
+        <ScenarioEntry />
         {error !== undefined ? (
           <ErrorPanel
             title={t("dashboard.errorTitle")}

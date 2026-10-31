@@ -17,6 +17,7 @@ export * from "./paypal/webhook-verify.ts";
 export * from "./paypal/webhook-ingest.ts";
 export * from "./paypal/captures.ts";
 export * from "./paypal/test-payment.ts";
+export * from "./paypal/chargeback.ts";
 export * from "./obs/context.ts";
 export * from "./obs/log.ts";
 export * from "./email/sender.ts";

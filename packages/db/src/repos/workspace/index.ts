@@ -6,6 +6,7 @@ import * as s from "../../../schema/index.ts";
 import type { Executor } from "../../tx.ts";
 import { disputesRepo } from "./disputes.ts";
 import { paymentsListRepo, testPaymentRequestsRepo } from "./payments-list.ts";
+import { scenarioRunsRepo } from "./scenarios.ts";
 import { findOneInScope, mutableScopedRepo, scopedRepo, type Row } from "./scoped.ts";
 
 function repos(db: Db, ws: string) {
@@ -40,6 +41,7 @@ function repos(db: Db, ws: string) {
     auditLog: scopedRepo(db, s.auditLog, ws),
     agentRuns: m(s.agentRuns),
     agentSteps: m(s.agentSteps),
+    scenarioRuns: scenarioRunsRepo(db, ws),
   };
 }
 
@@ -86,6 +88,7 @@ export const WORKSPACE_REPO_NAMES = [
   "auditLog",
   "agentRuns",
   "agentSteps",
+  "scenarioRuns",
 ] as const satisfies readonly (keyof ReturnType<typeof repos>)[];
 
 export type { ListOptions, MutableScopedRepo, NewRow, Row, RowPatch, ScopedRepo } from "./scoped.ts";

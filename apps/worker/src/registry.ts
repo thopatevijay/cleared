@@ -11,6 +11,11 @@ import {
   PAYPAL_DISPUTE_SYNC_QUEUE,
   queueSpec,
   SANDBOX_TEST_PAYMENT_QUEUE,
+  SCENARIO_CAPTURE_QUEUE,
+  SCENARIO_CHARGEBACK_QUEUE,
+  SCENARIO_DECIDE_QUEUE,
+  SCENARIO_POLL_QUEUE,
+  SCENARIO_SEED_PACK_QUEUE,
   type Db,
   type Queue,
 } from "@cleared/db";
@@ -23,6 +28,12 @@ import { executeActionHandler } from "./jobs/execute-action.ts";
 import { reconcileActionHandler } from "./jobs/reconcile-action.ts";
 import { extractEvidenceHandler } from "./jobs/extract-evidence.ts";
 import { testPaymentHandler } from "./jobs/test-payment.ts";
+import { scenarioCaptureHandler } from "./jobs/scenario/capture.ts";
+import { scenarioChargebackHandler } from "./jobs/scenario/chargeback.ts";
+import { scenarioDecideHandler } from "./jobs/scenario/decide.ts";
+import { scenarioPollHandler } from "./jobs/scenario/poll.ts";
+import { scenarioSeedPackHandler } from "./jobs/scenario/seed-pack.ts";
+import type { ScenarioDeps } from "./jobs/scenario/shared.ts";
 import type { PayPalClients } from "./paypal.ts";
 import type { QueueSpec } from "./queues.ts";
 
@@ -42,6 +53,14 @@ export interface Runtime {
 /** The production registry. The outbox relay is not listed: `boss.ts` schedules it on every worker. */
 export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntime): Registry {
   const publisher = createPublisher(rt.db, rt.boss, correlationIdOrNew);
+  const scenario: ScenarioDeps = {
+    db: rt.db,
+    publisher,
+    orders: paypal.orders,
+    captures: paypal.captures,
+    disputes: paypal.disputes,
+    now: () => new Date(),
+  };
   return [
     {
       queue: queueSpec(PAYPAL_CAPTURE_SYNC_QUEUE),
@@ -91,6 +110,12 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
       handler: extractEvidenceHandler({ db: rt.db, publisher, ...ai, now: () => new Date() }),
     },
     { queue: queueSpec("pack.extracted"), handler: recordEvent },
+    // M2-10: the judge dispute scenario's steps and its sandbox decision.
+    { queue: queueSpec(SCENARIO_CAPTURE_QUEUE), handler: scenarioCaptureHandler(scenario) },
+    { queue: queueSpec(SCENARIO_SEED_PACK_QUEUE), handler: scenarioSeedPackHandler(scenario) },
+    { queue: queueSpec(SCENARIO_CHARGEBACK_QUEUE), handler: scenarioChargebackHandler(scenario) },
+    { queue: queueSpec(SCENARIO_POLL_QUEUE), handler: scenarioPollHandler(scenario) },
+    { queue: queueSpec(SCENARIO_DECIDE_QUEUE), handler: scenarioDecideHandler(scenario) },
     // The events capture sync emits. Consuming them marks the outbox row published (so the relay does
     // not re-send it); M3-01 replaces these with hold derivation.
     { queue: queueSpec("payment.captured"), handler: recordEvent },

@@ -1,6 +1,6 @@
 // Status badge (components.md): icon + label + colour, never colour alone. PayPal's exact enum sits
 // beside the pill (mono, muted), never inside it.
-import { CircleCheck, CircleX, Hourglass, Info, Undo2, type LucideIcon } from "lucide-react";
+import { CircleCheck, CircleX, Hourglass, Info, Scale, Undo2, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { StatusKey } from "../lib/format.ts";
 
@@ -10,6 +10,8 @@ const STYLE: Record<StatusKey, { icon: LucideIcon; pill: string }> = {
   refunded: { icon: Undo2, pill: "bg-status-neutral-bg text-status-neutral-fg" },
   failed: { icon: CircleX, pill: "bg-status-error-bg text-status-error-fg" },
   info: { icon: Info, pill: "bg-status-info-bg text-status-info-fg" },
+  // M2-10: a dispute PayPal resolved (dispute-review.md); the outcome sentence beside it says how
+  resolved: { icon: Scale, pill: "bg-status-neutral-bg text-status-neutral-fg" },
 };
 
 export function StatusBadge({ status, detail }: { status: StatusKey; detail?: string | null }) {

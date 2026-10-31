@@ -72,6 +72,7 @@ describe.skipIf(!dbAvailable)("sandbox.test_payment (test-payment)", () => {
       orderId: "662632381Y533430H",
       captureId: "2FB27654CR016344S",
       status: "COMPLETED",
+      merchantId: "MERCHANT-1",
     });
     expect(ownerAtConfirm).toEqual([wsId]);
     expect(replay.unused()).toEqual([]);

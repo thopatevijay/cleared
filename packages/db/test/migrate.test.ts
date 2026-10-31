@@ -9,7 +9,7 @@ import { MIGRATIONS_FOLDER, runMigrations } from "../src/migrate.ts";
 import { seed, SEED_USER_EMAIL, SEED_WORKSPACE_ID } from "../src/seed.ts";
 import { dbAvailable, TEST_DATABASE_URL } from "./db-available.ts";
 
-/** §5, in its order, then the extensions (consumer_receipts: M1-03; worker_heartbeats: M1-08; platform_flags: M2-02). */
+/** §5, in its order, then the extensions (consumer_receipts: M1-03; worker_heartbeats: M1-08; platform_flags: M2-02; scenario_runs: M2-10). */
 const EXPECTED_TABLES = [
   "workspaces",
   "users",
@@ -40,6 +40,7 @@ const EXPECTED_TABLES = [
   "consumer_receipts",
   "worker_heartbeats",
   "platform_flags",
+  "scenario_runs",
 ];
 
 const EXTENSION_COLUMNS: Record<string, string[]> = {

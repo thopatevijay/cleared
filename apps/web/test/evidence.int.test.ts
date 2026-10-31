@@ -9,10 +9,14 @@ import {
   type PackState,
   type WorkspaceId,
 } from "@cleared/core";
-import { createPostgresBlobStore, evidenceSha256, prepareEvidenceFile } from "@cleared/adapters/files";
+import {
+  addEvidence,
+  createPostgresBlobStore,
+  evidenceSha256,
+  prepareEvidenceFile,
+} from "@cleared/adapters/files";
 import { createPublisher, createQueue, forWorkspace, type Publisher } from "@cleared/db";
 import { afterAll, describe, expect, it } from "vitest";
-import { addEvidence } from "../src/server/evidence/intake.ts";
 import { postDemo } from "../src/server/handlers/demo.ts";
 import {
   getEvidenceFile,
