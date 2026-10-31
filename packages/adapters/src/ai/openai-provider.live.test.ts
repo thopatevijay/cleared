@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { guardInput } from "@cleared/core";
 import { describe, expect, it } from "vitest";
 import { createHttpClient, type Exchange } from "../http/client.ts";
+import { createLogger } from "../obs/log.ts";
 import { FIXTURES_DIR, loadFixture } from "../testing/fixture.ts";
 import { createRecorder } from "../testing/record.ts";
 import { createScrubber } from "../testing/scrub.ts";
@@ -20,6 +21,8 @@ const KEY = process.env["OPENAI_API_KEY"] ?? "";
 const RECORD = process.env["RECORD_FIXTURES"] === "1";
 const MODEL = "gpt-6-luna";
 const M0_07_RUNS = ["r1", "r4", "r5", "c1"];
+/** pino, not console: Vitest hides console output of passing tests, and the spend line must be kept */
+const spendLog = createLogger({ service: "openai-live" });
 
 interface RecordedUsage {
   input_tokens: number;
@@ -95,8 +98,14 @@ describe.skipIf(KEY === "")("openai provider LIVE (M2-02, OPENAI budget $0.50)",
       reasoningEffort: "none",
     });
     // spend log (claims discipline: computed from usage × pricing.ts at call time)
-    console.log(
-      JSON.stringify({ live: "M2-02", call: "extract-E1", usage: res.usage, costUsd: res.costUsd, m0 }),
+    spendLog.info(
+      {
+        call: "extract-E1",
+        usage: res.usage,
+        costUsd: res.costUsd,
+        m0: { inputTokens: m0.inputTokens, costUsd: m0.costUsd },
+      },
+      "openai live spend",
     );
     expect(res.ok).toBe(true);
     expect(res.usage).not.toBeNull();
@@ -118,13 +127,9 @@ describe.skipIf(KEY === "")("openai provider LIVE (M2-02, OPENAI budget $0.50)",
       schema: ExtractResult,
       maxOutputTokens: 1,
     });
-    console.log(
-      JSON.stringify({
-        live: "M2-02",
-        call: "bad-request",
-        costUsd: res.costUsd,
-        error: res.ok ? null : res.error,
-      }),
+    spendLog.info(
+      { call: "bad-request", costUsd: res.costUsd, error: res.ok ? null : res.error },
+      "openai live spend",
     );
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error.kind).toBe("rejected");
