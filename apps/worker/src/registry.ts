@@ -24,6 +24,7 @@ import type { Handler } from "./consume.ts";
 import { captureSyncHandler } from "./jobs/capture-sync.ts";
 import { killSwitchFromEnv } from "./jobs/action-runtime.ts";
 import { disputeSyncHandler } from "./jobs/dispute-sync.ts";
+import { draftDisputeHandler } from "./jobs/draft-dispute.ts";
 import { executeActionHandler } from "./jobs/execute-action.ts";
 import { reconcileActionHandler } from "./jobs/reconcile-action.ts";
 import { checkScopeHandler } from "./jobs/check-scope.ts";
@@ -62,6 +63,8 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
     disputes: paypal.disputes,
     now: () => new Date(),
   };
+  // M2-07: a dispute with an evidence action and a checked pack gets a draft + proposal (seller approves)
+  const draft = draftDisputeHandler({ db: rt.db, ...ai, disputes: paypal.disputes, now: () => new Date() });
   return [
     {
       queue: queueSpec(PAYPAL_CAPTURE_SYNC_QUEUE),
@@ -114,8 +117,8 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
       queue: queueSpec("pack.extracted"),
       handler: checkScopeHandler({ db: rt.db, publisher, ...ai, now: () => new Date() }),
     },
-    // M2-05 / M2-07 consume it for real.
-    { queue: queueSpec("pack.checked"), handler: recordEvent },
+    // M2-07: a checked pack drafts for the open disputes on its payment.
+    { queue: queueSpec("pack.checked"), handler: draft },
     // M2-10: the judge dispute scenario's steps and its sandbox decision.
     { queue: queueSpec(SCENARIO_CAPTURE_QUEUE), handler: scenarioCaptureHandler(scenario) },
     { queue: queueSpec(SCENARIO_SEED_PACK_QUEUE), handler: scenarioSeedPackHandler(scenario) },
@@ -126,9 +129,9 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
     // not re-send it); M3-01 replaces these with hold derivation.
     { queue: queueSpec("payment.captured"), handler: recordEvent },
     { queue: queueSpec("payment.status_changed"), handler: recordEvent },
-    // The events dispute sync emits (M2-06); M2-07 / M3 consume them for real.
-    { queue: queueSpec("dispute.opened"), handler: recordEvent },
-    { queue: queueSpec("dispute.status_changed"), handler: recordEvent },
+    // The events dispute sync emits (M2-06); M2-07 drafts on them (M3 may add more consumers).
+    { queue: queueSpec("dispute.opened"), handler: draft },
+    { queue: queueSpec("dispute.status_changed"), handler: draft },
     // The action events (M2-08); M2-09 / M3-08 consume them for real.
     { queue: queueSpec("action.approved"), handler: recordEvent },
     { queue: queueSpec("action.executed"), handler: recordEvent },
