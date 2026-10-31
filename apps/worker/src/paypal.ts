@@ -17,8 +17,11 @@ import {
 export interface PayPalClients {
   readonly orders: PayPalOrdersClient;
   readonly captures: PayPalCapturesClient;
-  /** M2-06: dispute reads for `paypal.dispute.sync`; M2-08 adds the guarded writes. */
-  readonly disputes: Pick<PayPalDisputesClient, "getDispute" | "listDisputes">;
+  /** M2-06: dispute reads for `paypal.dispute.sync`; M2-08: the guarded writes `action.execute` makes. */
+  readonly disputes: Pick<
+    PayPalDisputesClient,
+    "getDispute" | "listDisputes" | "provideEvidence" | "provideSupportingInfo" | "acceptClaim"
+  >;
 }
 
 export function paypalClientsFromEnv(env: NodeJS.ProcessEnv): PayPalClients {
@@ -31,7 +34,13 @@ export function paypalClientsFromEnv(env: NodeJS.ProcessEnv): PayPalClients {
       Promise.reject(new Error("PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET are not set"));
     return {
       captures: { getCapture: missing },
-      disputes: { getDispute: missing, listDisputes: missing },
+      disputes: {
+        getDispute: missing,
+        listDisputes: missing,
+        provideEvidence: missing,
+        provideSupportingInfo: missing,
+        acceptClaim: missing,
+      },
       orders: {
         createOrder: missing,
         captureOrder: missing,

@@ -2,7 +2,7 @@
 import { sql } from "drizzle-orm";
 import { check, index, jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { scoped } from "./accounts.ts";
-import { sha256, tstz } from "./columns.ts";
+import { currency, money, sha256, tstz } from "./columns.ts";
 import { deadlineState, draftState } from "./enums.ts";
 import { payments } from "./payments.ts";
 import { blobs } from "./proof.ts";
@@ -17,6 +17,9 @@ export const disputes = pgTable(
     stage: text("stage"),
     status: text("status").notNull(),
     sellerResponseDueDate: tstz("seller_response_due_date"),
+    /** M2-08: PayPal's `dispute_amount` (what a seller types to accept a claim); null until synced */
+    amount: money("amount"),
+    currency: currency("currency"),
     /** `{ outcome_code, ... }` once resolved */
     outcome: jsonb("outcome"),
     /** link rels from the dispute's current `links[]` */

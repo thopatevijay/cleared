@@ -43,6 +43,13 @@
       "when": 1793409426866,
       "tag": "0005_agent_harness",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793409957201,
+      "tag": "0006_action_governance",
+      "breakpoints": true
     }
   ]
 }
