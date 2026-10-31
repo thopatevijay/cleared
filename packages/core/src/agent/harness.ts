@@ -11,6 +11,7 @@ import {
   type AiFailureKind,
   type AiProvider,
   type CompletionResult,
+  type ReasoningEffort,
 } from "../ports/ai-provider.ts";
 import { canonicalHash } from "./canonical-hash.ts";
 import {
@@ -112,6 +113,7 @@ export interface CallSpec<S extends z.ZodType> {
   readonly validators?: readonly OutputValidator<z.infer<S>>[];
   /** defaults to the workflow's model */
   readonly model?: "small" | "large";
+  readonly reasoningEffort?: ReasoningEffort;
 }
 
 export interface WorkflowContext {
@@ -407,6 +409,7 @@ class Run<I extends JsonValue, O> {
       schemaName: spec.schemaName,
       schema: spec.schema,
       maxOutputTokens,
+      ...(spec.reasoningEffort ? { reasoningEffort: spec.reasoningEffort } : {}),
     };
     this.totals = { ...this.totals, calls: this.totals.calls + 1 };
     const res = await withDeadline(this.deps.provider.complete(request), this.remainingMs(), name).catch(

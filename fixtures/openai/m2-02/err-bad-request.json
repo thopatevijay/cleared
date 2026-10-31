@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-31T00:33:46.793Z",
+    "env": "live",
+    "ticket": "M2-02",
+    "scrubbed": true,
+    "note": "M2-02: max_output_tokens below the API minimum → 400"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6-luna",
+      "instructions": "Return an empty object.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Nothing."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "extract_result",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "evidence_id": {
+                "type": "string",
+                "pattern": "^E\\d{1,3}$"
+              },
+              "item_kind": {
+                "type": "string",
+                "enum": ["scope_brief", "chat", "delivery_document", "screenshot", "other"]
+              },
+              "summary": {
+                "type": "string",
+                "maxLength": 400
+              },
+              "facts": {
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "requirement",
+                        "deliverable",
+                        "deadline",
+                        "price",
+                        "approval",
+                        "complaint",
+                        "other"
+                      ]
+                    },
+                    "statement": {
+                      "type": "string",
+                      "maxLength": 300
+                    },
+                    "quote": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 400
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["kind", "statement", "quote"],
+                  "additionalProperties": false
+                }
+              },
+              "instruction_like_lines": {
+                "maxItems": 10,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 400
+                }
+              }
+            },
+            "required": ["evidence_id", "item_kind", "summary", "facts", "instruction_like_lines"],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 1,
+      "store": false
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "error": {
+        "message": "Invalid 'max_output_tokens': integer below minimum value. Expected a value >= 16, but got 1 instead.",
+        "type": "invalid_request_error",
+        "param": "max_output_tokens",
+        "code": "integer_below_min_value"
+      }
+    }
+  }
+}

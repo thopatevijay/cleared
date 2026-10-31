@@ -33,7 +33,11 @@ export interface CompletionRequest<S extends z.ZodType> {
   readonly schemaName: string;
   readonly schema: S;
   readonly maxOutputTokens: number;
+  /** ADR 0009: `extract` runs at `none`, `check_scope` at `low`; absent = the model's default */
+  readonly reasoningEffort?: ReasoningEffort;
 }
+
+export type ReasoningEffort = "none" | "low" | "medium" | "high";
 
 export interface AiUsage {
   readonly inputTokens: number;

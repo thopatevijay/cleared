@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { evidenceContent, toStrictJsonSchema } from "./openai.ts";
-import { costUsd, PRICES, UnknownModelPriceError } from "./prices.ts";
+import { costUsd, PRICES, UnknownModelPriceError } from "./pricing.ts";
 import { ExtractResult, ScopeClaims, ScopeVerdicts } from "./schemas.ts";
 
 describe("openai adapter: strict schema", () => {

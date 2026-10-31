@@ -25,3 +25,5 @@ export * from "./email/templates/render.ts";
 export * from "./obs/redact.ts";
 export * from "./obs/http-logging.ts";
 export * from "./obs/sentry.ts";
+export { createOpenAiCompletionProvider, failureKind, toEvidencePart } from "./ai/openai-provider.ts";
+export * from "./ai/pricing.ts";
