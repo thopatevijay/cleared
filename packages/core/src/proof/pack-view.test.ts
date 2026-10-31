@@ -67,11 +67,7 @@ describe("packViewState (M2-05 banner)", () => {
 const A = "6f1d4f0e-3d5b-4b8e-9f7a-1c2d3e4f5a6b";
 const B = "7f1d4f0e-3d5b-4b8e-9f7a-1c2d3e4f5a6b";
 const C = "8f1d4f0e-3d5b-4b8e-9f7a-1c2d3e4f5a6b";
-const line = (
-  verdict: SummaryLine["verdict"],
-  scope: string | null,
-  cites: string[] = [],
-): SummaryLine => ({
+const line = (verdict: SummaryLine["verdict"], scope: string | null, cites: string[] = []): SummaryLine => ({
   verdict,
   lineCitation: scope === null ? null : { evidence_item_id: scope },
   citations: cites.map((evidence_item_id) => ({ evidence_item_id })),

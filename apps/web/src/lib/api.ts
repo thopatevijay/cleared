@@ -41,6 +41,28 @@ export async function postJson(path: string, body: unknown, idempotencyKey: stri
   }
 }
 
+/** A multipart upload (M2-05 evidence intake); the browser sets the multipart boundary. */
+export async function postForm(path: string, form: FormData, idempotencyKey: string): Promise<ApiResult> {
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "idempotency-key": idempotencyKey },
+      body: form,
+      credentials: "same-origin",
+    });
+    return await read(res);
+  } catch {
+    return { status: NETWORK_ERROR, body: null, correlationId: null, retryAfter: null };
+  }
+}
+
+/** The envelope's `error.code` (ADR 0003), or null. */
+export function errorCode(body: unknown): string | null {
+  if (typeof body !== "object" || body === null) return null;
+  const e = (body as { error?: { code?: unknown } }).error;
+  return typeof e?.code === "string" ? e.code : null;
+}
+
 export class ApiError extends Error {
   readonly status: number;
   readonly correlationId: string | null;

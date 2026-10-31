@@ -2,14 +2,20 @@
 // only; any workspace id in the query or body is ignored.
 import { randomUUID } from "node:crypto";
 import {
+  isProofReady,
+  packSummary,
+  packViewState,
   PaymentsQuerySchema,
   TEST_PAYMENTS_PER_DAY,
   type PaymentItem,
+  type PaymentPack,
   type PaymentsResponse,
   type WorkspaceId,
 } from "@cleared/core";
 import {
+  packReadsRepo,
   platform,
+  type PackStatus,
   SANDBOX_TEST_PAYMENT_QUEUE,
   withTransaction,
   workspaceViews,
@@ -28,7 +34,19 @@ export const WAITING_WINDOW_MS = 15 * 60 * 1000;
 
 type PaymentRow = Awaited<ReturnType<ReturnType<typeof workspaceViews>["paymentsList"]["page"]>>[number];
 
-function toItem(p: PaymentRow): PaymentItem {
+function toPack(st: PackStatus | undefined): PaymentPack | null {
+  if (st === undefined) return null;
+  const s = packSummary(st.latest);
+  return {
+    id: st.packId,
+    view: packViewState(st),
+    hasEvidence: st.kinds.length > 0,
+    proofReady: isProofReady(st.state, st.latest),
+    summary: s === null ? null : { scope: s.scope, delivery: s.delivery, sources: s.sources },
+  };
+}
+
+function toItem(p: PaymentRow, pack: PackStatus | undefined): PaymentItem {
   return {
     id: p.id,
     captureId: p.captureId,
@@ -41,6 +59,7 @@ function toItem(p: PaymentRow): PaymentItem {
     statusReason: p.statusReason,
     source: p.source,
     updatedAt: (p.paypalUpdatedAt ?? p.createdAt).toISOString(),
+    pack: toPack(pack),
   };
 }
 
@@ -70,13 +89,18 @@ export async function getPayments(req: Request, deps: Deps): Promise<Response> {
     v.testPaymentRequests.since(new Date(now - DAY_MS)),
     v.testPaymentRequests.since(new Date(now - WAITING_WINDOW_MS)),
   ]);
-  const arrived = recent.oldest === null ? 0 : await v.paymentsList.countCreatedSince(recent.oldest);
+  const packs = packReadsRepo(deps.db, session.workspaceId as WorkspaceId);
+  const [arrived, packOf, proofReady] = await Promise.all([
+    recent.oldest === null ? 0 : v.paymentsList.countCreatedSince(recent.oldest),
+    packs.forPayments(rows.map((r) => r.id)),
+    packs.proofReadyCount(),
+  ]);
   const body: PaymentsResponse = {
-    items: rows.map(toItem),
+    items: rows.map((r) => toItem(r, packOf.get(r.id))),
     total,
     offset: q.data.offset,
     limit: q.data.limit,
-    summary: { held, inDispute: null, proofReady: null },
+    summary: { held, inDispute: null, proofReady },
     workspace: { kind: ws.kind, timezone: ws.timezone },
     testPayments: {
       waiting: Math.max(0, recent.n - arrived),

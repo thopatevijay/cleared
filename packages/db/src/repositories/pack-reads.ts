@@ -1,7 +1,13 @@
 // M2-05: the proof-pack read model behind the pack page and the dashboard rows. One batch of queries per
 // page of payments (never one query per row): the packs, their items, how each item's extraction ended,
 // the newest `check_unavailable` entry and the latest check's verdicts. Bound to one workspace.
-import { EXTRACT_PROMPT, WorkspaceIdSchema, type PackState, type Verdict, type WorkspaceId } from "@cleared/core";
+import {
+  EXTRACT_PROMPT,
+  WorkspaceIdSchema,
+  type PackState,
+  type Verdict,
+  type WorkspaceId,
+} from "@cleared/core";
 import { and, asc, count, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "../client.ts";
 import type { Executor } from "../tx.ts";
@@ -38,7 +44,9 @@ interface Finish {
 }
 
 const ItemRef = (v: unknown): { evidence_item_id: string } | null =>
-  typeof v === "object" && v !== null && typeof (v as { evidence_item_id?: unknown }).evidence_item_id === "string"
+  typeof v === "object" &&
+  v !== null &&
+  typeof (v as { evidence_item_id?: unknown }).evidence_item_id === "string"
     ? { evidence_item_id: (v as { evidence_item_id: string }).evidence_item_id }
     : null;
 
@@ -89,7 +97,10 @@ export function packReadsRepo(db: Db, workspaceId: WorkspaceId) {
     return out;
   }
 
-  async function latestLines(packIds: readonly string[], ex: Executor): Promise<Map<string, PackStatusLine[]>> {
+  async function latestLines(
+    packIds: readonly string[],
+    ex: Executor,
+  ): Promise<Map<string, PackStatusLine[]>> {
     const out = new Map<string, PackStatusLine[]>();
     if (packIds.length === 0) return out;
     const top = ex

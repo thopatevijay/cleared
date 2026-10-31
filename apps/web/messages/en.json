@@ -71,7 +71,16 @@
     "errorTitle": "Couldn't load your payments",
     "errorBody": "Check your connection and retry.",
     "footer": "The agent does the work. You hold the keys.",
-    "footerAudit": "Audit log"
+    "footerAudit": "Audit log",
+    "summary": {
+      "proofReady": "{count, plural, one {# payment proof-ready} other {# payments proof-ready}}",
+      "proofReadyName": "{count, plural, one {# payment proof-ready} other {# payments proof-ready}}: show only these"
+    },
+    "filter": {
+      "proofReady": "Showing proof-ready payments",
+      "clear": "Show all payments",
+      "none": "No payment is proof-ready yet."
+    }
   },
   "row": {
     "viaWebhook": "via webhook",
@@ -80,7 +89,20 @@
     "waiting": "Waiting for PayPal…",
     "waitingHint": "Usually under 2 minutes.",
     "arrived": "Payment {amount} arrived from PayPal: {status}",
-    "unknownAmount": "Not yet reported by PayPal"
+    "unknownAmount": "Not yet reported by PayPal",
+    "pack": "Proof pack: scope <scope>{s}</scope> · delivery <delivery>{d}</delivery> · client sign-off <signoff>{c}</signoff> · {n} sources",
+    "addProof": "Add proof",
+    "addProofName": "Add proof for the payment of {amount}",
+    "newPayment": "New payment from {buyer}. Add proof so it's ready if PayPal asks.",
+    "buyerUnknown": "a buyer",
+    "open": "Open the payment of {amount}",
+    "verdict": {
+      "met": "met",
+      "partial": "partly met",
+      "missing": "missing",
+      "unverifiable": "can't verify",
+      "pending": "pending"
+    }
   },
   "empty": {
     "title": "No payments yet",
@@ -176,5 +198,137 @@
     "ctaHint": "A card payment, a chargeback and PayPal's real states: about 25 minutes.",
     "timedOutAgain": "Run a new scenario",
     "stillWaiting": "Still waiting. PayPal or our server may be slow."
+  },
+  "pack": {
+    "metaTitle": "Proof pack",
+    "title": "Payment of {amount}",
+    "back": "Your PayPal money",
+    "captureId": "Capture ID",
+    "orderId": "Order ID",
+    "captured": "Captured {time}",
+    "copyId": "Copy {label}",
+    "proofCheck": "Proof check",
+    "facts": "Facts",
+    "evidence": "Evidence",
+    "loadingSlow": "Loading the proof pack…",
+    "errorTitle": "Couldn't load this payment",
+    "errorBody": "Check your connection and retry.",
+    "refreshError": "Couldn't refresh the proof pack. Showing what was loaded.",
+    "notFound": "This payment isn't in your workspace.",
+    "banner": {
+      "empty": "No evidence yet.",
+      "collecting": "Evidence added. Add the delivery too, then Cleared checks it.",
+      "checking": "Checking delivery against scope… usually under a minute.",
+      "checked": "Checked {time}. {met} met, {partial} partly met, {missing} missing.",
+      "stale": "New evidence: re-checking.",
+      "aiDown": "AI is unavailable: facts shown without a verdict.",
+      "budget": "This workspace has used its AI budget. Facts and evidence are kept; no new verdicts."
+    },
+    "verdictsUpdated": "Verdicts updated: {met} met, {partial} partly met, {missing} missing.",
+    "verdict": {
+      "met": "Met",
+      "partial": "Partly met",
+      "missing": "Missing",
+      "unverifiable": "Can't verify"
+    },
+    "unverifiable": {
+      "noCitation": "No citation found",
+      "imageOnly": "Image only: can't quote it",
+      "noScopeQuote": "The agreement couldn't be quoted",
+      "model": "The evidence doesn't settle it"
+    },
+    "verdictName": "{line}: {verdict}, {count, plural, one {# citation} other {# citations}}",
+    "noVerdict": "No verdict",
+    "noVerdicts": "No verdicts yet. They appear here once Cleared has checked the delivery against the scope.",
+    "previous": "From the previous check",
+    "why": "Why: {rationale}",
+    "agreedIn": "Agreed in",
+    "shownBy": "Shown by",
+    "citation": {
+      "quoted": "quoted:",
+      "expand": "Show in context",
+      "collapse": "Hide context",
+      "open": "Open in evidence",
+      "noText": "This item has no text to show.",
+      "from": "From {kind}"
+    },
+    "factsHint": "Read from the evidence by the AI. These quotes are hints and are not checked; the verdict citations above are.",
+    "factsEmpty": "No facts yet.",
+    "factGroup": {
+      "amounts": "Agreed price",
+      "dates": "Dates and deadlines",
+      "deliverables": "Deliverables",
+      "sent": "Sent",
+      "opened": "Opened",
+      "accepted": "Accepted",
+      "parties": "People",
+      "shipment": "Shipment"
+    },
+    "deliverable": {
+      "promised": "Promised",
+      "delivered": "Delivered"
+    },
+    "factSource": "Quote from {kind}: {quote}",
+    "kind": {
+      "scope": "agreed scope",
+      "delivery": "delivery",
+      "communication": "client chat",
+      "shipment": "shipment",
+      "invoice": "invoice",
+      "client_ack": "client sign-off",
+      "scope_snapshot": "scope snapshot",
+      "dispute_message": "dispute message"
+    },
+    "kindOption": {
+      "communication": "Client chat",
+      "scope": "Agreed scope (brief or order)",
+      "delivery": "Delivery",
+      "shipment": "Shipment",
+      "invoice": "Invoice"
+    },
+    "list": {
+      "empty": "Nothing added yet.",
+      "added": "Added {time}",
+      "sha": "SHA-256 {short}",
+      "text": "Pasted text · {count} characters",
+      "file": "{type} file · {size}",
+      "download": "Download",
+      "downloadName": "Download the {kind} file added {time}",
+      "injection": "Contains text that looks like instructions; treated as data"
+    },
+    "intake": {
+      "heading": "Add evidence",
+      "open": "Add evidence",
+      "file": "Choose a file",
+      "fileHint": "JPG, PNG, GIF or PDF, under 10 MB.",
+      "fileChosen": "Chosen: {name} ({size})",
+      "drop": "Drop files here or choose files",
+      "kind": "What is it?",
+      "paste": "Paste the chat",
+      "pasteHint": "Paste text only. Links in it are not opened.",
+      "add": "Add",
+      "adding": "Adding…",
+      "added": "Evidence added",
+      "nothing": "Choose a file or paste text first.",
+      "offline": "You're offline. Evidence can be added when you reconnect."
+    },
+    "errors": {
+      "evidence_type": "Only JPG, PNG, GIF and PDF files can be added.",
+      "evidence_too_large": "This file is {size}. Files must be under 10 MB.",
+      "evidence_too_many_pages": "This PDF has too many pages. PDFs can have up to 30 pages.",
+      "evidence_encrypted": "This PDF is password-protected. Remove the password and add it again.",
+      "evidence_too_many_pixels": "This image is too large. Images can be up to 25 megapixels.",
+      "evidence_unreadable": "This file couldn't be read. Export it again and retry.",
+      "evidence_text_empty": "The pasted text is empty.",
+      "evidence_text_too_long": "The pasted text is too long. Paste up to 50,000 characters at a time.",
+      "evidence_pack_full": "This proof pack is full (50 items).",
+      "evidence_workspace_full": "This workspace has no space left for evidence.",
+      "network": "Couldn't reach Cleared. Check your connection and retry.",
+      "generic": "Couldn't add this evidence. Retry in a moment."
+    },
+    "empty": {
+      "title": "No proof yet",
+      "body": "Paste the client chat where you agreed the work, and add what you delivered. Cleared checks one against the other and cites every line."
+    }
   }
 }
