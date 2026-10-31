@@ -7,3 +7,4 @@ export * from "./pdf-text.ts";
 export * from "./prepare.ts";
 export { createPostgresBlobStore } from "../blob/postgres-blob-store.ts";
 export * from "./intake.ts";
+export * from "../pdf/compile-evidence.ts";
