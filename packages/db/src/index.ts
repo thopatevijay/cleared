@@ -33,6 +33,15 @@ export {
   type ScopedRepo,
   type WorkspaceRepos,
 } from "./repos/workspace/index.ts";
+export {
+  evidenceRepo,
+  EVIDENCE_LIST_MAX,
+  type BlobRow,
+  type EvidenceItemRow,
+  type EvidenceListRow,
+  type EvidenceRepo,
+  type ProofPackRow,
+} from "./repos/workspace/evidence.ts";
 export { TEST_PAYMENT_REQUESTED, type CurrencyTotal } from "./repos/workspace/payments-list.ts";
 export { platform, type PlatformRepos } from "./repos/platform/index.ts";
 export type * from "./repos/platform/index.ts";
