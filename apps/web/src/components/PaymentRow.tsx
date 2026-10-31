@@ -15,6 +15,7 @@ const RAIL: Record<StatusKey, string> = {
   refunded: "bg-status-neutral-fg",
   failed: "bg-status-error-fg",
   info: "bg-status-info-fg",
+  resolved: "bg-status-neutral-fg",
 };
 
 const rowBase = "relative flex min-h-[72px] gap-3 border-b border-border bg-surface py-3 pr-4 pl-5";

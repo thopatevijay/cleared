@@ -27,7 +27,8 @@ export function SandboxDecision({
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   if (!decision.shown) return null;
-  const reason = decision.reason;
+  // before PayPal has opened the dispute, the spec's "not ready" wording applies too
+  const reason = decision.reason === "no_dispute" ? "no_adjudicate_link" : decision.reason;
 
   function open(): void {
     dialog.current?.showModal();
@@ -47,7 +48,7 @@ export function SandboxDecision({
   }
 
   return (
-    <section className="flex flex-col gap-2" aria-label={t("decide")} data-testid="sandbox-decision">
+    <div className="flex flex-col gap-2" data-testid="sandbox-decision">
       <button
         type="button"
         onClick={open}
@@ -97,6 +98,6 @@ export function SandboxDecision({
           </button>
         </div>
       </dialog>
-    </section>
+    </div>
   );
 }

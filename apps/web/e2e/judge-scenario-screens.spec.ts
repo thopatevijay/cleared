@@ -36,7 +36,7 @@ async function capture(page: Page, name: string): Promise<void> {
       }));
       expect(sw, `horizontal scroll on ${name}-${String(width)}`).toBeLessThanOrEqual(cw);
       await page.screenshot({ path: `${REVIEW}${name}-${String(width)}-${theme}.png`, fullPage: true });
-      if (width !== 768) await axe(page, `${name}-${String(width)}-${theme}`);
+      await axe(page, `${name}-${String(width)}-${theme}`);
     }
   }
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
@@ -44,7 +44,9 @@ async function capture(page: Page, name: string): Promise<void> {
 }
 
 const NOW = Date.now();
-const at = (minutes: number): Date => new Date(NOW - (30 - minutes) * 60_000);
+// minutes after the capture, on a run that started 70 minutes ago (M0-05 timings)
+const at = (minutes: number): Date => new Date(NOW - (70 - minutes) * 60_000);
+const iso = (minutes: number): string => at(minutes).toISOString();
 const ID = { order: "5O190127TN364715T", capture: "3C679366HH908993F" };
 
 interface Seed {
@@ -53,6 +55,30 @@ interface Seed {
   readonly capture?: { status: string; reason: string | null };
   readonly evidence?: boolean;
   readonly requested?: boolean;
+  /** milestones the poll recorded, in minutes after the capture */
+  readonly seen?: {
+    hold?: number;
+    evidence?: number;
+    offered?: number;
+    resolved?: number;
+    released?: number;
+  };
+  readonly lastPolled?: number;
+}
+
+function seenOf(s: Seed) {
+  const m = s.seen ?? {};
+  return {
+    ...(m.hold === undefined ? {} : { hold: { at: iso(m.hold), status: "PENDING / BUYER_COMPLAINT" } }),
+    ...(m.evidence === undefined
+      ? {}
+      : { evidence_step: { at: iso(m.evidence), status: "WAITING_FOR_SELLER_RESPONSE" } }),
+    ...(m.offered === undefined ? {} : { decision_offered: { at: iso(m.offered) } }),
+    ...(m.resolved === undefined
+      ? {}
+      : { resolved: { at: iso(m.resolved), outcomeCode: "RESOLVED_WITH_PAYOUT" } }),
+    ...(m.released === undefined ? {} : { released: { at: iso(m.released), status: "COMPLETED" } }),
+  };
 }
 
 async function seed(db: Db, ws: string, s: Seed): Promise<string> {
@@ -67,9 +93,9 @@ async function seed(db: Db, ws: string, s: Seed): Promise<string> {
     captureId: s.state === "capturing" ? null : captureId,
     disputeId: withDispute ? disputeId : null,
     pollStartedAt: withDispute ? at(1) : null,
-    lastPolledAt: withDispute ? at(29) : null,
-    decisionRequestedAt: s.requested === true ? at(12) : null,
-    finishedAt: s.state === "resolved" || s.state === "timed_out" ? at(29) : null,
+    lastPolledAt: s.lastPolled === undefined ? null : at(s.lastPolled),
+    decisionRequestedAt: s.requested === true ? at(9) : null,
+    finishedAt: s.state === "resolved" || s.state === "timed_out" ? at(s.lastPolled ?? 0) : null,
     failure: s.state === "timed_out" ? "poll_limit" : null,
     steps:
       s.state === "capturing"
@@ -84,6 +110,7 @@ async function seed(db: Db, ws: string, s: Seed): Promise<string> {
             },
             seed_pack: { at: at(0.2).toISOString(), packId: "p", evidenceItemIds: [] },
             chargeback: { at: at(0.5).toISOString(), disputeId, adopted: false },
+            seen: seenOf(s),
           },
   });
   if (s.capture !== undefined) {
@@ -103,7 +130,7 @@ async function seed(db: Db, ws: string, s: Seed): Promise<string> {
       status: s.dispute.status,
       reason: "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
       allowedActions: s.dispute.links,
-      paypalUpdatedAt: at(4),
+      paypalUpdatedAt: at(s.lastPolled ?? 1),
       outcome:
         s.dispute.outcome === true
           ? {
@@ -127,7 +154,12 @@ async function seed(db: Db, ws: string, s: Seed): Promise<string> {
       state: "succeeded",
       risk: "high",
     });
-    await r.auditLog.insert({ actor: "system", action: "action.succeeded", detail: { actionId: action.id } });
+    await r.auditLog.insert({
+      actor: "system",
+      action: "action.succeeded",
+      detail: { actionId: action.id },
+      at: at(5),
+    });
   }
   return run.id;
 }
@@ -138,18 +170,23 @@ const STATES: Record<string, Seed> = {
     state: "polling",
     dispute: { status: "UNDER_REVIEW", links: ["provide_supporting_info"] },
     capture: { status: "COMPLETED", reason: null },
+    lastPolled: 1.5,
   },
   "decision-not-ready": {
     state: "polling",
     dispute: { status: "UNDER_REVIEW", links: ["provide_supporting_info"] },
     capture: { status: "PENDING", reason: "BUYER_COMPLAINT" },
     evidence: true,
+    seen: { hold: 3, evidence: 3.6 },
+    lastPolled: 6,
   },
   "decision-ready": {
     state: "polling",
     dispute: { status: "UNDER_REVIEW", links: ["adjudicate", "provide_supporting_info", "require_evidence"] },
     capture: { status: "PENDING", reason: "BUYER_COMPLAINT" },
     evidence: true,
+    seen: { hold: 3, evidence: 3.6, offered: 8.5 },
+    lastPolled: 8.5,
   },
   resolved: {
     state: "resolved",
@@ -157,11 +194,15 @@ const STATES: Record<string, Seed> = {
     capture: { status: "COMPLETED", reason: null },
     evidence: true,
     requested: true,
+    seen: { hold: 3, evidence: 3.6, offered: 8.5, resolved: 15.5, released: 16 },
+    lastPolled: 16,
   },
   "timed-out": {
     state: "timed_out",
     dispute: { status: "WAITING_FOR_SELLER_RESPONSE", links: ["accept_claim", "provide_evidence"] },
     capture: { status: "PENDING", reason: "BUYER_COMPLAINT" },
+    seen: { hold: 3, evidence: 3.6 },
+    lastPolled: 60.5,
   },
 };
 
@@ -192,26 +233,45 @@ test("M2-10 scenario screens and states for ui-reviewer (local)", async ({ page 
         await page.getByTestId("scenario-timeline").waitFor();
         await capture(page, `${locale}-${name}`);
         if (name === "decision-ready" && locale === "en") {
-          await page.getByTestId("sandbox-decision").getByRole("button").first().click();
-          await page.getByRole("dialog").waitFor();
+          // keyboard path: focus the sandbox control (focus-visible), open the dialog with Enter
           await page.setViewportSize({ width: 375, height: 800 });
+          const control = page.getByTestId("sandbox-decision").getByRole("button").first();
+          await page.keyboard.press("Tab");
+          await control.focus();
+          await control.scrollIntoViewIfNeeded();
+          await page.screenshot({ path: `${REVIEW}${locale}-focus-sandbox-control-375-light.png` });
+          await page.keyboard.press("Enter");
+          await page.getByRole("dialog").waitFor();
           await page.screenshot({ path: `${REVIEW}${locale}-confirm-dialog-375-light.png` });
           await axe(page, `${locale}-confirm-dialog-375-light`);
+          await page.keyboard.press("Tab");
+          await page.screenshot({ path: `${REVIEW}${locale}-confirm-dialog-focus-confirm-375-light.png` });
           await page.keyboard.press("Escape");
         }
       }
       if (locale === "en") {
-        await page.route("**/api/scenarios/*", (route) => route.fulfill({ status: 500, body: "{}" }));
+        await page.route("**/api/scenarios/**", (route) =>
+          route.fulfill({
+            status: 500,
+            headers: {
+              "content-type": "application/json",
+              "x-correlation-id": "c0ffee00-5ce7-4d1e-9a7a-000000000500",
+            },
+            body: JSON.stringify({ error: { code: "internal", message: "Something went wrong." } }),
+          }),
+        );
         await page.goto(`/${locale}/scenario/00000000-0000-4000-8000-000000000000`);
         await page.getByTestId("error-panel").waitFor();
         await capture(page, `${locale}-error`);
-        await page.unroute("**/api/scenarios/*");
-        await page.route("**/api/scenarios/*", () => undefined);
+        await page.unroute("**/api/scenarios/**");
+        await page.route("**/api/scenarios/**", () => undefined);
         await page.goto(`/${locale}/scenario/00000000-0000-4000-8000-000000000000`);
         await page.getByTestId("loading").waitFor();
         await page.waitForTimeout(3_500);
         await capture(page, `${locale}-loading`);
-        await page.unroute("**/api/scenarios/*");
+        await page.waitForTimeout(7_000);
+        await page.screenshot({ path: `${REVIEW}${locale}-loading-10s-1440-light.png`, fullPage: true });
+        await page.unroute("**/api/scenarios/**");
       }
     }
   } finally {

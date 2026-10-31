@@ -67,7 +67,7 @@ export function ScenarioEntry() {
 
   const capped = data.reason === "llm_cap";
   return (
-    <div className="flex w-full flex-col gap-2 md:w-auto" data-testid="scenario-entry">
+    <div className="flex w-full max-w-[480px] flex-col gap-2 self-start" data-testid="scenario-entry">
       <button
         type="button"
         onClick={() => void run()}
@@ -81,6 +81,7 @@ export function ScenarioEntry() {
         <span className="text-center">{busy ? t("busy") : t("cta")}</span>
         <SandboxBadge decorative />
       </button>
+      <p className="text-sm text-text-muted">{t("ctaHint")}</p>
       {capped ? (
         <p id={reasonId} className="text-sm text-text-muted">
           {t("llmCap")}

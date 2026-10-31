@@ -4,6 +4,7 @@
 // (outcome, timeline, sandbox decision), timed out and failed. The outcome sentence and "hold released"
 // come only from PayPal's mirrored dispute and capture.
 import { ScenarioViewSchema, type ScenarioView as View } from "@cleared/core";
+import { TriangleAlert } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
@@ -11,8 +12,9 @@ import { intlLocale, isAppLocale } from "../../i18n/routing.ts";
 import { ApiError, getJson } from "../../lib/api.ts";
 import { formatTime } from "../../lib/format.ts";
 import { ErrorPanel } from "../ErrorPanel.tsx";
-import { StatusBadge } from "../StatusBadge.tsx";
 import { SandboxDecision } from "./SandboxDecision.tsx";
+import { ScenarioEntry } from "./ScenarioEntry.tsx";
+import { ScenarioOutcome } from "./ScenarioOutcome.tsx";
 import { ScenarioTimeline } from "./ScenarioTimeline.tsx";
 
 export const SCENARIO_POLL_MS = 5_000;
@@ -23,60 +25,35 @@ async function fetchScenario(path: string): Promise<View> {
 
 function Loading() {
   const t = useTranslations("scenario");
-  const [slow, setSlow] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
-    const id = setTimeout(() => {
-      setSlow(true);
+    const slow = setTimeout(() => {
+      setElapsed(3);
     }, 3_000);
+    const slower = setTimeout(() => {
+      setElapsed(10);
+    }, 10_000);
     return () => {
-      clearTimeout(id);
+      clearTimeout(slow);
+      clearTimeout(slower);
     };
   }, []);
+  // timeline-shaped skeleton rows: an icon circle, a title line and a meta line
   return (
-    <div aria-busy="true" data-testid="loading" className="flex flex-col gap-3">
-      {[0, 1, 2, 3].map((i) => (
-        <span key={i} aria-hidden="true" className="skeleton-pulse block h-10 w-full rounded-md" />
+    <div aria-busy="true" data-testid="loading" className="flex flex-col gap-5">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div key={i} aria-hidden="true" className="flex gap-3">
+          <span className="skeleton-pulse block h-6 w-6 shrink-0 rounded-full" />
+          <span className="flex flex-1 flex-col gap-2">
+            <span className="skeleton-pulse block h-5 w-3/4 rounded-md" />
+            <span className="skeleton-pulse block h-4 w-1/2 rounded-md" />
+          </span>
+        </div>
       ))}
       <p role="status" className="text-text-muted">
-        {slow ? t("loading") : ""}
+        {elapsed >= 10 ? t("stillWaiting") : elapsed >= 3 ? t("loading") : ""}
       </p>
     </div>
-  );
-}
-
-/** The outcome block: PayPal's resolution in honest words, then the hold as the capture reads now. */
-export function ScenarioOutcome({ s }: { s: View }) {
-  const t = useTranslations("scenario");
-  if (s.outcome === null) return null;
-  const sentence =
-    s.outcome === "payout_paypal_covered"
-      ? t("outcomePayout")
-      : t("outcomeOther", { code: s.dispute?.outcome?.outcome_code ?? "" });
-  return (
-    <section
-      aria-labelledby="outcome-heading"
-      className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4"
-      data-testid="scenario-outcome"
-    >
-      <h2 id="outcome-heading" className="sr-only">
-        {t("step.outcome")}
-      </h2>
-      <StatusBadge status="info" detail={s.dispute?.status ?? null} />
-      <p className="font-medium">{sentence}</p>
-      {s.holdReleased ? (
-        <p className="flex flex-wrap items-center gap-2">
-          <StatusBadge status="completed" detail={s.capture?.status ?? null} />
-          <span>{t("holdReleased")}</span>
-        </p>
-      ) : s.capture !== null ? (
-        <p className="text-text-muted">
-          {t("holdStill", {
-            status:
-              s.capture.reason === null ? s.capture.status : `${s.capture.status} / ${s.capture.reason}`,
-          })}
-        </p>
-      ) : null}
-    </section>
   );
 }
 
@@ -112,15 +89,17 @@ export function ScenarioScreen({ id, timeZone }: { id: string; timeZone: string 
     <div className="flex flex-col gap-6 xl:grid xl:grid-cols-12 xl:items-start xl:gap-8">
       <div className="flex flex-col gap-6 xl:col-span-7">
         <ScenarioOutcome s={data} />
-        {data.state === "timed_out" ? (
-          <p role="status" className="rounded-md bg-status-info-bg p-3 text-status-info-fg">
-            {t("timedOut")}
-          </p>
-        ) : null}
-        {data.state === "failed" ? (
-          <p role="status" className="rounded-md bg-status-error-bg p-3 text-status-error-fg">
-            {t("failed")}
-          </p>
+        {data.state === "timed_out" || data.state === "failed" ? (
+          <>
+            <p
+              role="status"
+              className="flex items-start gap-2 rounded-md bg-status-error-bg p-3 text-status-error-fg"
+            >
+              <TriangleAlert aria-hidden="true" size={20} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+              <span>{data.state === "timed_out" ? t("timedOut") : t("failed")}</span>
+            </p>
+            <ScenarioEntry />
+          </>
         ) : null}
         <section aria-labelledby="timeline-heading" className="flex flex-col gap-3">
           <h2 id="timeline-heading" className="text-xl font-semibold">
@@ -134,7 +113,14 @@ export function ScenarioScreen({ id, timeZone }: { id: string; timeZone: string 
           ) : null}
         </section>
       </div>
-      <div className="flex flex-col gap-4 xl:sticky xl:top-20 xl:col-span-5">
+      <section
+        aria-labelledby="sandbox-heading"
+        className="flex flex-col gap-3 xl:sticky xl:top-20 xl:col-span-5"
+        hidden={!data.decision.shown}
+      >
+        <h2 id="sandbox-heading" className="text-xl font-semibold">
+          {t("sandboxHeading")}
+        </h2>
         <SandboxDecision
           scenarioId={data.id}
           decision={data.decision}
@@ -142,7 +128,7 @@ export function ScenarioScreen({ id, timeZone }: { id: string; timeZone: string 
             void mutate();
           }}
         />
-      </div>
+      </section>
     </div>
   );
 }

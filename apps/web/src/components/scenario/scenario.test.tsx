@@ -11,7 +11,7 @@ import en from "../../../messages/en.json" with { type: "json" };
 import hi from "../../../messages/hi.json" with { type: "json" };
 import { SandboxDecision } from "./SandboxDecision.tsx";
 import { ScenarioTimeline } from "./ScenarioTimeline.tsx";
-import { ScenarioOutcome } from "./ScenarioView.tsx";
+import { ScenarioOutcome } from "./ScenarioOutcome.tsx";
 
 const html = (node: ReactNode, locale: "en" | "hi" = "en"): string =>
   renderToStaticMarkup(

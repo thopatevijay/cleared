@@ -136,8 +136,8 @@
       "outcome": "Outcome and hold"
     },
     "wait": {
-      "evidence_step": "PayPal usually opens the evidence step within ~15 min.",
-      "evidence_filed": "Waiting for the reply you approve.",
+      "evidence_step": "Waiting for PayPal to open the evidence step. It usually opens within ~15 min.",
+      "evidence_filed": "Waiting for your approved reply. Reviewing and approving the drafted reply arrives with dispute support.",
       "decision": "PayPal usually offers the decision step within ~5 min of your evidence.",
       "outcome": "PayPal usually resolves the case within ~10 min of the decision."
     },
@@ -165,6 +165,16 @@
     "loading": "Loading the scenario from PayPal…",
     "errorTitle": "Couldn't load this scenario",
     "errorBody": "Check your connection and retry.",
-    "startError": "Couldn't start the scenario."
+    "startError": "Couldn't start the scenario.",
+    "idLabel": {
+      "order": "Order",
+      "capture": "Capture",
+      "dispute": "Dispute"
+    },
+    "offered": "PayPal now offers the decision step (adjudicate). Use the sandbox control to stand in for PayPal's review.",
+    "sandboxHeading": "Sandbox decision",
+    "ctaHint": "A card payment, a chargeback and PayPal's real states: about 25 minutes.",
+    "timedOutAgain": "Run a new scenario",
+    "stillWaiting": "Still waiting. PayPal or our server may be slow."
   }
 }

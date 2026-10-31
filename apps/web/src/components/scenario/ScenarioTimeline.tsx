@@ -19,6 +19,12 @@ const ICON: Readonly<Record<Step["status"], { icon: LucideIcon; tone: string }>>
 /** Steps whose wait PayPal (or the seller) controls; the copy states the measured expectation. */
 const WAITS = new Set<Step["key"]>(["evidence_step", "evidence_filed", "decision", "outcome"]);
 
+/** What each id is: the capture step carries the order then the capture; the outcome the capture. */
+function idLabel(key: Step["key"], n: number): "order" | "capture" | "dispute" {
+  if (key === "capture") return n === 0 ? "order" : "capture";
+  return key === "outcome" ? "capture" : "dispute";
+}
+
 export function ScenarioTimeline({
   steps,
   locale,
@@ -34,6 +40,8 @@ export function ScenarioTimeline({
       {steps.map((s, i) => {
         const { icon: Icon, tone } = ICON[s.status];
         const last = i === steps.length - 1;
+        // PayPal now offers `adjudicate` and the seller hasn't asked yet: say so instead of a wait
+        const offered = s.key === "decision" && s.status === "active" && s.observed === "adjudicate";
         return (
           <li
             key={s.key}
@@ -64,23 +72,21 @@ export function ScenarioTimeline({
                   <time dateTime={s.at}>{formatTime(locale, s.at, timeZone)}</time>
                 </p>
               ) : null}
-              {s.paypalIds.length > 0 ? (
-                <p className="text-sm">
-                  <span className="text-text-muted">{t("paypalId")}: </span>
-                  {s.paypalIds.map((id) => (
-                    <span key={id} className="mr-2 font-mono text-xs break-all">
-                      {id}
-                    </span>
-                  ))}
+              {s.paypalIds.map((id, n) => (
+                <p key={id} className="text-sm">
+                  <span className="text-text-muted">{t(`idLabel.${idLabel(s.key, n)}`)}: </span>
+                  <span className="font-mono text-xs break-words">{id}</span>
                 </p>
-              ) : null}
-              {s.observed !== null ? (
+              ))}
+              {offered ? (
+                <p className="text-sm">{t("offered")}</p>
+              ) : s.observed !== null ? (
                 <p className="text-sm">
                   <span className="text-text-muted">{t("observed")}: </span>
-                  <span className="font-mono text-xs break-all">{s.observed}</span>
+                  <span className="font-mono text-xs break-words">{s.observed.replace(" / ", " /​ ")}</span>
                 </p>
               ) : null}
-              {s.status === "active" && WAITS.has(s.key) ? (
+              {s.status === "active" && WAITS.has(s.key) && !offered ? (
                 <p className="text-sm text-text-muted">{t(`wait.${s.key as "evidence_step"}`)}</p>
               ) : null}
             </div>
