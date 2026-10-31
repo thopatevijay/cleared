@@ -58,7 +58,7 @@ export function formatTime(locale: string, iso: string, timeZone: string): strin
   }
 }
 
-export type StatusKey = "completed" | "held" | "refunded" | "failed" | "info" | "resolved";
+export type StatusKey = "completed" | "held" | "refunded" | "failed" | "info" | "resolved" | "dispute";
 
 /**
  * PayPal capture status → badge (components.md "Status badge"). Unknown or unmapped values (e.g.
@@ -85,4 +85,65 @@ export function captureStatusKey(status: string): StatusKey {
 export function attentionRank(status: string): number {
   const key = captureStatusKey(status);
   return key === "held" ? 0 : key === "completed" ? 1 : 2;
+}
+
+/** "14:01:12 IST": an audit entry's time in the workspace time zone, with seconds (audit-log.md). */
+export function formatClock(locale: string, iso: string, timeZone: string): string {
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+      timeZone,
+      timeZoneName: "short",
+      numberingSystem: "latn",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+/** The calendar day in the workspace time zone: `2026-10-30` (grouping key). */
+export function dayKey(iso: string, timeZone: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+/** "Fri 30 Oct" (a day group's heading). */
+export function formatDay(locale: string, iso: string, timeZone: string): string {
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      timeZone,
+      numberingSystem: "latn",
+    }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+/** Whole days (≥ 24 h left) or hours (under 24 h) until `iso`, never below 0. */
+export function countdown(nowMs: number, iso: string): { unit: "days" | "hours"; n: number } {
+  const left = Math.max(0, new Date(iso).getTime() - nowMs);
+  const hours = Math.floor(left / 3_600_000);
+  return hours >= 24 ? { unit: "days", n: Math.floor(hours / 24) } : { unit: "hours", n: hours };
+}
+
+/** "2.4 MB" / "126 KB": a file size (decimal units, as PayPal states its limits). */
+export function formatBytes(locale: string, bytes: number): string {
+  const nf = (n: number, d: number) =>
+    new Intl.NumberFormat(locale, { maximumFractionDigits: d, numberingSystem: "latn" }).format(n);
+  if (bytes >= 1_000_000) return `${nf(bytes / 1_000_000, 1)} MB`;
+  return `${nf(Math.max(1, Math.round(bytes / 1_000)), 0)} KB`;
 }

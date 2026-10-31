@@ -6,7 +6,9 @@ import { Loader2, Webhook } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { intlLocale, isAppLocale } from "../i18n/routing.ts";
 import { captureStatusKey, formatTime, type StatusKey } from "../lib/format.ts";
+import type { DisputeSummary } from "../lib/dispute-view.ts";
 import { MoneyCell } from "./MoneyCell.tsx";
+import { DisputeLines } from "./payments/DisputeLines.tsx";
 import { StatusBadge } from "./StatusBadge.tsx";
 
 const RAIL: Record<StatusKey, string> = {
@@ -16,19 +18,39 @@ const RAIL: Record<StatusKey, string> = {
   failed: "bg-status-error-fg",
   info: "bg-status-info-fg",
   resolved: "bg-status-neutral-fg",
+  dispute: "bg-status-dispute-fg",
 };
 
 const rowBase = "relative flex min-h-[72px] gap-3 border-b border-border bg-surface py-3 pr-4 pl-5";
 
-export function PaymentRow({ p, timeZone, flash }: { p: PaymentItem; timeZone: string; flash: boolean }) {
+export function PaymentRow({
+  p,
+  timeZone,
+  flash,
+  dispute = null,
+}: {
+  p: PaymentItem;
+  timeZone: string;
+  flash: boolean;
+  /** M2-09: the payment's dispute (dashboard.md elements 4, 5) */
+  dispute?: DisputeSummary | null;
+}) {
   const t = useTranslations("row");
   const raw = useLocale();
   const key = captureStatusKey(p.status);
   // PayPal's exact enum beside the badge (copy rule 6): PENDING shows `status_details.reason`.
   const detail = key === "held" ? (p.statusReason ?? p.status) : p.status;
   return (
-    <li className={`${rowBase} ${flash ? "flash" : ""}`} data-testid="payment-row" data-status={p.status}>
-      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${RAIL[key]}`} />
+    <li
+      className={`${rowBase} ${flash ? "flash" : ""}`}
+      data-testid="payment-row"
+      data-status={p.status}
+      data-dispute={dispute === null ? undefined : dispute.disputeId}
+    >
+      <span
+        aria-hidden="true"
+        className={`absolute inset-y-0 left-0 w-1 ${RAIL[dispute !== null && dispute.status !== "RESOLVED" ? "dispute" : key]}`}
+      />
       <div className="flex min-w-0 flex-1 flex-col gap-1 md:grid md:grid-cols-2 md:items-start md:gap-4">
         <div className="flex flex-col gap-1">
           <MoneyCell amount={p.amount} receivable={p.receivable} />
@@ -49,6 +71,11 @@ export function PaymentRow({ p, timeZone, flash }: { p: PaymentItem; timeZone: s
             {p.source === "webhook" ? t("viaWebhook") : t("viaPoll")}
           </span>
         </div>
+        {dispute === null ? null : (
+          <div className="md:col-span-2">
+            <DisputeLines d={dispute} timeZone={timeZone} />
+          </div>
+        )}
       </div>
     </li>
   );

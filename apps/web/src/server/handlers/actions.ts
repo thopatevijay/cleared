@@ -81,7 +81,8 @@ export interface ActionView {
   readonly execution: { readonly paypalStatus: string | null; readonly paypalDebugId: string | null } | null;
 }
 
-async function view(deps: Deps, row: ProposedActionRow): Promise<ActionView> {
+/** The seller-facing view of one action (also embedded in M2-09's dispute detail). */
+export async function view(deps: Deps, row: ProposedActionRow): Promise<ActionView> {
   const [approval, execution] = await Promise.all([
     approvalForAction(deps.db, row.workspaceId, row.id),
     executionForAction(deps.db, row.workspaceId, row.id),
@@ -105,13 +106,13 @@ async function view(deps: Deps, row: ProposedActionRow): Promise<ActionView> {
   };
 }
 
-const actorOf = (s: Session): string => s.userId ?? s.sessionId;
+export const actorOf = (s: Session): string => s.userId ?? s.sessionId;
 
 /**
  * A refusal in the ADR 0003 envelope: `code` is the snake_case form (`approval_hash_mismatch`) and
  * `details.refusal` the governance code itself (`APPROVAL_HASH_MISMATCH`), which M2-09 renders.
  */
-function refusal(req: Request, status: number, code: string, message: string): Response {
+export function refusal(req: Request, status: number, code: string, message: string): Response {
   const cid = correlationId(req);
   const body = errorEnvelope({
     code: code.toLowerCase(),
@@ -135,14 +136,18 @@ export async function getAction(req: Request, deps: Deps, rawId: string): Promis
   return withRenewal(json({ action: await view(deps, row) }), session);
 }
 
-interface Mutation<B> {
+export interface Mutation<B> {
   readonly session: Session;
   readonly body: B;
   readonly key: string;
 }
 
 /** CSRF, session and body checks shared by the POST routes; a Response when any fails. */
-async function mutation<B>(req: Request, deps: Deps, schema: z.ZodType<B>): Promise<Mutation<B> | Response> {
+export async function mutation<B>(
+  req: Request,
+  deps: Deps,
+  schema: z.ZodType<B>,
+): Promise<Mutation<B> | Response> {
   const check = checkMutation(req, deps.config.appOrigin);
   if (!check.ok) return check.response;
   const session = await requireSession(req, deps);
