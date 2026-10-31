@@ -412,19 +412,33 @@ class Run<I extends JsonValue, O> {
       ...(spec.reasoningEffort ? { reasoningEffort: spec.reasoningEffort } : {}),
     };
     this.totals = { ...this.totals, calls: this.totals.calls + 1 };
-    const res = await withDeadline(this.deps.provider.complete(request), this.remainingMs(), name).catch(
-      async (e: unknown) => {
-        if (e instanceof RunHalt)
-          await this.guardStep(name, "limit_time", { wallClockMs: this.deps.config.limits.wallClockMs });
-        throw e instanceof RunHalt ? this.halt(e.status, e.message) : e;
-      },
-    );
+    const pending = this.deps.provider.complete(request);
+    const res = await withDeadline(pending, this.remainingMs(), name).catch(async (e: unknown) => {
+      if (e instanceof RunHalt) {
+        await this.guardStep(name, "limit_time", { wallClockMs: this.deps.config.limits.wallClockMs });
+        this.recordLate(`${name}:late`, request, pending, guarded.flags, started);
+      }
+      throw e instanceof RunHalt ? this.halt(e.status, e.message) : e;
+    });
     const outcome = res.ok ? checkOutput(spec.schema, res.output, spec.validators ?? []) : null;
     await this.recordCall(name, request, res, guarded.flags, outcome, Math.round(this.now() - started));
     if (!res.ok) return this.onFailure(name, res.error);
     return outcome?.ok
       ? { ok: true, value: outcome.value }
       : { ok: false, problems: outcome?.problems ?? [] };
+  }
+
+  /** BL-01: a call abandoned at the wall clock may still be billed; its usage is recorded when it lands. */
+  private recordLate(
+    name: string,
+    request: Parameters<Run<I, O>["recordCall"]>[1],
+    pending: Promise<CompletionResult<unknown>>,
+    flags: Parameters<Run<I, O>["recordCall"]>[3],
+    started: number,
+  ): void {
+    void pending
+      .then((late) => this.recordCall(name, request, late, flags, "late", Math.round(this.now() - started)))
+      .catch(() => undefined);
   }
 
   private onFailure(
@@ -450,7 +464,7 @@ class Run<I extends JsonValue, O> {
     },
     res: CompletionResult<unknown>,
     flags: readonly { evidenceId: string; pattern: string; match: string }[],
-    outcome: { ok: boolean } | null,
+    outcome: { ok: boolean } | "late" | null,
     latencyMs: number,
   ): Promise<void> {
     const tokensIn = res.usage?.inputTokens ?? 0;
@@ -461,7 +475,8 @@ class Run<I extends JsonValue, O> {
       tokensOut: this.totals.tokensOut + tokensOut,
       costUsd: this.totals.costUsd + res.costUsd,
     };
-    const status = !res.ok ? res.error.kind : outcome?.ok ? "ok" : "invalid_output";
+    const status =
+      outcome === "late" ? "late" : !res.ok ? res.error.kind : outcome?.ok ? "ok" : "invalid_output";
     await this.deps.store.recordStep({
       workspaceId: this.deps.workspaceId,
       runId: this.runId,

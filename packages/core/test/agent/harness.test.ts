@@ -89,6 +89,22 @@ describe("runWorkflow: limits", () => {
     expect(store.steps.at(-1)).toMatchObject({ kind: "guardrail", status: "limit_time" });
   });
 
+  it("a call abandoned at the wall clock still has its billed usage recorded when it lands (BL-01)", async () => {
+    const slow = () =>
+      new Promise<ReturnType<typeof okResult>>((r) => setTimeout(() => { r(okResult(ANSWER, 0.004)); }, 80));
+    const store = fakeStore();
+    const cfg = config();
+    const out = await runWorkflow(testWorkflow, INPUT, {
+      ...deps(fakeProvider([slow]), store),
+      config: { ...cfg, limits: { ...cfg.limits, wallClockMs: 20 } },
+    });
+    expect(out.status).toBe("limit_time");
+    await new Promise((r) => setTimeout(r, 120));
+    const late = store.steps.find((s) => s.name === "step1:late");
+    expect(late).toMatchObject({ kind: "call", status: "late", costUsd: 0.004, tokensIn: 600 });
+    expect(store.runs[0]?.costUsd).toBeCloseTo(0.004);
+  });
+
   it("refuses a call once the clock has already run out", async () => {
     let t = 0;
     const provider = fakeProvider([
