@@ -653,7 +653,7 @@
       "action_check": "Checked: {check}",
       "action_sent": "Sent {what} to PayPal",
       "action_succeeded": "PayPal accepted {what}",
-      "action_failed": "{what} not sent",
+      "action_failed": "Not sent: {what}",
       "action_unknown": "No answer from PayPal yet",
       "action_reconcile": "Checked with PayPal",
       "dispute_status_changed": "Mirrored PayPal status",
@@ -699,7 +699,8 @@
       "superseded": "Replaced by your edit",
       "rejected": "Set aside",
       "sandbox": "Sent to sandbox",
-      "recorded": "Recorded"
+      "recorded": "Recorded",
+      "sentRefused": "Refused by PayPal ({status})"
     }
   }
 }

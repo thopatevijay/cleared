@@ -653,7 +653,7 @@
       "action_check": "जाँच: {check}",
       "action_sent": "{what} PayPal को भेजा",
       "action_succeeded": "PayPal ने {what} स्वीकार किया",
-      "action_failed": "{what} नहीं भेजा गया",
+      "action_failed": "नहीं भेजा गया: {what}",
       "action_unknown": "PayPal से अभी जवाब नहीं",
       "action_reconcile": "PayPal से पुष्टि की",
       "dispute_status_changed": "PayPal की स्थिति दर्ज की",
@@ -699,7 +699,8 @@
       "superseded": "आपके बदलाव से बदला गया",
       "rejected": "अलग रखा",
       "sandbox": "सैंडबॉक्स को भेजा",
-      "recorded": "दर्ज हुआ"
+      "recorded": "दर्ज हुआ",
+      "sentRefused": "PayPal ने अस्वीकार किया ({status})"
     }
   }
 }

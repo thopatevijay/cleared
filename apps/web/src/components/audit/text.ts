@@ -52,10 +52,9 @@ function result(t: T, e: AuditEntry): { text: string; tone: Tone } {
     case "action.sent":
       return d["status"] === null || d["status"] === undefined
         ? { text: t("result.sentNoStatus"), tone: "neutral" }
-        : {
-            text: t("result.sent", { status: s(d["status"]) }),
-            tone: Number(d["status"]) < 300 ? "ok" : "bad",
-          };
+        : Number(d["status"]) >= 200 && Number(d["status"]) < 300
+          ? { text: t("result.sent", { status: s(d["status"]) }), tone: "ok" }
+          : { text: t("result.sentRefused", { status: s(d["status"]) }), tone: "bad" };
     case "action.succeeded":
       return { text: t("result.succeeded"), tone: "ok" };
     case "action.unknown":

@@ -123,6 +123,15 @@ describe("AuditRow", () => {
     expect(out).toContain('<time dateTime="2026-10-30T08:31:01.000Z"');
   });
 
+  it("a send PayPal refused reads 'Refused by PayPal (422)', never 'Completed' (EN, HI)", () => {
+    const refused = entry(1, { detail: { status: 422, debugId: "ca51fb6196f52" } });
+    const out = row(refused);
+    expect(out).toContain("Refused by PayPal (422)");
+    expect(out).not.toContain("Completed");
+    expect(row(refused, "hi")).toContain(hi.auditLog.result.sentRefused.replace("{status}", "422"));
+    expect(row(entry(2))).toContain("Completed (200)");
+  });
+
   it("renders detail as literal text (a <script> stays text)", () => {
     const out = row(entry(1, { action: "action.failed", detail: { code: "<script>alert(1)</script>" } }));
     expect(out).not.toContain("<script>");

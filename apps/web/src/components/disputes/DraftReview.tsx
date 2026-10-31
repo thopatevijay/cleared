@@ -276,16 +276,18 @@ export function DraftReview({
           }}
         />
       )}
-      <details className="border-t border-border pt-3">
-        <summary className="min-h-11 cursor-pointer py-2 font-medium">{ta("other")}</summary>
-        <AcceptClaimDialog
-          disputeRowId={d.id}
-          expected={d.amount === null ? null : amountText}
-          amountText={amountText}
-          allowed={d.allowedActions.includes("accept_claim") && detail.acceptClaim?.state !== "approved"}
-          onDone={() => void onChanged()}
-        />
-      </details>
+      {d.status === "RESOLVED" || tooLate ? null : (
+        <details className="border-t border-border pt-3">
+          <summary className="min-h-11 cursor-pointer py-2 font-medium">{ta("other")}</summary>
+          <AcceptClaimDialog
+            disputeRowId={d.id}
+            expected={d.amount === null ? null : amountText}
+            amountText={amountText}
+            allowed={d.allowedActions.includes("accept_claim") && detail.acceptClaim?.state !== "approved"}
+            onDone={() => void onChanged()}
+          />
+        </details>
+      )}
     </section>
   );
 }
