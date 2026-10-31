@@ -90,7 +90,7 @@ async function jobs(queue: string, actionId: string) {
 
 describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
   beforeAll(async () => {
-    server.listen({ onUnhandledRequest: "error" });
+    server.listen({ onUnhandledFrame: "error" });
     boss = await createQueue(db, { background: false, max: 2 });
     publisher = createPublisher(db, boss);
   });

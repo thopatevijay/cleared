@@ -78,7 +78,7 @@ async function reconcileJob(actionId: string, attempt: number) {
 
 describe.skipIf(!dbAvailable)("action.reconcile (reconcile-action)", () => {
   beforeAll(async () => {
-    server.listen({ onUnhandledRequest: "error" });
+    server.listen({ onUnhandledFrame: "error" });
     boss = await createQueue(db, { background: false, max: 2 });
     publisher = createPublisher(db, boss);
   });
