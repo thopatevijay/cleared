@@ -1,10 +1,11 @@
 // Wires the registry onto pg-boss (M1-03): creates each queue and its `.dlq`, starts its consumer with
 // concurrency 5 (architecture §12), starts a dead-letter consumer that logs and records the message,
-// and schedules the outbox relay every minute.
+// and schedules the outbox relay every minute and the dispute deadline watcher every 15 (M2-06).
 import { correlationIdOrNew, reportError } from "@cleared/adapters";
 import { RELAY_CRON, RELAY_QUEUE, relayOutbox, type Db, type Queue } from "@cleared/db";
 import { consume, type ConsumeDeps, type Handler } from "./consume.ts";
 import { dlqName, ensureQueue } from "./queues.ts";
+import { scheduleDeadlineWatch } from "./jobs/deadline-watcher.ts";
 import type { Registry } from "./registry.ts";
 
 /** Jobs in flight per queue per worker process (architecture §12). */
@@ -66,4 +67,5 @@ export async function scheduleRelay(deps: WireDeps): Promise<void> {
 export async function wireWorker(deps: WireDeps, registry: Registry): Promise<void> {
   await wireRegistry(deps, registry);
   await scheduleRelay(deps);
+  await scheduleDeadlineWatch(deps);
 }
