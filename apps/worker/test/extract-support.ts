@@ -46,7 +46,21 @@ export async function newWorkspace(db: Db, llmBudgetUsd?: string): Promise<Works
     baseCurrency: "USD",
     ...(llmBudgetUsd === undefined ? {} : { llmBudgetUsd }),
   });
+  created.push(row.id);
   return WorkspaceIdSchema.parse(row.id);
+}
+
+const created: string[] = [];
+
+/**
+ * Deletes the `pack.extracted` jobs these tests enqueued, so a worker started by another suite on the same
+ * database (process.test.ts) does not consume them.
+ */
+export async function deleteTestJobs(db: Db): Promise<void> {
+  await db.$client.query(
+    "delete from pgboss.job where name = 'pack.extracted' and data->>'workspaceId' = any($1)",
+    [created],
+  );
 }
 
 /** A payment and its pack (`collecting`, as after the first evidence item). */
@@ -118,10 +132,16 @@ export function recordedFacts(name: SampleName): Facts {
 
 const uniq = (xs: string[]): string[] => [...new Set(xs)].sort();
 
-/** What the live proof compares: the sets of party roles and names, amounts and delivery event kinds. */
+/**
+ * What the live proof compares: the order's parties (seller and buyer, role and name), the amounts and the
+ * delivery event kinds, as sets. `other` parties are left out: a passing mention ("Hi Meera") is listed by
+ * some runs and not others, and no downstream step reads them.
+ */
 export function factSet(f: Facts): { parties: string[]; amounts: string[]; events: string[] } {
   return {
-    parties: uniq(f.parties.map((p) => `${p.role}:${p.name.trim().toLowerCase()}`)),
+    parties: uniq(
+      f.parties.filter((p) => p.role !== "other").map((p) => `${p.role}:${p.name.trim().toLowerCase()}`),
+    ),
     amounts: uniq(f.amounts.map((a) => `${Number(a.value).toFixed(2)} ${a.currency}`)),
     events: uniq(f.delivery_events.map((e) => e.event)),
   };

@@ -26,6 +26,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   addedEvent,
   addSample,
+  deleteTestJobs,
   elideBody,
   factSet,
   newPack,
@@ -51,6 +52,7 @@ describe.skipIf(KEY === "" || !dbAvailable)("extract-evidence LIVE (M2-03, OPENA
     boss = await createQueue(db);
   });
   afterAll(async () => {
+    await deleteTestJobs(db);
     await boss.stop({ graceful: false });
     await closeDb(db);
   });

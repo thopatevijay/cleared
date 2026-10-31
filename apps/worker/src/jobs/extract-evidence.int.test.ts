@@ -22,6 +22,7 @@ import { consumeOne } from "../consume.ts";
 import {
   addedEvent,
   addSample,
+  deleteTestJobs,
   factSet,
   fixtureName,
   newPack,
@@ -114,6 +115,7 @@ describe.skipIf(!dbAvailable)("evidence.added → extract@v1 (msw replay + compo
     bodies.length = 0;
   });
   afterAll(async () => {
+    await deleteTestJobs(db);
     await boss.stop({ graceful: false });
     await closeDb(db);
   });
