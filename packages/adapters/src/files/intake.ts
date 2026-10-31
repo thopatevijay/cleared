@@ -1,4 +1,5 @@
-// The evidence write (M2-01): one transaction holds the blob, the evidence row, the pack's new state and
+// The evidence write (M2-01; moved here from apps/web in M2-10 so the worker's scenario seed uses the same
+// path): one transaction holds the blob, the evidence row, the pack's new state and
 // the outbox `evidence.added` event (ADR 0004), so either all of them exist or none does. Writes are
 // serialised per workspace, which makes the 50-per-pack and 200 MB-per-workspace checks race-free.
 import {
@@ -14,7 +15,7 @@ import {
   type Sha256,
   type WorkspaceId,
 } from "@cleared/core";
-import type { PreparedFile } from "@cleared/adapters/files";
+import type { PreparedFile } from "./prepare.ts";
 import {
   evidenceRepo,
   withTransaction,
@@ -43,7 +44,7 @@ export type NewEvidence =
 export type IntakeFailure = EvidenceRejection | { readonly code: "PACK_NOT_FOUND" };
 
 /** Thrown inside the transaction to roll it back with a typed refusal. */
-class Refused extends Error {
+export class EvidenceRefusedError extends Error {
   readonly failure: IntakeFailure;
   constructor(failure: IntakeFailure) {
     super(failure.code);
@@ -51,7 +52,8 @@ class Refused extends Error {
   }
 }
 
-async function write(
+/** The write inside the caller's transaction (M2-10 seed step); throws `EvidenceRefusedError` on a refusal. */
+export async function writeEvidence(
   d: IntakeDeps,
   tx: Tx,
   workspaceId: WorkspaceId,
@@ -63,7 +65,7 @@ async function write(
   // The pack must be ours and its payment too (ownership); a foreign pack is indistinguishable from none.
   const owned = await repo.packs.getOwned(packId, tx);
   const pack = owned === null ? null : await repo.packs.lock(owned.id, tx);
-  if (pack === null) throw new Refused({ code: "PACK_NOT_FOUND" });
+  if (pack === null) throw new EvidenceRefusedError({ code: "PACK_NOT_FOUND" });
 
   const [itemsInPack, workspaceBytes] = await Promise.all([
     repo.items.countForPack(pack.id, tx),
@@ -76,7 +78,7 @@ async function write(
   const addBytes =
     input.type === "text" ? Buffer.byteLength(input.text, "utf8") : blob?.reused ? 0 : input.file.size;
   const capacity = checkEvidenceCapacity({ itemsInPack, workspaceBytes, addBytes });
-  if (!capacity.ok) throw new Refused(capacity.error);
+  if (!capacity.ok) throw new EvidenceRefusedError(capacity.error);
 
   const item = await repo.items.insert(
     {
@@ -108,9 +110,9 @@ export async function addEvidence(
   input: NewEvidence,
 ): Promise<Result<EvidenceItemRow, IntakeFailure>> {
   try {
-    return ok(await withTransaction(d.db, (tx) => write(d, tx, workspaceId, packId, input)));
+    return ok(await withTransaction(d.db, (tx) => writeEvidence(d, tx, workspaceId, packId, input)));
   } catch (error) {
-    if (error instanceof Refused) return err(error.failure);
+    if (error instanceof EvidenceRefusedError) return err(error.failure);
     throw error;
   }
 }

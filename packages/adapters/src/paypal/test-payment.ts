@@ -4,7 +4,7 @@
 // `custom_id = workspaceId` on the order and its capture. Every write carries a PayPal-Request-Id derived
 // from the caller's id (the job messageId), so a retried job replays PayPal's first result instead of
 // paying twice.
-import type { Money } from "./schemas.ts";
+import type { Money, Order } from "./schemas.ts";
 import { firstCapture, type CardSource, type PayPalOrdersClient } from "./orders.ts";
 
 /** PayPal's sandbox test Visa (M0-04): approves without 3-D Secure. */
@@ -33,6 +33,8 @@ export interface OwnedTestPayment {
   readonly orderId: string;
   readonly captureId: string;
   readonly status: string;
+  /** M2-10: the order's `payee.merchant_id` (the sandbox chargeback needs it); null if PayPal omits it */
+  readonly merchantId: string | null;
 }
 
 /** The PayPal-Request-Id of each write; distinct per step, stable per caller id. */
@@ -57,12 +59,13 @@ export async function createOwnedTestPayment(
       await deps.orders.confirmCard(created.id, SANDBOX_TEST_CARD, ids.confirm);
     }
     const captured = await deps.orders.captureOrder(created.id, ids.capture);
-    return result(created.id, firstCapture(captured));
+    return result(captured.purchase_units[0]?.payee ? captured : created, firstCapture(captured));
   }
-  return result(created.id, firstCapture(created));
+  return result(created, firstCapture(created));
 }
 
-function result(orderId: string, capture: ReturnType<typeof firstCapture>): OwnedTestPayment {
-  if (capture === undefined) throw new Error(`order ${orderId} has no capture after capture`);
-  return { orderId, captureId: capture.id, status: capture.status };
+function result(order: Order, capture: ReturnType<typeof firstCapture>): OwnedTestPayment {
+  if (capture === undefined) throw new Error(`order ${order.id} has no capture after capture`);
+  const merchantId = order.purchase_units[0]?.payee?.merchant_id ?? null;
+  return { orderId: order.id, captureId: capture.id, status: capture.status, merchantId };
 }
