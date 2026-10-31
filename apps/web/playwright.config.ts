@@ -67,7 +67,19 @@ export default defineConfig({
           wait: { stdout: /"msg":"worker ready"/ },
           reuseExistingServer: false,
           stdout: "pipe",
-          env: { ...shared, E2E_PAYPAL_STUB: live ? "" : "worker" },
+          env: {
+            ...shared,
+            E2E_PAYPAL_STUB: live ? "" : "worker",
+            // M2-05: locally the AI steps replay recorded OpenAI responses (e2e/support/openai-stub.ts); a
+            // dummy key selects the real provider, whose calls the stub answers. Live runs inherit theirs.
+            ...(live
+              ? {}
+              : {
+                  OPENAI_API_KEY: "e2e-local-openai",
+                  LLM_DAILY_CAP_USD: "5",
+                  LLM_WORKSPACE_CAP_USD: "0.10",
+                }),
+          },
         },
       ],
 });

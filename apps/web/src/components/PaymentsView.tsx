@@ -4,11 +4,12 @@
 // waiting ("Waiting for PayPal…" until the webhook lands), success, error (with the correlation id).
 // New rows flash and are announced once in one polite live region.
 import { PaymentsResponseSchema, type PaymentItem, type PaymentsResponse } from "@cleared/core";
-import { Inbox } from "lucide-react";
+import { FileCheck, Inbox } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
-import { useRouter } from "../i18n/navigation.ts";
+import { Link, useRouter } from "../i18n/navigation.ts";
 import { intlLocale, isAppLocale } from "../i18n/routing.ts";
 import { ApiError, getJson } from "../lib/api.ts";
 import { attentionRank, captureStatusKey, formatAmount } from "../lib/format.ts";
@@ -16,7 +17,7 @@ import { EmptyState } from "./EmptyState.tsx";
 import { ErrorPanel } from "./ErrorPanel.tsx";
 import { PaymentRow, WaitingRow } from "./PaymentRow.tsx";
 import { DisputesBand } from "./payments/DisputeLines.tsx";
-import { FilterChip, useDisputeFilter, useDisputes } from "./payments/useDashboardDisputes.tsx";
+import { DisputeFilterChip, useDisputes } from "./payments/useDashboardDisputes.tsx";
 import { ScenarioEntry } from "./scenario/ScenarioEntry.tsx";
 import { SummaryBar, SummarySkeleton } from "./SummaryBar.tsx";
 import { TestPaymentButton } from "./TestPaymentButton.tsx";
@@ -83,8 +84,31 @@ function Loading() {
   );
 }
 
+/** The active summary filter (dashboard.md: `?filter=proof-ready`) and the link that clears it. */
+function FilterChip({ empty }: { empty: boolean }) {
+  const t = useTranslations("dashboard.filter");
+  return (
+    <div className="flex flex-col gap-2" data-testid="filter-chip">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="inline-flex items-center gap-1 rounded-pill bg-status-info-bg px-3 py-1 text-sm text-status-info-fg">
+          <FileCheck aria-hidden="true" size={16} strokeWidth={1.75} />
+          {t("proofReady")}
+        </span>
+        <Link
+          href="/payments"
+          className="inline-flex min-h-11 items-center text-accent underline underline-offset-2"
+        >
+          {t("clear")}
+        </Link>
+      </p>
+      {empty ? <p className="text-text-muted">{t("none")}</p> : null}
+    </div>
+  );
+}
+
 export function PaymentsView() {
   const t = useTranslations();
+  const filter = useSearchParams().get("filter");
   const raw = useLocale();
   const locale = intlLocale(isAppLocale(raw) ? raw : "en");
   const router = useRouter();
@@ -116,7 +140,6 @@ export function PaymentsView() {
   }, [fresh, data, locale, t]);
 
   const disputes = useDisputes();
-  const filter = useDisputeFilter();
 
   let body;
   if (data === undefined && error === undefined) {
@@ -135,23 +158,27 @@ export function PaymentsView() {
     );
   } else {
     const byPayment = disputes.byPayment;
-    const sorted = [...data.items].sort(
-      (a, b) =>
-        (byPayment.has(a.id) ? -1 : attentionRank(a.status)) -
-        (byPayment.has(b.id) ? -1 : attentionRank(b.status)),
-    );
-    const items = filter.on ? sorted.filter((p) => byPayment.has(p.id)) : sorted;
-    const waiting = filter.on ? 0 : data.testPayments.waiting;
+    const proofOnly = filter === "proof-ready";
+    const disputeOnly = filter === "dispute";
+    const items = [...data.items]
+      .filter((p) => !proofOnly || p.pack?.proofReady === true)
+      .filter((p) => !disputeOnly || byPayment.has(p.id))
+      .sort(
+        (a, b) =>
+          (byPayment.has(a.id) ? -1 : attentionRank(a.status)) -
+          (byPayment.has(b.id) ? -1 : attentionRank(b.status)),
+      );
+    const waiting = proofOnly || disputeOnly ? 0 : data.testPayments.waiting;
     const capped = data.testPayments.usedToday >= data.testPayments.limit;
     body = (
       <div className="flex flex-col gap-6">
         <SummaryBar
           held={data.summary.held}
+          proofReady={data.summary.proofReady}
+          filter={filter}
           inDispute={disputes.error ? null : disputes.data?.summary.inDispute}
-          onFilterDispute={filter.set}
         />
         {disputes.error ? <DisputesBand reference={disputes.reference} onRetry={disputes.retry} /> : null}
-        {filter.on ? <FilterChip onClear={filter.clear} /> : null}
         {/* M2-10: "Run the dispute scenario" (sandbox; demo and owner workspaces) */}
         <ScenarioEntry />
         {error !== undefined ? (
@@ -178,9 +205,9 @@ export function PaymentsView() {
               <span className="text-sm text-text-muted">{t("dashboard.order")}</span>
             ) : null}
           </div>
-          {filter.on && items.length === 0 ? (
-            <p className="text-text-muted">{t("disputes.dashboard.filteredEmpty")}</p>
-          ) : items.length === 0 && waiting === 0 ? (
+          {proofOnly ? <FilterChip empty={items.length === 0} /> : null}
+          {disputeOnly ? <DisputeFilterChip empty={items.length === 0} /> : null}
+          {(proofOnly || disputeOnly) && items.length === 0 ? null : items.length === 0 && waiting === 0 ? (
             <EmptyState icon={Inbox} title={t("empty.title")} body={t("empty.body")} headingLevel={3}>
               <TestPaymentButton capped={capped} onQueued={() => void mutate()} />
             </EmptyState>

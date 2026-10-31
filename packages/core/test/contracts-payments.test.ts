@@ -30,6 +30,7 @@ describe("payments contract (M1-07)", () => {
       statusReason: null,
       source: "webhook",
       updatedAt: "2026-10-30T10:00:00.000Z",
+      pack: null,
     };
     expect(PaymentItemSchema.parse(item)).toEqual(item);
     expect(PaymentItemSchema.safeParse({ ...item, amount: { value: "4,2", currency: "USD" } }).success).toBe(
@@ -37,13 +38,13 @@ describe("payments contract (M1-07)", () => {
     );
   });
 
-  it("M1 summary has no dispute or proof figures yet", () => {
+  it("the summary has no dispute figure yet; proof-ready is a count (M2-05)", () => {
     const body = {
       items: [],
       total: 0,
       offset: 0,
       limit: 50,
-      summary: { held: [], inDispute: null, proofReady: null },
+      summary: { held: [], inDispute: null, proofReady: 0 },
       workspace: { kind: "demo", timezone: "UTC" },
       testPayments: { waiting: 0, usedToday: 0, limit: 3 },
     };

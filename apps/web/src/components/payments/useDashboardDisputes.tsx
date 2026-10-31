@@ -1,13 +1,12 @@
 "use client";
 // The dashboard's dispute data (M2-09): GET /api/disputes on its own SWR (5 s), so a dispute failure is a
 // partial state ("Couldn't load disputes. Payments are up to date.") and never blanks the payments. Also the
-// `?filter=dispute` list filter that the "in dispute" summary fact applies (dashboard.md "Interactions").
-import { X } from "lucide-react";
+// chip for the `?filter=dispute` list filter that the "in dispute" summary fact applies.
+import { Scale } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import useSWR from "swr";
-import { usePathname, useRouter } from "../../i18n/navigation.ts";
+import { Link } from "../../i18n/navigation.ts";
 import { ApiError } from "../../lib/api.ts";
 import type { DisputeList, DisputeSummary } from "../../lib/dispute-view.ts";
 import { DISPUTES_POLL_MS, fetchDisputes } from "../disputes/DisputeList.tsx";
@@ -38,36 +37,24 @@ export function useDisputes() {
   };
 }
 
-export function useDisputeFilter() {
-  const params = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  return {
-    on: params.get("filter") === "dispute",
-    set: () => {
-      router.replace(`${pathname}?filter=dispute`, { scroll: false });
-    },
-    clear: () => {
-      router.replace(pathname, { scroll: false });
-    },
-  };
-}
-
-export function FilterChip({ onClear }: { onClear: () => void }) {
+/** The active `?filter=dispute` (dashboard.md "Interactions") and the link that clears it. */
+export function DisputeFilterChip({ empty }: { empty: boolean }) {
   const t = useTranslations("disputes.dashboard");
   return (
-    <p className="flex flex-wrap items-center gap-2" data-testid="filter-chip">
-      <span className="rounded-pill bg-status-dispute-bg px-3 py-1 text-sm font-medium text-status-dispute-fg">
-        {t("filterChip")}
-      </span>
-      <button
-        type="button"
-        onClick={onClear}
-        className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-accent underline underline-offset-2"
-      >
-        <X aria-hidden="true" size={16} />
-        {t("clearFilter")}
-      </button>
-    </p>
+    <div className="flex flex-col gap-2" data-testid="dispute-filter-chip">
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="inline-flex items-center gap-1 rounded-pill bg-status-dispute-bg px-3 py-1 text-sm text-status-dispute-fg">
+          <Scale aria-hidden="true" size={16} strokeWidth={1.75} />
+          {t("filterChip")}
+        </span>
+        <Link
+          href="/payments"
+          className="inline-flex min-h-11 items-center text-accent underline underline-offset-2"
+        >
+          {t("clearFilter")}
+        </Link>
+      </p>
+      {empty ? <p className="text-text-muted">{t("filteredEmpty")}</p> : null}
+    </div>
   );
 }

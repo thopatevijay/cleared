@@ -1,10 +1,11 @@
-// Summary bar (components.md, M1): the held total per currency (from mirrored PENDING captures), the
-// "in dispute" total per currency (M2-09; "—" when disputes fail to load), and the proof-ready fact ("—"
-// until M2-05 delivers it). One fact per line at 375 px.
+// Summary bar (components.md): the held total per currency (from mirrored PENDING captures, M1-07), the
+// "in dispute" total per currency (M2-09; "—" when disputes fail to load) and the proof-ready count
+// (M2-05). One fact per line at 375 px.
 import type { Amount } from "@cleared/core";
 import { FileCheck, Hourglass, Scale, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
+import { Link } from "../i18n/navigation.ts";
 import { intlLocale, isAppLocale } from "../i18n/routing.ts";
 import { formatAmount } from "../lib/format.ts";
 
@@ -32,15 +33,16 @@ function Fact({
 }
 
 /**
- * M2-09 (dashboard.md 3b): "{amount} in dispute" per currency, a button that filters the list to dispute
- * rows. `null` = disputes failed to load ("—"; the list shows the inline band); `undefined` = loading.
+ * dashboard.md 3b (M2-09): "{amount} in dispute" per currency, a link that filters the list
+ * (`?filter=dispute`). `null` = disputes failed to load ("—"; the list shows the inline band);
+ * `undefined` = still loading.
  */
 function DisputeFact({
   inDispute,
-  onFilter,
+  active,
 }: {
   inDispute: readonly Amount[] | null | undefined;
-  onFilter: () => void;
+  active: boolean;
 }) {
   const t = useTranslations("dashboard");
   const td = useTranslations("disputes.dashboard");
@@ -50,26 +52,50 @@ function DisputeFact({
   if (inDispute.length === 0) return <Fact icon={Scale}>{td("noneInDispute")}</Fact>;
   const text = inDispute.map((a) => `${formatAmount(locale, a).text} ${a.currency}`).join(" + ");
   return (
-    <button
-      type="button"
-      onClick={onFilter}
-      aria-label={`${td("inDispute", { amount: text })}. ${td("inDisputeFilter")}`}
-      className="min-h-11 rounded-md text-left underline decoration-border-strong underline-offset-4 hover:decoration-accent md:inline-flex"
+    <Link
+      href={{ pathname: "/payments", query: { filter: "dispute" } }}
+      aria-current={active ? "true" : undefined}
+      className="inline-flex min-h-11 items-start gap-2 underline decoration-border-strong underline-offset-4 hover:decoration-accent"
       data-testid="summary-dispute"
     >
-      <Fact icon={Scale}>{td("inDispute", { amount: text })}</Fact>
-    </button>
+      <span className="flex h-[1lh] shrink-0 items-center">
+        <Scale aria-hidden="true" size={22} strokeWidth={1.75} className="text-text-muted" />
+      </span>
+      <span>{td("inDispute", { amount: text })}</span>
+    </Link>
+  );
+}
+
+/** dashboard.md 3c (M2-05): the proof-ready count, a link that filters the list (`?filter=proof-ready`). */
+function ProofReadyFact({ count, active }: { count: number; active: boolean }) {
+  const t = useTranslations("dashboard.summary");
+  return (
+    <Link
+      href={{ pathname: "/payments", query: { filter: "proof-ready" } }}
+      aria-label={t("proofReadyName", { count })}
+      aria-current={active ? "true" : undefined}
+      className="inline-flex min-h-11 items-start gap-2 underline decoration-border-strong underline-offset-4 hover:decoration-accent"
+      data-testid="summary-proof-ready"
+    >
+      <span className="flex h-[1lh] shrink-0 items-center">
+        <FileCheck aria-hidden="true" size={22} strokeWidth={1.75} className="text-text-muted" />
+      </span>
+      <span>{t("proofReady", { count })}</span>
+    </Link>
   );
 }
 
 export function SummaryBar({
   held,
+  proofReady,
+  filter,
   inDispute,
-  onFilterDispute = () => undefined,
 }: {
   held: readonly Amount[];
+  proofReady: number;
+  filter: string | null;
+  /** M2-09: open disputes per currency; null when they failed to load */
   inDispute?: readonly Amount[] | null | undefined;
-  onFilterDispute?: () => void;
 }) {
   const t = useTranslations("dashboard");
   const raw = useLocale();
@@ -86,10 +112,8 @@ export function SummaryBar({
       data-testid="summary"
     >
       <Fact icon={Hourglass}>{held.length === 0 ? t("nothingHeld") : t("held", { amount: heldText })}</Fact>
-      <DisputeFact inDispute={inDispute} onFilter={onFilterDispute} />
-      <Fact icon={FileCheck} pending={t("pendingProof")}>
-        {t("proofReadyNone")}
-      </Fact>
+      <DisputeFact inDispute={inDispute} active={filter === "dispute"} />
+      <ProofReadyFact count={proofReady} active={filter === "proof-ready"} />
     </p>
   );
 }
