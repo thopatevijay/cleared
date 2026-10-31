@@ -81,12 +81,7 @@
                     },
                     "verdict": {
                       "type": "string",
-                      "enum": [
-                        "met",
-                        "partial",
-                        "missing",
-                        "unverifiable"
-                      ]
+                      "enum": ["met", "partial", "missing", "unverifiable"]
                     },
                     "rationale": {
                       "type": "string",
@@ -107,27 +102,17 @@
                             "maxLength": 400
                           }
                         },
-                        "required": [
-                          "evidence_id",
-                          "quote"
-                        ],
+                        "required": ["evidence_id", "quote"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "claim_id",
-                    "verdict",
-                    "rationale",
-                    "citations"
-                  ],
+                  "required": ["claim_id", "verdict", "rationale", "citations"],
                   "additionalProperties": false
                 }
               }
             },
-            "required": [
-              "verdicts"
-            ],
+            "required": ["verdicts"],
             "additionalProperties": false
           },
           "strict": true
@@ -226,12 +211,7 @@
                     },
                     "verdict": {
                       "type": "string",
-                      "enum": [
-                        "met",
-                        "partial",
-                        "missing",
-                        "unverifiable"
-                      ]
+                      "enum": ["met", "partial", "missing", "unverifiable"]
                     },
                     "rationale": {
                       "type": "string",
@@ -252,27 +232,17 @@
                             "maxLength": 400
                           }
                         },
-                        "required": [
-                          "evidence_id",
-                          "quote"
-                        ],
+                        "required": ["evidence_id", "quote"],
                         "additionalProperties": false
                       }
                     }
                   },
-                  "required": [
-                    "claim_id",
-                    "verdict",
-                    "rationale",
-                    "citations"
-                  ],
+                  "required": ["claim_id", "verdict", "rationale", "citations"],
                   "additionalProperties": false
                 }
               }
             },
-            "required": [
-              "verdicts"
-            ],
+            "required": ["verdicts"],
             "additionalProperties": false
           },
           "strict": true

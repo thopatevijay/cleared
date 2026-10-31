@@ -195,7 +195,7 @@ All tables carry `workspace_id`, except platform tables. Timestamps are UTC `tim
 | `evidence_items` | pack_id, kind (`scope` \| `delivery` \| `communication` \| `shipment` \| `invoice` \| `scope_snapshot` \| `client_ack`), blob_id, sha256, text, created_at | immutable |
 | `blobs` | id, mime, bytes (bytea), size, sha256 | BlobStore adapter; move to S3 at > 5 GB |
 | `extracted_facts` | evidence_item_id, facts jsonb, model, run_id | structured extraction output |
-| `scope_checks` | pack_id, line, verdict (`met` \| `partial` \| `missing` \| `unverifiable`), citations jsonb (evidence_item_id, quote, offsets) | quotes verified verbatim |
+| `scope_checks` | pack_id, check_version, evidence_set_hash, prompt_version, run_id, line_id, line, verdict (`met` \| `partial` \| `missing` \| `unverifiable`), model_verdict, note, rationale, line_citation, citations jsonb (evidence_item_id, quote, offsets, sha256) | quotes verified verbatim; append-only versions (M2-04) |
 | `client_acks` | pack_id, token_hash, accepted_at, ip, user_agent | buyer-side acknowledgement |
 | `holds` | payment_id, type, reason, opened_at, released_at, estimated_release_at, estimate_source | derived from the payment status |
 | `explanations` | hold_id, locale, text, source_ref | grounded in the rule table |

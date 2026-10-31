@@ -105,7 +105,26 @@ const EXPECTED: Readonly<Record<string, readonly string[]>> = {
     "C3 unverifiable:image_only_support",
     "C4 unverifiable:model_unverifiable",
   ],
+  // check_scope@v1's own live recordings (M2-04 live proof, gpt-6.1-terra, 2026-10-31)
+  "v1-logo": [
+    "C1 met",
+    "C2 met",
+    "C3 unverifiable:model_unverifiable",
+    "C4 met",
+    "C5 met",
+    "C6 unverifiable:model_unverifiable",
+    "C7 missing",
+    "C8 met",
+    "C9 met",
+  ],
+  "v1-translation": ["C1 partial", "C2 partial", "C3 met", "C4 met"],
 };
+
+/** `r1`..`c1`: the M0-07 spike recordings; `v1-<pack>`: check_scope@v1's own (fixtures/openai/scope-v1). */
+const fixturesOf = (key: string): string[] =>
+  key.startsWith("v1-") ? ["pass1", "pass2"].map((p) => `scope-v1/${key.slice(3)}-${p}`) : spike(key);
+const packOf = (key: string): SpikePack =>
+  key.startsWith("v1-") ? (key.slice(3) as SpikePack) : (SPIKE_RUNS[key] ?? "logo");
 
 describe.skipIf(!dbAvailable)("pack.extracted → check_scope@v1 (msw replay + compose Postgres)", () => {
   beforeAll(async () => {
@@ -124,8 +143,8 @@ describe.skipIf(!dbAvailable)("pack.extracted → check_scope@v1 (msw replay + c
   it.each(Object.keys(EXPECTED))(
     "AC 3 · %s: the recorded answers give the expected verdict per line; every citation slices its item's text",
     async (spikeRun) => {
-      const { ws, packId, ids, last } = await packWith(SPIKE_RUNS[spikeRun] ?? "logo");
-      const r = serve(...spike(spikeRun));
+      const { ws, packId, ids, last } = await packWith(packOf(spikeRun));
+      const r = serve(...fixturesOf(spikeRun));
       const out = await run(ws, packId, last);
       expect(r.unused()).toEqual([]);
       expect(r.unmatched()).toEqual([]);
