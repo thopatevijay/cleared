@@ -79,7 +79,8 @@ describe("mapDispute edge cases", () => {
   });
 
   it("no disputed transaction, no stage, no reason, no links → nulls and no actions", () => {
-    const { disputed_transactions: _t, dispute_life_cycle_stage: _s, reason: _r, links: _l, ...rest } = base;
+    const dropped = new Set(["disputed_transactions", "dispute_life_cycle_stage", "reason", "links"]);
+    const rest = Object.fromEntries(Object.entries(base).filter(([k]) => !dropped.has(k)));
     const r = mapDispute(rest);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
