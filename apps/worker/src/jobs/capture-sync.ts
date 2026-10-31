@@ -136,7 +136,8 @@ interface StoredState {
 
 async function mirrorPayment(run: Run, workspaceId: WorkspaceId): Promise<SyncOutcome> {
   const { mirror, deps, tx, input } = run;
-  const payments = forWorkspace(deps.db, workspaceId).payments;
+  const repos = forWorkspace(deps.db, workspaceId);
+  const payments = repos.payments;
   const prev = await payments.getByCaptureId(mirror.captureId, tx);
   const next: StoredState = {
     status: mirroredRaw(mirror.state.status),
@@ -153,7 +154,9 @@ async function mirrorPayment(run: Run, workspaceId: WorkspaceId): Promise<SyncOu
   if (!applyMirror(prevRecord, next, updateTime).ok) return "stale";
   const values = paymentValues(mirror, next, input.source, updateTime, deps.now());
   if (prev === null) {
-    await payments.insert(values, tx);
+    const payment = await payments.insert(values, tx);
+    // M2-05 (BL-01 6536606046): the payment's proof pack (`empty`) is born with it, in the same transaction.
+    await repos.proofPacks.insert({ paymentId: payment.id }, tx);
     await deps.publisher.emit(tx, {
       type: "payment.captured",
       version: 1,

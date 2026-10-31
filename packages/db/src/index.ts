@@ -95,6 +95,12 @@ export {
   type NewExtractedFacts,
 } from "./repositories/extracted-facts.ts";
 export {
+  packReadsRepo,
+  type PackReadsRepo,
+  type PackStatus,
+  type PackStatusLine,
+} from "./repositories/pack-reads.ts";
+export {
   scopeChecksRepo,
   type NewScopeCheck,
   type NewScopeLine,

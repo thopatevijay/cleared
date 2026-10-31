@@ -71,6 +71,13 @@
       "when": 1793415851216,
       "tag": "0009_scope_check_versions",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793417247157,
+      "tag": "0010_proof_pack_backfill",
+      "breakpoints": true
     }
   ]
 }
