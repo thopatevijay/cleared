@@ -20,7 +20,7 @@ import {
   type Dispute,
   type DisputeList,
   type DisputeWriteResponse,
-} from "./dispute-schemas.ts";
+} from "./disputes.schemas.ts";
 import { PAYPAL_SANDBOX_BASE_URL, PayPalApiError } from "./orders.ts";
 import type { Money } from "./schemas.ts";
 import type { TokenProvider } from "./token.ts";
@@ -279,8 +279,18 @@ export interface ChargebackInput {
   readonly requestId: string;
 }
 
+export interface ListDisputesQuery {
+  readonly updateTimeAfter?: string;
+  readonly disputedTransactionId?: string;
+  readonly pageSize?: number;
+}
+
 export interface PayPalDisputesClient {
-  listDisputes(q?: { updateTimeAfter?: string; pageSize?: number }): Promise<DisputeList>;
+  /**
+   * `GET /v1/customer/disputes`. `disputedTransactionId` (a capture id) finds the disputes on one
+   * payment; PayPal does not combine it with the time filter, so `updateTimeAfter` is then ignored.
+   */
+  listDisputes(q?: ListDisputesQuery): Promise<DisputeList>;
   getDispute(id: string): Promise<Dispute>;
   provideSupportingInfo(
     id: string,
@@ -409,9 +419,13 @@ export function createPayPalDisputesClient(options: PayPalDisputesClientOptions)
 
   return {
     getDispute,
-    listDisputes: (q = {}) => {
+    listDisputes: async (q = {}) => {
       const params = new URLSearchParams();
-      if (q.updateTimeAfter !== undefined) params.set("update_time_after", q.updateTimeAfter);
+      if (q.disputedTransactionId !== undefined) {
+        params.set("disputed_transaction_id", seg(q.disputedTransactionId));
+      } else if (q.updateTimeAfter !== undefined) {
+        params.set("update_time_after", q.updateTimeAfter);
+      }
       params.set("page_size", String(q.pageSize ?? 50));
       return t.send({
         method: "GET",
