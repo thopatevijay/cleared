@@ -280,6 +280,7 @@ test("AC 7: every state axe-clean at 360–1440 px light/dark; keyboard-only int
   await capture(page, "en-stale");
 
   // a failed refresh while polling: the last data stays, with the error band (Retry + Reference)
+  await gotoPack(page, packUrl("en", collecting.paymentId));
   await page.route("**/api/packs/**", (route) =>
     route.fulfill({
       status: 500,
@@ -290,8 +291,8 @@ test("AC 7: every state axe-clean at 360–1440 px light/dark; keyboard-only int
       body: JSON.stringify({ error: { code: "internal", message: "Something went wrong." } }),
     }),
   );
-  await gotoPack(page, packUrl("en", collecting.paymentId));
   await expect(page.getByTestId("error-panel")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByTestId("pack-banner")).toHaveAttribute("data-state", "collecting");
   await capture(page, "en-refresh-error");
 
   // the first load fails: the full-page error with Retry and Reference
