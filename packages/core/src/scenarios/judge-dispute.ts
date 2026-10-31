@@ -77,7 +77,14 @@ export function scenarioRequestIds(runId: string) {
 /** Per-step facts kept on the run (`scenario_runs.steps`): real PayPal ids and when each step finished. */
 export const ScenarioStepsSchema = z.object({
   capture: z
-    .object({ at: z.string(), orderId: z.string(), captureId: z.string(), status: z.string() })
+    .object({
+      at: z.string(),
+      orderId: z.string(),
+      captureId: z.string(),
+      status: z.string(),
+      /** the order's `payee.merchant_id`, for the sandbox chargeback */
+      merchantId: z.string().nullable(),
+    })
     .optional(),
   seed_pack: z
     .object({ at: z.string(), packId: z.string(), evidenceItemIds: z.array(z.string()) })

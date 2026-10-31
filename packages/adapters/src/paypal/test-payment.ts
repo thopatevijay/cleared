@@ -17,7 +17,7 @@ export const SANDBOX_TEST_CARD: CardSource = {
 export const TEST_PAYMENT_AMOUNT: Money = { currency_code: "USD", value: "42.00" };
 
 export interface OwnedTestPaymentDeps {
-  readonly orders: PayPalOrdersClient;
+  readonly orders: Pick<PayPalOrdersClient, "createOrder" | "confirmCard" | "captureOrder">;
   /** Writes `paypal_resource_owner(order, orderId) → workspaceId`; must be committed when it resolves. */
   readonly claimOrder: (orderId: string, workspaceId: string) => Promise<void>;
 }
