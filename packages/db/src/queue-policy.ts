@@ -62,6 +62,10 @@ export const PAYPAL_DISPUTE_SYNC_QUEUE = "paypal.dispute.sync";
 /** M2-06: the deadline watcher, scheduled every 15 minutes. */
 export const DISPUTE_DEADLINE_WATCH_QUEUE = "dispute.deadline_watch";
 export const DISPUTE_DEADLINE_WATCH_CRON = "*/15 * * * *";
+/** M2-08: run the governed checks and the one PayPal write of an approved action (`{actionId, workspaceId}`). */
+export const ACTION_EXECUTE_QUEUE = "action.execute";
+/** M2-08: re-read the dispute after an `unknown` send (`{actionId, workspaceId, attempt, before}`). */
+export const ACTION_RECONCILE_QUEUE = "action.reconcile";
 
 export const COMMAND_QUEUES: readonly QueueSpec[] = [
   // 12 retries with the 300 s cap ≈ 28 min minimum: longer than the 10-minute unowned-capture window.
@@ -71,6 +75,10 @@ export const COMMAND_QUEUES: readonly QueueSpec[] = [
   { name: PAYPAL_DISPUTE_SYNC_QUEUE, expireInSeconds: 60, retryLimit: 12 },
   // A missed tick is covered by the next one 15 minutes later (and by every sync).
   { name: DISPUTE_DEADLINE_WATCH_QUEUE, expireInSeconds: 120, retryLimit: 2 },
+  // The send is guarded by the committed `executions` row: a retry never resends (it goes `unknown`).
+  { name: ACTION_EXECUTE_QUEUE, expireInSeconds: 120, retryLimit: 3 },
+  // Each try schedules the next itself (2, 4, 8, 16 min); these retries only cover a failed re-read.
+  { name: ACTION_RECONCILE_QUEUE, expireInSeconds: 60, retryLimit: 8 },
 ];
 
 /** Every domain event type is a queue (M1-03: queue = outbox topic = `event.type`). */

@@ -56,3 +56,34 @@ export {
   insertProposedActions,
   type NewProposal,
 } from "./repositories/proposed-actions.ts";
+export {
+  getProposedAction,
+  insertSellerProposal,
+  setProposedActionState,
+  type ProposedActionRow,
+  type SellerProposal,
+} from "./repositories/proposed-actions.ts";
+export {
+  approvalForAction,
+  approveProposedAction,
+  insertApproval,
+  rejectProposedAction,
+  type ApprovalRow,
+  type ApproveRequest,
+  type Decision,
+  type DecisionResult,
+  type NewApproval,
+} from "./repositories/approvals.ts";
+export {
+  claimExecution,
+  executionForAction,
+  recordExecutionOutcome,
+  type ExecutionOutcome,
+  type ExecutionRow,
+} from "./repositories/executions.ts";
+export {
+  actionAuditTrail,
+  appendActionAudit,
+  type ActionAuditEntry,
+  type ActionAuditRow,
+} from "./repositories/audit-log.ts";

@@ -4,6 +4,8 @@
 // M2 and M3 add theirs here.
 import { correlationIdOrNew } from "@cleared/adapters";
 import {
+  ACTION_EXECUTE_QUEUE,
+  ACTION_RECONCILE_QUEUE,
   createPublisher,
   PAYPAL_CAPTURE_SYNC_QUEUE,
   PAYPAL_DISPUTE_SYNC_QUEUE,
@@ -14,7 +16,10 @@ import {
 } from "@cleared/db";
 import type { Handler } from "./consume.ts";
 import { captureSyncHandler } from "./jobs/capture-sync.ts";
+import { killSwitchFromEnv } from "./jobs/action-runtime.ts";
 import { disputeSyncHandler } from "./jobs/dispute-sync.ts";
+import { executeActionHandler } from "./jobs/execute-action.ts";
+import { reconcileActionHandler } from "./jobs/reconcile-action.ts";
 import { testPaymentHandler } from "./jobs/test-payment.ts";
 import type { PayPalClients } from "./paypal.ts";
 import type { QueueSpec } from "./queues.ts";
@@ -54,6 +59,26 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients): Registry {
         now: () => new Date(),
       }),
     },
+    // M2-08: the governed write path (approve → execute → unknown → reconcile).
+    {
+      queue: queueSpec(ACTION_EXECUTE_QUEUE),
+      handler: executeActionHandler({
+        db: rt.db,
+        publisher,
+        disputes: paypal.disputes,
+        now: () => new Date(),
+        killSwitchEnv: () => killSwitchFromEnv(process.env),
+      }),
+    },
+    {
+      queue: queueSpec(ACTION_RECONCILE_QUEUE),
+      handler: reconcileActionHandler({
+        db: rt.db,
+        publisher,
+        disputes: paypal.disputes,
+        now: () => new Date(),
+      }),
+    },
     {
       queue: queueSpec(SANDBOX_TEST_PAYMENT_QUEUE),
       handler: testPaymentHandler({ db: rt.db, orders: paypal.orders }),
@@ -65,6 +90,11 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients): Registry {
     // The events dispute sync emits (M2-06); M2-07 / M3 consume them for real.
     { queue: queueSpec("dispute.opened"), handler: recordEvent },
     { queue: queueSpec("dispute.status_changed"), handler: recordEvent },
+    // The action events (M2-08); M2-09 / M3-08 consume them for real.
+    { queue: queueSpec("action.approved"), handler: recordEvent },
+    { queue: queueSpec("action.executed"), handler: recordEvent },
+    { queue: queueSpec("action.failed"), handler: recordEvent },
+    { queue: queueSpec("action.unknown"), handler: recordEvent },
   ];
 }
 

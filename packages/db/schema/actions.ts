@@ -16,6 +16,8 @@ export const proposedActions = pgTable(
     state: actionState("state").notNull().default("proposed"),
     risk: actionRisk("risk").notNull(),
     createdByRunId: uuid("created_by_run_id").references(() => agentRuns.id),
+    /** M2-08: the seller-facing code of a `failed` action (core `ACTION_FAILURE_CODES`) */
+    refusalCode: text("refusal_code"),
   },
   (t) => [index("proposed_actions_workspace_created_idx").on(t.workspaceId, t.createdAt)],
 );

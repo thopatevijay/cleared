@@ -153,6 +153,8 @@ function mirrorValues(m: DisputeMirror, paymentId: string | null, now: Date) {
     stage: m.state.stage === null ? null : mirroredRaw(m.state.stage),
     status: mirroredRaw(m.state.status),
     sellerResponseDueDate: m.sellerResponseDueDate === null ? null : new Date(m.sellerResponseDueDate),
+    amount: m.amount?.value ?? null,
+    currency: m.amount?.currency_code ?? null,
     outcome: m.outcome,
     allowedActions: [...m.allowedActions],
     paypalUpdatedAt: new Date(m.updateTime),
@@ -171,6 +173,8 @@ function sameMirror(prev: DisputeRow, next: MirrorValues): boolean {
     prev.stage === next.stage &&
     prev.status === next.status &&
     iso(prev.sellerResponseDueDate) === iso(next.sellerResponseDueDate) &&
+    prev.amount === next.amount &&
+    prev.currency === next.currency &&
     JSON.stringify(prev.outcome) === JSON.stringify(next.outcome) &&
     JSON.stringify(prev.allowedActions) === JSON.stringify(next.allowedActions) &&
     iso(prev.paypalUpdatedAt) === iso(next.paypalUpdatedAt)

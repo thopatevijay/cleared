@@ -267,6 +267,13 @@ export interface WriteOptions {
   readonly requestId: string;
   /** Per-call timeout for the write itself (the re-check GET uses the client default). */
   readonly timeoutMs?: number;
+  /** M2-08: sees the write's 2xx status and `paypal-debug-id` (errors carry theirs on PayPalApiError). */
+  readonly onResponse?: (meta: WriteResponseMeta) => void;
+}
+
+export interface WriteResponseMeta {
+  readonly status: number;
+  readonly debugId: string | undefined;
 }
 
 export interface ChargebackInput {
@@ -339,6 +346,7 @@ export interface SendOptions<S extends z.ZodType> {
   readonly multipart?: Multipart;
   readonly requestId?: string;
   readonly timeoutMs?: number;
+  readonly onResponse?: (meta: WriteResponseMeta) => void;
 }
 
 export interface DisputesTransport {
@@ -368,6 +376,7 @@ export function createDisputesTransport(
           idempotent: o.method === "GET" || DISPUTE_WRITES_IDEMPOTENT,
         }),
       );
+      o.onResponse?.({ status: res.status, debugId: res.debugId });
       return o.schema.parse(res.bodyText.trim() === "" ? {} : JSON.parse(res.bodyText));
     } catch (err) {
       if (err instanceof HttpStatusError) throw new PayPalApiError(err);
@@ -402,6 +411,7 @@ export function createPayPalDisputesClient(options: PayPalDisputesClientOptions)
       ...write(path),
       requestId: o.requestId,
       ...(o.timeoutMs === undefined ? {} : { timeoutMs: o.timeoutMs }),
+      ...(o.onResponse === undefined ? {} : { onResponse: o.onResponse }),
     });
   }
   const post = (path: string, json: unknown) => ({
