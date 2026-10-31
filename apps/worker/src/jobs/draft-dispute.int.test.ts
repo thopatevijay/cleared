@@ -24,6 +24,7 @@ import { deleteTestJobs, silentLog } from "../../test/extract-support.ts";
 import { dbAvailable, url } from "../../test/helpers.ts";
 import {
   checkedSamplePack,
+  settleDraftTestQueue,
   disputeEvent,
   DRAFT_NOW,
   packCheckedEvent,
@@ -96,6 +97,7 @@ describe.skipIf(!dbAvailable)("dispute draft workflow (msw replay + compose Post
   });
   afterAll(async () => {
     await deleteTestJobs(db);
+    await settleDraftTestQueue(db);
     await boss.stop({ graceful: false });
     await closeDb(db);
   });

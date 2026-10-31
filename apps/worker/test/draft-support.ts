@@ -23,9 +23,25 @@ export interface SamplePack {
   readonly itemIds: readonly string[];
 }
 
+const created: string[] = [];
+
+/**
+ * Removes the jobs these workspaces enqueued (pack.checked, action.proposed, action.execute after an approval)
+ * and marks their outbox rows published, so a worker another suite starts on the same database
+ * (process.test.ts) neither consumes nor relays them.
+ */
+export async function settleDraftTestQueue(db: Db): Promise<void> {
+  await db.$client.query("delete from pgboss.job where data->>'workspaceId' = any($1)", [created]);
+  await db.$client.query(
+    "update outbox set published_at = now() where published_at is null and payload->>'workspaceId' = any($1)",
+    [created],
+  );
+}
+
 /** The logo sample pack, scope-checked with the recorded `scope-v1/logo-pass{1,2}` answers (version 1). */
 export async function checkedSamplePack(db: Db, boss: Queue, budget?: string): Promise<SamplePack> {
   const ws = await newWorkspace(db, budget);
+  created.push(ws);
   const packId = await newPack(db, ws);
   const itemIds = await storePack(db, ws, packId, SPIKE_PACKS.logo);
   const replay = startReplay(["openai/scope-v1/logo-pass1", "openai/scope-v1/logo-pass2"]);

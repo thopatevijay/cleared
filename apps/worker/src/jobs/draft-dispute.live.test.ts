@@ -19,6 +19,7 @@ import { deleteTestJobs, elideBody, silentLog } from "../../test/extract-support
 import { dbAvailable, url } from "../../test/helpers.ts";
 import {
   checkedSamplePack,
+  settleDraftTestQueue,
   disputeEvent,
   DRAFT_NOW,
   sampleDispute,
@@ -41,6 +42,7 @@ describe.skipIf(KEY === "" || !dbAvailable)("draft-dispute LIVE (M2-07, OPENAI b
   });
   afterAll(async () => {
     await deleteTestJobs(db);
+    await settleDraftTestQueue(db);
     await boss.stop({ graceful: false });
     await closeDb(db);
   });
