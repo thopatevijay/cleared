@@ -31,6 +31,9 @@ describe.skipIf(!dbAvailable)("constraints (compose Postgres)", () => {
     ],
     ["DELETE FROM evidence_items", "delete from evidence_items", "evidence_items is append-only: DELETE"],
     ["TRUNCATE audit_log", "truncate audit_log", "audit_log is append-only: TRUNCATE"],
+    // M2-04: a scope check is a version; new evidence writes the next one and never edits an old row
+    ["UPDATE scope_checks", "update scope_checks set verdict = 'met'", "scope_checks is append-only: UPDATE"],
+    ["DELETE FROM scope_checks", "delete from scope_checks", "scope_checks is append-only: DELETE"],
   ])("%s fails with the trigger's error", async (_label, statement, message) => {
     await expect(db.$client.query(statement)).rejects.toThrow(message);
   });

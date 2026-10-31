@@ -1,13 +1,19 @@
 // Verbatim-quote check (ADR 0009): the citation guarantee for OpenAI output lives here, not in the
 // model. A quote counts only if it appears verbatim in the evidence item it cites.
 //
-// Normalisation is deliberately narrow and applied identically to quote and evidence:
+// Normalisation is deliberately narrow and applied identically to quote and evidence (M2-04):
 //   1. Unicode NFC (composed and decomposed forms of the same character compare equal)
-//   2. every run of Unicode whitespace (incl. NBSP, tabs, newlines) collapses to one ASCII space
-//   3. leading and trailing whitespace of the quote is ignored
-// Nothing else: no case folding, no quote-mark or dash folding, no punctuation stripping. A
-// paraphrase, a changed word or a "smart" quote the evidence does not contain is unverifiable.
-// Offsets are UTF-16 code-unit offsets into the ORIGINAL evidence text, end exclusive.
+//   2. `\r\n` and lone `\r` become `\n`
+//   3. curly quote marks become straight ones (‘ ’ ‚ ‛ → '   “ ” „ ‟ → ")
+//   4. every run of Unicode whitespace (incl. NBSP, tabs, newlines) collapses to one ASCII space
+//   5. leading and trailing whitespace of the quote is ignored
+// Nothing else: no case folding, no dash folding, no punctuation stripping. A paraphrase or a changed
+// word is unverifiable.
+//
+// Two APIs share these rules:
+// - `verifyCitation` (M2-04, the scope check): offsets are into the NORMALISED item text, so
+//   `normaliseForQuote(text).slice(start, end) === quote` for every stored citation; length limits apply.
+// - `checkQuote` / `checkQuotes` (M0-07 spike API): offsets are into the ORIGINAL text; no length limits.
 
 export interface EvidenceText {
   readonly id: string;
@@ -43,6 +49,13 @@ interface Normalised {
 }
 
 const WHITESPACE = /\s/u;
+const SINGLE_QUOTES = /[‘’‚‛]/g;
+const DOUBLE_QUOTES = /[“”„‟]/g;
+
+/** Curly → straight quote marks. Each mark is one UTF-16 unit on both sides, so offsets are unchanged. */
+function foldQuoteMarks(s: string): string {
+  return s.replace(SINGLE_QUOTES, "'").replace(DOUBLE_QUOTES, '"');
+}
 
 /** Collapses whitespace runs to one space, keeping a map back to offsets in the input. */
 export function collapseWhitespace(input: string): Normalised {
@@ -63,15 +76,20 @@ export function collapseWhitespace(input: string): Normalised {
   return { text, map };
 }
 
+/** The scope check's normal form (rules 1–4). The quote side is also trimmed (rule 5). */
+export function normaliseForQuote(s: string): string {
+  return collapseWhitespace(foldQuoteMarks(s.normalize("NFC").replace(/\r\n?/g, "\n"))).text;
+}
+
 export function checkQuote(ref: QuoteRef, evidence: ReadonlyMap<string, string>): QuoteCheck {
   const { evidenceId, quote } = ref;
-  const needle = collapseWhitespace(quote.normalize("NFC")).text.trim();
+  const needle = collapseWhitespace(foldQuoteMarks(quote.normalize("NFC"))).text.trim();
   if (needle.length === 0) return { status: "unverifiable", evidenceId, quote, reason: "empty_quote" };
   const source = evidence.get(evidenceId);
   if (source === undefined) return { status: "unverifiable", evidenceId, quote, reason: "unknown_evidence" };
 
   const nfcSource = source.normalize("NFC");
-  const hay = collapseWhitespace(nfcSource);
+  const hay = collapseWhitespace(foldQuoteMarks(nfcSource));
   const at = hay.text.indexOf(needle);
   if (at < 0) return { status: "unverifiable", evidenceId, quote, reason: "not_found" };
 
@@ -104,4 +122,63 @@ function mapNfcOffsets(source: string, startNfc: number, endNfc: number): { star
 export function checkQuotes(refs: readonly QuoteRef[], evidence: readonly EvidenceText[]): QuoteCheck[] {
   const index = new Map(evidence.map((e) => [e.id, e.text] as const));
   return refs.map((ref) => checkQuote(ref, index));
+}
+
+// ---- M2-04: citations for the scope check ------------------------------------------------------------
+
+/** A quote shorter than this matches by chance ("Home", "5 items"); longer than the max is not a span. */
+export const QUOTE_MIN_CHARS = 8;
+export const QUOTE_MAX_CHARS = 500;
+
+export const CITATION_REJECTIONS = [
+  "empty_quote",
+  "too_short",
+  "too_long",
+  "unknown_evidence",
+  "no_text",
+  "not_found",
+] as const;
+export type CitationRejection = (typeof CITATION_REJECTIONS)[number];
+
+/** One stored item the model may cite, by its block ref (`E1`). `text` is null for an image. */
+export interface CitableItem {
+  readonly ref: string;
+  readonly sha256: string;
+  readonly text: string | null;
+}
+
+/** Items indexed by ref, each text normalised once. */
+export type CitationIndex = ReadonlyMap<string, { readonly sha256: string; readonly norm: string | null }>;
+
+export function citationIndex(items: readonly CitableItem[]): CitationIndex {
+  return new Map(
+    items.map((i) => [i.ref, { sha256: i.sha256, norm: i.text === null ? null : normaliseForQuote(i.text) }]),
+  );
+}
+
+export type CitationCheck =
+  | {
+      readonly ok: true;
+      readonly ref: string;
+      /** the normalised quote: exactly `normaliseForQuote(item.text).slice(start, end)` */
+      readonly quote: string;
+      readonly start: number;
+      readonly end: number;
+      readonly sha256: string;
+    }
+  | { readonly ok: false; readonly ref: string; readonly reason: CitationRejection };
+
+/** The verbatim rule for one citation: the normalised quote must occur in that item's normalised text. */
+export function verifyCitation(ref: string, quote: string, index: CitationIndex): CitationCheck {
+  const needle = normaliseForQuote(quote).trim();
+  const len = Array.from(needle).length; // code points: an emoji or a CJK character counts once
+  if (len === 0) return { ok: false, ref, reason: "empty_quote" };
+  if (len < QUOTE_MIN_CHARS) return { ok: false, ref, reason: "too_short" };
+  if (len > QUOTE_MAX_CHARS) return { ok: false, ref, reason: "too_long" };
+  const item = index.get(ref);
+  if (item === undefined) return { ok: false, ref, reason: "unknown_evidence" };
+  if (item.norm === null) return { ok: false, ref, reason: "no_text" };
+  const start = item.norm.indexOf(needle);
+  if (start < 0) return { ok: false, ref, reason: "not_found" };
+  return { ok: true, ref, quote: needle, start, end: start + needle.length, sha256: item.sha256 };
 }

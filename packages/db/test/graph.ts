@@ -111,7 +111,17 @@ async function seedPayment(r: WorkspaceRepos, runId: string): Promise<Ids & { ev
     runId,
     promptVersion: "extract@v1",
   });
-  const check = await r.scopeChecks.insert({ packId: pack.id, line: "3 concepts", verdict: "met" });
+  const check = await r.scopeChecks.insert({
+    packId: pack.id,
+    line: "3 concepts",
+    verdict: "met",
+    checkVersion: 1,
+    evidenceSetHash: sha("set"),
+    promptVersion: "check_scope@v1",
+    lineId: "C1",
+    modelVerdict: "met",
+    rationale: "",
+  });
   const ack = await r.clientAcks.insert({ packId: pack.id, tokenHash: sha(randomUUID()) });
   return {
     payments: payment.id,

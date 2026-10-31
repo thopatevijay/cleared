@@ -39,3 +39,20 @@ Verified on 2026-10-29 from https://developers.openai.com/api/docs/pricing and t
   the SDK's own retries off. `POST /v1/responses` is not idempotent, so only a 429 is retried
 - The verbatim check is `packages/core/src/proof/verbatim.ts`, and its normalisation is NFC plus whitespace
   collapse only
+
+## Addendum 2026-10-31: Scope check rules (M2-04)
+
+- `check_scope@v1` runs both passes in one harness run on LARGE at effort `low` (pass 1 ≤ 2,000 and pass 2 ≤
+  4,000 output tokens; ≤ 6 calls with repairs). The model-facing shapes keep the M0-07 field names, so the spike
+  recordings replay unchanged. Items go as text when they have text (a PDF as its stored text layer, so there
+  is no page marker to cite); images go as image parts
+- The verbatim normalisation gains two rules, applied to both sides: `\r\n` → `\n` and curly → straight quote
+  marks. A scope-check citation must be 8–500 characters, and its offsets are into the normalised item text
+  (`normaliseForQuote(text).slice(start, end) === quote`), stored with the item's sha256
+- The verbatim check runs on the parsed answer after the harness validators. A failing quote is dropped, never
+  repaired. Support comes only from delivery, communication, shipment and invoice text, never from the scope
+  brief, and never from a line the injection scan or the extract step flagged as instruction-like
+- A met or partial line with no valid support is `unverifiable` (`no_valid_citation`, or `image_only_support`
+  when the support pointed only at items without text); a missing line also needs its verified scope-line quote
+  (`no_scope_quote`); a model `unverifiable` stays (`model_unverifiable`)
+- Checks are versions: `scope_checks` is append-only, idempotent on (pack, evidence set hash, prompt version)

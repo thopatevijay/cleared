@@ -31,7 +31,7 @@ function repos(db: Db, ws: string) {
     blobs: m(s.blobs),
     evidenceItems: scopedRepo(db, s.evidenceItems, ws),
     extractedFacts: m(s.extractedFacts),
-    scopeChecks: m(s.scopeChecks),
+    scopeChecks: scopedRepo(db, s.scopeChecks, ws),
     clientAcks: m(s.clientAcks),
     disputes: disputesRepo(db, ws),
     disputeDrafts: m(s.disputeDrafts),
