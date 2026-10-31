@@ -114,7 +114,12 @@ export type WebhookRoute =
        */
       readonly marksEvent: boolean;
     }
-  /** Stored raw with status `received` (orders, unknown types: M2-06), or an event with no capture id. */
+  /**
+   * CUSTOMER.DISPUTE.* (M2-06): `paypal.dispute.sync` re-fetches the dispute and marks the event; the
+   * disputed capture (when the body names one) is also re-fetched at once, as since M1-04.
+   */
+  | { readonly kind: "dispute_sync"; readonly disputeId: string; readonly captureId: string | null }
+  /** Stored raw with status `received` (orders, unknown types), or an event with no usable id. */
   | { readonly kind: "store_only" };
 
 /** PAYMENT.CAPTURE.* events that re-fetch a capture (PayPal event names, never invented). */
@@ -203,9 +208,19 @@ export function disputedCaptureIdOf(resource: Record<string, unknown>): string |
   return parsed.success ? (parsed.data.disputed_transactions[0]?.seller_transaction_id ?? null) : null;
 }
 
+const DISPUTE_ID = /^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/;
+
+/** The dispute a CUSTOMER.DISPUTE.* event is about: `resource.dispute_id`. */
+export function disputeIdOf(resource: Record<string, unknown>): string | null {
+  const id = resource["dispute_id"];
+  return typeof id === "string" && DISPUTE_ID.test(id) ? id : null;
+}
+
 export function routeWebhook(event: WebhookEnvelope): WebhookRoute {
   if (event.event_type.startsWith("CUSTOMER.DISPUTE.")) {
     const captureId = disputedCaptureIdOf(event.resource);
+    const disputeId = disputeIdOf(event.resource);
+    if (disputeId !== null) return { kind: "dispute_sync", disputeId, captureId };
     return captureId === null
       ? { kind: "store_only" }
       : { kind: "capture_sync", captureId, marksEvent: false };

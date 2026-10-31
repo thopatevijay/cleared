@@ -20,6 +20,8 @@ export * from "./proof/pack.ts";
 export * from "./proof/evidence.ts";
 export * from "./holds/hold.ts";
 export * from "./disputes/dispute.ts";
+export * from "./disputes/mirror.ts";
+export * from "./disputes/deadline.ts";
 export * from "./actions/action.ts";
 export * from "./actions/canonical-json.ts";
 export * from "./actions/policy.ts";

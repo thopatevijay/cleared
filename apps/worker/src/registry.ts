@@ -6,6 +6,7 @@ import { correlationIdOrNew } from "@cleared/adapters";
 import {
   createPublisher,
   PAYPAL_CAPTURE_SYNC_QUEUE,
+  PAYPAL_DISPUTE_SYNC_QUEUE,
   queueSpec,
   SANDBOX_TEST_PAYMENT_QUEUE,
   type Db,
@@ -13,6 +14,7 @@ import {
 } from "@cleared/db";
 import type { Handler } from "./consume.ts";
 import { captureSyncHandler } from "./jobs/capture-sync.ts";
+import { disputeSyncHandler } from "./jobs/dispute-sync.ts";
 import { testPaymentHandler } from "./jobs/test-payment.ts";
 import type { PayPalClients } from "./paypal.ts";
 import type { QueueSpec } from "./queues.ts";
@@ -44,6 +46,15 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients): Registry {
       }),
     },
     {
+      queue: queueSpec(PAYPAL_DISPUTE_SYNC_QUEUE),
+      handler: disputeSyncHandler({
+        db: rt.db,
+        publisher,
+        disputes: paypal.disputes,
+        now: () => new Date(),
+      }),
+    },
+    {
       queue: queueSpec(SANDBOX_TEST_PAYMENT_QUEUE),
       handler: testPaymentHandler({ db: rt.db, orders: paypal.orders }),
     },
@@ -51,6 +62,9 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients): Registry {
     // not re-send it); M3-01 replaces these with hold derivation.
     { queue: queueSpec("payment.captured"), handler: recordEvent },
     { queue: queueSpec("payment.status_changed"), handler: recordEvent },
+    // The events dispute sync emits (M2-06); M2-07 / M3 consume them for real.
+    { queue: queueSpec("dispute.opened"), handler: recordEvent },
+    { queue: queueSpec("dispute.status_changed"), handler: recordEvent },
   ];
 }
 

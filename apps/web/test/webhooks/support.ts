@@ -182,7 +182,7 @@ export async function counts(eventIds: readonly string[]): Promise<{ rows: numbe
 export async function cleanup(eventIds: readonly string[]): Promise<void> {
   const c = testDb().$client;
   await c.query(
-    `delete from pgboss.job where name = 'paypal.capture.sync'
+    `delete from pgboss.job where name in ('paypal.capture.sync', 'paypal.dispute.sync')
        and data->'data'->>'eventId' in (select id::text from webhook_events where event_id = any($1))`,
     [eventIds],
   );
@@ -206,4 +206,14 @@ export async function disputeSyncJobs(captureId: string): Promise<number> {
     [captureId],
   );
   return Number(r.rows[0]?.n ?? 0);
+}
+
+/** `paypal.dispute.sync` jobs (M2-06) carrying the stored row id of one of these deliveries. */
+export async function disputeEventJobs(eventIds: readonly string[]): Promise<{ disputeId: string }[]> {
+  const r = await testDb().$client.query<{ dispute_id: string }>(
+    `select data->'data'->>'disputeId' as dispute_id from pgboss.job where name = 'paypal.dispute.sync'
+       and data->'data'->>'eventId' in (select id::text from webhook_events where event_id = any($1))`,
+    [eventIds],
+  );
+  return r.rows.map((x) => ({ disputeId: x.dispute_id }));
 }
