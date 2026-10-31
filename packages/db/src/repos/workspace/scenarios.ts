@@ -24,6 +24,10 @@ export function scenarioRunsRepo(db: Db, ws: string) {
         .limit(1);
       return rows[0] ?? null;
     },
+    /** Serialises scenario starts in this workspace for the transaction (the unique index is the backstop). */
+    async lockStarts(tx: Executor): Promise<void> {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`scenario_runs:${ws}`}))`);
+    },
     /** The workspace's active run (at most one, by the partial unique index). */
     async active(tx?: Executor): Promise<ScenarioRunRow | null> {
       const rows = await (tx ?? db)
