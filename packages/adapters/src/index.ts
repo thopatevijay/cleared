@@ -27,3 +27,4 @@ export * from "./obs/http-logging.ts";
 export * from "./obs/sentry.ts";
 export { createOpenAiCompletionProvider, failureKind, toEvidencePart } from "./ai/openai-provider.ts";
 export * from "./ai/pricing.ts";
+export { ExtractResult, ScopeClaims, ScopeVerdicts } from "./ai/schemas.ts";

@@ -74,7 +74,8 @@ describe.skipIf(!dbAvailable)("agent RunStore (compose Postgres)", () => {
   const deps = (p: AiProvider, over = {}) => ({
     provider: p,
     store,
-    config: { ...parseAgentConfig({}), ...over },
+    // a shared test database accumulates spend across runs: only the daily-cap test sets a real cap
+    config: { ...parseAgentConfig({}), dailyCapUsd: 1_000_000, ...over },
     workspaceId: ws,
     correlationId: "7e0f4c1a-6a1b-4f7e-9a51-1f2d3c4b5a69",
   });
