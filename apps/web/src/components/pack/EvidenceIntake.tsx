@@ -63,8 +63,11 @@ export function EvidenceIntake({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [added, setAdded] = useState(false);
+  // hydrated: the file input's change handler is attached (tests wait for it before choosing a file)
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    setReady(true);
     if (focusOnMount) heading.current?.focus();
   }, [focusOnMount]);
 
@@ -111,9 +114,11 @@ export function EvidenceIntake({
       aria-labelledby="intake-heading"
       className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4"
       data-testid="intake"
+      data-ready={ready}
       id="intake"
     >
       <button
+        id="intake-open"
         type="button"
         className={`${open ? "hidden" : "flex"} min-h-12 w-full items-center justify-center gap-2 rounded-md border border-border-strong bg-surface px-4 font-medium md:hidden`}
         aria-expanded={open}

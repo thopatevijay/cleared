@@ -18,6 +18,7 @@ import {
   loadFixture,
   responseText,
 } from "../../../../packages/adapters/src/testing/fixture.ts";
+import { openAiHandlers } from "./openai-stub.ts";
 
 const API = "https://api-m.sandbox.paypal.com";
 const REC = {
@@ -137,7 +138,8 @@ const webHandlers = [
 
 if (role === "worker" || role === "web") {
   const server = setupServer(
-    ...(role === "worker" ? workerHandlers : webHandlers),
+    // M2-05: the worker's AI calls replay the recorded OpenAI responses (openai-stub.ts)
+    ...(role === "worker" ? [...workerHandlers, ...openAiHandlers] : webHandlers),
     // Nothing else leaves the process: no real PayPal, no passthrough.
     http.all("*", ({ request }) => {
       console.error(JSON.stringify({ service: "e2e-paypal-stub", msg: "refused", url: request.url }));
