@@ -1,5 +1,7 @@
 // `evidence.added` consumer (M2-03): run `extract@v1` on the new item through the M2-02 harness, then write
 // `extracted_facts` and emit `pack.extracted` (M2-04's scope check) in the consumer's transaction.
+// - `client_ack` and `scope_snapshot` items are Cleared's own records: no AI run; the pack they made stale
+//   goes back to `checked` when its newest check still covers the AI-visible evidence (ADR 0018)
 // - idempotent on (evidence_item_id, prompt version): a row already there means nothing runs and nothing is
 //   written; the unique key backs the pre-check if two deliveries race. The consumer receipt covers an exact
 //   re-delivery; the harness's content-hash cache covers identical canned evidence in another item.
@@ -13,6 +15,7 @@ import {
   EXTRACT_PROMPT,
   extractInputFor,
   extractWorkflow,
+  isClearedEvidenceKind,
   runWorkflow,
   withEvidenceIds,
   type AgentConfig,
@@ -31,6 +34,7 @@ import {
   type Tx,
 } from "@cleared/db";
 import type { ConsumeContext, Handler } from "../consume.ts";
+import { settleAfterRecord } from "./check-scope.ts";
 
 export interface ExtractEvidenceDeps {
   readonly db: Db;
@@ -45,6 +49,7 @@ export type ExtractOutcome =
   | { readonly status: "exists" }
   | { readonly status: "not_found" }
   | { readonly status: "no_content" }
+  | { readonly status: "record"; readonly pack: "restored" | "unchanged" }
   | { readonly status: "no_facts"; readonly runStatus: string; readonly runId: string | null };
 
 type AddedEvent = ReturnType<typeof EvidenceAddedEvent.parse>;
@@ -62,6 +67,12 @@ export async function extractEvidence(
 ): Promise<ExtractOutcome> {
   const ws = event.workspaceId;
   const { evidenceItemId, packId } = event.data;
+  if (isClearedEvidenceKind(event.data.kind)) {
+    // Cleared's own records are not extracted: no AI run (ADR 0018, BL-01 6569233018)
+    const pack = await settleAfterRecord(deps.db, ws, packId, ctx.tx);
+    ctx.log.info({ evidenceItemId, kind: event.data.kind, pack }, "extract skipped: Cleared record");
+    return { status: "record", pack };
+  }
   const facts = extractedFactsRepo(deps.db, ws);
   if (await facts.forItem(evidenceItemId, EXTRACT_PROMPT.id, ctx.tx)) return { status: "exists" };
   const input = await inputFor(deps.db, ws, evidenceItemId, ctx.tx);

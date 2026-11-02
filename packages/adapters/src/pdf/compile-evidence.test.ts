@@ -105,6 +105,8 @@ describe("compileEvidencePdf (M2-07 AC 5)", () => {
     const text = (await extractPdfText(r.value.bytes)) ?? "";
     expect(text).toContain("Delivered on 18 October.");
     expect(text).toMatch(/[ऀ-ॿ]/);
+    // BL-01 6538667077: the typed text extracts exactly (pre-base matras in logical order), not in glyph order
+    expect(text).toContain("डिलीवरी 18 अक्टूबर को हुई। ग्राहक ने 19 अक्टूबर को फ़ाइलें स्वीकार कीं।");
     expect(r.value.pageCount).toBe(2);
   });
 

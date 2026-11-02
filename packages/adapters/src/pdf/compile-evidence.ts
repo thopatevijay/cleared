@@ -3,8 +3,9 @@
 // of every item with its sha256, date and pages), then one page group per item in the selected order:
 // - a PDF item: its pages, copied unchanged
 // - an image: one page, scaled to fit (GIF is converted to PNG first; PDF has no GIF images)
-// - pasted text: typeset in Hind (OFL, Latin + Devanagari: `assets/fonts/`); pdf-lib does no Indic
-//   shaping, so Devanagari has full glyph coverage but no conjunct reordering (BL-01)
+// - pasted text: typeset in Hind (OFL, Latin + Devanagari: `assets/fonts/`) through `glyph-text.ts` (M3-07):
+//   shaped Devanagari on the page and the typed text in its text layer, so it reads and extracts right
+//   (BL-01 6538667077: plain `drawText` shapes too, but extracts a pre-base matra before its consonant)
 // The result must be < 10 MB (`EVIDENCE_LIMITS.maxFileBytes`, exclusive); over → `pdf_too_large` listing every
 // item's size so the seller can deselect. Nothing is dropped silently. Deterministic for the same input.
 import { createHash } from "node:crypto";
@@ -14,6 +15,7 @@ import { PDFDocument, rgb, type PDFFont, type PDFPage } from "@cantoo/pdf-lib";
 import { err, ok, type Result } from "@cleared/core";
 import sharp from "sharp";
 import { EVIDENCE_LIMITS } from "../paypal/disputes.ts";
+import { glyphText, type GlyphText } from "./glyph-text.ts";
 
 export const EVIDENCE_FONT_URL = new URL("../../assets/fonts/Hind-Regular.ttf", import.meta.url);
 
@@ -84,7 +86,8 @@ const INK = rgb(0.1, 0.1, 0.12);
 const MUTED = rgb(0.4, 0.4, 0.45);
 
 let fontBytes: Promise<Uint8Array> | null = null;
-const loadFont = (): Promise<Uint8Array> => (fontBytes ??= readFile(EVIDENCE_FONT_URL));
+/** Hind's bytes, read once per process (shared with the M3-07 scope snapshot). */
+export const loadEvidenceFont = (): Promise<Uint8Array> => (fontBytes ??= readFile(EVIDENCE_FONT_URL));
 
 export const itemSize = (i: CompileItem): number =>
   i.bytes?.byteLength ?? Buffer.byteLength(i.text ?? "", "utf8");
@@ -96,12 +99,15 @@ export async function compileEvidencePdf(
   if (items.length === 0) return err({ code: "no_items" });
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
-  const font = await doc.embedFont(await loadFont(), { subset: true });
+  const font = await doc.embedFont(await loadEvidenceFont(), { subset: true });
+  // the whole font is embedded only when a text item needs the extractable text layer
+  let gt: GlyphText | null = null;
+  const body = async (): Promise<GlyphText> => (gt ??= await glyphText(doc, await loadEvidenceFont()));
   const groups: PageGroup[] = [];
   for (const item of items) {
     const before = doc.getPageCount();
     try {
-      await addItem(doc, font, item);
+      await addItem(doc, font, body, item);
     } catch (e) {
       return err({
         code: "item_unreadable",
@@ -136,7 +142,12 @@ export async function compileEvidencePdf(
   return ok({ bytes, sha256, size: bytes.byteLength, pageCount: doc.getPageCount(), groups });
 }
 
-async function addItem(doc: PDFDocument, font: PDFFont, item: CompileItem): Promise<void> {
+async function addItem(
+  doc: PDFDocument,
+  font: PDFFont,
+  body: () => Promise<GlyphText>,
+  item: CompileItem,
+): Promise<void> {
   if (item.bytes !== null && item.mime === "application/pdf") {
     const src = await PDFDocument.load(item.bytes);
     for (const p of await doc.copyPages(src, src.getPageIndices())) doc.addPage(p);
@@ -147,7 +158,7 @@ async function addItem(doc: PDFDocument, font: PDFFont, item: CompileItem): Prom
     return;
   }
   if (item.text !== null) {
-    typeset(doc, font, item);
+    typeset(doc, font, await body(), item);
     return;
   }
   throw new Error(`item ${item.id} has neither a file nor text`);
@@ -212,8 +223,8 @@ export function wrapText(text: string, font: PDFFont, size: number, width: numbe
   return lines;
 }
 
-function typeset(doc: PDFDocument, font: PDFFont, item: CompileItem): void {
-  const lines = wrapText(item.text ?? "", font, BODY_SIZE, PAGE[0] - 2 * MARGIN);
+function typeset(doc: PDFDocument, font: PDFFont, gt: GlyphText, item: CompileItem): void {
+  const lines = wrapText(item.text ?? "", gt.font, BODY_SIZE, PAGE[0] - 2 * MARGIN);
   let page: PDFPage | null = null;
   let y = 0;
   for (const line of lines) {
@@ -221,7 +232,7 @@ function typeset(doc: PDFDocument, font: PDFFont, item: CompileItem): void {
       page = doc.addPage(PAGE);
       y = header(page, font, item);
     }
-    if (line !== "") page.drawText(line, { x: MARGIN, y, size: BODY_SIZE, font, color: INK });
+    if (line !== "") gt.draw(page, line, { x: MARGIN, y, size: BODY_SIZE, color: INK });
     y -= LEADING;
   }
 }

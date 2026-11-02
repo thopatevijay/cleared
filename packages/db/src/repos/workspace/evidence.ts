@@ -24,6 +24,7 @@ const itemColumns = {
   blobId: s.evidenceItems.blobId,
   sha256: s.evidenceItems.sha256,
   text: s.evidenceItems.text,
+  inputSha256: s.evidenceItems.inputSha256,
   createdAt: s.evidenceItems.createdAt,
   mime: s.blobs.mime,
   size: s.blobs.size,
@@ -92,6 +93,20 @@ function evidenceItems(db: Db, ws: string) {
         .select()
         .from(s.evidenceItems)
         .where(and(inScope, eq(s.evidenceItems.id, id)))
+        .limit(1);
+      return rows[0] ?? null;
+    },
+    /** M3-07: the pack's scope snapshot for this input hash (the job's idempotency key), or null. */
+    async snapshotForInput(
+      packId: string,
+      inputSha256: string,
+      tx?: Executor,
+    ): Promise<EvidenceItemRow | null> {
+      if (!isUuid(packId)) return null;
+      const rows = await (tx ?? db)
+        .select()
+        .from(s.evidenceItems)
+        .where(and(inScope, eq(s.evidenceItems.packId, packId), eq(s.evidenceItems.inputSha256, inputSha256)))
         .limit(1);
       return rows[0] ?? null;
     },

@@ -2,6 +2,7 @@
 // a re-delivered `pack.extracted` finds its rows by (pack, evidence set hash, prompt version) and writes
 // nothing; new evidence writes the next version. Reads re-validate the citation jsonb.
 import {
+  CLEARED_EVIDENCE_KINDS,
   LINE_NOTES,
   StoredCitationSchema,
   VERDICTS,
@@ -11,7 +12,7 @@ import {
   type Verdict,
   type WorkspaceId,
 } from "@cleared/core";
-import { and, asc, desc, eq, exists, not, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, not, notInArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { Db } from "../client.ts";
 import type { Executor, Tx } from "../tx.ts";
@@ -187,7 +188,8 @@ export function scopeChecksRepo(db: Db, workspaceId: WorkspaceId) {
 
     /**
      * Items of the pack whose extraction has not finished: no facts row for `extractPrompt` and no
-     * `extract.no_facts` audit entry (M2-03). The scope check waits for them.
+     * `extract.no_facts` audit entry (M2-03). The scope check waits for them. Cleared's own records
+     * (`client_ack`, `scope_snapshot`) are never extracted, so nothing waits for them (ADR 0018).
      */
     async itemsAwaitingFacts(packId: string, extractPrompt: string, tx?: Executor): Promise<string[]> {
       const ex = tx ?? db;
@@ -217,6 +219,7 @@ export function scopeChecksRepo(db: Db, workspaceId: WorkspaceId) {
           and(
             eq(evidenceItems.workspaceId, ws),
             eq(evidenceItems.packId, packId),
+            notInArray(evidenceItems.kind, [...CLEARED_EVIDENCE_KINDS]),
             not(exists(facts)),
             not(exists(noFacts)),
           ),

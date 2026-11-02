@@ -35,6 +35,13 @@ export interface IntakeDeps {
 export type NewEvidence =
   | { readonly type: "file"; readonly kind: SellerEvidenceKind; readonly file: PreparedFile }
   | {
+      readonly type: "file";
+      /** written by Cleared's own job (M3-07), keyed on its input hash; never from a seller's request */
+      readonly kind: "scope_snapshot";
+      readonly file: Pick<PreparedFile, "mime" | "bytes" | "size" | "sha256" | "text">;
+      readonly inputSha256: Sha256;
+    }
+  | {
       readonly type: "text";
       /**
        * `client_ack` is written by Cleared itself (M3-06, the buyer's acceptance), never from a seller's
@@ -91,6 +98,7 @@ export async function writeEvidence(
       blobId: blob?.id ?? null,
       sha256: input.type === "file" ? input.file.sha256 : input.sha256,
       text: input.type === "file" ? input.file.text : input.text,
+      inputSha256: "inputSha256" in input ? input.inputSha256 : null,
     },
     tx,
   );

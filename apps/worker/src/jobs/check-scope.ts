@@ -16,6 +16,7 @@ import {
   checkScopeWorkflow,
   EXTRACT_PROMPT,
   extractInputFor,
+  isClearedEvidenceKind,
   PackExtractedEvent,
   packStateAfterCheck,
   runWorkflow,
@@ -191,6 +192,7 @@ async function loadPack(db: Db, ws: WorkspaceId, packId: string, tx: Tx): Promis
   const items: ScopeItemInput[] = [];
   const ids: string[] = [];
   for (const row of rows) {
+    if (isClearedEvidenceKind(row.kind)) continue; // Cleared's own records are not AI input (ADR 0018)
     const blob = row.text === null && row.blobId ? await blobs.get(ws, row.blobId, tx) : null;
     const ref = `E${String(items.length + 1)}`;
     const content = extractInputFor(
@@ -229,6 +231,39 @@ async function loadPack(db: Db, ws: WorkspaceId, packId: string, tx: Tx): Promis
       }),
     ),
   };
+}
+
+/**
+ * After a Cleared record (`client_ack`, `scope_snapshot`) made the pack stale (ADR 0018, BL-01 6569233018):
+ * the record changes nothing the check reads, so when the newest check already covers the pack's AI-visible
+ * evidence (same evidence set hash) the pack goes back to `checked` with no AI run. Otherwise the state stays:
+ * an item still extracting re-checks the pack when it finishes.
+ */
+export async function settleAfterRecord(
+  db: Db,
+  ws: WorkspaceId,
+  packId: string,
+  tx: Tx,
+): Promise<"restored" | "unchanged"> {
+  const pack = await evidenceRepo(db, ws).packs.lock(packId, tx);
+  if (pack === null || pack.state !== "stale") return "unchanged";
+  const checks = scopeChecksRepo(db, ws);
+  if ((await checks.itemsAwaitingFacts(pack.id, EXTRACT_PROMPT.id, tx)).length > 0) return "unchanged";
+  const hash = await evidenceSetHashOf(db, ws, pack.id, tx);
+  if (hash === null || (await checks.versionFor(pack.id, hash, CHECK_SCOPE_PROMPT.id, tx)) === null)
+    return "unchanged";
+  await evidenceRepo(db, ws).packs.setState(pack.id, packStateAfterCheck(pack.state), tx);
+  return "restored";
+}
+
+/** The pack's evidence set hash exactly as the check keys its versions on it; null for no pack. */
+export async function evidenceSetHashOf(
+  db: Db,
+  ws: WorkspaceId,
+  packId: string,
+  tx: Tx,
+): Promise<string | null> {
+  return (await loadPack(db, ws, packId, tx))?.evidenceSetHash ?? null;
 }
 
 async function recordUnavailable(

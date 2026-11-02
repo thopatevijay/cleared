@@ -3,6 +3,7 @@
 // the newest `check_unavailable` entry and the latest check's verdicts. Bound to one workspace.
 import {
   EXTRACT_PROMPT,
+  isClearedEvidenceKind,
   WorkspaceIdSchema,
   type PackState,
   type Verdict,
@@ -178,8 +179,9 @@ export function packReadsRepo(db: Db, workspaceId: WorkspaceId) {
         newestItemAt: own.at(-1)?.at ?? null,
         unavailable: u === undefined ? null : { at: u.at, status: u.status },
         lastExtractionFailed: (() => {
+          // Cleared's own records are never extracted (ADR 0018): they never count as "still extracting"
           const f = lastFailure(
-            own.map((i) => i.id),
+            own.filter((i) => !isClearedEvidenceKind(i.kind)).map((i) => i.id),
             finishes,
           );
           return f === null ? null : { at: f.at, status: f.status };

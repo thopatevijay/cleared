@@ -443,6 +443,16 @@
       "title": "No proof yet",
       "body": "Paste the client chat where you agreed the work, and add what you delivered. Cleared checks one against the other and cites every line."
     },
+    "snapshot": {
+      "title": "Scope snapshot",
+      "intro": "A fixed PDF of the agreed scope, the delivery evidence and your client's acknowledgement, to attach when PayPal asks for documents. It is not a signature or a contract.",
+      "noScope": "Add the agreed scope first.",
+      "create": "Create scope snapshot",
+      "creating": "Creating…",
+      "queued": "Creating the snapshot. It appears in Evidence in a few seconds.",
+      "download": "Download scope snapshot",
+      "failed": "The snapshot couldn't be requested. Try again. Reference: {reference}"
+    },
     "ack": {
       "title": "Client acknowledgement",
       "intro": "Ask your client to confirm the agreed scope. Their confirmation is added to this pack as client sign-off.",
