@@ -142,3 +142,21 @@ export {
   type DisputeListRow,
   type DraftWithAction,
 } from "./repositories/dispute-views.ts";
+export {
+  clientAckByToken,
+  clientAcksRepo,
+  markClientAckAccepted,
+  rateLimitHit,
+  type ClientAckByToken,
+  type ClientAckRow,
+  type ClientAcksRepo,
+  type ScopeItemRef,
+} from "./repositories/client-acks.ts";
+export {
+  holdsRepo,
+  type DisputeRowForHold,
+  type HoldRow,
+  type HoldsRepo,
+  type HoldView,
+  type PaymentRowForHold,
+} from "./repositories/holds.ts";

@@ -122,7 +122,13 @@ async function seedPayment(r: WorkspaceRepos, runId: string): Promise<Ids & { ev
     modelVerdict: "met",
     rationale: "",
   });
-  const ack = await r.clientAcks.insert({ packId: pack.id, tokenHash: sha(randomUUID()) });
+  const ack = await r.clientAcks.insert({
+    packId: pack.id,
+    tokenHash: sha(randomUUID()),
+    scopeItemId: ev.id,
+    scopeSha256: ev.sha256,
+    expiresAt: new Date(Date.now() + 86_400_000),
+  });
   return {
     payments: payment.id,
     holds: hold.id,

@@ -93,10 +93,3 @@ export function disputeOpenedHandler(deps: NotifyDeps): Handler {
     log.info({ disputeId: e.data.disputeId, notificationId: row?.id ?? null }, "dispute notification");
   };
 }
-
-/** Runs each handler in order in the same delivery (one queue, one entry: BL-01 6538667217). */
-export function allOf(...handlers: readonly Handler[]): Handler {
-  return async (data, ctx) => {
-    for (const h of handlers) await h(data, ctx);
-  };
-}

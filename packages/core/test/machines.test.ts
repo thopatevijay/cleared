@@ -78,10 +78,16 @@ describe("Hold machine", () => {
     ["approved", "action_filed", "filed"],
     ["filed", "capture_released", "released"],
     ["filed", "still_held_after_filing", "still_held"],
+    // M3-01 (ADR 0017, BL-01 6527422618): PayPal releases a hold whatever Cleared is doing
+    ["open", "capture_released", "released"],
+    ["explained", "capture_released", "released"],
+    ["action_proposed", "capture_released", "released"],
+    ["approved", "capture_released", "released"],
+    ["still_held", "capture_released", "released"],
   ]);
-  it("starts open and ends released or still_held", () => {
+  it("starts open and ends released", () => {
     expect(holdMachine.initial).toBe("open");
-    expect(terminalStates(holdMachine)).toEqual(["released", "still_held"]);
+    expect(terminalStates(holdMachine)).toEqual(["released"]);
     expect(transitionHold("filed", "capture_released")).toEqual({ ok: true, value: "released" });
   });
 });

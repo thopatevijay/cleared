@@ -8,6 +8,7 @@ import { outbox } from "../schema/index.ts";
 import { closeDb, createDb } from "../src/client.ts";
 import { createPublisher, parseEnvelope, relayOutbox, RELAY_AFTER_MS } from "../src/outbox/index.ts";
 import { createQueue, type Queue } from "../src/queue.ts";
+import { ensureQueue, queueSpec } from "../src/queue-policy.ts";
 import { platform } from "../src/repos/platform/index.ts";
 import { withTransaction } from "../src/tx.ts";
 import { dbAvailable, TEST_DATABASE_URL } from "./db-available.ts";
@@ -61,6 +62,9 @@ describe.skipIf(!dbAvailable)("outbox (compose Postgres)", () => {
 
   afterAll(async () => {
     await boss.deleteQueue(TOPIC);
+    // `hold.opened` is a real event queue since M3-01 (the worker consumes it): put it back as `migrate`
+    // creates it, or later suites on this database emit into a missing queue
+    await ensureQueue(boss, queueSpec(TOPIC));
     await boss.stop({ graceful: false });
     await closeDb(db);
   });

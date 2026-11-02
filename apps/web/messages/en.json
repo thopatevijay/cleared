@@ -122,6 +122,105 @@
     "quarantined": "Quarantined",
     "info": "Info"
   },
+  "holds": {
+    "title": "Held money",
+    "intro": "PayPal is holding these payments. Every release date is an estimate, shown with its source.",
+    "back": "Back to your payments",
+    "backToInbox": "Back to held money",
+    "total": "{amount} held in {count, plural, one {# payment} other {# payments}}",
+    "listHeading": "Held payments",
+    "order": "Newest first",
+    "empty": "Every payment is with you or on its way.",
+    "loading": "Loading held money…",
+    "errorTitle": "Couldn't load held money",
+    "errorOneTitle": "Couldn't load this hold",
+    "errorBody": "Check your connection and retry.",
+    "notFoundTitle": "Hold not found",
+    "notFoundBody": "This hold isn't in your workspace, or it no longer exists.",
+    "open": "Open the hold on {amount}",
+    "reason": {
+      "PENDING_REVIEW": "PayPal is reviewing this payment",
+      "BUYER_COMPLAINT": "Held because the buyer opened a dispute",
+      "CHARGEBACK": "Held because the buyer disputed the payment with their bank",
+      "other": "PayPal is holding this payment"
+    },
+    "est": {
+      "review": "Within 24 hours; up to 3 business days",
+      "dispute": "Released when the dispute is resolved",
+      "delivered": "About 24 hours after the courier confirms delivery",
+      "service": "About 7 days after you confirm the order as Completed",
+      "none": "PayPal gives no timeline for this reason"
+    },
+    "freeBy": "Free by {date}",
+    "upTo": "up to {date}",
+    "estimated": "estimated",
+    "source": "Source",
+    "sourceRetrieved": "Retrieved {date}",
+    "sourceOpen": "Open the source page",
+    "estimateName": "Estimated release {date}, source {source}",
+    "noTimelineName": "No release date from PayPal, source {source}",
+    "disputeDue": "Dispute reply due {date}",
+    "why": "Why?",
+    "whyName": "Why is {amount} held?",
+    "dontShip": "Don't ship yet: PayPal is reviewing this payment",
+    "trackingHelps": "Tracking can help release this",
+    "samplesLink": "Sample scenarios: limitation, reserve, new-seller hold",
+    "samples": {
+      "title": "Sample scenarios",
+      "intro": "Holds the sandbox can't produce, explained from PayPal's published rules. They show no amount from your payments and have no actions.",
+      "badge": "Sample scenario: sandbox can't produce this",
+      "whatPayPalSays": "What PayPal says",
+      "new_seller_21d": {
+        "title": "New-seller hold",
+        "body": "PayPal can hold a new seller's payments for up to 21 days. Cleared can't release them early or promise a date; PayPal decides."
+      },
+      "reserve": {
+        "title": "Reserve",
+        "body": "PayPal keeps a percentage of payments for a set number of days as a condition for processing. Cleared can't change a reserve; PayPal decides."
+      },
+      "limitation": {
+        "title": "Account limitation",
+        "body": "PayPal has limited the account. Cleared can't lift a limitation or promise a release; PayPal decides. This explains what PayPal usually asks for."
+      }
+    },
+    "detail": {
+      "h1": "Held: {amount}",
+      "opened": "Held since {time}",
+      "payment": "Open the payment",
+      "dispute": "Open dispute {id}",
+      "whyTitle": "Why it's held",
+      "ruleText": "Rule text from PayPal",
+      "estimateTitle": "Estimated release",
+      "actionTitle": "What you can do",
+      "nothingToDo": "Nothing to do. PayPal will update this payment; we'll tell you when it changes.",
+      "timelineTitle": "Timeline",
+      "released": "Released {time}",
+      "stillHeld": "Still held after the estimate. PayPal hasn't released it yet.",
+      "h1Released": "Released: {amount}",
+      "whyTitleReleased": "Why it was held",
+      "wasHeld": "Was held for",
+      "stillHeldCheck": "Check this payment in your PayPal account. PayPal decides when it is released; we'll show the release as soon as PayPal reports it."
+    },
+    "timeline": {
+      "open": "Held",
+      "explained": "Explained",
+      "action_proposed": "Action proposed",
+      "approved": "Approved",
+      "filed": "Filed",
+      "released": "Released",
+      "still_held": "Still held"
+    },
+    "live": {
+      "released": "The hold on {amount} was released."
+    },
+    "emptyTitle": "No held money.",
+    "offline": "You're offline. Showing what was loaded at {time}.",
+    "step": {
+      "done": "done",
+      "current": "now",
+      "notReached": "not reached yet"
+    }
+  },
   "audit": {
     "title": "Audit log",
     "intro": "Every action on your workspace, oldest entries kept. Nothing here can be edited or deleted.",
@@ -295,7 +394,11 @@
       "file": "{type} file · {size}",
       "download": "Download",
       "downloadName": "Download the {kind} file added {time}",
-      "injection": "Contains text that looks like instructions; treated as data"
+      "injection": "Contains text that looks like instructions; treated as data",
+      "ackBy": "Confirmed by {name}, {time}",
+      "ackMeta": "IP {ip} · {browser}",
+      "ackScope": "Scope fingerprint",
+      "ackSource": "Recorded by Cleared from the client's link"
     },
     "intake": {
       "heading": "Add evidence",
@@ -330,6 +433,47 @@
     "empty": {
       "title": "No proof yet",
       "body": "Paste the client chat where you agreed the work, and add what you delivered. Cleared checks one against the other and cites every line."
+    },
+    "ack": {
+      "title": "Client acknowledgement",
+      "intro": "Ask your client to confirm the agreed scope. Their confirmation is added to this pack as client sign-off.",
+      "noScope": "Add the agreed scope first. Your client confirms that exact text.",
+      "addScope": "Add the agreed scope",
+      "create": "Create acknowledgement link",
+      "creating": "Creating…",
+      "createNew": "Create a new link",
+      "linkLabel": "Acknowledgement link",
+      "copy": "Copy link",
+      "copied": "Link copied",
+      "copyFailed": "Couldn't copy. The link is selected; copy it yourself.",
+      "created": "Link created.",
+      "shareYourself": "Send this link to your client yourself; Cleared doesn't email it. For security it is shown only now.",
+      "shownOnce": "Link created {time}; for security the link is shown once. Revoke and create a new one if you lost it.",
+      "expires": "Expires {date}",
+      "expiresWorkspace": "Expires {date}, when this demo workspace ends",
+      "status": {
+        "pending": "Waiting for your client",
+        "accepted": "Accepted",
+        "expired": "Expired",
+        "revoked": "Revoked",
+        "scope_changed": "Scope changed"
+      },
+      "acceptedAt": "Accepted {time}",
+      "inEvidence": "Recorded as client sign-off in Evidence.",
+      "viewEvidence": "View in evidence",
+      "earlierScope": "for an earlier version of the scope",
+      "expiredBody": "This link expired on {date} without a reply.",
+      "revokedBody": "You revoked this link on {date}.",
+      "scopeChanged": "The scope changed after you created this link, so the link no longer works.",
+      "revoke": "Revoke link",
+      "revokeConfirm": "Revoke this link? Your client won't be able to use it.",
+      "revokeYes": "Revoke",
+      "revoking": "Revoking…",
+      "keep": "Keep link",
+      "announceAccepted": "Your client confirmed the scope.",
+      "createError": "Couldn't create the link.",
+      "revokeError": "Couldn't revoke the link.",
+      "offline": "You're offline. Links can be changed when you reconnect."
     }
   },
   "disputes": {
@@ -666,6 +810,9 @@
       "sandbox_test_payment_requested": "Requested a sandbox test payment",
       "demo_created": "Demo workspace created",
       "auth_sign_in": "Signed in",
+      "ack_link_created": "Created a client acknowledgement link",
+      "ack_link_revoked": "Revoked the client acknowledgement link",
+      "ack_accepted": "Client confirmed the scope",
       "other": "{action}"
     },
     "what": {
@@ -702,6 +849,35 @@
       "recorded": "Recorded",
       "sentRefused": "Refused by PayPal ({status})"
     }
+  },
+  "ack": {
+    "metaTitle": "Confirm the agreed work",
+    "title": "Confirm the agreed work",
+    "from": "{seller} asks you to confirm the work you agreed for this payment.",
+    "sellerFallback": "The seller",
+    "amountLabel": "Payment",
+    "scopeHeading": "What was agreed",
+    "name": "Your name",
+    "nameHint": "As you would sign it.",
+    "agree": "I agree to this scope",
+    "recorded": "When you confirm, Cleared records your name, the time, your IP address and your browser. {seller} can see this record, and it may be sent to PayPal as evidence for this payment.",
+    "confirm": "Confirm",
+    "confirming": "Confirming…",
+    "error": {
+      "nameRequired": "Enter your name.",
+      "nameTooLong": "Use 120 characters or fewer.",
+      "agreeRequired": "Tick the box to confirm you agree."
+    },
+    "success": "Thanks, {name}. Your confirmation is recorded.",
+    "recordedAt": "Recorded {time}",
+    "successClose": "You can close this page. This link won't open again.",
+    "rateLimited": "Too many attempts. Try again in a few minutes.",
+    "neutralTitle": "This link can't be used",
+    "neutralBody": "Ask the person who sent it for a new one.",
+    "errorTitle": "Couldn't record your confirmation.",
+    "errorBody": "Your answer wasn't saved. Try again.",
+    "noscript": "Turn on JavaScript to confirm.",
+    "footer": "Cleared records this confirmation for the seller. PayPal sandbox demo."
   },
   "notifications": {
     "bell": "Notifications, {count} unread",

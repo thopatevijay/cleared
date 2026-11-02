@@ -1,7 +1,7 @@
 // The pack's evidence (payment-detail.md §5), newest first: kind, the first line of a text item or the
 // file type and size, when it was added (workspace time zone), the sha256 short form, the injection-flag
 // badge and a download link for files. Excerpts are evidence data: plain text.
-import type { PackEvidence } from "@cleared/core";
+import type { ClientAckRecord as ClientAck, PackEvidence } from "@cleared/core";
 import { Download, ShieldAlert } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { intlLocale, isAppLocale } from "../../i18n/routing.ts";
@@ -18,6 +18,33 @@ const TYPE: Readonly<Record<string, string>> = {
 function firstLine(excerpt: string | null): string {
   const line = (excerpt ?? "").split("\n").find((l) => l.trim() !== "") ?? "";
   return line.length > 120 ? `${line.slice(0, 120)}…` : line;
+}
+
+/** The browser part of a user agent, short enough for one line (the full value is in the record). */
+function browserOf(ua: string): string {
+  const m = /(Edg|Firefox|Chrome|Safari)\/[\d.]+/.exec(ua);
+  if (m !== null) return m[0].replace("Edg/", "Edge/");
+  if (ua === "") return "—";
+  return ua.length > 48 ? `${ua.slice(0, 48)}…` : ua;
+}
+
+/** M3-06: the client's sign-off as a plain-language record, not its canonical JSON. */
+function ClientAckLines({ ack, locale, timeZone }: { ack: ClientAck; locale: string; timeZone: string }) {
+  const t = useTranslations("pack.list");
+  return (
+    <>
+      <span className="break-words">
+        {t("ackBy", { name: ack.typedName, time: formatTime(locale, ack.acceptedAt, timeZone) })}
+      </span>
+      <span className="text-sm break-words text-text-muted">
+        {t("ackMeta", { ip: ack.ip, browser: browserOf(ack.userAgent) })}
+      </span>
+      <span className="text-sm text-text-muted" title={ack.scopeSha256}>
+        {t("ackScope")} <span className="font-mono text-xs">{ack.scopeSha256.slice(0, 8)}</span>
+      </span>
+      <span className="text-sm text-text-muted">{t("ackSource")}</span>
+    </>
+  );
 }
 
 export function EvidenceList({ items, timeZone }: { items: readonly PackEvidence[]; timeZone: string }) {
@@ -41,14 +68,20 @@ export function EvidenceList({ items, timeZone }: { items: readonly PackEvidence
             data-kind={i.kind}
           >
             <span className="font-medium first-letter:uppercase">{kind}</span>
-            <span className="break-words">
-              {i.fileUrl === null
-                ? firstLine(i.excerpt)
-                : t("list.file", { type, size: formatBytes(locale, i.size ?? 0) })}
-            </span>
-            {i.fileUrl === null ? (
-              <span className="text-sm text-text-muted">{t("list.text", { count: i.textLength })}</span>
-            ) : null}
+            {i.clientAck !== null ? (
+              <ClientAckLines ack={i.clientAck} locale={locale} timeZone={timeZone} />
+            ) : (
+              <>
+                <span className="break-words">
+                  {i.fileUrl === null
+                    ? firstLine(i.excerpt)
+                    : t("list.file", { type, size: formatBytes(locale, i.size ?? 0) })}
+                </span>
+                {i.fileUrl === null ? (
+                  <span className="text-sm text-text-muted">{t("list.text", { count: i.textLength })}</span>
+                ) : null}
+              </>
+            )}
             <span className="text-sm text-text-muted">
               <time dateTime={i.createdAt}>{t("list.added", { time })}</time>
             </span>
