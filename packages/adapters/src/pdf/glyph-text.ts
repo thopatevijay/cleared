@@ -52,7 +52,11 @@ interface FkFont {
 export interface GlyphText {
   /** the embedded font (whole), also what `wrapText` measures with */
   readonly font: PDFFont;
-  readonly draw: (page: PDFPage, line: string, at: { x: number; y: number; size: number; color: Color }) => void;
+  readonly draw: (
+    page: PDFPage,
+    line: string,
+    at: { x: number; y: number; size: number; color: Color },
+  ) => void;
 }
 
 /** Glyph outline in font units (y up) as PDF path operators; quadratic curves become cubic. */
@@ -68,7 +72,9 @@ function outline(glyph: FkGlyph): PDFOperator[] {
     else if (command === "quadraticCurveTo") {
       const [qx, qy, x, y] = [a[0] ?? 0, a[1] ?? 0, a[2] ?? 0, a[3] ?? 0];
       const k = 2 / 3;
-      ops.push(appendBezierCurve(cx + k * (qx - cx), cy + k * (qy - cy), x + k * (qx - x), y + k * (qy - y), x, y));
+      ops.push(
+        appendBezierCurve(cx + k * (qx - cx), cy + k * (qy - cy), x + k * (qx - x), y + k * (qy - y), x, y),
+      );
     } else if (command === "closePath") ops.push(closePath());
     if (a.length >= 2) [cx, cy] = [a[a.length - 2] ?? 0, a[a.length - 1] ?? 0];
   }
@@ -92,7 +98,10 @@ export async function glyphText(doc: PDFDocument, fontBytes: Uint8Array): Promis
       const ops = outline(g);
       const { minX, minY, maxX, maxY } = g.bbox;
       const bbox = [minX, minY, maxX, maxY].map((n) => (Number.isFinite(n) ? n : 0));
-      forms.set(g.id, ops.length === 0 ? null : doc.context.register(doc.context.formXObject(ops, { BBox: bbox })));
+      forms.set(
+        g.id,
+        ops.length === 0 ? null : doc.context.register(doc.context.formXObject(ops, { BBox: bbox })),
+      );
     }
     return forms.get(g.id) ?? null;
   };
@@ -123,7 +132,12 @@ export async function glyphText(doc: PDFDocument, fontBytes: Uint8Array): Promis
             keys.glyphs.set(g.id, name);
           }
           const [tx, ty] = [x + (pen + pos.xOffset) * scale, y + pos.yOffset * scale];
-          ops.push(pushGraphicsState(), concatTransformationMatrix(scale, 0, 0, scale, tx, ty), drawObject(name), popGraphicsState());
+          ops.push(
+            pushGraphicsState(),
+            concatTransformationMatrix(scale, 0, 0, scale, tx, ty),
+            drawObject(name),
+            popGraphicsState(),
+          );
         }
         pen += pos.xAdvance;
       });

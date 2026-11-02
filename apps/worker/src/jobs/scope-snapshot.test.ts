@@ -2,9 +2,18 @@
 // carries the scope verbatim (Devanagari included), says "signature" only in its negating footer, and shows
 // the acknowledgement block or "Not acknowledged by the client".
 import { extractPdfText, readPdfInfo, missingGlyphs, renderScopeSnapshotPdf } from "@cleared/adapters/files";
-import { EVIDENCE_FILE_MAX_BYTES, SCOPE_SNAPSHOT_FOOTER, SCOPE_SNAPSHOT_NOT_ACKNOWLEDGED } from "@cleared/core";
+import {
+  EVIDENCE_FILE_MAX_BYTES,
+  SCOPE_SNAPSHOT_FOOTER,
+  SCOPE_SNAPSHOT_NOT_ACKNOWLEDGED,
+} from "@cleared/core";
 import { describe, expect, it } from "vitest";
-import { flat, SNAPSHOT_FIXTURES, snapshotFixture, type SnapshotFixture } from "../../test/snapshot-support.ts";
+import {
+  flat,
+  SNAPSHOT_FIXTURES,
+  snapshotFixture,
+  type SnapshotFixture,
+} from "../../test/snapshot-support.ts";
 
 async function rendered(name: SnapshotFixture) {
   const doc = snapshotFixture(name);
@@ -35,7 +44,13 @@ describe("scope snapshot PDF (M3-07)", () => {
       expect(text).toContain("This is not a signature or a contract");
       expect(flat(text)).toContain(SCOPE_SNAPSHOT_FOOTER);
       expect(text).toContain("Scope snapshot");
-      for (const s of [doc.payment.captureId, "240.00 USD", doc.payment.date, doc.scope.sha256, doc.generatedAt])
+      for (const s of [
+        doc.payment.captureId,
+        "240.00 USD",
+        doc.payment.date,
+        doc.scope.sha256,
+        doc.generatedAt,
+      ])
         expect(text).toContain(s);
       for (const d of doc.delivery) expect(text).toContain(d.sha256);
     }

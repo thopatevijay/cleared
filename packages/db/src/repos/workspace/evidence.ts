@@ -97,14 +97,16 @@ function evidenceItems(db: Db, ws: string) {
       return rows[0] ?? null;
     },
     /** M3-07: the pack's scope snapshot for this input hash (the job's idempotency key), or null. */
-    async snapshotForInput(packId: string, inputSha256: string, tx?: Executor): Promise<EvidenceItemRow | null> {
+    async snapshotForInput(
+      packId: string,
+      inputSha256: string,
+      tx?: Executor,
+    ): Promise<EvidenceItemRow | null> {
       if (!isUuid(packId)) return null;
       const rows = await (tx ?? db)
         .select()
         .from(s.evidenceItems)
-        .where(
-          and(inScope, eq(s.evidenceItems.packId, packId), eq(s.evidenceItems.inputSha256, inputSha256)),
-        )
+        .where(and(inScope, eq(s.evidenceItems.packId, packId), eq(s.evidenceItems.inputSha256, inputSha256)))
         .limit(1);
       return rows[0] ?? null;
     },

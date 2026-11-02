@@ -13,13 +13,19 @@ import { EVIDENCE_KINDS, type EvidenceKind } from "./evidence.ts";
  * Kinds Cleared writes itself from records it already holds (M3-06 acknowledgement, M3-07 snapshot). They
  * are records, not new facts: the AI never extracts or checks them (BL-01 6569233018, ADR 0018).
  */
-export const CLEARED_EVIDENCE_KINDS = ["client_ack", "scope_snapshot"] as const satisfies readonly EvidenceKind[];
+export const CLEARED_EVIDENCE_KINDS = [
+  "client_ack",
+  "scope_snapshot",
+] as const satisfies readonly EvidenceKind[];
 export type ClearedEvidenceKind = (typeof CLEARED_EVIDENCE_KINDS)[number];
 export const isClearedEvidenceKind = (kind: string): kind is ClearedEvidenceKind =>
   (CLEARED_EVIDENCE_KINDS as readonly string[]).includes(kind);
 
 /** Pack items listed under "Delivery evidence" (metadata only: kind, created_at, sha256). */
-export const SCOPE_SNAPSHOT_DELIVERY_KINDS = ["delivery", "shipment"] as const satisfies readonly EvidenceKind[];
+export const SCOPE_SNAPSHOT_DELIVERY_KINDS = [
+  "delivery",
+  "shipment",
+] as const satisfies readonly EvidenceKind[];
 
 export const SCOPE_SNAPSHOT_TITLE = "Scope snapshot";
 export const SCOPE_SNAPSHOT_NOT_ACKNOWLEDGED = "Not acknowledged by the client";

@@ -97,11 +97,15 @@ function body(flow: Flow, d: ScopeSnapshotDocument): void {
   flow.text("Agreed scope (verbatim, as the seller provided it)", H2);
   flow.text(`Scope evidence sha256: ${d.scope.sha256}`, SMALL);
   flow.gap(4);
-  flow.text(d.scope.text ?? "The scope was provided as a file without a text layer; its sha256 is above.", BODY);
+  flow.text(
+    d.scope.text ?? "The scope was provided as a file without a text layer; its sha256 is above.",
+    BODY,
+  );
   flow.gap(10);
   flow.text("Delivery evidence (metadata only)", H2);
   if (d.delivery.length === 0) flow.text("No delivery evidence recorded.", BODY);
-  for (const item of d.delivery) flow.text(`${item.kind} · added ${item.createdAt} · sha256 ${item.sha256}`, SMALL);
+  for (const item of d.delivery)
+    flow.text(`${item.kind} · added ${item.createdAt} · sha256 ${item.sha256}`, SMALL);
   flow.gap(10);
   flow.text("Client acknowledgement", H2);
   if (d.ack === null) flow.text(SCOPE_SNAPSHOT_NOT_ACKNOWLEDGED, BODY);
@@ -145,7 +149,9 @@ export async function renderScopeSnapshotPdf(d: ScopeSnapshotDocument): Promise<
   doc.setModificationDate(at);
   const bytes = await doc.save({ useObjectStreams: true });
   if (bytes.byteLength >= EVIDENCE_LIMITS.maxFileBytes)
-    throw new Error(`scope snapshot is ${String(bytes.byteLength)} bytes (limit < ${String(EVIDENCE_LIMITS.maxFileBytes)})`);
+    throw new Error(
+      `scope snapshot is ${String(bytes.byteLength)} bytes (limit < ${String(EVIDENCE_LIMITS.maxFileBytes)})`,
+    );
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   return { bytes, sha256, size: bytes.byteLength, pageCount: doc.getPageCount() };
 }

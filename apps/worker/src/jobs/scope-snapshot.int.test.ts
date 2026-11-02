@@ -3,7 +3,12 @@
 // (pack, input hash), embeds only the acknowledgement of the current scope item, and a `client_ack` arriving
 // refreshes it. BL-01 6569233018 (ADR 0018): Cleared's records run no AI and settle a stale pack.
 import { randomUUID } from "node:crypto";
-import { createPostgresBlobStore, evidenceSha256, extractPdfText, writeEvidence } from "@cleared/adapters/files";
+import {
+  createPostgresBlobStore,
+  evidenceSha256,
+  extractPdfText,
+  writeEvidence,
+} from "@cleared/adapters/files";
 import {
   CHECK_SCOPE_PROMPT,
   clientAckEvidence,
@@ -57,7 +62,13 @@ async function addText(ws: WorkspaceId, packId: string, kind: SellerEvidenceKind
 }
 
 async function ack(ws: WorkspaceId, packId: string, scopeSha256: string) {
-  const record = { scopeSha256, typedName: "Lena Okafor", acceptedAt: new Date("2026-10-05T09:30:12Z"), ip: "203.0.113.24", userAgent: "Mozilla/5.0 test" };
+  const record = {
+    scopeSha256,
+    typedName: "Lena Okafor",
+    acceptedAt: new Date("2026-10-05T09:30:12Z"),
+    ip: "203.0.113.24",
+    userAgent: "Mozilla/5.0 test",
+  };
   const { text, sha256 } = clientAckEvidence(record);
   return withTransaction(db, (tx) =>
     writeEvidence(
@@ -142,7 +153,10 @@ describe.skipIf(!dbAvailable)("scope_snapshot.render (M3-07, compose Postgres)",
 
   it("AC7: the item and the outbox row are written in one transaction (a forced failure leaves neither)", async () => {
     const { ws, packId } = await packWithScope();
-    const before = await db.$client.query<{ n: string }>("select count(*)::text as n from outbox where payload->>'workspaceId' = $1", [ws]);
+    const before = await db.$client.query<{ n: string }>(
+      "select count(*)::text as n from outbox where payload->>'workspaceId' = $1",
+      [ws],
+    );
     await expect(
       withTransaction(db, async (tx) => {
         const out = await renderScopeSnapshot(deps(), ws, packId, { tx, log: silentLog });
@@ -151,7 +165,10 @@ describe.skipIf(!dbAvailable)("scope_snapshot.render (M3-07, compose Postgres)",
       }),
     ).rejects.toThrow("forced failure");
     expect(await snapshots(packId)).toEqual([]);
-    const after = await db.$client.query<{ n: string }>("select count(*)::text as n from outbox where payload->>'workspaceId' = $1", [ws]);
+    const after = await db.$client.query<{ n: string }>(
+      "select count(*)::text as n from outbox where payload->>'workspaceId' = $1",
+      [ws],
+    );
     expect(after.rows[0]?.n).toBe(before.rows[0]?.n);
     expect((await render(ws, packId)).status).toBe("written"); // and the job can then succeed
   });
@@ -160,8 +177,16 @@ describe.skipIf(!dbAvailable)("scope_snapshot.render (M3-07, compose Postgres)",
     const { ws, packId, scope } = await packWithScope();
     await render(ws, packId);
     const item = await ack(ws, packId, scope.sha256);
-    const event = { type: "evidence.added", version: 1, workspaceId: ws, occurredAt: NOW.toISOString(), data: { packId, evidenceItemId: item.id, kind: "client_ack", sha256: item.sha256 } };
-    await withTransaction(db, (tx) => snapshotOnAckHandler(deps())(event, { tx, log: silentLog, envelope: envelope(), job: {} as never }));
+    const event = {
+      type: "evidence.added",
+      version: 1,
+      workspaceId: ws,
+      occurredAt: NOW.toISOString(),
+      data: { packId, evidenceItemId: item.id, kind: "client_ack", sha256: item.sha256 },
+    };
+    await withTransaction(db, (tx) =>
+      snapshotOnAckHandler(deps())(event, { tx, log: silentLog, envelope: envelope(), job: {} as never }),
+    );
     const rows = await snapshots(packId);
     expect(rows).toHaveLength(2);
     const text = await pdfText(ws, rows[1]?.blob_id ?? "");
@@ -190,23 +215,65 @@ describe.skipIf(!dbAvailable)("scope_snapshot.render (M3-07, compose Postgres)",
     const items = await evidenceRepo(db, ws).items.listForPack(packId);
     // the two seller items finished extraction and a check covers exactly them
     for (const i of items)
-      await forWorkspace(db, ws).auditLog.insert({ actor: "system", action: "extract.no_facts", detail: { evidenceItemId: i.id, status: "degraded" } });
+      await forWorkspace(db, ws).auditLog.insert({
+        actor: "system",
+        action: "extract.no_facts",
+        detail: { evidenceItemId: i.id, status: "degraded" },
+      });
     await withTransaction(db, async (tx) => {
       const hash = (await evidenceSetHashOf(db, ws, packId, tx)) ?? "";
-      const line = { lineId: "L1", line: "Logo in SVG and PNG", verdict: "unverifiable", modelVerdict: "unverifiable", note: null, rationale: "test", lineCitation: null, citations: [] } as const;
-      await scopeChecksRepo(db, ws).insertCheck({ packId, evidenceSetHash: hash, promptVersion: CHECK_SCOPE_PROMPT.id, runId: null, lines: [line] }, tx);
+      const line = {
+        lineId: "L1",
+        line: "Logo in SVG and PNG",
+        verdict: "unverifiable",
+        modelVerdict: "unverifiable",
+        note: null,
+        rationale: "test",
+        lineCitation: null,
+        citations: [],
+      } as const;
+      await scopeChecksRepo(db, ws).insertCheck(
+        { packId, evidenceSetHash: hash, promptVersion: CHECK_SCOPE_PROMPT.id, runId: null, lines: [line] },
+        tx,
+      );
       await evidenceRepo(db, ws).packs.setState(packId, "checked", tx);
     });
     const item = await ack(ws, packId, scope.sha256);
     expect((await evidenceRepo(db, ws).packs.getOwned(packId))?.state).toBe("stale"); // M3-06 AC 6 holds
-    const noAi: AiProvider = { complete: () => Promise.reject(new Error("the AI must not run")) } as unknown as AiProvider;
-    const event = { type: "evidence.added" as const, version: 1 as const, workspaceId: ws, occurredAt: NOW.toISOString() as never, data: { packId: packId as never, evidenceItemId: item.id as never, kind: "client_ack" as const, sha256: item.sha256 as never } };
+    const noAi: AiProvider = {
+      complete: () => Promise.reject(new Error("the AI must not run")),
+    } as unknown as AiProvider;
+    const event = {
+      type: "evidence.added" as const,
+      version: 1 as const,
+      workspaceId: ws,
+      occurredAt: NOW.toISOString() as never,
+      data: {
+        packId: packId as never,
+        evidenceItemId: item.id as never,
+        kind: "client_ack" as const,
+        sha256: item.sha256 as never,
+      },
+    };
     const out = await withTransaction(db, (tx) =>
-      extractEvidence({ db, publisher: createPublisher(db, boss), provider: noAi, config: parseAgentConfig({}), now: () => NOW }, event, { tx, log: silentLog, envelope: envelope() }),
+      extractEvidence(
+        {
+          db,
+          publisher: createPublisher(db, boss),
+          provider: noAi,
+          config: parseAgentConfig({}),
+          now: () => NOW,
+        },
+        event,
+        { tx, log: silentLog, envelope: envelope() },
+      ),
     );
     expect(out).toEqual({ status: "record", pack: "restored" });
     expect((await evidenceRepo(db, ws).packs.getOwned(packId))?.state).toBe("checked");
-    const runs = await db.$client.query<{ n: string }>("select count(*)::text as n from agent_runs where workspace_id = $1", [ws]);
+    const runs = await db.$client.query<{ n: string }>(
+      "select count(*)::text as n from agent_runs where workspace_id = $1",
+      [ws],
+    );
     expect(runs.rows[0]?.n).toBe("0");
     expect(await scopeChecksRepo(db, ws).itemsAwaitingFacts(packId, "extract@v1")).toEqual([]);
   });

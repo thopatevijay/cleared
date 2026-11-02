@@ -80,11 +80,22 @@ export async function renderScopeSnapshot(
   const existing = await repo.items.snapshotForInput(pack.id, inputSha256, ctx.tx);
   if (existing !== null) return { status: "exists", itemId: existing.id };
   const pdf = await renderScopeSnapshotPdf({ ...content, generatedAt: deps.now().toISOString() });
-  const intake = { db: deps.db, blobs: createPostgresBlobStore(deps.db), publisher: deps.publisher, now: deps.now };
+  const intake = {
+    db: deps.db,
+    blobs: createPostgresBlobStore(deps.db),
+    publisher: deps.publisher,
+    now: deps.now,
+  };
   const item = await writeEvidence(intake, ctx.tx, ws, pack.id, {
     type: "file",
     kind: "scope_snapshot",
-    file: { mime: "application/pdf", bytes: pdf.bytes, size: pdf.size, sha256: Sha256Schema.parse(pdf.sha256), text: null },
+    file: {
+      mime: "application/pdf",
+      bytes: pdf.bytes,
+      size: pdf.size,
+      sha256: Sha256Schema.parse(pdf.sha256),
+      text: null,
+    },
     inputSha256,
   });
   ctx.log.info({ packId, itemId: item.id, sha256: pdf.sha256, size: pdf.size }, "scope snapshot written");
@@ -110,7 +121,12 @@ export async function snapshotContent(
   if (payment === null) return null;
   return {
     packId: pack.id,
-    payment: { captureId: payment.captureId, amount: payment.amount, currency: payment.currency, date: iso(payment.createdAt) },
+    payment: {
+      captureId: payment.captureId,
+      amount: payment.amount,
+      currency: payment.currency,
+      date: iso(payment.createdAt),
+    },
     scope: { itemId: scope.id, sha256: Sha256Schema.parse(scope.sha256), text: scope.text },
     delivery: items
       .filter((i) => (SCOPE_SNAPSHOT_DELIVERY_KINDS as readonly string[]).includes(i.kind))

@@ -27,6 +27,7 @@ import { EvidenceList } from "./EvidenceList.tsx";
 import { FactsList } from "./FactsList.tsx";
 import { PackStateBanner } from "./PackStateBanner.tsx";
 import { PaymentHeader } from "./PaymentHeader.tsx";
+import { ScopeSnapshotPanel } from "./ScopeSnapshotButton.tsx";
 import { VerdictRow } from "./VerdictRow.tsx";
 
 export const PACK_POLL_MS = 5_000;
@@ -182,6 +183,12 @@ function PackBody({
           <FactsList facts={view.facts} kindOf={kindOf} />
         </section>
         <AckLinkPanel packId={view.pack.id} timeZone={tz} onAccepted={reload} />
+        <ScopeSnapshotPanel
+          packId={view.pack.id}
+          hasScope={view.evidence.some((i) => i.kind === "scope")}
+          snapshots={view.evidence.filter((i) => i.kind === "scope_snapshot").length}
+          onQueued={reload}
+        />
       </div>
       <section
         aria-labelledby="evidence-heading"

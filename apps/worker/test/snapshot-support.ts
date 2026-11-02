@@ -12,7 +12,9 @@ export type SnapshotFixture = (typeof SNAPSHOT_FIXTURES)[number];
 const DocumentSchema = ScopeSnapshotContentSchema.extend({ generatedAt: z.iso.datetime() });
 
 export function snapshotFixture(name: SnapshotFixture): ScopeSnapshotDocument {
-  const raw: unknown = JSON.parse(readFileSync(join(FIXTURES_DIR, "packs", `scope-snapshot-${name}.json`), "utf8"));
+  const raw: unknown = JSON.parse(
+    readFileSync(join(FIXTURES_DIR, "packs", `scope-snapshot-${name}.json`), "utf8"),
+  );
   return DocumentSchema.parse(raw);
 }
 

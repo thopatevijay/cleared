@@ -10,6 +10,7 @@ import {
   EvidenceTextRequestSchema,
   evidenceWireCode,
   SellerEvidenceKindSchema,
+  type BlobContent,
   type EvidenceErrorCode,
   type EvidenceItemResponse,
   type SellerEvidenceKind,
@@ -259,7 +260,12 @@ export async function getEvidenceFile(req: Request, deps: Deps, id: string): Pro
   const blob = await createPostgresBlobStore(deps.db).get(ws, item.blobId);
   if (blob === null) return notFound(req, "file");
   const name = `evidence-${item.id.slice(0, 8)}.${EXTENSION[blob.mime] ?? "bin"}`;
-  const res = new Response(new Uint8Array(blob.bytes), {
+  return withRenewal(attachment(blob, name), session);
+}
+
+/** Stored bytes as a download: never sniffed, never rendered inline, never cached (M2-01; M3-07 reuses it). */
+export function attachment(blob: BlobContent, name: string): Response {
+  return new Response(new Uint8Array(blob.bytes), {
     status: 200,
     headers: {
       "content-type": blob.mime,
@@ -271,5 +277,4 @@ export async function getEvidenceFile(req: Request, deps: Deps, id: string): Pro
       etag: `"${blob.sha256}"`,
     },
   });
-  return withRenewal(res, session);
 }

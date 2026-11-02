@@ -257,7 +257,12 @@ export async function settleAfterRecord(
 }
 
 /** The pack's evidence set hash exactly as the check keys its versions on it; null for no pack. */
-export async function evidenceSetHashOf(db: Db, ws: WorkspaceId, packId: string, tx: Tx): Promise<string | null> {
+export async function evidenceSetHashOf(
+  db: Db,
+  ws: WorkspaceId,
+  packId: string,
+  tx: Tx,
+): Promise<string | null> {
   return (await loadPack(db, ws, packId, tx))?.evidenceSetHash ?? null;
 }
 
