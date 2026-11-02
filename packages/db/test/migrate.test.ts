@@ -9,7 +9,7 @@ import { MIGRATIONS_FOLDER, runMigrations } from "../src/migrate.ts";
 import { seed, SEED_USER_EMAIL, SEED_WORKSPACE_ID } from "../src/seed.ts";
 import { dbAvailable, TEST_DATABASE_URL } from "./db-available.ts";
 
-/** §5, in its order, then the extensions (consumer_receipts: M1-03; worker_heartbeats: M1-08; platform_flags: M2-02; scenario_runs: M2-10). */
+/** §5, in its order, then the extensions (consumer_receipts: M1-03; worker_heartbeats: M1-08; platform_flags: M2-02; scenario_runs: M2-10; rate_limit_hits: M3-06). */
 const EXPECTED_TABLES = [
   "workspaces",
   "users",
@@ -41,6 +41,7 @@ const EXPECTED_TABLES = [
   "worker_heartbeats",
   "platform_flags",
   "scenario_runs",
+  "rate_limit_hits",
 ];
 
 const EXTENSION_COLUMNS: Record<string, string[]> = {
@@ -49,6 +50,7 @@ const EXTENSION_COLUMNS: Record<string, string[]> = {
   sessions: ["workspace_id", "user_id", "kind", "token_hash", "expires_at", "last_seen_at"],
   agent_runs: ["prompt_version", "correlation_id", "output", "error"],
   agent_steps: ["kind", "detail", "correlation_id"],
+  client_acks: ["scope_item_id", "scope_sha256", "expires_at", "revoked_at", "evidence_item_id"],
 };
 
 const PLATFORM_TABLES = new Set([
@@ -58,6 +60,7 @@ const PLATFORM_TABLES = new Set([
   "consumer_receipts",
   "worker_heartbeats",
   "platform_flags",
+  "rate_limit_hits",
   "workspaces",
 ]);
 

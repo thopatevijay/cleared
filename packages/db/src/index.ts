@@ -136,3 +136,13 @@ export {
   type DisputeListRow,
   type DraftWithAction,
 } from "./repositories/dispute-views.ts";
+export {
+  clientAckByToken,
+  clientAcksRepo,
+  markClientAckAccepted,
+  rateLimitHit,
+  type ClientAckByToken,
+  type ClientAckRow,
+  type ClientAcksRepo,
+  type ScopeItemRef,
+} from "./repositories/client-acks.ts";

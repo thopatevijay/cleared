@@ -125,3 +125,17 @@ export const platformFlags = pgTable(
   },
   (t) => [check("platform_flags_single_row", sql`${t.id} = 1`)],
 );
+
+/**
+ * M3-06: hits on a rate-limited anonymous route, one row per attempt, counted per bucket in a rolling
+ * window (`ack:ip:<hmac>`, `ack:token:<sha256>`). Never a raw IP or token.
+ */
+export const rateLimitHits = pgTable(
+  "rate_limit_hits",
+  {
+    id: pk(),
+    bucket: text("bucket").notNull(),
+    at: tstz("at").notNull().defaultNow(),
+  },
+  (t) => [index("rate_limit_hits_bucket_at_idx").on(t.bucket, t.at)],
+);
