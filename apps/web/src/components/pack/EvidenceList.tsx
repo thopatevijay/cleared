@@ -39,8 +39,8 @@ function ClientAckLines({ ack, locale, timeZone }: { ack: ClientAck; locale: str
       <span className="text-sm break-words text-text-muted">
         {t("ackMeta", { ip: ack.ip, browser: browserOf(ack.userAgent) })}
       </span>
-      <span className="font-mono text-xs text-text-muted" title={ack.scopeSha256}>
-        {t("ackScope", { short: ack.scopeSha256.slice(0, 12) })}
+      <span className="text-sm text-text-muted" title={ack.scopeSha256}>
+        {t("ackScope")} <span className="font-mono text-xs">{ack.scopeSha256.slice(0, 8)}</span>
       </span>
       <span className="text-sm text-text-muted">{t("ackSource")}</span>
     </>

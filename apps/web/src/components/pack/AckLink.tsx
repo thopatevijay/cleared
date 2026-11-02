@@ -12,6 +12,7 @@ import { intlLocale, isAppLocale } from "../../i18n/routing.ts";
 import { getJson, postJson, type ApiResult } from "../../lib/api.ts";
 import { formatTime } from "../../lib/format.ts";
 import { useOnline } from "../../lib/use-online.ts";
+import { ErrorPanel } from "../ErrorPanel.tsx";
 import { openEvidence } from "./Citation.tsx";
 
 const POLL_MS = 5_000;
@@ -187,6 +188,13 @@ function LinkBody(props: {
     case "accepted":
       return (
         <>
+          {/* The current scope is not signed off: say so first, the earlier acceptance below. */}
+          {link.earlierScope ? (
+            <>
+              <p>{t("scopeChanged")}</p>
+              {createNew}
+            </>
+          ) : null}
           <p>
             {t("acceptedAt", { time: d.time(link.acceptedAt ?? link.createdAt) })}
             {link.earlierScope ? ` (${t("earlierScope")})` : ""}
@@ -204,7 +212,6 @@ function LinkBody(props: {
               {t("viewEvidence")}
             </a>
           ) : null}
-          {link.earlierScope ? createNew : null}
         </>
       );
     case "expired":
@@ -347,10 +354,11 @@ export function AckLinkPanel({
         </p>
       ) : null}
       {failure !== null ? (
-        <p role="alert" className="rounded-md bg-status-error-bg p-3 text-status-error-fg">
-          {t(failure.what === "create" ? "createError" : "revokeError")}
-          {failure.reference !== null ? ` (${failure.reference})` : ""}
-        </p>
+        <ErrorPanel
+          title={t(failure.what === "create" ? "createError" : "revokeError")}
+          reference={failure.reference}
+          onRetry={failure.what === "create" ? create : revoke}
+        />
       ) : null}
       {!online ? <p className="text-sm text-text-muted">{t("offline")}</p> : null}
       <p role="status" aria-live="polite" className="sr-only" data-testid="ack-live">
@@ -406,7 +414,7 @@ function AckPanelBody(props: {
   }
   return (
     <>
-      <Badge status={view.link.status} />
+      <Badge status={view.link.earlierScope ? "scope_changed" : view.link.status} />
       <LinkBody link={view.link} {...props} />
     </>
   );

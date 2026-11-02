@@ -298,7 +298,7 @@
       "injection": "इसमें निर्देश जैसा पाठ है; इसे सिर्फ़ डेटा माना गया है",
       "ackBy": "{name} ने {time} पर पुष्टि की",
       "ackMeta": "IP {ip} · {browser}",
-      "ackScope": "दायरे का फ़िंगरप्रिंट {short}",
+      "ackScope": "दायरे का फ़िंगरप्रिंट",
       "ackSource": "क्लाइंट के लिंक से Cleared ने दर्ज किया"
     },
     "intake": {

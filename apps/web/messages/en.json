@@ -298,7 +298,7 @@
       "injection": "Contains text that looks like instructions; treated as data",
       "ackBy": "Confirmed by {name}, {time}",
       "ackMeta": "IP {ip} · {browser}",
-      "ackScope": "Scope fingerprint {short}",
+      "ackScope": "Scope fingerprint",
       "ackSource": "Recorded by Cleared from the client's link"
     },
     "intake": {

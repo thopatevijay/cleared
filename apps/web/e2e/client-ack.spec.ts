@@ -120,6 +120,12 @@ test("seller creates a link; the client sees the scope as plain text and confirm
   await panel(page).getByRole("button", { name: "Copy link" }).click();
   await expect(page.getByTestId("ack-copy-note")).toHaveText("Link copied");
   await capture(page, "seller-copied", DIR);
+  await page.evaluate(() => {
+    navigator.clipboard.writeText = () => Promise.reject(new Error("denied"));
+  });
+  await panel(page).getByRole("button", { name: "Copy link" }).click();
+  await expect(page.getByTestId("ack-copy-note")).toContainText("Couldn't copy.");
+  await capture(page, "seller-copy-failed", DIR);
 
   const c = await client(browser);
   const res = await c.page.goto(new URL(url).pathname);
@@ -238,7 +244,19 @@ test("seller states: loading, no scope, pending after reload, revoke, expired, c
   await panel(page).getByRole("button", { name: "Revoke link" }).click();
   await expect(panel(page).getByRole("button", { name: "Keep link" })).toBeFocused();
   await capture(page, "seller-revoke-confirm", DIR);
+  const revokeUrl = `**/api/packs/${packId}/ack-links/*/revoke`;
+  await page.route(revokeUrl, (r) =>
+    r.fulfill({ status: 500, headers: { "x-correlation-id": randomUUID() }, json: { error: {} } }),
+  );
   await panel(page).getByRole("button", { name: "Revoke", exact: true }).click();
+  await expect(panel(page).getByTestId("error-panel")).toContainText("Couldn't revoke the link.");
+  await capture(page, "seller-revoke-failed", DIR);
+  await page.unrouteAll({ behavior: "wait" });
+  const releaseRevoke = await hold(page, revokeUrl, "POST");
+  await panel(page).getByRole("button", { name: "Revoke", exact: true }).click();
+  await expect(panel(page).getByRole("button", { name: "Revoking…" })).toBeVisible();
+  await capture(page, "seller-revoking", DIR);
+  releaseRevoke();
   await expect(panel(page)).toContainText("Revoked");
   await expect(panel(page).getByRole("button", { name: "Create a new link" })).toBeVisible();
   await capture(page, "seller-revoked", DIR);

@@ -4,9 +4,11 @@
 // the form; an unusable link (the server's neutral answer) shows the neutral panel. Every value the user
 // or the seller typed renders as plain text.
 import { ACK_NAME_MAX_CHARS } from "@cleared/core";
-import { CircleCheck, CircleX, Info, Lock } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { CircleCheck, CircleX, Clock, Info, LoaderCircle, Lock } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { intlLocale, isAppLocale } from "../../i18n/routing.ts";
+import { formatTime } from "../../lib/format.ts";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 
 type Phase =
@@ -67,16 +69,10 @@ function Success({ name, at }: { name: string; at: string }) {
   const t = useTranslations("ack");
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
-  // The client has no workspace: their own browser's time zone, named.
-  const time = new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short",
-    numberingSystem: "latn",
-  }).format(new Date(at));
+  const raw = useLocale();
+  // The client has no workspace: their own browser's time zone, in the seller pages' format.
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const time = formatTime(intlLocale(isAppLocale(raw) ? raw : "en"), at, zone);
   return (
     <section
       className="flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-6"
@@ -121,6 +117,9 @@ export function AckForm({ token, seller }: { token: string; seller: string }) {
       (found.name ? nameRef : agreeRef).current?.focus();
       return;
     }
+    await send();
+  };
+  const send = async () => {
     setPhase({ kind: "submitting" });
     setPhase(await submit(token, name));
   };
@@ -165,7 +164,7 @@ export function AckForm({ token, seller }: { token: string; seller: string }) {
             }}
             aria-invalid={errors.agree ? true : undefined}
             aria-describedby={errors.agree ? "ack-agree-error" : undefined}
-            className="size-6 shrink-0 accent-[var(--color-accent)]"
+            className="size-6 shrink-0 accent-[var(--color-accent)] [color-scheme:light_dark]"
           />
           <span className="font-medium">{t("agree")}</span>
         </label>
@@ -176,18 +175,30 @@ export function AckForm({ token, seller }: { token: string; seller: string }) {
         <span>{t("recorded", { seller })}</span>
       </p>
       {phase.kind === "limited" ? (
-        <p role="alert" className="rounded-md bg-status-held-bg p-3 text-status-held-fg">
+        <p
+          role="alert"
+          className="flex items-start gap-2 rounded-md bg-status-held-bg p-3 text-status-held-fg"
+        >
+          <Clock aria-hidden="true" size={16} strokeWidth={1.75} className="mt-1 shrink-0" />
           {t("rateLimited")}
         </p>
       ) : null}
       {phase.kind === "error" ? (
-        <ErrorPanel title={t("errorTitle")} body={t("errorBody")} reference={phase.reference} />
+        <ErrorPanel
+          title={t("errorTitle")}
+          body={t("errorBody")}
+          reference={phase.reference}
+          onRetry={() => void send()}
+        />
       ) : null}
       <button
         type="submit"
         disabled={busy}
-        className="min-h-12 w-full rounded-md bg-accent px-6 font-semibold text-on-accent hover:bg-accent-hover disabled:opacity-60 md:w-auto md:self-start"
+        className="min-h-12 w-full rounded-md bg-accent px-6 font-semibold text-on-accent inline-flex items-center justify-center gap-2 hover:bg-accent-hover disabled:cursor-wait md:w-auto md:self-start"
       >
+        {busy ? (
+          <LoaderCircle aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" />
+        ) : null}
         {busy ? t("confirming") : t("confirm")}
       </button>
     </form>
