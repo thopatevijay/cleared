@@ -134,7 +134,11 @@ describe.skipIf(!dbAvailable)("client acknowledgement link (integration)", () =>
     expect(items).toHaveLength(1);
     const item = items[0];
     expect(item?.id).toBe(acks[0]?.evidence_item_id);
-    expect(item?.sha256).toBe(createHash("sha256").update(item?.text ?? "", "utf8").digest("hex"));
+    expect(item?.sha256).toBe(
+      createHash("sha256")
+        .update(item?.text ?? "", "utf8")
+        .digest("hex"),
+    );
     const scopeSha = evidenceSha256({ kind: "text", text: SCOPE });
     expect(JSON.parse(item?.text ?? "{}")).toEqual({
       accepted_at: body.acceptedAt,
@@ -173,7 +177,9 @@ describe.skipIf(!dbAvailable)("client acknowledgement link (integration)", () =>
     const s = await seller();
     const { token, id } = await link(s);
     await accept(token);
-    const [row] = await q<{ j: string }>("select row_to_json(c)::text j from client_acks c where id = $1", [id]);
+    const [row] = await q<{ j: string }>("select row_to_json(c)::text j from client_acks c where id = $1", [
+      id,
+    ]);
     expect(row?.j).toContain(ackTokenHash(token));
     expect(row?.j).not.toContain(token);
     // nor anywhere else this workspace wrote: evidence, audit, outbox, idempotency keys
@@ -283,7 +289,9 @@ describe.skipIf(!dbAvailable)("client acknowledgement link (integration)", () =>
     expect(await packState(s.packId)).toBe("checked");
     expect(await ackOutbox(s.wsId)).toHaveLength(0);
     expect(await ackItems(s.wsId)).toHaveLength(0);
-    const [ack] = await q<{ accepted_at: Date | null }>("select accepted_at from client_acks where id = $1", [id]);
+    const [ack] = await q<{ accepted_at: Date | null }>("select accepted_at from client_acks where id = $1", [
+      id,
+    ]);
     expect(ack?.accepted_at).toBeNull();
 
     // the same link then succeeds, and both land together
@@ -361,9 +369,13 @@ describe.skipIf(!dbAvailable)("client acknowledgement link (integration)", () =>
     expect(res.status).toBe(201);
     const view = AckLinkCreatedSchema.parse(await res.json()).view;
     expect(view.link?.id).not.toBe(first.id);
-    const [ws] = await q<{ expires_at: Date | null }>("select expires_at from workspaces where id = $1", [s.wsId]);
+    const [ws] = await q<{ expires_at: Date | null }>("select expires_at from workspaces where id = $1", [
+      s.wsId,
+    ]);
     if (ws?.expires_at) {
-      const [row] = await q<{ expires_at: Date }>("select expires_at from client_acks where id = $1", [first.id]);
+      const [row] = await q<{ expires_at: Date }>("select expires_at from client_acks where id = $1", [
+        first.id,
+      ]);
       expect(row?.expires_at.getTime()).toBeLessThanOrEqual(ws.expires_at.getTime());
     }
   });

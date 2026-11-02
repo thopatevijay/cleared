@@ -89,7 +89,8 @@ async function createLink(deps: Deps, ws: WorkspaceId, packId: string): Promise<
     if (scope === null) return { refused: "ack_no_scope" };
     const now = deps.now();
     const open = await repo.openForScopeItem(scope.id, tx);
-    if (open.some((l) => ackLinkStatus(l, scope.sha256, now) === "pending")) return { refused: "ack_link_active" };
+    if (open.some((l) => ackLinkStatus(l, scope.sha256, now) === "pending"))
+      return { refused: "ack_link_active" };
     const workspace = await platform(deps.db).workspaces.get(ws, tx);
     const token = randomBytes(ACK_TOKEN_BYTES).toString("base64url");
     const link = await repo.insert(
@@ -106,7 +107,12 @@ async function createLink(deps: Deps, ws: WorkspaceId, packId: string): Promise<
       {
         actor: "seller",
         action: "ack_link.created",
-        detail: { ackId: link.id, packId: pack.id, scopeSha256: scope.sha256, expiresAt: link.expiresAt.toISOString() },
+        detail: {
+          ackId: link.id,
+          packId: pack.id,
+          scopeSha256: scope.sha256,
+          expiresAt: link.expiresAt.toISOString(),
+        },
       },
       tx,
     );

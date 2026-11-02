@@ -37,7 +37,10 @@ const BODY_MAX_BYTES = 4096;
 /** The one answer for every unusable token: same status, same body. */
 export const ACK_NEUTRAL_STATUS = 404;
 export const ACK_NEUTRAL_BODY = {
-  error: { code: "ack_unavailable", message: "This link can't be used. Ask the person who sent it for a new one." },
+  error: {
+    code: "ack_unavailable",
+    message: "This link can't be used. Ask the person who sent it for a new one.",
+  },
 } as const;
 const neutral = (): Response => json(ACK_NEUTRAL_BODY, ACK_NEUTRAL_STATUS);
 
@@ -69,7 +72,8 @@ async function rateLimited(req: Request, deps: Deps, token: string): Promise<Res
     apiError(429, "rate_limited", "Too many attempts. Try again in a few minutes.", correlationId(req), {
       "retry-after": String(ACK_RATE_WINDOW_MS / 1000),
     });
-  if ((await rateLimitHit(deps.db, `ack:ip:${ip}`, now, ACK_RATE_WINDOW_MS)) > ACK_RATE_PER_IP) return tooMany();
+  if ((await rateLimitHit(deps.db, `ack:ip:${ip}`, now, ACK_RATE_WINDOW_MS)) > ACK_RATE_PER_IP)
+    return tooMany();
   // Hashing an arbitrary path segment is safe: the bucket never holds the raw value.
   const bucket = `ack:token:${ackTokenHash(token.slice(0, 64))}`;
   if ((await rateLimitHit(deps.db, bucket, now, ACK_RATE_WINDOW_MS)) > ACK_RATE_PER_TOKEN) return tooMany();
@@ -167,7 +171,12 @@ export async function postAck(
   if (!AckTokenSchema.safeParse(token).success) return neutral();
   const submit = await readSubmit(req);
   if (submit === null) {
-    return apiError(400, "invalid_request", "Send { name, agree: true }; name is 1 to 120 characters.", correlationId(req));
+    return apiError(
+      400,
+      "invalid_request",
+      "Send { name, agree: true }; name is 1 to 120 characters.",
+      correlationId(req),
+    );
   }
   const record = {
     name: submit.name,
@@ -179,7 +188,12 @@ export async function postAck(
     out = await accept(deps, publisher, ackTokenHash(token), record);
   } catch (error) {
     if (!(error instanceof EvidenceRefusedError)) throw error;
-    return apiError(409, "ack_not_recorded", "The confirmation couldn't be added to this pack.", correlationId(req));
+    return apiError(
+      409,
+      "ack_not_recorded",
+      "The confirmation couldn't be added to this pack.",
+      correlationId(req),
+    );
   }
   if (out === "neutral") return neutral();
   return json({ status: "accepted", acceptedAt: out.acceptedAt.toISOString() });
