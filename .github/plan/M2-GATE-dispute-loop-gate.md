@@ -48,7 +48,7 @@ M2 delivers the product's central loop and the judge path that Stage One depends
 make down && make up
 pnpm db:migrate && pnpm db:seed
 ./scripts/landing-checks.sh
-(pnpm --filter ./apps/web run start > "$TMPDIR/m2-gate-web.log" 2>&1 &) ; (pnpm --filter ./apps/worker run start > "$TMPDIR/m2-gate-worker.log" 2>&1 &)
+# live mode: playwright.config.ts starts its own `next start` and worker (BL-01 6568051784: no separate start line)
 pnpm --filter ./apps/web exec playwright test e2e/judge-dispute.live.spec.ts --timeout=3600000 --reporter=line | tee "$TMPDIR/m2-gate-e2e.log"
 psql "$DATABASE_URL" -c "select resource_type, count(*) from paypal_resource_owner group by 1;"
 psql "$DATABASE_URL" -c "select status, outcome->>'outcome_code' from disputes order by updated_at desc limit 1;"

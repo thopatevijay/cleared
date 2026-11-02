@@ -34,7 +34,10 @@ export const CLEANUP_CAP_MS = 30_000;
 /** Runs every cleanup step, each one even if an earlier one failed, within `CLEANUP_CAP_MS` overall. */
 async function cleanup(steps: readonly (() => Promise<unknown>)[]): Promise<void> {
   const all = (async () => {
-    for (const step of steps) await step().catch((e: unknown) => { console.error("cleanup:", String(e)); });
+    for (const step of steps)
+      await step().catch((e: unknown) => {
+        console.error("cleanup:", String(e));
+      });
   })();
   let timer: NodeJS.Timeout | undefined;
   const cap = new Promise<void>((resolve) => {
