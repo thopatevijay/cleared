@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AmountSchema } from "../contracts/payments.ts";
 import { HOLD_TYPES } from "./rules.ts";
 import { HOLD_STATES } from "./state.ts";
+import { HoldExplanationSchema } from "../ai/explain-hold/schema.ts";
 
 const when = z.iso.datetime({ offset: true });
 
@@ -52,5 +53,7 @@ export const HoldDetailSchema = z.object({
   /** the mirrored capture now (the hold is `released` only once it leaves PENDING) */
   payment: z.object({ id: z.uuid(), status: z.string().min(1), statusReason: z.string().nullable() }),
   workspace: z.object({ timezone: z.string().min(1) }),
+  /** M3-02: the newest explanation per locale (at most one `en`, one `hi`); plain text */
+  explanations: z.array(HoldExplanationSchema).max(2),
 });
 export type HoldDetail = z.infer<typeof HoldDetailSchema>;
