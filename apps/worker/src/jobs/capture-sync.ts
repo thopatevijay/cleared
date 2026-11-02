@@ -152,6 +152,8 @@ async function mirrorPayment(run: Run, workspaceId: WorkspaceId): Promise<SyncOu
           updateTime: prev.paypalUpdatedAt.toISOString() as Instant,
         };
   if (!applyMirror(prevRecord, next, updateTime).ok) return "stale";
+  // M3-09: the 15-minute reconcile re-reads every PENDING capture; one PayPal hasn't changed writes nothing
+  if (input.source === "poll" && prev !== null && sameAsStored(prev, next, updateTime)) return "unchanged";
   const values = paymentValues(mirror, next, input.source, updateTime, deps.now());
   if (prev === null) {
     const payment = await payments.insert(values, tx);
@@ -182,6 +184,18 @@ async function mirrorPayment(run: Run, workspaceId: WorkspaceId): Promise<SyncOu
     },
   });
   return "changed";
+}
+
+function sameAsStored(
+  prev: { status: string; statusReason: string | null; paypalUpdatedAt: Date | null },
+  next: StoredState,
+  updateTime: Instant,
+): boolean {
+  return (
+    prev.status === next.status &&
+    prev.statusReason === next.reason &&
+    prev.paypalUpdatedAt?.getTime() === Date.parse(updateTime)
+  );
 }
 
 function paymentValues(m: CaptureMirror, s: StoredState, source: SyncSource, updateTime: Instant, now: Date) {

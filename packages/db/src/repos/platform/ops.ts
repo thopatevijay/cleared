@@ -5,7 +5,7 @@
 //   never fetched.
 // - the SLO samples
 // - the synthetic workspace purge
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type { Db } from "../../client.ts";
 import { opsChecks, workspaces } from "../../../schema/index.ts";
 import type { Executor, Tx } from "../../tx.ts";
@@ -56,6 +56,21 @@ export function opsChecksRepo(db: Db) {
         .orderBy(desc(opsChecks.runAt))
         .limit(1);
       return rows[0] ?? null;
+    },
+    /** Whether a breach of `check` raised its alert (`detail.alerted`) since `since` (the SLO throttle). */
+    async alertedSince(check: string, since: Date, tx?: Executor): Promise<boolean> {
+      const rows = await (tx ?? db)
+        .select({ id: opsChecks.id })
+        .from(opsChecks)
+        .where(
+          and(
+            eq(opsChecks.check, check),
+            gte(opsChecks.runAt, since),
+            sql`${opsChecks.detail}->>'alerted' = 'true'`,
+          ),
+        )
+        .limit(1);
+      return rows.length > 0;
     },
   };
 }
