@@ -6,7 +6,7 @@
 // that payload_sha256; the worker sends it. No state of this card changes the estimate or the timeline, and
 // no copy says it releases money (PayPal support: an API equivalence is "not available").
 import { PAYPAL_SUPPORT_QUOTES, type CompletedSummary, type HoldItem } from "@cleared/core";
-import { ChevronDown, CircleCheck, Loader2, TriangleAlert } from "lucide-react";
+import { ChevronDown, CircleCheck, CircleX, Loader2, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 import useSWR from "swr";
@@ -176,8 +176,18 @@ function Status({ record }: { record: CompletedSummary["record"] }) {
     );
   if (record.state === "failed")
     return (
-      <p role="alert" className="text-status-error-fg" data-testid="record-failed">
-        {t("failed", { reason: record.refusal ?? "—" })}
+      <p role="alert" className="flex items-start gap-2 text-status-error-fg" data-testid="record-failed">
+        <CircleX aria-hidden="true" size={18} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+        <span className="min-w-0 [overflow-wrap:anywhere]">
+          {t.rich("failed", {
+            reason: record.refusal ?? "—",
+            code: (chunks) => (
+              <code lang="en" className="font-mono text-sm">
+                {chunks}
+              </code>
+            ),
+          })}
+        </span>
       </p>
     );
   return null;

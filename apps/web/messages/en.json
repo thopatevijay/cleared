@@ -342,7 +342,7 @@
         "recorded": "Recorded after your approval · PayPal reads <code>COMPLETED</code> · debug_id {debugId}",
         "recordedNoRead": "Recorded after your approval · debug_id {debugId}",
         "recordedToast": "Recorded with PayPal",
-        "failed": "PayPal didn't record it: {reason}",
+        "failed": "PayPal didn't record it: <code>{reason}</code>",
         "unknown": "PayPal didn't answer; we'll check its record and never resend.",
         "refused": "Not done: {code}"
       }

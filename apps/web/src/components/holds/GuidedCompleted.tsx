@@ -151,15 +151,16 @@ function Confirm({
   const [on, setOn] = useState(today);
   const [busy, setBusy] = useState(false);
   const [fieldError, setFieldError] = useState<DateError>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<{ text: string; ref: string } | null>(null);
   const key = useRef<string | null>(null);
   async function submit(): Promise<void> {
     const local: DateError = on > today ? "future" : on < opened ? "beforeOpened" : null;
     setFieldError(local);
     if (local !== null) return;
     key.current ??= newKey();
+    const sentKey = key.current;
     setBusy(true);
-    const res = await postJson(`/api/holds/${hold.id}/completed`, { confirmed_on: on }, key.current);
+    const res = await postJson(`/api/holds/${hold.id}/completed`, { confirmed_on: on }, sentKey);
     setBusy(false);
     key.current = null;
     if (res.status === 200) {
@@ -170,7 +171,12 @@ function Confirm({
     const code = res.status === NETWORK_ERROR ? null : refusalOf(res.body);
     if (code === "DATE_IN_FUTURE") setFieldError("future");
     else if (code === "DATE_BEFORE_HOLD") setFieldError("beforeOpened");
-    else setSaveError(code === null ? t("error.save") : t("error.refused", { code }));
+    // the Reference: the server's correlation id, or (no answer) the request's own idempotency key
+    else
+      setSaveError({
+        text: code === null ? t("error.save") : t("error.refused", { code }),
+        ref: res.correlationId ?? sentKey,
+      });
   }
   const describedBy = [`${id}-hint`, fieldError === null ? null : `${id}-err`, online ? null : `${id}-off`]
     .filter(Boolean)
@@ -185,28 +191,41 @@ function Confirm({
         void submit();
       }}
     >
-      <div className="flex flex-col gap-3 md:flex-row md:items-end">
-        <label className="flex flex-col gap-1" htmlFor={`${id}-date`}>
-          <span className="font-medium">{t("dateLabel")}</span>
-          <input
-            id={`${id}-date`}
-            type="date"
-            className="min-h-12 w-full min-w-[200px] rounded-md border border-border-strong bg-surface px-3 text-text aria-invalid:border-2 aria-invalid:border-status-error-fg md:w-auto"
-            value={on}
-            min={opened}
-            max={today}
-            readOnly={busy}
-            aria-invalid={fieldError === null ? undefined : true}
-            aria-describedby={describedBy}
-            onChange={(e) => {
-              setOn(e.target.value);
-            }}
-            data-testid="completed-date"
-          />
-        </label>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start">
+        <div className="flex flex-col gap-1">
+          <label className="flex flex-col gap-1" htmlFor={`${id}-date`}>
+            <span className="font-medium">{t("dateLabel")}</span>
+            <input
+              id={`${id}-date`}
+              type="date"
+              className="min-h-12 w-full min-w-[200px] rounded-md border border-border-strong bg-surface px-3 text-text aria-invalid:border-2 aria-invalid:border-status-error-fg md:w-auto"
+              value={on}
+              min={opened}
+              max={today}
+              readOnly={busy}
+              aria-invalid={fieldError === null ? undefined : true}
+              aria-describedby={describedBy}
+              onChange={(e) => {
+                setOn(e.target.value);
+              }}
+              data-testid="completed-date"
+            />
+          </label>
+          <span id={`${id}-hint`} className="text-sm text-text-muted">
+            {t("dateHint", { openedDate, today: todayDate })}
+          </span>
+          {fieldError === null ? null : (
+            <p id={`${id}-err`} role="alert" className="flex items-start gap-2 text-status-error-fg">
+              <CircleX aria-hidden="true" size={16} strokeWidth={1.75} className="mt-1 shrink-0" />
+              <span>
+                {fieldError === "future" ? t("error.future") : t("error.beforeOpened", { openedDate })}
+              </span>
+            </p>
+          )}
+        </div>
         <button
           type="submit"
-          className={primary}
+          className={`${primary} md:mt-7`}
           disabled={busy || !online}
           aria-busy={busy || undefined}
           data-testid="completed-submit"
@@ -215,24 +234,24 @@ function Confirm({
           {busy ? t("saving") : t("confirm")}
         </button>
       </div>
-      <span id={`${id}-hint`} className="text-sm text-text-muted">
-        {t("dateHint", { openedDate, today: todayDate })}
-      </span>
-      {fieldError === null ? null : (
-        <p id={`${id}-err`} role="alert" className="flex items-center gap-2 text-status-error-fg">
-          <CircleX aria-hidden="true" size={16} strokeWidth={1.75} />
-          {fieldError === "future" ? t("error.future") : t("error.beforeOpened", { openedDate })}
-        </p>
-      )}
       {online ? null : (
         <p id={`${id}-off`} className="text-sm text-text-muted">
           {t("offline")}
         </p>
       )}
       {saveError === null ? null : (
-        <p role="alert" className="text-status-error-fg" data-testid="completed-error">
-          {saveError}
-        </p>
+        <div role="alert" className="flex flex-col gap-1 text-status-error-fg" data-testid="completed-error">
+          <p className="flex items-start gap-2">
+            <CircleX aria-hidden="true" size={16} strokeWidth={1.75} className="mt-1 shrink-0" />
+            <span data-testid="completed-error-text">{saveError.text}</span>
+          </p>
+          <p className="text-sm text-text-muted">
+            {t("reference", { id: "" })}
+            <code lang="en" className="font-mono select-all" data-testid="completed-error-ref">
+              {saveError.ref}
+            </code>
+          </p>
+        </div>
       )}
     </form>
   );

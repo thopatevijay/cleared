@@ -48,7 +48,12 @@ function Why({ d }: { d: HoldDetail }) {
         {released ? t("whyTitleReleased") : t("whyTitle")}
       </h2>
       <p>{reason(d.hold.reason)}</p>
-      <Explanation holdId={d.hold.id} explanations={d.explanations} released={released} />
+      <Explanation
+        holdId={d.hold.id}
+        explanations={d.explanations}
+        released={released}
+        ruleId={d.hold.ruleId}
+      />
       {source === null ? null : (
         <div className="flex flex-col gap-1 rounded-md border border-border bg-surface-sunken p-3">
           <p className="text-sm text-text-muted">{t("ruleText")}</p>

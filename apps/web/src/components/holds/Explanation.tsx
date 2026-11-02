@@ -90,22 +90,27 @@ export function Explanation({
   holdId,
   explanations,
   released,
+  ruleId,
 }: {
   holdId: string;
   explanations: readonly HoldExplanation[];
   released: boolean;
+  /** M3-04: the hold's rule now; an explanation written for an earlier rule is stale and not shown */
+  ruleId?: string;
 }) {
   const t = useTranslations("holds.explanation");
   const ui = useLocale();
   const [locale, setLocale] = useState<Locale>(isAppLocale(ui) ? ui : "en");
-  const current = explanations.find((e) => e.locale === locale) ?? null;
-  const failed = useRequest(holdId, locale, current === null && !released);
+  const forLocale = explanations.find((e) => e.locale === locale) ?? null;
+  const stale = forLocale !== null && ruleId !== undefined && forLocale.ruleId !== ruleId;
+  const current = stale ? null : forLocale;
+  const failed = useRequest(holdId, locale, current === null && !released && !stale);
   return (
     <div className="flex flex-col gap-3">
       <Toggle value={locale} onChange={setLocale} />
       {current !== null ? (
         <ExplanationBody e={current} />
-      ) : released ? null : (
+      ) : released || stale ? null : (
         <p role="status" className="text-text-muted" data-testid="explanation-pending">
           {failed ? t("unavailable") : t("pending")}
         </p>

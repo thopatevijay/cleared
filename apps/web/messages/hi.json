@@ -342,7 +342,7 @@
         "recorded": "आपकी मंज़ूरी के बाद दर्ज हुआ · PayPal में स्टेटस <code>COMPLETED</code> · debug_id {debugId}",
         "recordedNoRead": "आपकी मंज़ूरी के बाद दर्ज हुआ · debug_id {debugId}",
         "recordedToast": "PayPal में दर्ज हो गया",
-        "failed": "PayPal ने इसे दर्ज नहीं किया: {reason}",
+        "failed": "PayPal ने इसे दर्ज नहीं किया: <code>{reason}</code>",
         "unknown": "PayPal ने जवाब नहीं दिया; हम उसका रिकॉर्ड जाँचेंगे और दोबारा कभी नहीं भेजेंगे।",
         "refused": "नहीं हुआ: {code}"
       }

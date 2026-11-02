@@ -99,6 +99,9 @@ test("guided Completed step: API record (unconfirmed, estimate unchanged), then 
   await expect(est).toContainText(/About \d{1,2} \w{3} · estimated/);
   await expect(est).not.toContainText("Free by");
   await expect(page.getByTestId("timeline")).toContainText("Marked Completed in PayPal by you");
+  // the explanation written for the earlier rule ("no release date") no longer shows beside the estimate
+  await expect(page.getByTestId("why-section")).not.toContainText("gives no release date");
+  await expect(page.getByTestId("rule-quote")).toContainText("7 days after you confirm the order status");
   await expect(record.getByTestId("unconfirmed-badge")).toBeVisible();
   await axeClean(page, "completed-done");
   await top(page);
@@ -180,7 +183,8 @@ test("states: loading, error, not found, saving, save failed, offline, before-op
   await page.goto(url);
   await page.route(`${api}/completed`, (r) => r.abort());
   await slot.getByTestId("completed-submit").click();
-  await expect(slot.getByTestId("completed-error")).toHaveText(
+  await expect(slot.getByTestId("completed-error-ref")).not.toBeEmpty();
+  await expect(slot.getByTestId("completed-error-text")).toHaveText(
     "Couldn't save your confirmation. Nothing changed. Try again.",
   );
   await axeClean(page, "completed-save-failed");
