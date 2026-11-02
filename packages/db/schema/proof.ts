@@ -51,9 +51,12 @@ export const evidenceItems = pgTable(
     blobId: uuid("blob_id").references(() => blobs.id),
     sha256: sha256("sha256").notNull(),
     text: text("text"),
+    /** M3-07: a `scope_snapshot`'s content hash (without generated_at); one snapshot per (pack, input) */
+    inputSha256: sha256("input_sha256"),
   },
   (t) => [
     index("evidence_items_pack_idx").on(t.packId),
+    uniqueIndex("evidence_items_pack_input_key").on(t.packId, t.inputSha256),
     index("evidence_items_workspace_created_idx").on(t.workspaceId, t.createdAt),
   ],
 );

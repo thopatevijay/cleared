@@ -19,6 +19,7 @@ import {
   SCENARIO_DECIDE_QUEUE,
   SCENARIO_POLL_QUEUE,
   SCENARIO_SEED_PACK_QUEUE,
+  SCOPE_SNAPSHOT_RENDER_QUEUE,
   type Db,
   type Queue,
 } from "@cleared/db";
@@ -36,6 +37,7 @@ import { executeActionHandler } from "./jobs/execute-action.ts";
 import { reconcileActionHandler } from "./jobs/reconcile-action.ts";
 import { checkScopeHandler } from "./jobs/check-scope.ts";
 import { extractEvidenceHandler } from "./jobs/extract-evidence.ts";
+import { renderScopeSnapshotHandler, snapshotOnAckHandler } from "./jobs/render-scope-snapshot.ts";
 import { testPaymentHandler } from "./jobs/test-payment.ts";
 import { scenarioCaptureHandler } from "./jobs/scenario/capture.ts";
 import { scenarioChargebackHandler } from "./jobs/scenario/chargeback.ts";
@@ -80,6 +82,8 @@ export function defaultRegistry(
   const draft = draftDisputeHandler({ db: rt.db, ...ai, disputes: paypal.disputes, now: () => new Date() });
   // M3-01: derive or release the payment's hold from the mirrored capture
   const holds = holdsHandler({ db: rt.db, publisher, now: () => new Date() });
+  // M3-07: the scope snapshot PDF (seller request, or a client's acknowledgement arriving)
+  const snapshot = { db: rt.db, publisher, now: () => new Date() };
   return [
     {
       queue: queueSpec(PAYPAL_CAPTURE_SYNC_QUEUE),
@@ -124,10 +128,15 @@ export function defaultRegistry(
       handler: testPaymentHandler({ db: rt.db, orders: paypal.orders }),
     },
     // M2-03: extract facts from each new evidence item; M2-04: check the pack's scope once every item is extracted.
+    // M3-07: a `client_ack` item then refreshes the scope snapshot (Cleared's records skip the AI: ADR 0018).
     {
       queue: queueSpec("evidence.added"),
-      handler: extractEvidenceHandler({ db: rt.db, publisher, ...ai, now: () => new Date() }),
+      handler: inOrder(
+        extractEvidenceHandler({ db: rt.db, publisher, ...ai, now: () => new Date() }),
+        snapshotOnAckHandler(snapshot),
+      ),
     },
+    { queue: queueSpec(SCOPE_SNAPSHOT_RENDER_QUEUE), handler: renderScopeSnapshotHandler(snapshot) },
     {
       queue: queueSpec("pack.extracted"),
       handler: checkScopeHandler({ db: rt.db, publisher, ...ai, now: () => new Date() }),

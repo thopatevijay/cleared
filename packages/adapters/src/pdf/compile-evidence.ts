@@ -84,7 +84,8 @@ const INK = rgb(0.1, 0.1, 0.12);
 const MUTED = rgb(0.4, 0.4, 0.45);
 
 let fontBytes: Promise<Uint8Array> | null = null;
-const loadFont = (): Promise<Uint8Array> => (fontBytes ??= readFile(EVIDENCE_FONT_URL));
+/** Hind's bytes, read once per process (shared with the M3-07 scope snapshot). */
+export const loadEvidenceFont = (): Promise<Uint8Array> => (fontBytes ??= readFile(EVIDENCE_FONT_URL));
 
 export const itemSize = (i: CompileItem): number =>
   i.bytes?.byteLength ?? Buffer.byteLength(i.text ?? "", "utf8");
@@ -96,7 +97,7 @@ export async function compileEvidencePdf(
   if (items.length === 0) return err({ code: "no_items" });
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
-  const font = await doc.embedFont(await loadFont(), { subset: true });
+  const font = await doc.embedFont(await loadEvidenceFont(), { subset: true });
   const groups: PageGroup[] = [];
   for (const item of items) {
     const before = doc.getPageCount();

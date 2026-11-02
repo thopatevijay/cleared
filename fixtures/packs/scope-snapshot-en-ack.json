@@ -1,0 +1,35 @@
+{
+  "packId": "0f6e1d2c-1a2b-4c3d-9e4f-5a6b7c8d9e01",
+  "payment": {
+    "captureId": "7HX48211LM305624B",
+    "amount": "240.00",
+    "currency": "USD",
+    "date": "2026-10-02T11:20:00.000Z"
+  },
+  "scope": {
+    "itemId": "6b1f2c9e-3d4a-4e5b-8c6d-7e8f90a1b2c3",
+    "sha256": "62ed6531b1efd227c8c2b32e3a3206a1b70e9ad31d92ae2436e5c28290ae5dcf",
+    "text": "Order LOGO-1042 · Scope brief (synthetic sample)\nSeller: Meera Studio (meera@example.test)\nClient: Northwind Tea Co. (orders@example.test)\nPrice: USD 240.00, paid via PayPal on 2 October 2026\n\nDeliverables:\n1. Primary logo in SVG and PNG formats.\n2. Three colour variants: full colour, black, and white.\n3. A one-page brand guide (PDF) listing the colour codes.\n4. The editable source file in Adobe Illustrator (.ai) format.\n5. Final files delivered by 20 October 2026.\n\nRevisions: up to two rounds, requested in the order chat."
+  },
+  "delivery": [
+    {
+      "kind": "delivery",
+      "createdAt": "2026-10-19T16:05:00.000Z",
+      "sha256": "eaa4193b7543700c162410002c5695bb99723580497a18d75cc20562c394cefa"
+    },
+    {
+      "kind": "shipment",
+      "createdAt": "2026-10-20T08:40:00.000Z",
+      "sha256": "92453a3fca1cc0f380196a899e145b17d5f3d20d3f872a48691f21be2ed46058"
+    }
+  ],
+  "timeZone": "Asia/Kolkata",
+  "generatedAt": "2026-11-02T06:00:00.000Z",
+  "ack": {
+    "typedName": "Lena Okafor",
+    "acceptedAt": "2026-10-05T09:30:12.000Z",
+    "ip": "203.0.113.24",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/19.0 Safari/605.1.15",
+    "sha256": "107117632bf498537c51b45bd8d865ce90ddbd504b2037bc2242d2d3dd4d25f4"
+  }
+}
