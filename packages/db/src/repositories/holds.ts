@@ -1,7 +1,7 @@
 // M3-01 holds: the reconcile lock and the read models behind `GET /api/holds(/:id)` and the dashboard's
 // held total. Every query is bound to one workspace, and the reads also require the capture to be owned
 // by that workspace in `paypal_resource_owner` (ADR 0008), so an unowned or foreign capture never shows.
-import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lt, ne, sql } from "drizzle-orm";
 import type { Db } from "../client.ts";
 import * as s from "../../schema/index.ts";
 import type { Executor, Tx } from "../tx.ts";
@@ -82,6 +82,16 @@ export function holdsRepo(db: Db, ws: string) {
     /** Active holds on owned captures, newest first. */
     async listActive(ex: Executor = db): Promise<HoldView[]> {
       return views(active, ex);
+    },
+    /** M3-05: released holds on owned captures whose release time is in [from, to) (the cash calendar). */
+    async releasedBetween(from: Date, to: Date, ex: Executor = db): Promise<HoldView[]> {
+      const released = and(
+        eq(s.holds.workspaceId, ws),
+        eq(s.holds.state, "released"),
+        gte(s.holds.releasedAt, from),
+        lt(s.holds.releasedAt, to),
+      );
+      return views(released, ex);
     },
     /** One hold (any state) on an owned capture; null when absent, foreign or unowned. */
     async view(holdId: string, ex: Executor = db): Promise<HoldView | null> {

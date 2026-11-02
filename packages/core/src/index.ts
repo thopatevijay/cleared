@@ -29,6 +29,7 @@ export * from "./proof/scope-snapshot.ts";
 export * from "./contracts/packs.ts";
 export * from "./ports/blob-store.ts";
 export * from "./holds/index.ts";
+export * from "./cash/index.ts";
 export * from "./carriers/index.ts";
 export * from "./disputes/dispute.ts";
 export * from "./disputes/mirror.ts";
