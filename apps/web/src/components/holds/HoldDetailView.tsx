@@ -22,6 +22,8 @@ import { AdviceLine, TrackingHint } from "./HeldLines.tsx";
 import { HOLDS_POLL_MS } from "./HoldsView.tsx";
 import { OfflineBanner, useLoadedAt } from "./Offline.tsx";
 import { RuleSource } from "./RuleSource.tsx";
+import { RouteAdvice } from "../tracking/RouteAdvice.tsx";
+import { TrackingCard } from "../tracking/TrackingCard.tsx";
 import { ruleOf, useReasonText } from "./text.ts";
 
 const fetchHold = async (path: string): Promise<HoldDetail> => HoldDetailSchema.parse(await getJson(path));
@@ -171,7 +173,20 @@ function Header({ d }: { d: HoldDetail }) {
   );
 }
 
-function Detail({ d }: { d: HoldDetail }) {
+/** M3-03: a goods hold's action slot: route advice, then the `add_tracking` ApprovalCard. */
+function GoodsAction({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) {
+  const tracking = d.hold.tracking ?? null;
+  if (tracking === null) return <TrackingHint />;
+  return (
+    <>
+      {tracking.state === "filed" ? null : <TrackingHint />}
+      <RouteAdvice s={tracking} />
+      <TrackingCard hold={d.hold} onChanged={onChanged} />
+    </>
+  );
+}
+
+function Detail({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) {
   const t = useTranslations("holds.detail");
   const h = d.hold;
   const released = h.state === "released";
@@ -186,7 +201,7 @@ function Detail({ d }: { d: HoldDetail }) {
           <h2 id="action-heading" className="text-xl font-semibold">
             {t("actionTitle")}
           </h2>
-          {h.type === "goods" ? <TrackingHint /> : <p>{t("nothingToDo")}</p>}
+          {h.type === "goods" ? <GoodsAction d={d} onChanged={onChanged} /> : <p>{t("nothingToDo")}</p>}
         </section>
       )}
       <Timeline state={h.state} />
@@ -208,16 +223,20 @@ export function HoldDetailView({ id }: { id: string }) {
     if (error instanceof ApiError && error.status === 401) router.replace("/?ended=1");
   }, [error, router]);
   useEffect(() => {
-    if (data === undefined || focused.current || window.location.hash !== "#why") return;
+    // "#why" (the dashboard's "Why?") or "#tracking" (M3-03 "File tracking" → the ApprovalCard)
+    const target = window.location.hash.slice(1);
+    if (data === undefined || focused.current || (target !== "why" && target !== "tracking")) return;
+    const el = document.getElementById(target);
+    if (el === null) return;
     focused.current = true;
-    document.getElementById("why")?.focus();
+    el.focus();
   }, [data]);
 
   if (data !== undefined)
     return (
       <>
         <OfflineBanner loadedAt={loadedAt} timeZone={data.workspace.timezone} />
-        <Detail d={data} />
+        <Detail d={data} onChanged={() => void mutate()} />
       </>
     );
   if (error instanceof ApiError && error.status === 404)
