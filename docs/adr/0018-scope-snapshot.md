@@ -33,5 +33,5 @@ M3-07 turns the agreed scope, the payment, the delivery evidence metadata and th
 
 - The snapshot embeds the whole Hind font (~180 KB per PDF), well under PayPal's 10 MB. A 50,000-character scope stays small, because each glyph outline is stored once.
 - A pack checked with a `client_ack` before this change carries that item in its stored evidence set hash. Its next check simply runs as for any new evidence.
-- M2-07's compiled evidence PDF still typesets pasted Devanagari with plain `drawText`, which is shaped but extracts in visual order (BL-01 entry logged). It can adopt `glyph-text.ts` later.
+- M2-07's compiled evidence PDF now typesets pasted text through `glyph-text.ts` too (BL-01 6538667077, fixed in the M3-07 backlog pass), so pasted Hindi chats extract in typed order there as well. It embeds the whole font only when the selection has a text item.
 - `SCOPE_KINDS` still lists `scope_snapshot`, but the check never sees one now.
