@@ -44,7 +44,9 @@ describe("renderNotification", () => {
   it("HI copy for each kind, with the HI link", () => {
     const now = addMinutes(DUE, -50 * 60);
     const hold = holdOpenedNotification({ holdId: D, paymentId: D, amount: usd, reason: "PENDING_REVIEW" });
-    expect(renderNotification(hold, ctx(now, "hi")).sentence).toBe("PayPal ने $120.00 USD रोका है (PENDING_REVIEW)।");
+    expect(renderNotification(hold, ctx(now, "hi")).sentence).toBe(
+      "PayPal ने $120.00 USD रोका है (PENDING_REVIEW)।",
+    );
     const opened = disputeOpenedNotification({
       disputeRowId: D,
       amount: usd,

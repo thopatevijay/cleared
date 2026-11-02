@@ -6,7 +6,10 @@ import type { TemplateStrings, SentenceParams } from "./types.ts";
 function due(p: SentenceParams): string {
   if (p.remaining === null || p.due === null) return "";
   const n = p.remaining.n;
-  const span = p.remaining.unit === "days" ? `${String(n)} ${n === 1 ? "day" : "days"}` : `${String(n)} ${n === 1 ? "hour" : "hours"}`;
+  const span =
+    p.remaining.unit === "days"
+      ? `${String(n)} ${n === 1 ? "day" : "days"}`
+      : `${String(n)} ${n === 1 ? "hour" : "hours"}`;
   return `in ${span} (${p.due.date}, ${p.due.time} ${p.due.tz})`;
 }
 
@@ -23,5 +26,6 @@ const SENTENCES: Readonly<Record<NotificationKind, (p: SentenceParams) => string
 export const EN: TemplateStrings = {
   sentence: (kind, p) => SENTENCES[kind](p),
   open: "Open in Cleared",
-  footer: "Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.",
+  footer:
+    "Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.",
 };

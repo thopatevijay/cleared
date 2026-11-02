@@ -2,7 +2,12 @@
 // no tracking pixels, a single link to APP_BASE_URL. The data carries only amounts, reason codes and dates
 // (NotificationDataSchema), so evidence text and buyer messages can never reach a template.
 import type { Locale } from "../../accounts/workspace.ts";
-import { notificationPath, type NotificationData, type NotificationKind, type NotificationRefType } from "../rules.ts";
+import {
+  notificationPath,
+  type NotificationData,
+  type NotificationKind,
+  type NotificationRefType,
+} from "../rules.ts";
 import type { Instant } from "../../time.ts";
 import { EN } from "./en.ts";
 import { escapeHtml, formatAmount, reasonWords, remaining, zonedDate } from "./format.ts";

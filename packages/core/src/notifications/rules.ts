@@ -7,7 +7,7 @@
 // (BL-01 6536548146), while repeated ticks against the same date add none.
 import { z } from "zod";
 import { evaluateDeadline } from "../disputes/deadline.ts";
-import { MoneySchema, type Money } from "../money.ts";
+import { MoneySchema, parseMoney, type Money } from "../money.ts";
 import { addMinutes, compareInstants, InstantSchema, type Instant } from "../time.ts";
 
 export const NOTIFICATION_KINDS = [
@@ -45,7 +45,41 @@ export interface NotificationDraft {
   readonly data: NotificationData;
 }
 
-const EMPTY: NotificationData = { amount: null, reason: null, dueDate: null, releaseDate: null, paymentId: null };
+const EMPTY: NotificationData = {
+  amount: null,
+  reason: null,
+  dueDate: null,
+  releaseDate: null,
+  paymentId: null,
+};
+
+/** A stored amount + currency as Money, or null when either is missing or invalid (the copy then omits it). */
+export function storedMoney(amount: string | null, currency: string | null): Money | null {
+  if (amount === null || currency === null) return null;
+  const parsed = parseMoney(amount, currency);
+  return parsed.ok ? parsed.value : null;
+}
+
+/** A stored row as template input; null for an unknown kind. Rows from before M3-08 have `{}` data. */
+export function storedNotification(row: {
+  readonly id: string;
+  readonly kind: string;
+  readonly refType: string | null;
+  readonly refId: string | null;
+  readonly disputeId: string | null;
+  readonly data: unknown;
+}): Pick<NotificationDraft, "kind" | "refType" | "refId" | "data"> | null {
+  const kind = NOTIFICATION_KINDS.find((k) => k === row.kind);
+  if (kind === undefined) return null;
+  const refType = NOTIFICATION_REF_TYPES.find((t) => t === row.refType) ?? "dispute";
+  const data = NotificationDataSchema.safeParse({ ...EMPTY, ...(row.data as object | null) });
+  return {
+    kind,
+    refType,
+    refId: row.refId ?? row.disputeId ?? row.id,
+    data: data.success ? data.data : EMPTY,
+  };
+}
 
 export function dedupeKey(d: Pick<NotificationDraft, "kind" | "refId" | "threshold">): string {
   return `${d.kind}:${d.refId}:${d.threshold}`;

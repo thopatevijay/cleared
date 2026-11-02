@@ -9,6 +9,7 @@ import {
   ACTION_EXECUTE_QUEUE,
   ACTION_RECONCILE_QUEUE,
   createPublisher,
+  NOTIFICATION_SEND_EMAIL_QUEUE,
   PAYPAL_CAPTURE_SYNC_QUEUE,
   PAYPAL_DISPUTE_SYNC_QUEUE,
   queueSpec,
@@ -23,6 +24,9 @@ import {
 } from "@cleared/db";
 import type { AiRuntime } from "./ai.ts";
 import type { Handler } from "./consume.ts";
+import { allOf, disputeOpenedHandler, holdOpenedHandler } from "./consumers/notifications.ts";
+import type { EmailRuntime } from "./email.ts";
+import { sendEmailHandler } from "./jobs/send-email.ts";
 import { captureSyncHandler } from "./jobs/capture-sync.ts";
 import { killSwitchFromEnv } from "./jobs/action-runtime.ts";
 import { disputeSyncHandler } from "./jobs/dispute-sync.ts";
@@ -55,8 +59,14 @@ export interface Runtime {
 }
 
 /** The production registry. The outbox relay is not listed: `boss.ts` schedules it on every worker. */
-export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntime): Registry {
+export function defaultRegistry(
+  rt: Runtime,
+  paypal: PayPalClients,
+  ai: AiRuntime,
+  email: EmailRuntime,
+): Registry {
   const publisher = createPublisher(rt.db, rt.boss, correlationIdOrNew);
+  const notifications = { db: rt.db, publisher };
   const scenario: ScenarioDeps = {
     db: rt.db,
     publisher,
@@ -131,8 +141,9 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
     // not re-send it); M3-01 replaces these with hold derivation.
     { queue: queueSpec("payment.captured"), handler: recordEvent },
     { queue: queueSpec("payment.status_changed"), handler: recordEvent },
-    // The events dispute sync emits (M2-06); M2-07 drafts on them (M3 may add more consumers).
-    { queue: queueSpec("dispute.opened"), handler: draft },
+    // The events dispute sync emits (M2-06); M2-07 drafts on them. M3-08: `dispute.opened` also writes the
+    // seller's notification (first, so it is in the same delivery as the draft).
+    { queue: queueSpec("dispute.opened"), handler: allOf(disputeOpenedHandler(notifications), draft) },
     { queue: queueSpec("dispute.status_changed"), handler: draft },
     // The action events (M2-08); M2-09 / M3-08 consume them for real. `action.proposed` too, or its
     // outbox rows stay unpublished and the relay re-sends them every minute (BL-01 6568052054).
@@ -141,6 +152,13 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
     { queue: queueSpec("action.executed"), handler: recordEvent },
     { queue: queueSpec("action.failed"), handler: recordEvent },
     { queue: queueSpec("action.unknown"), handler: recordEvent },
+    // M3-08: notifications. `hold.opened` (emitted by M3-01's hold derivation) writes `hold_opened`; every
+    // new notification row enqueues one `notification.send_email` job.
+    { queue: queueSpec("hold.opened"), handler: holdOpenedHandler(notifications) },
+    {
+      queue: queueSpec(NOTIFICATION_SEND_EMAIL_QUEUE),
+      handler: sendEmailHandler({ db: rt.db, email, now: () => new Date() }),
+    },
   ];
 }
 

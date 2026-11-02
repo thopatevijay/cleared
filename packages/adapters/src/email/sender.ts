@@ -56,6 +56,14 @@ export function domainOf(address: string): string {
   return address.slice(address.lastIndexOf("@") + 1).toLowerCase();
 }
 
+/** A sender for environments with no Resend key: refuses and logs, so callers fail closed. */
+export const unconfiguredSender: EmailSender = {
+  send() {
+    defaultLog({ msg: "email refused", reason: "resend_not_configured" });
+    return Promise.resolve({ kind: "refused", reason: "not_configured" });
+  },
+};
+
 /**
  * Sends only to allowlisted recipients when `allowlist` is non-null; anything else is refused before
  * the inner sender runs (no vendor request), with a logged reason.

@@ -22,7 +22,14 @@ function ticks(due: Instant, from: Instant, minutes: number, seen = new Set<stri
   const fired: string[] = [];
   for (let t = 0; t <= minutes; t += 15) {
     const now = addMinutes(from, t);
-    const alert = deadlineAlert({ disputeRowId: DISPUTE, dueDate: due, open: true, now, amount: usd, reason: null });
+    const alert = deadlineAlert({
+      disputeRowId: DISPUTE,
+      dueDate: due,
+      open: true,
+      now,
+      amount: usd,
+      reason: null,
+    });
     if (alert === null) continue;
     const key = dedupeKey(alert);
     if (seen.has(key)) continue;
@@ -52,15 +59,36 @@ describe("deadlineAlert across 15-minute ticks", () => {
   it("a late first tick inside 24 h fires T-24 only; past due − 1 h and closed disputes fire nothing", () => {
     const due = addMinutes(START, 20 * 60);
     expect(ticks(due, START, 24 * 60)).toEqual(["deadline_t24@0"]);
-    const closed = deadlineAlert({ disputeRowId: DISPUTE, dueDate: due, open: false, now: START, amount: null, reason: null });
+    const closed = deadlineAlert({
+      disputeRowId: DISPUTE,
+      dueDate: due,
+      open: false,
+      now: START,
+      amount: null,
+      reason: null,
+    });
     expect(closed).toBeNull();
-    const noDue = deadlineAlert({ disputeRowId: DISPUTE, dueDate: null, open: true, now: START, amount: null, reason: null });
+    const noDue = deadlineAlert({
+      disputeRowId: DISPUTE,
+      dueDate: null,
+      open: true,
+      now: START,
+      amount: null,
+      reason: null,
+    });
     expect(noDue).toBeNull();
   });
 
   it("keys on (kind, ref, due date) and stores only amount, reason and dates", () => {
     const due = addMinutes(START, 30 * 60);
-    const a = deadlineAlert({ disputeRowId: DISPUTE, dueDate: due, open: true, now: START, amount: usd, reason: "X" });
+    const a = deadlineAlert({
+      disputeRowId: DISPUTE,
+      dueDate: due,
+      open: true,
+      now: START,
+      amount: usd,
+      reason: "X",
+    });
     expect(a && dedupeKey(a)).toBe(`deadline_t72:${DISPUTE}:${due}`);
     expect(NotificationDataSchema.parse(a?.data)).toEqual(a?.data);
   });
@@ -69,7 +97,12 @@ describe("deadlineAlert across 15-minute ticks", () => {
 describe("one-time events and links", () => {
   it("hold_opened and dispute_opened key on 'once' and link to the payment / dispute", () => {
     const pay = "1b4b9a11-3f0e-4c69-9a0e-6f3d6f0b8e43";
-    const h = holdOpenedNotification({ holdId: DISPUTE, paymentId: pay, amount: usd, reason: "PENDING_REVIEW" });
+    const h = holdOpenedNotification({
+      holdId: DISPUTE,
+      paymentId: pay,
+      amount: usd,
+      reason: "PENDING_REVIEW",
+    });
     expect(dedupeKey(h)).toBe(`hold_opened:${DISPUTE}:once`);
     expect(notificationPath(h)).toBe(`/payments/${pay}`);
     const d = disputeOpenedNotification({ disputeRowId: DISPUTE, amount: usd, reason: null, dueDate: null });

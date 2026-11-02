@@ -43,7 +43,8 @@ export function zonedDate(at: Instant, locale: Locale, timeZone: string): ZonedD
   return { date, time, tz };
 }
 
-export type Remaining = { readonly unit: "days"; readonly n: number } | { readonly unit: "hours"; readonly n: number };
+export type Remaining =
+  { readonly unit: "days"; readonly n: number } | { readonly unit: "hours"; readonly n: number };
 
 /**
  * The true time left at `now`: whole days from 48 h up, otherwise whole hours (at least 1), so a late run

@@ -24,5 +24,6 @@ const SENTENCES: Readonly<Record<NotificationKind, (p: SentenceParams) => string
 export const HI: TemplateStrings = {
   sentence: (kind, p) => SENTENCES[kind](p),
   open: "Cleared में खोलें",
-  footer: "Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।",
+  footer:
+    "Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।",
 };

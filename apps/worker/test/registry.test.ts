@@ -7,6 +7,7 @@ import { DOMAIN_EVENT_TYPES } from "@cleared/core";
 import type { Db, Queue } from "@cleared/db";
 import { describe, expect, it } from "vitest";
 import { aiFromEnv } from "../src/ai.ts";
+import { emailFromEnv } from "../src/email.ts";
 import { paypalClientsFromEnv } from "../src/paypal.ts";
 import { defaultRegistry } from "../src/registry.ts";
 
@@ -44,6 +45,7 @@ const registry = defaultRegistry(
   { db: {} as unknown as Db, boss: {} as unknown as Queue },
   paypalClientsFromEnv({}),
   aiFromEnv({}),
+  emailFromEnv({}),
 );
 const queues = registry.map((r) => r.queue.name);
 

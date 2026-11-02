@@ -44,6 +44,10 @@ export interface WatchedDispute {
   readonly status: string;
   readonly sellerResponseDueDate: Date;
   readonly deadlineState: DeadlineState;
+  /** M3-08: the alert's template inputs */
+  readonly amount: string | null;
+  readonly currency: string | null;
+  readonly reason: string | null;
 }
 
 /** Platform read for the deadline watcher: every unresolved dispute with a due date, in every workspace. */
@@ -58,6 +62,9 @@ export function disputeDeadlinesRepo(db: Db) {
           status: s.disputes.status,
           sellerResponseDueDate: s.disputes.sellerResponseDueDate,
           deadlineState: s.disputes.deadlineState,
+          amount: s.disputes.amount,
+          currency: s.disputes.currency,
+          reason: s.disputes.reason,
         })
         .from(s.disputes)
         .where(
