@@ -174,7 +174,7 @@ describe("CashCalendar contract (props fixture)", () => {
     expect(out).toMatch(/datetime="2026-12-20"/i);
     const none = text(html(<NoEstimate data={FIXTURE} locale="en-IN" />));
     expect(none).toContain("No estimate yet");
-    expect(none).toContain("PayPal gives no timeline for this reason BUYER_COMPLAINT");
+    expect(none).toContain("PayPal gives no timeline for this reason. BUYER_COMPLAINT");
   });
 
   it("an empty range says so", () => {

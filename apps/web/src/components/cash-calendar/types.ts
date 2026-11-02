@@ -21,6 +21,8 @@ export interface CashCalendarProps {
   readonly onRangeChange?: (from: string, to: string) => void;
   /** month view: a day was selected (its events show beside or below the grid) */
   readonly onDaySelect?: (date: string) => void;
+  /** month view: the selected day (`YYYY-MM-DD`), marked in the grid */
+  readonly selectedDay?: string | null;
 }
 
 /** Where selecting an event goes: the hold detail or the dispute detail. */

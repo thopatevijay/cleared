@@ -20,6 +20,7 @@ import { useRouter } from "../../i18n/navigation.ts";
 import { ApiError, getJson } from "../../lib/api.ts";
 import { useUiLocale } from "../disputes/text.ts";
 import { EmptyState } from "../EmptyState.tsx";
+import { OfflineBanner, useLoadedAt } from "../holds/Offline.tsx";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 import { CashCalendar } from "./index.tsx";
 import { DayGroup } from "./list.tsx";
@@ -149,6 +150,7 @@ export function CashCalendarView({
   useEffect(() => {
     if (error instanceof ApiError && error.status === 401) router.replace("/?ended=1");
   }, [error, router]);
+  const loadedAt = useLoadedAt(data);
 
   const onSelect = (e: CashEvent) => {
     router.push(eventHref(e));
@@ -187,6 +189,7 @@ export function CashCalendarView({
         onSelect={onSelect}
         onRangeChange={onRangeChange}
         onDaySelect={setDay}
+        selectedDay={day}
       />
     );
     body =
@@ -202,6 +205,7 @@ export function CashCalendarView({
 
   return (
     <div className="flex flex-col gap-6">
+      {data === undefined ? null : <OfflineBanner loadedAt={loadedAt} timeZone={data.timezone} />}
       <ViewSwitch view={view} onChange={setView} />
       <div data-testid="calendar-area" data-view={view ?? ""}>
         {body}

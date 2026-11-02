@@ -4,7 +4,7 @@
 //              plus a second one in EUR (€15.50) on the same day (totals are per currency)
 // - complaint: the M2-09 dispute mirror (PENDING / BUYER_COMPLAINT, $120.00, WAITING_FOR_SELLER_RESPONSE)
 //              with its `dispute_hold` (PayPal gives no timeline), so it shows a reply deadline only
-// - released:  a review hold PayPal released ($420.00)
+// - released:  a review hold PayPal released ($420.00), an hour before `base`
 // - service:   the M3-04 service hold, Completed confirmed: `filed`, `service_completed`, confirmed + 7 d
 // Instants sit at 12:00 UTC, so each lands on the same day in every zone from UTC−11 to UTC+11.
 import { deriveHold, fromEpochMs, WorkspaceIdSchema } from "@cleared/core";
@@ -28,7 +28,7 @@ export interface SeededCash {
   readonly service: { holdId: string; estimate: Date };
 }
 
-/** Every kind, at `base` + 1 (review), + 2 (released), + 3 (service), + 4 (reply due) days at 12:00 UTC. */
+/** Every kind: released (`base` − 1 h), then review (+1 d), service (+3 d), reply due (+4 d), at 12:00 UTC. */
 export async function seedCash(db: Db, ws: string, base: Date): Promise<SeededCash> {
   const repos = forWorkspace(db, WorkspaceIdSchema.parse(ws));
   const review = await seedHeldPayment(db, ws, { seenAt: noonUtc(base, 0) });
@@ -51,7 +51,8 @@ export async function seedCash(db: Db, ws: string, base: Date): Promise<SeededCa
     estimateSource: dh.estimateRuleId,
   });
 
-  const at = noonUtc(base, 2);
+  // PayPal released it an hour before `base` (a release is never in the future)
+  const at = new Date(base.getTime() - 3_600_000);
   const gone = await seedHeldPayment(db, ws, { amount: "420.00", seenAt: noonUtc(base, -3) });
   await repos.holds.update(gone.holdId ?? "", { state: "released", releasedAt: at });
 

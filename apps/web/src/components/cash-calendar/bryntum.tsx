@@ -121,11 +121,11 @@ function MonthBar({
   );
 }
 
-/** Below 1024 px the month grid shows counts only (cash-calendar.md "375 px"). */
+/** Below 768 px the month grid shows counts only (cash-calendar.md "375 px"). */
 function useCompact(): boolean {
   const [compact, setCompact] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1023px)");
+    const mq = window.matchMedia("(max-width: 767px)");
     const on = () => {
       setCompact(mq.matches);
     };
@@ -181,6 +181,11 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
     for (const e of p.events) by.set(e.date, (by.get(e.date) ?? 0) + 1);
     return by;
   }, [p.events]);
+  const kindsByDay = useMemo(() => {
+    const by = new Map<string, Set<string>>();
+    for (const e of p.events) by.set(e.date, (by.get(e.date) ?? new Set()).add(e.kind));
+    return by;
+  }, [p.events]);
 
   // 375 px cells: "2 · €15.50 · $64.00" (count, then each currency's total, never summed across currencies)
   const shortByDay = useMemo(() => {
@@ -217,8 +222,26 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
         (children as DomConfig[]).push({
           tag: "span",
           className: "cash-day-count",
-          children: [String(n), ...short].map((line) => ({ tag: "span", text: line })),
+          children: [
+            {
+              tag: "span",
+              className: "cash-day-n",
+              children: [
+                ...[...(kindsByDay.get(cell.key) ?? [])].map((k) => ({
+                  tag: "i",
+                  className: `cash-dot cash-dot--${k}`,
+                })),
+                { tag: "b", text: String(n) },
+              ],
+            },
+            ...short.map((line) => ({ tag: "span", text: line })),
+          ],
         });
+      if (p.selectedDay === cell.key)
+        (dom as { className?: Record<string, boolean> }).className = {
+          ...((dom as { className?: Record<string, boolean> }).className ?? {}),
+          "cash-selected": true,
+        };
       return dom;
     };
     return {
@@ -229,7 +252,7 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
       eventRenderer,
       dayCellRenderer,
     };
-  }, [byId, totalsByDay, countByDay, shortByDay, reduced]);
+  }, [byId, totalsByDay, countByDay, kindsByDay, shortByDay, p.selectedDay, reduced]);
 
   const onKeyDownCapture = (ev: KeyboardEvent<HTMLDivElement>) => {
     if (ev.key !== "Enter" && ev.key !== " ") return;

@@ -60,11 +60,13 @@ async function shoot(
   widths: readonly number[],
   ready: Ready,
   after?: Ready,
+  before?: Ready,
 ): Promise<void> {
   for (const theme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
     for (const width of widths) {
       await page.setViewportSize({ width, height: width < 768 ? 800 : 900 });
+      if (before) await before(page);
       await page.goto(path);
       await ready(page);
       if (after) await after(page);
@@ -201,7 +203,7 @@ test("list view at 360: the default below 768 px, no horizontal scroll, every ev
   const rows = page.getByTestId("cash-list").getByTestId("cash-row");
   await expect(rows).toHaveCount(cal.events.length);
   for (const r of await rows.all()) expect((await r.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(56);
-  await expect(page.getByTestId("cash-day").first()).toContainText("estimated");
+  await expect(page.getByTestId("cash-day").nth(1)).toContainText("estimated");
   const { sw, cw } = await page.evaluate(() => ({
     sw: document.documentElement.scrollWidth,
     cw: document.documentElement.clientWidth,
@@ -301,4 +303,73 @@ test("empty, loading and error states", async ({ page }) => {
   };
   await shoot(page, "/en/calendar?view=month", "en-calendar-error", [375, 1440], errorReady);
   await page.unrouteAll({ behavior: "ignoreErrors" });
+
+  // the engine's own states: its chunk hangs (loading) or fails (the table still has every date). The
+  // page loads in List view (no engine chunk yet); then chunks are held or refused and Month is chosen.
+  const reset: Ready = async (p) => {
+    await p.unrouteAll({ behavior: "ignoreErrors" });
+    await p.context().setOffline(false);
+  };
+  const toMonth =
+    (mode: "hang" | "fail", label: string): Ready =>
+    async (p) => {
+      await p.route("**/_next/static/chunks/**", (route) =>
+        mode === "hang" ? undefined : route.abort("failed"),
+      );
+      await p.getByTestId("view-switch").getByRole("button", { name: label }).click();
+    };
+  await shoot(
+    page,
+    "/en/calendar?view=list",
+    "en-calendar-engine-loading",
+    [375, 1440],
+    listReady,
+    async (p) => {
+      await toMonth("hang", "Month")(p);
+      await expect(p.getByTestId("engine-loading")).toContainText("Loading the calendar view…");
+    },
+    reset,
+  );
+  await shoot(
+    page,
+    "/en/calendar?view=list",
+    "en-calendar-engine-failed",
+    [375, 1440],
+    listReady,
+    async (p) => {
+      await toMonth("fail", "Month")(p);
+      await expect(p.getByTestId("engine-failed")).toHaveText(
+        "The calendar view couldn't load. All dates are in the table below.",
+      );
+      await expect(p.getByTestId("cash-table-row")).toHaveCount(5);
+    },
+    reset,
+  );
+  await shoot(
+    page,
+    "/hi/calendar?view=list",
+    "hi-calendar-engine-failed",
+    [375],
+    listReady,
+    async (p) => {
+      await toMonth("fail", "महीना")(p);
+      await expect(p.getByTestId("engine-failed")).toBeVisible();
+    },
+    reset,
+  );
+
+  // offline: the last data stays, under a banner naming when it was loaded
+  await shoot(
+    page,
+    "/en/calendar?view=month",
+    "en-calendar-offline",
+    [375, 1440],
+    engineReady,
+    async (p) => {
+      await p.context().setOffline(true);
+      await expect(p.getByTestId("offline-banner")).toBeVisible();
+    },
+    reset,
+  );
+  await reset(page);
 });

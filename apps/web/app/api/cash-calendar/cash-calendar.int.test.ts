@@ -51,6 +51,7 @@ describe.skipIf(!dbAvailable)("cash calendar API (integration)", () => {
     expect(c.timezone).toBe(a.tz);
     const day = (d: Date) => localDay(d.toISOString(), a.tz);
     expect(c.events.map((e) => [e.kind, e.ref.id, e.date, e.amount, e.estimated])).toEqual([
+      ["released", s.released.holdId, day(s.released.at), { value: "420.00", currency: "USD" }, false],
       [
         "estimated_release",
         expect.any(String),
@@ -65,7 +66,6 @@ describe.skipIf(!dbAvailable)("cash calendar API (integration)", () => {
         { value: "64.00", currency: "USD" },
         true,
       ],
-      ["released", s.released.holdId, day(s.released.at), { value: "420.00", currency: "USD" }, false],
       [
         "service_completed_due",
         s.service.holdId,
@@ -81,7 +81,7 @@ describe.skipIf(!dbAvailable)("cash calendar API (integration)", () => {
         false,
       ],
     ]);
-    expect(new Set(c.events.slice(0, 2).map((e) => e.ref.id))).toEqual(
+    expect(new Set(c.events.slice(1, 3).map((e) => e.ref.id))).toEqual(
       new Set([s.review.holdId, s.reviewEur.holdId]),
     );
     const review = c.events.find((e) => e.ref.id === s.review.holdId);
@@ -100,9 +100,9 @@ describe.skipIf(!dbAvailable)("cash calendar API (integration)", () => {
     });
 
     expect(c.totals).toEqual([
+      { date: day(s.released.at), currency: "USD", estimated: "0", released: "420.00", count: 1 },
       { date: day(s.review.estimate), currency: "EUR", estimated: "15.50", released: "0", count: 1 },
       { date: day(s.review.estimate), currency: "USD", estimated: "64.00", released: "0", count: 1 },
-      { date: day(s.released.at), currency: "USD", estimated: "0", released: "420.00", count: 1 },
       { date: day(s.service.estimate), currency: "USD", estimated: "80.00", released: "0", count: 1 },
     ]);
     // held now: review + complaint + service (USD), the EUR review; never summed across currencies

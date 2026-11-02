@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "../../i18n/navigation.ts";
 import { RuleSource } from "../holds/RuleSource.tsx";
 import { KIND_STYLE } from "./kinds.ts";
+import { useReasonText } from "../holds/text.ts";
 import { useCashText } from "./text.ts";
 import { eventHref } from "./types.ts";
 
@@ -93,6 +94,7 @@ export function CashTable({ data, locale }: { data: CashCalendarResponse; locale
 export function NoEstimate({ data, locale }: { data: CashCalendarResponse; locale: string }) {
   const t = useTranslations("calendar");
   const text = useCashText(locale);
+  const reason = useReasonText();
   if (data.noEstimate.length === 0) return null;
   return (
     <section aria-labelledby="no-estimate" className="flex flex-col gap-2" data-testid="no-estimate">
@@ -109,8 +111,9 @@ export function NoEstimate({ data, locale }: { data: CashCalendarResponse; local
             >
               {text.money(n.amount)}
             </Link>
+            <span className="text-sm">{reason(n.reason)}</span>
             <span className="text-sm">
-              {t("noEstimate")}{" "}
+              {t("noEstimate")}.{" "}
               <span className="inline-block font-mono text-xs text-text-muted">{n.reason}</span>
             </span>
           </li>

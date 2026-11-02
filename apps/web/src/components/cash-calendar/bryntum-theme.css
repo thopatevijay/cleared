@@ -67,6 +67,32 @@
 .cash-bryntum .b-calendar-cell.b-other-month .b-cal-cell-header {
   color: var(--color-text-muted);
 }
+/* The month-start label ("Nov" in "Nov 1") is Bryntum's ::before on the day number. */
+.cash-bryntum .b-day-num[data-start-of]::before {
+  color: var(--color-text) !important;
+}
+/* Hover and focus on a day number: our sunken surface, the digits keep the text token. */
+.cash-bryntum .b-day-num:hover,
+.cash-bryntum .b-day-num:focus {
+  background: var(--color-surface-sunken) !important;
+  color: var(--color-text) !important;
+}
+/* Today: the accent ring (not Bryntum's blue). */
+.cash-bryntum .b-calendar-cell.b-today .b-day-num {
+  border-color: var(--color-accent) !important;
+  color: var(--color-accent) !important;
+  background: transparent !important;
+}
+/* The day selected in Month view (its list shows beside or below the grid). */
+.cash-bryntum .b-calendar-cell.cash-selected .b-day-num {
+  background: var(--color-accent) !important;
+  color: var(--color-on-accent) !important;
+  border-radius: 50%;
+}
+.cash-bryntum .b-calendar-cell.cash-selected {
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
 /* The selected day: accent fill with on-accent digits (Bryntum's marker hides the digits in dark). */
 .cash-bryntum .b-cal-cell-header.b-selected-date .b-day-num,
 .cash-bryntum .b-calendar-cell.b-selected-date .b-day-num {
@@ -144,7 +170,7 @@
 }
 .cash-bryntum.cash-compact .cash-day-count {
   display: block;
-  padding: 0 0.2em;
+  padding: 0 0.25em;
   font-size: 0.6875rem;
   line-height: 1.25;
   font-weight: 600;
@@ -154,6 +180,39 @@
 .cash-bryntum.cash-compact .cash-day-count > span {
   display: block;
   white-space: nowrap;
+  overflow: hidden;
+}
+.cash-bryntum .cash-day-n {
+  display: flex !important;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.75rem;
+}
+.cash-bryntum .cash-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.cash-bryntum .cash-dot--estimated_release {
+  background: var(--color-status-held-fg);
+}
+.cash-bryntum .cash-dot--dispute_deadline {
+  background: var(--color-status-dispute-fg);
+}
+.cash-bryntum .cash-dot--released {
+  background: var(--color-status-completed-fg);
+}
+.cash-bryntum .cash-dot--service_completed_due {
+  background: var(--color-status-info-fg);
+}
+
+/* 768-1279 px: a cell is too narrow for the totals beside the day number; the bars carry each amount and
+   the selected day's list carries the totals. */
+@media (max-width: 1279px) {
+  .cash-bryntum .cash-day-total {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
