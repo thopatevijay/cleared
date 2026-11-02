@@ -18,6 +18,7 @@ import {
   checkPayloadHash,
   classifySendFailure,
   fromEpochMs,
+  isHoldActionKind,
   mapDispute,
   parseExecutablePayload,
   RECONCILE_FIRST_DELAY_SECONDS,
@@ -63,6 +64,7 @@ import {
   type TrackingRun,
   type TrackingWrites,
 } from "../actions/add-tracking.ts";
+import { executeRecordCompleted, type CompletedWrites } from "../actions/record-service-completed.ts";
 import {
   endAction,
   enqueueReconcile,
@@ -88,6 +90,8 @@ export interface ExecuteActionDeps extends ActionRuntime {
   readonly writeTimeoutMs?: number;
   /** M3-03 `add_tracking`: Orders v2 track + order re-read (absent → the action fails PAYPAL_UNAVAILABLE) */
   readonly orders?: TrackingWrites;
+  /** M3-04 `record_service_completed`: trackers-batch + read-back (absent → fails PAYPAL_UNAVAILABLE) */
+  readonly completed?: CompletedWrites;
 }
 
 export type ExecuteOutcome = "skipped" | "succeeded" | "failed" | "unknown";
@@ -108,6 +112,8 @@ export async function executeAction(
   if (claim.mode === "skip") return "skipped";
   if (claim.mode === "recover") return recoverUnknown(deps, claim.row);
   if (claim.row.kind === "add_tracking") return executeTracking(trackingRun(deps, claim.row, ctx));
+  if (claim.row.kind === "record_service_completed")
+    return executeRecordCompleted({ ...trackingRun(deps, claim.row, ctx), orders: deps.completed });
   const run: Run = { deps, row: claim.row, ctx };
   const prepared = await runChecks(run);
   if (prepared.kind === "refused") return "failed";
@@ -163,7 +169,7 @@ function trackingRun(deps: ExecuteActionDeps, row: ProposedActionRow, ctx: Consu
 }
 
 async function mirrorOf(deps: ExecuteActionDeps, row: ProposedActionRow, tx: Tx): Promise<DisputeSnapshot> {
-  if (row.kind === "add_tracking") return NO_SNAPSHOT;
+  if (isHoldActionKind(row.kind)) return NO_SNAPSHOT;
   const disputeId = z.object({ dispute_id: z.string() }).safeParse(row.payload).data?.dispute_id ?? "";
   const m = await forWorkspace(deps.db, WorkspaceIdSchema.parse(row.workspaceId)).disputes.getByDisputeId(
     disputeId,
@@ -220,8 +226,12 @@ async function runChecks(run: Run): Promise<Prepared | { readonly kind: "refused
   });
   if (!(await record(run, hash, { recomputed }))) return refused;
   const executable = parseExecutablePayload(row.kind, row.payload);
-  // `add_tracking` never reaches here (executeTracking); a dispute check on it would be meaningless
-  if (executable === null || executable.kind === "add_tracking") {
+  // hold actions never reach here (hold-action.ts); a dispute check on them would be meaningless
+  if (
+    executable === null ||
+    executable.kind === "add_tracking" ||
+    executable.kind === "record_service_completed"
+  ) {
     await finish(run, { to: "failed", code: "INVALID_PAYLOAD", debugId: null });
     return refused;
   }

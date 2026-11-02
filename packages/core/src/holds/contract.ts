@@ -7,6 +7,7 @@ import { AmountSchema } from "../contracts/payments.ts";
 import { HOLD_TYPES } from "./rules.ts";
 import { HOLD_STATES } from "./state.ts";
 import { HoldExplanationSchema } from "../ai/explain-hold/schema.ts";
+import { CompletedSummarySchema } from "./completed.ts";
 
 const when = z.iso.datetime({ offset: true });
 
@@ -28,6 +29,8 @@ export const HoldItemSchema = z.object({
   ruleId: z.string().min(1),
   /** M3-03: goods holds only, route advice + where the tracking action stands */
   tracking: TrackingSummarySchema.nullable().optional(),
+  /** M3-04: service holds only, the guided Completed step and the secondary API record */
+  completed: CompletedSummarySchema.nullable().optional(),
   /** dispute-linked holds: our dispute row id, PayPal's id, status and reply deadline */
   dispute: z
     .object({

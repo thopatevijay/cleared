@@ -107,12 +107,13 @@ describe("checkApproval (M2-08 policy)", () => {
 });
 
 describe("executable payloads", () => {
-  it("the executable kinds are the three dispute writes and add_tracking (M3-03)", () => {
+  it("the executable kinds are the three dispute writes, add_tracking (M3-03) and record_service_completed (M3-04)", () => {
     expect([...EXECUTABLE_KINDS].sort()).toEqual([
       "accept_claim",
       "add_tracking",
       "provide_evidence",
       "provide_supporting_info",
+      "record_service_completed",
     ]);
     expect(isExecutableKind("add_tracking")).toBe(true);
     expect(isExecutableKind("toString")).toBe(false);

@@ -35,20 +35,43 @@ interface Payload {
   readonly tracking_number: string;
 }
 
-function ConfirmDialog({
+/** The words of a hold action's confirm dialog (M3-04 reuses the dialog for `record_service_completed`). */
+export interface ConfirmText {
+  readonly title: string;
+  readonly body: string;
+  readonly fingerprint: string;
+  readonly back: string;
+  readonly send: string;
+  readonly sending: string;
+}
+
+function useTrackingConfirmText(sha: string): ConfirmText {
+  const t = useTranslations("holds.tracking");
+  return {
+    title: t("confirmTitle"),
+    body: t("confirmBody"),
+    fingerprint: t("fingerprint", { fp: fingerprint(sha) }),
+    back: t("back"),
+    send: t("send"),
+    sending: t("sending"),
+  };
+}
+
+export function ConfirmDialog({
   open,
-  sha,
+  text,
   onClose,
   onSend,
   busy,
+  testId = "tracking",
 }: {
   open: boolean;
-  sha: string;
+  text: ConfirmText;
   onClose: () => void;
   onSend: () => void;
   busy: boolean;
+  testId?: string;
 }) {
-  const t = useTranslations("holds.tracking");
   const id = useId();
   const dialog = useRef<HTMLDialogElement>(null);
   const back = useRef<HTMLButtonElement>(null);
@@ -70,20 +93,20 @@ function ConfirmDialog({
       onClose={onClose}
       onCancel={onClose}
       className="m-auto w-[calc(100%-32px)] max-w-[480px] rounded-lg border border-border bg-surface p-5 text-text backdrop:bg-black/40"
-      data-testid="tracking-confirm"
+      data-testid={`${testId}-confirm`}
     >
       <h2 id={`${id}-title`} className="mb-2 text-lg font-semibold">
-        {t("confirmTitle")}
+        {text.title}
       </h2>
       <p id={`${id}-body`} className="mb-2">
-        {t("confirmBody")}
+        {text.body}
       </p>
       <p className="mb-4 text-sm text-text-muted">
-        <code className="font-mono">{t("fingerprint", { fp: fingerprint(sha) })}</code>
+        <code className="font-mono">{text.fingerprint}</code>
       </p>
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button ref={back} type="button" onClick={onClose} className={secondary}>
-          {t("back")}
+          {text.back}
         </button>
         <button
           type="button"
@@ -91,10 +114,10 @@ function ConfirmDialog({
           disabled={busy}
           aria-busy={busy || undefined}
           className={primary}
-          data-testid="tracking-send"
+          data-testid={`${testId}-send`}
         >
           {busy ? <Loader2 aria-hidden="true" size={16} className="spin" /> : null}
-          {busy ? t("sending") : t("send")}
+          {busy ? text.sending : text.send}
         </button>
       </div>
     </dialog>
@@ -164,6 +187,7 @@ function Review({
   const [error, setError] = useState<string | null>(null);
   const key = useRef<string | null>(null);
   const p = action.payload as Payload;
+  const confirmText = useTrackingConfirmText(action.payload_sha256);
   const tier = s.chosen?.code === p.carrier ? s.chosen.tier : null;
   async function send(): Promise<void> {
     key.current ??= newKey();
@@ -263,7 +287,7 @@ function Review({
       </div>
       <ConfirmDialog
         open={open}
-        sha={action.payload_sha256}
+        text={confirmText}
         busy={busy}
         onClose={() => {
           setOpen(false);

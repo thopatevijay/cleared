@@ -114,6 +114,7 @@ export function defaultRegistry(
         publisher,
         disputes: paypal.disputes,
         orders: paypal.orders, // M3-03 add_tracking
+        completed: paypal.orders, // M3-04 record_service_completed
         now: () => new Date(),
         killSwitchEnv: () => killSwitchFromEnv(process.env),
       }),
@@ -125,6 +126,7 @@ export function defaultRegistry(
         publisher,
         disputes: paypal.disputes,
         orders: paypal.orders,
+        completed: paypal.orders, // M3-04 record_service_completed read-back
         now: () => new Date(),
       }),
     },
@@ -179,6 +181,8 @@ export function defaultRegistry(
     // M3-02: the EN/HI toggle asks for a locale without an explanation; `hold.explained` is recorded.
     { queue: queueSpec("hold.explain_requested"), handler: explain },
     { queue: queueSpec("hold.explained"), handler: recordEvent },
+    // M3-04: the seller confirmed the guided Completed step (M3-08 can compose the 7-day reminder here).
+    { queue: queueSpec("hold.completed_confirmed"), handler: recordEvent },
     // M3-08: every new notification row enqueues one `notification.send_email` job.
     {
       queue: queueSpec(NOTIFICATION_SEND_EMAIL_QUEUE),

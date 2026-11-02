@@ -51,6 +51,36 @@ export function EstimatedDate({
         ? t("estimateName", { date: t(`est.${key}`), source: source?.title ?? "" })
         : t("noTimelineName", { source: source?.title ?? "" });
   const due = e.disputeDueAt ?? null;
+  // M3-04: a dated service estimate reads "About {date} · estimated · Source" (never "Free by", which reads
+  // as PayPal's promise); separators end a line, never start one. The full form adds the rule's sentence.
+  if (key === "service" && at !== null)
+    return (
+      <div
+        role="group"
+        aria-label={name}
+        className="inline-flex max-w-full flex-col gap-1 self-start rounded-md border-[1.5px] border-dashed border-border-strong bg-surface-sunken px-3 py-1 text-sm"
+        data-testid="estimated-date"
+        data-rule={rule?.id}
+      >
+        <span className="flex flex-wrap items-center gap-x-1">
+          <CalendarClock aria-hidden="true" size={16} strokeWidth={1.75} className="text-text-muted" />
+          <span data-testid="free-by" className="whitespace-nowrap">
+            {t("completed.estimate", { date: date(at) })}
+            <Dot />
+          </span>
+          <span className="font-medium whitespace-nowrap">
+            {t("estimated")}
+            {source === null ? null : <Dot />}
+          </span>
+          {source === null ? null : <RuleSource source={source} />}
+        </span>
+        {full ? (
+          <span className="text-text-muted" data-testid="estimate-sentence">
+            {t("est.service")}
+          </span>
+        ) : null}
+      </div>
+    );
   return (
     <div
       role="group"
