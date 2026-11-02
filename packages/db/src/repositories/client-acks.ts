@@ -122,11 +122,7 @@ export interface ClientAckByToken {
  * Pre-workspace lookup by token hash (the public page and accept route). With `tx`, the link row is
  * locked until the transaction ends, so concurrent accepts of one token serialise.
  */
-export async function clientAckByToken(
-  db: Db,
-  tokenHash: string,
-  tx?: Tx,
-): Promise<ClientAckByToken | null> {
+export async function clientAckByToken(db: Db, tokenHash: string, tx?: Tx): Promise<ClientAckByToken | null> {
   const ex = tx ?? db;
   const base = ex.select().from(s.clientAcks).where(eq(s.clientAcks.tokenHash, tokenHash)).limit(1);
   const [ack] = tx === undefined ? await base : await base.for("update");

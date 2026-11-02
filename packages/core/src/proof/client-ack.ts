@@ -45,7 +45,11 @@ export interface AckLinkFacts {
  * A link's status against the pack's current scope item (`null`: the pack has no scope item). Acceptance
  * and revocation are final; a link bound to an older scope text is void even before it expires.
  */
-export function ackLinkStatus(link: AckLinkFacts, currentScopeSha256: string | null, now: Date): AckLinkStatus {
+export function ackLinkStatus(
+  link: AckLinkFacts,
+  currentScopeSha256: string | null,
+  now: Date,
+): AckLinkStatus {
   if (link.acceptedAt !== null) return "accepted";
   if (link.revokedAt !== null) return "revoked";
   if (currentScopeSha256 !== link.scopeSha256) return "scope_changed";

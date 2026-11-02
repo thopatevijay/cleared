@@ -144,9 +144,6 @@ export const clientAcks = pgTable(
     index("client_acks_workspace_created_idx").on(t.workspaceId, t.createdAt),
     index("client_acks_pack_created_idx").on(t.packId, t.createdAt),
     check("client_acks_final_once", sql`${t.acceptedAt} is null or ${t.revokedAt} is null`),
-    check(
-      "client_acks_accepted_complete",
-      sql`(${t.acceptedAt} is null) = (${t.evidenceItemId} is null)`,
-    ),
+    check("client_acks_accepted_complete", sql`(${t.acceptedAt} is null) = (${t.evidenceItemId} is null)`),
   ],
 );
