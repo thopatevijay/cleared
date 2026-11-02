@@ -88,6 +88,7 @@ stateDiagram-v2
 stateDiagram-v2
   [*] --> open
   open --> explained
+  open --> action_proposed
   explained --> action_proposed
   action_proposed --> approved
   approved --> filed

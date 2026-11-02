@@ -23,7 +23,7 @@ import {
   RECONCILE_FIRST_DELAY_SECONDS,
   type CheckResult,
   type DisputeSnapshot,
-  type ExecutablePayload,
+  type DisputeExecutablePayload,
   type JsonValue,
   type SendFailure,
   type Sha256,
@@ -58,6 +58,12 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { ConsumeContext, Handler } from "../consume.ts";
 import {
+  executeTracking,
+  NO_SNAPSHOT,
+  type TrackingRun,
+  type TrackingWrites,
+} from "../actions/add-tracking.ts";
+import {
   endAction,
   enqueueReconcile,
   mirrorFetched,
@@ -80,6 +86,8 @@ export interface ExecuteActionDeps extends ActionRuntime {
   readonly killSwitchEnv: () => boolean;
   /** per-call timeout of the write itself (the client default otherwise) */
   readonly writeTimeoutMs?: number;
+  /** M3-03 `add_tracking`: Orders v2 track + order re-read (absent → the action fails PAYPAL_UNAVAILABLE) */
+  readonly orders?: TrackingWrites;
 }
 
 export type ExecuteOutcome = "skipped" | "succeeded" | "failed" | "unknown";
@@ -99,6 +107,7 @@ export async function executeAction(
   ctx.log.info({ actionId: input.actionId, claim: claim.mode }, "action execute");
   if (claim.mode === "skip") return "skipped";
   if (claim.mode === "recover") return recoverUnknown(deps, claim.row);
+  if (claim.row.kind === "add_tracking") return executeTracking(trackingRun(deps, claim.row, ctx));
   const run: Run = { deps, row: claim.row, ctx };
   const prepared = await runChecks(run);
   if (prepared.kind === "refused") return "failed";
@@ -142,7 +151,19 @@ async function recoverUnknown(deps: ExecuteActionDeps, row: ProposedActionRow): 
   return "unknown";
 }
 
+function trackingRun(deps: ExecuteActionDeps, row: ProposedActionRow, ctx: ConsumeContext): TrackingRun {
+  return {
+    rt: deps,
+    orders: deps.orders,
+    killSwitch: async () => deps.killSwitchEnv() || (await platform(deps.db).flags.agentKillSwitch()),
+    ...(deps.writeTimeoutMs === undefined ? {} : { writeTimeoutMs: deps.writeTimeoutMs }),
+    row,
+    ctx,
+  };
+}
+
 async function mirrorOf(deps: ExecuteActionDeps, row: ProposedActionRow, tx: Tx): Promise<DisputeSnapshot> {
+  if (row.kind === "add_tracking") return NO_SNAPSHOT;
   const disputeId = z.object({ dispute_id: z.string() }).safeParse(row.payload).data?.dispute_id ?? "";
   const m = await forWorkspace(deps.db, WorkspaceIdSchema.parse(row.workspaceId)).disputes.getByDisputeId(
     disputeId,
@@ -159,7 +180,7 @@ async function mirrorOf(deps: ExecuteActionDeps, row: ProposedActionRow, tx: Tx)
 
 interface Prepared {
   readonly kind: "ready";
-  readonly executable: ExecutablePayload;
+  readonly executable: DisputeExecutablePayload;
   readonly pdf: Uint8Array | null;
   readonly before: Dispute;
 }
@@ -199,7 +220,8 @@ async function runChecks(run: Run): Promise<Prepared | { readonly kind: "refused
   });
   if (!(await record(run, hash, { recomputed }))) return refused;
   const executable = parseExecutablePayload(row.kind, row.payload);
-  if (executable === null) {
+  // `add_tracking` never reaches here (executeTracking); a dispute check on it would be meaningless
+  if (executable === null || executable.kind === "add_tracking") {
     await finish(run, { to: "failed", code: "INVALID_PAYLOAD", debugId: null });
     return refused;
   }
@@ -209,7 +231,7 @@ async function runChecks(run: Run): Promise<Prepared | { readonly kind: "refused
 }
 
 /** Checks 4–6: ownership, then the re-fetched dispute's link, then the deadline. */
-async function checkDispute(run: Run, executable: ExecutablePayload, pdf: Uint8Array | null) {
+async function checkDispute(run: Run, executable: DisputeExecutablePayload, pdf: Uint8Array | null) {
   const refused = { kind: "refused" } as const;
   const { deps, row } = run;
   const disputeId = executable.payload.dispute_id;
@@ -248,7 +270,7 @@ interface BlobCheck {
 }
 
 /** The compiled PDF the payload names (draft → compiled blob), hashed from its bytes now. */
-async function loadBlob(run: Run, e: ExecutablePayload): Promise<BlobCheck> {
+async function loadBlob(run: Run, e: DisputeExecutablePayload): Promise<BlobCheck> {
   if (
     e.kind === "accept_claim" ||
     e.payload.compiled_blob_sha256 === undefined ||

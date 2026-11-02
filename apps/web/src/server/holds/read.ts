@@ -14,11 +14,13 @@ import {
   type HoldsResponse,
   type HoldType,
   type PaymentHold,
+  type TrackingSummary,
   type WorkspaceId,
 } from "@cleared/core";
 import { holdsRepo, platform, type ExplanationRow, type HoldRow, type HoldView } from "@cleared/db";
 import { z } from "zod";
 import type { Deps } from "../deps.ts";
+import { trackingSummaries } from "../tracking/summaries.ts";
 
 const iso = (d: Date | null): string | null => (d === null ? null : d.toISOString());
 const holdType = (t: string): HoldType =>
@@ -30,9 +32,10 @@ function upperBound(h: Pick<HoldRow, "estimateSource" | "openedAt">): string | n
   return rule?.estimate(fromEpochMs(h.openedAt.getTime()))?.upperBound ?? null;
 }
 
-/** The dashboard row's hold (dashboard.md elements 7–10). */
-export function paymentHold(h: HoldRow): PaymentHold {
+/** The dashboard row's hold (dashboard.md elements 7–12; M3-03 adds `tracking` on goods holds). */
+export function paymentHold(h: HoldRow, tracking: TrackingSummary | null = null): PaymentHold {
   return {
+    tracking,
     id: h.id,
     type: holdType(h.type),
     reason: h.reason,
@@ -42,10 +45,10 @@ export function paymentHold(h: HoldRow): PaymentHold {
   };
 }
 
-export function holdItem(v: HoldView): HoldItem {
+export function holdItem(v: HoldView, tracking: TrackingSummary | null = null): HoldItem {
   const { hold: h, payment: p, dispute: d } = v;
   return {
-    ...paymentHold(h),
+    ...paymentHold(h, tracking),
     paymentId: p.id,
     captureId: p.captureId,
     amount: { value: p.amount, currency: p.currency },
@@ -66,11 +69,12 @@ async function timezone(deps: Deps, ws: string): Promise<string> {
 
 export async function listHolds(deps: Deps, ws: WorkspaceId): Promise<HoldsResponse> {
   const repo = holdsRepo(deps.db, ws);
-  const [views, held] = await Promise.all([repo.listActive(), repo.heldTotals()]);
+  const [views, held, tz] = await Promise.all([repo.listActive(), repo.heldTotals(), timezone(deps, ws)]);
+  const tracking = await trackingSummaries(deps.db, ws, views, tz);
   return HoldsResponseSchema.parse({
-    items: views.map(holdItem),
+    items: views.map((v) => holdItem(v, tracking.get(v.hold.id) ?? null)),
     summary: { held, count: views.length },
-    workspace: { timezone: await timezone(deps, ws) },
+    workspace: { timezone: tz },
   });
 }
 
@@ -92,11 +96,13 @@ export async function holdDetail(deps: Deps, ws: WorkspaceId, rawId: string): Pr
   const repo = holdsRepo(deps.db, ws);
   const v = await repo.view(rawId);
   if (v === null) return null;
+  const tz = await timezone(deps, ws);
+  const tracking = await trackingSummaries(deps.db, ws, [v], tz);
   const explanations = (await repo.explanations(v.hold.id)).flatMap((r) => holdExplanation(r) ?? []);
   return HoldDetailSchema.parse({
-    hold: holdItem(v),
+    hold: holdItem(v, tracking.get(v.hold.id) ?? null),
     payment: { id: v.payment.id, status: v.payment.status, statusReason: v.payment.statusReason },
-    workspace: { timezone: await timezone(deps, ws) },
+    workspace: { timezone: tz },
     explanations,
   });
 }

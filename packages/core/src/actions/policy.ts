@@ -63,11 +63,33 @@ export const AcceptClaimPayloadSchema = z.object({
   accept_claim_type: z.literal("REFUND"),
 });
 
-/** The kinds M2-08 executes. `add_tracking` (M3-03) and Completed (M3-04) join here later. */
+const PayPalId = z.string().regex(/^[A-Za-z0-9-]{1,64}$/);
+
+/**
+ * M3-03: one tracker on one capture (Orders v2 `POST /v2/checkout/orders/{order_id}/track`). `carrier` is a
+ * PayPal code, or `OTHER` with `carrier_name_other` (≤ 64); `notify_payer` is always false. Unknown keys
+ * are refused: the approval hash binds every field.
+ */
+export const AddTrackingPayloadSchema = z
+  .strictObject({
+    order_id: PayPalId,
+    capture_id: PayPalId,
+    carrier: z.string().regex(/^[A-Z0-9_]{1,64}$/),
+    carrier_name_other: z.string().trim().min(1).max(64).optional(),
+    tracking_number: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9-]{0,63}$/),
+    notify_payer: z.literal(false),
+  })
+  .refine((p) => (p.carrier === "OTHER") === (p.carrier_name_other !== undefined), {
+    message: "carrier_name_other goes with carrier OTHER, and only with it",
+  });
+export type AddTrackingPayload = z.infer<typeof AddTrackingPayloadSchema>;
+
+/** The kinds the worker executes (M2-08; `add_tracking` M3-03). Completed (M3-04) joins here later. */
 export const EXECUTABLE_PAYLOAD_SCHEMAS = {
   provide_evidence: ProvideEvidencePayloadSchema,
   provide_supporting_info: ProvideSupportingInfoPayloadSchema,
   accept_claim: AcceptClaimPayloadSchema,
+  add_tracking: AddTrackingPayloadSchema,
 } as const;
 export type ExecutableKind = keyof typeof EXECUTABLE_PAYLOAD_SCHEMAS;
 export const EXECUTABLE_KINDS = Object.keys(EXECUTABLE_PAYLOAD_SCHEMAS) as ExecutableKind[];
@@ -78,7 +100,11 @@ export type ExecutablePayload =
       readonly kind: "provide_supporting_info";
       readonly payload: z.infer<typeof ProvideSupportingInfoPayloadSchema>;
     }
-  | { readonly kind: "accept_claim"; readonly payload: z.infer<typeof AcceptClaimPayloadSchema> };
+  | { readonly kind: "accept_claim"; readonly payload: z.infer<typeof AcceptClaimPayloadSchema> }
+  | { readonly kind: "add_tracking"; readonly payload: AddTrackingPayload };
+
+/** The executable payloads that act on a dispute (all but `add_tracking`). */
+export type DisputeExecutablePayload = Exclude<ExecutablePayload, { readonly kind: "add_tracking" }>;
 
 export function isExecutableKind(kind: string): kind is ExecutableKind {
   return Object.hasOwn(EXECUTABLE_PAYLOAD_SCHEMAS, kind);

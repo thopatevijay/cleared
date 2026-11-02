@@ -24,3 +24,8 @@ M1-01 built the Hold machine exactly as architecture §2 drew it: `released` was
 
 - A hold whose reason changes (e.g. `PENDING_REVIEW` → `BUYER_COMPLAINT`) stays one hold; M3-08 gets no second `hold.opened` for it.
 - `estimate_source` now means "rule id", not free text. M3-02 grounds explanations on that row.
+
+## Addendum (M3-03, 2026-11-02): tracking before an explanation
+
+- `open --action_proposed--> action_proposed` is added. A seller can file tracking on a goods hold before M3-02 has written an explanation; requiring `explained` first would block a seller action on an AI step.
+- The tracking action drives the hold only when PayPal accepts it: on `add_tracking` success the worker walks the hold through `action_proposed → approved → filed` with `transitionHold` (skipping events the current state does not take) in the same transaction as the execution row, and sets `estimate_source = goods_delivered` with no date ("after the courier confirms delivery"). A rejected or failed tracking action leaves the hold where it was, so a new proposal is always possible.

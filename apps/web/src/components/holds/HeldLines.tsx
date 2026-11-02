@@ -1,12 +1,15 @@
 "use client";
 // The dashboard's held-row lines (dashboard.md elements 7–10, M3-01): `EstimatedDate` ("Free by … ·
 // estimated · Source"), the advice line "Don't ship yet" only when the cited rule's source carries it
-// (with that source), "Tracking can help release this" on goods holds (M3-03 adds the action), and the
-// single row action "Why?" → the hold detail's explanation section.
+// (with that source), "Tracking can help release this" on goods holds, and the single row action "Why?"
+// → the hold detail's explanation section. M3-03 (elements 11–12): on a goods hold not yet filed, the
+// route-advice line and "File tracking" (→ the hold detail's `add_tracking` ApprovalCard) replace "Why?";
+// once tracking is filed both are gone.
 import type { PaymentHold } from "@cleared/core";
 import { Truck, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "../../i18n/navigation.ts";
+import { RouteAdviceLine } from "../tracking/RouteAdvice.tsx";
 import { EstimatedDate } from "./EstimatedDate.tsx";
 import { RuleSource } from "./RuleSource.tsx";
 import { ruleOf } from "./text.ts";
@@ -58,12 +61,25 @@ export function HeldLines({
   action: boolean;
 }) {
   const t = useTranslations("holds");
+  const tracking = hold.type === "goods" ? (hold.tracking ?? null) : null;
+  const toFile = tracking !== null && tracking.state !== "filed";
   return (
     <div className="flex flex-col items-start gap-2" data-testid="held-lines" data-hold={hold.id}>
       <EstimatedDate e={{ ...hold, disputeDueAt }} timeZone={timeZone} />
       <AdviceLine ruleId={hold.ruleId} />
-      {hold.type === "goods" ? <TrackingHint /> : null}
-      {action ? (
+      {hold.type === "goods" && tracking?.state !== "filed" ? <TrackingHint /> : null}
+      {tracking === null ? null : <RouteAdviceLine s={tracking} />}
+      {action && toFile ? (
+        <Link
+          href={`/holds/${hold.id}#tracking`}
+          aria-label={t("tracking.fileTrackingName", { amount })}
+          className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-surface px-4 font-medium"
+          data-testid="file-tracking"
+          data-row-action=""
+        >
+          {t("tracking.fileTracking")}
+        </Link>
+      ) : action ? (
         <Link
           href={`/holds/${hold.id}#why`}
           aria-label={t("whyName", { amount })}

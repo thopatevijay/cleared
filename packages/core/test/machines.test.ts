@@ -84,6 +84,8 @@ describe("Hold machine", () => {
     ["action_proposed", "capture_released", "released"],
     ["approved", "capture_released", "released"],
     ["still_held", "capture_released", "released"],
+    // M3-03 (ADR 0017 addendum): tracking can be proposed on a hold nobody has explained yet
+    ["open", "action_proposed", "action_proposed"],
   ]);
   it("starts open and ends released", () => {
     expect(holdMachine.initial).toBe("open");

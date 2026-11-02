@@ -174,9 +174,27 @@ const disputeHandlers = [
   }),
 ];
 
+// M3-03: Orders v2 track for seeded goods holds (order ids `E2EO…`), from the recorded M0-04 201
+// (fixtures/paypal/tracking/track-ind-delhivery) with this request's order, capture and tracking number.
+const TRACK = { order: "2KC08730ML031160C", capture: "6BC19320SY177903T", number: "SPKA1793249841084" };
+const trackHandlers = [
+  http.post(`${API}/v2/checkout/orders/:id/track`, async ({ params, request }) => {
+    const id = String(params["id"]);
+    if (!id.startsWith("E2EO")) return HttpResponse.error();
+    const b = (await request.json()) as { capture_id: string; tracking_number: string };
+    const f = loadFixture("paypal/tracking/track-ind-delhivery");
+    const body = responseText(f)
+      .replaceAll(TRACK.order, id)
+      .replaceAll(TRACK.capture, b.capture_id)
+      .replaceAll(TRACK.number, b.tracking_number);
+    return new HttpResponse(body, { status: f.response.status, headers: f.response.headers });
+  }),
+];
+
 const workerHandlers = [
   http.post(`${API}/v1/oauth2/token`, token),
   ...disputeHandlers,
+  ...trackHandlers,
   http.post(`${API}/v2/checkout/orders`, async ({ request }) => {
     const body = (await request.json()) as { purchase_units: { custom_id: string }[] };
     const o = { orderId: paypalId(), captureId: paypalId(), ws: body.purchase_units[0]?.custom_id ?? "" };

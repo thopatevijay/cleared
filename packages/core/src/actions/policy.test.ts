@@ -67,7 +67,8 @@ describe("checkApproval (M2-08 policy)", () => {
   });
 
   it("unknown or not-yet-executable kinds are refused", () => {
-    for (const kind of ["add_tracking", "make_offer", "escalate"]) {
+    // add_tracking became executable in M3-03 (its payload rules are tested below)
+    for (const kind of ["mark_completed", "make_offer", "escalate"]) {
       const s = subject({ kind });
       expect(checkApproval(s, { payloadSha256: s.payloadSha256 })).toEqual({
         kind: "refuse",
@@ -106,14 +107,33 @@ describe("checkApproval (M2-08 policy)", () => {
 });
 
 describe("executable payloads", () => {
-  it("the executable kinds are the three dispute writes", () => {
+  it("the executable kinds are the three dispute writes and add_tracking (M3-03)", () => {
     expect([...EXECUTABLE_KINDS].sort()).toEqual([
       "accept_claim",
+      "add_tracking",
       "provide_evidence",
       "provide_supporting_info",
     ]);
-    expect(isExecutableKind("add_tracking")).toBe(false);
+    expect(isExecutableKind("add_tracking")).toBe(true);
     expect(isExecutableKind("toString")).toBe(false);
+  });
+
+  it("add_tracking: a code, or OTHER with a name; notify_payer false; nothing else", () => {
+    const base = {
+      order_id: "2KC08730ML031160C",
+      capture_id: "6BC19320SY177903T",
+      carrier: "IND_DELHIVERY",
+      tracking_number: "SPKA1793249841084",
+      notify_payer: false,
+    };
+    expect(parseExecutablePayload("add_tracking", base)?.kind).toBe("add_tracking");
+    const other = { ...base, carrier: "OTHER", carrier_name_other: "Local courier" };
+    expect(parseExecutablePayload("add_tracking", other)?.kind).toBe("add_tracking");
+    expect(parseExecutablePayload("add_tracking", { ...base, carrier: "OTHER" })).toBeNull();
+    expect(parseExecutablePayload("add_tracking", { ...base, carrier_name_other: "x" })).toBeNull();
+    expect(parseExecutablePayload("add_tracking", { ...base, notify_payer: true })).toBeNull();
+    expect(parseExecutablePayload("add_tracking", { ...base, extra: 1 })).toBeNull();
+    expect(parseExecutablePayload("add_tracking", { ...base, tracking_number: "a b" })).toBeNull();
   });
 
   it("supporting info: notes alone, or notes with both blob fields", () => {

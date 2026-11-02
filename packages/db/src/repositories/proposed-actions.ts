@@ -131,8 +131,8 @@ export interface SellerProposal {
   readonly workspaceId: string;
   /** user id, or the demo session id */
   readonly proposedBy: string;
-  /** `accept_claim` (M2-08), or a filing the seller revised from an agent draft (M2-09) */
-  readonly kind: "accept_claim" | "provide_evidence" | "provide_supporting_info";
+  /** `accept_claim` (M2-08), a filing the seller revised from an agent draft (M2-09), or `add_tracking` (M3-03) */
+  readonly kind: "accept_claim" | "provide_evidence" | "provide_supporting_info" | "add_tracking";
   readonly payload: JsonValue;
   /** extra audit detail (M2-09: `revisionOf` = the superseded action) */
   readonly detail?: Readonly<Record<string, JsonValue>>;

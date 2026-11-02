@@ -2,6 +2,7 @@
 // `POST /api/sandbox/test-payments`. PayPal values (status, reason, currency) stay raw strings: the
 // list mirrors PayPal and never rejects a value PayPal adds later.
 import { z } from "zod";
+import { TrackingSummarySchema } from "../carriers/summary.ts";
 import { SYNC_SOURCES } from "../payments/payment.ts";
 import { VERDICTS } from "../proof/pack.ts";
 import { PACK_VIEW_STATES } from "../proof/pack-view.ts";
@@ -60,6 +61,8 @@ export const PaymentHoldSchema = z.object({
   ruleId: z.string().min(1),
   estimatedReleaseAt: z.iso.datetime({ offset: true }).nullable(),
   estimateUpperBoundAt: z.iso.datetime({ offset: true }).nullable(),
+  /** M3-03: goods holds only, route advice + where the tracking action stands */
+  tracking: TrackingSummarySchema.nullable().optional(),
 });
 export type PaymentHold = z.infer<typeof PaymentHoldSchema>;
 
