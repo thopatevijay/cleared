@@ -30,7 +30,6 @@ const DropdownSchema = z.object({
   source: z.string().min(1),
   captured_at: z.iso.date(),
   account: z.string().min(1),
-  partial: z.boolean().optional(),
   count: z.number().int().positive(),
   codes: z.array(z.string().regex(/^[A-Z0-9_]+$/)).min(1),
 });
@@ -75,7 +74,6 @@ export const TIER_SOURCES: Readonly<Record<CarrierTier, TierSource>> = {
     title: `PayPal "Shipped by" list in Add tracking info (${SHIPPED_BY_DROPDOWN.account})`,
     url: null,
     date: SHIPPED_BY_DROPDOWN.captured_at,
-    ...(SHIPPED_BY_DROPDOWN.partial === true ? { note: "partial list" } : {}),
   },
   accepted: API_SOURCE,
   other: API_SOURCE,
