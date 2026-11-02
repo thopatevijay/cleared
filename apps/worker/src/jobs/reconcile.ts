@@ -14,19 +14,24 @@
 import { createHash } from "node:crypto";
 import {
   CHECK_NAMES,
+  EXTRACT_PROMPT,
   isHoldActionKind,
   RECONCILE_CRON,
   RECONCILE_MAX_TRIES,
   RECONCILE_RECENT_MS,
   STRANDED_UNKNOWN_AFTER_MS,
+  WorkspaceIdSchema,
+  type Instant,
 } from "@cleared/core";
 import type { Logger } from "@cleared/adapters";
 import {
   ACTION_RECONCILE_QUEUE,
+  forWorkspace,
   OPS_RECONCILE_QUEUE,
   PAYPAL_CAPTURE_SYNC_QUEUE,
   PAYPAL_DISPUTE_SYNC_QUEUE,
   platform,
+  scopeChecksRepo,
   withTransaction,
   type Db,
   type Publisher,
@@ -56,6 +61,8 @@ export interface ReconcileCounts {
   readonly actions: number;
   /** stranded dispute actions without a recorded `before` snapshot: left for the seller, logged */
   readonly skippedActions: number;
+  /** `collecting` packs whose scope check was nudged (BL-01 6537991625) */
+  readonly packs: number;
 }
 
 export type ReconcileResult =
@@ -113,7 +120,38 @@ async function enqueueItems(deps: ReconcileDeps, tx: Tx, now: Date): Promise<Rec
     disputes: disputes.length,
     actions,
     skippedActions: stranded.length - actions,
+    packs: await nudgeStuckPacks(deps, tx, now),
   };
+}
+
+/**
+ * BL-01 6537991625 (owner decision 2026-11-02): when a pack's last unfinished item ends without facts,
+ * M2-03 emits no `pack.extracted`, so the scope check never runs and the pack stays `collecting`. Once
+ * every item is finished (facts or `extract.no_facts`), the sweeper emits one `pack.extracted` for a facts
+ * row of the pack (the M2-04 consumer is idempotent on the evidence set) and records `pack.scope_recheck`,
+ * so each pack is nudged once: a check that then can't run (AI unavailable) is not retried every tick.
+ */
+async function nudgeStuckPacks(deps: ReconcileDeps, tx: Tx, now: Date): Promise<number> {
+  let nudged = 0;
+  for (const p of await platform(deps.db).reconcileTargets.stuckPacks(tx)) {
+    const ws = WorkspaceIdSchema.parse(p.workspaceId);
+    if ((await scopeChecksRepo(deps.db, ws).itemsAwaitingFacts(p.packId, EXTRACT_PROMPT.id, tx)).length > 0) {
+      continue;
+    }
+    await deps.publisher.emit(tx, {
+      type: "pack.extracted",
+      version: 1,
+      workspaceId: ws,
+      occurredAt: now.toISOString() as Instant,
+      data: { packId: p.packId, evidenceItemId: p.evidenceItemId, factsId: p.factsId, runId: p.runId },
+    } as Parameters<Publisher["emit"]>[1]);
+    await forWorkspace(deps.db, ws).auditLog.insert(
+      { actor: "system", action: "pack.scope_recheck", detail: { packId: p.packId, factsId: p.factsId } },
+      tx,
+    );
+    nudged += 1;
+  }
+  return nudged;
 }
 
 /** One reconcile tick. Returns `{ ran: false }` when another tick holds the lock. */

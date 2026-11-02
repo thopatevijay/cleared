@@ -12,7 +12,7 @@ import {
   createPayPalCapturesClient,
   createTokenProvider,
 } from "@cleared/adapters";
-import { type WorkspaceId } from "@cleared/core";
+import { EXTRACT_PROMPT, type WorkspaceId } from "@cleared/core";
 import {
   actionAuditTrail,
   closeDb,
@@ -46,6 +46,7 @@ import {
 } from "../../test/actions-support.ts";
 import { FULL, STATE } from "../../test/disputes-support.ts";
 import { dbAvailable, url } from "../../test/helpers.ts";
+import { addSample, newPack } from "../../test/extract-support.ts";
 import { holdsForEvent } from "../consumers/holds.ts";
 import { CaptureSyncInputSchema, syncCapture } from "./capture-sync.ts";
 import { executeAction } from "./execute-action.ts";
@@ -297,6 +298,50 @@ describe.skipIf(!dbAvailable)("reconcile poll (integration)", () => {
     expect((await getProposedAction(db, s.ws, actionId))?.state).toBe("succeeded");
     const after = (await actionAuditTrail(db, s.ws, actionId)).map((x) => x.action);
     expect(after.slice(-2)).toEqual(["action.reconcile", "action.succeeded"]);
+  });
+
+  it("BL-01 6537991625: a pack whose last item ended without facts gets one scope-check nudge", async () => {
+    const ws = await workspace();
+    const packId = await newPack(db, ws);
+    const withFacts = await addSample(db, ws, packId, "brief-logo");
+    const failed = await addSample(db, ws, packId, "chat-logo");
+    const run = await db.$client.query<{ id: string }>(
+      "insert into agent_runs (workspace_id, task, input_hash, model, status) values ($1, 'extract', $2, 'test', 'ok') returning id",
+      [ws, "c".repeat(64)],
+    );
+    const runId = run.rows[0]?.id ?? "";
+    const facts = await db.$client.query<{ id: string }>(
+      "insert into extracted_facts (workspace_id, evidence_item_id, facts, model, prompt_version, run_id) values ($1, $2, '{}', 'test', $3, $4) returning id",
+      [ws, withFacts, EXTRACT_PROMPT.id, runId],
+    );
+    const nudges = async () =>
+      (
+        await db.$client.query<{ payload: { data: Record<string, unknown> } }>(
+          "select payload from outbox where topic = 'pack.extracted' and payload->'data'->>'packId' = $1",
+          [packId],
+        )
+      ).rows;
+    // the second item is still being extracted: no nudge yet
+    await runReconcile(deps(new Date()));
+    expect(await nudges()).toHaveLength(0);
+    // it ends without facts (M2-03 emits nothing then): the next tick nudges the scope check once
+    await platform(db).auth.auditSystem({
+      workspaceId: ws,
+      action: "extract.no_facts",
+      detail: { evidenceItemId: failed, runId: null, status: "degraded", reason: "test" },
+    });
+    const tick = await runReconcile(deps(new Date()));
+    expect(tick.ran && tick.counts.packs).toBeGreaterThanOrEqual(1);
+    const sent = await nudges();
+    expect(sent).toHaveLength(1);
+    expect(sent[0]?.payload.data).toEqual({
+      packId,
+      evidenceItemId: withFacts,
+      factsId: facts.rows[0]?.id,
+      runId,
+    });
+    await runReconcile(deps(new Date()));
+    expect(await nudges()).toHaveLength(1);
   });
 
   it("AC 5: an overlapping tick is skipped; the schedule's queue is a singleton", async () => {

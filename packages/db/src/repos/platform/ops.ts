@@ -28,6 +28,15 @@ export interface StrandedAction {
   /** the `action.unknown` audit row's `before` snapshot (M3-09), when recorded */
   readonly before: unknown;
 }
+/** A pack whose scope check may never have been triggered (BL-01 6537991625), with one of its facts rows. */
+export interface StuckPack {
+  readonly workspaceId: string;
+  readonly packId: string;
+  readonly evidenceItemId: string;
+  readonly factsId: string;
+  readonly runId: string;
+}
+
 export interface DeadlineRow {
   readonly disputeId: string;
   readonly status: string;
@@ -113,6 +122,33 @@ export function reconcileTargetsRepo(db: Db) {
         order by d.seller_response_due_date asc nulls last
         limit ${MAX_ITEMS}`);
       return rowsOf<PollDispute>(r);
+    },
+    /**
+     * BL-01 6537991625: `collecting` packs where at least one item has facts and at least one ended without
+     * them (`extract.no_facts`), never re-checked by the sweeper (`pack.scope_recheck`). The caller still
+     * confirms no item is awaiting extraction before it nudges the scope check.
+     */
+    async stuckPacks(tx?: Executor): Promise<StuckPack[]> {
+      const r = await (tx ?? db).execute(sql`
+        select p.workspace_id as "workspaceId", p.id as "packId",
+          f.evidence_item_id as "evidenceItemId", f.id as "factsId", f.run_id as "runId"
+        from proof_packs p
+        join lateral (
+          select f.id, f.evidence_item_id, f.run_id from extracted_facts f
+          join evidence_items e on e.id = f.evidence_item_id
+          where e.pack_id = p.id and f.run_id is not null
+          order by f.created_at desc limit 1
+        ) f on true
+        where p.state = 'collecting'
+          and exists (
+            select 1 from audit_log l join evidence_items e on l.detail->>'evidenceItemId' = e.id::text
+            where l.workspace_id = p.workspace_id and l.action = 'extract.no_facts' and e.pack_id = p.id)
+          and not exists (
+            select 1 from audit_log l
+            where l.workspace_id = p.workspace_id and l.action = 'pack.scope_recheck'
+              and l.detail->>'packId' = p.id::text)
+        limit ${MAX_ITEMS}`);
+      return rowsOf<StuckPack>(r);
     },
     /** `unknown` actions with no audit activity since `quietSince`: their reconcile chain is lost. */
     async strandedActions(quietSince: Date, tx?: Executor): Promise<StrandedAction[]> {
