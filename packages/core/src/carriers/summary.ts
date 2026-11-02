@@ -116,12 +116,12 @@ export function trackingSummary(i: TrackingInputs): TrackingSummary {
         ? null
         : {
             code: c.code,
-            name: c.code === OTHER_CARRIER ? c.name : carrierDisplayName(c.name),
+            name: c.code === OTHER_CARRIER ? c.name : carrierDisplayName(c.code, c.name),
             tier: c.tier,
           },
     country: a.country,
     flagged: a.flagged,
-    alternatives: a.alternatives.map((x) => ({ code: x.code, name: carrierDisplayName(x.name) })),
+    alternatives: a.alternatives.map((x) => ({ code: x.code, name: carrierDisplayName(x.code, x.name) })),
     sources: { approved: source(a.sources.approved), accepted: source(a.sources.accepted) },
     prefill,
   };

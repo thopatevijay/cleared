@@ -189,7 +189,7 @@ export function RouteAdvice({ s }: { s: TrackingSummary }) {
             {s.alternatives.slice(0, 8).map((a) => (
               <li
                 key={a.code}
-                className="flex min-h-11 flex-wrap items-center gap-x-2 rounded-md border border-border px-3"
+                className="flex min-h-12 flex-wrap items-center gap-x-2 rounded-md border border-border px-3 py-2"
               >
                 <span>{a.name}</span>
                 <code lang="en" className="font-mono text-xs text-text-muted">

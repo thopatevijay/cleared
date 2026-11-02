@@ -41,10 +41,15 @@ export function EstimatedDate({
   const key = estimateKey(rule);
   const at = e.estimatedReleaseAt;
   const date = (iso: string, long = false) => formatDate(locale, iso, timeZone, long);
+  // M3-03: a timeline that starts from an event Cleared doesn't know yet (goods: the courier's delivery
+  // confirmation; service: Completed) has no date, but it is still an estimate and says so
+  const pendingEvent = at === null && (key === "delivered" || key === "service");
   const name =
-    at === null
-      ? t("noTimelineName", { source: source?.title ?? "" })
-      : t("estimateName", { date: date(at, true), source: source?.title ?? "" });
+    at !== null
+      ? t("estimateName", { date: date(at, true), source: source?.title ?? "" })
+      : pendingEvent
+        ? t("estimateName", { date: t(`est.${key}`), source: source?.title ?? "" })
+        : t("noTimelineName", { source: source?.title ?? "" });
   const due = e.disputeDueAt ?? null;
   return (
     <div
@@ -63,7 +68,7 @@ export function EstimatedDate({
               <span>{t("disputeDue", { date: date(due) })}</span>
             </>
           ) : null}
-          {at !== null ? (
+          {at !== null || pendingEvent ? (
             <>
               <Dot />
               <span className="font-medium">{t("estimated")}</span>

@@ -14,6 +14,7 @@ import { getJson, NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
 import { ActionViewSchema, fingerprint, type ActionViewData } from "../../lib/dispute-view.ts";
 import { useOnline } from "../../lib/use-online.ts";
 import { refusalOf } from "../disputes/text.ts";
+import { Fingerprint } from "../disputes/DraftParts.tsx";
 import { TierBadge } from "./RouteAdvice.tsx";
 
 const OTHER = "OTHER";
@@ -100,10 +101,11 @@ function ConfirmDialog({
   );
 }
 
-function Filed({ s }: { s: TrackingSummary }) {
+/** The ApprovalCard's succeeded state: what was filed, and PayPal's debug_id as the proof it was taken. */
+function Filed({ s, debugId }: { s: TrackingSummary; debugId: string | null }) {
   const t = useTranslations("holds.tracking");
   return (
-    <div role="status" className="flex flex-col gap-1" data-testid="tracking-filed">
+    <div className="flex flex-col gap-1" data-testid="tracking-filed">
       <p className="flex items-center gap-2 font-semibold">
         <CircleCheck aria-hidden="true" size={18} strokeWidth={1.75} className="text-status-completed-fg" />
         {t("filed")}
@@ -113,8 +115,35 @@ function Filed({ s }: { s: TrackingSummary }) {
           {t("filedDetail", { carrier: s.chosen.name, number: s.prefill.tracking_number })}
         </p>
       )}
+      {debugId === null ? null : (
+        <p className="flex flex-wrap items-center gap-x-2 text-sm" data-testid="tracking-debug-id">
+          {t("filedAfterApproval")}
+          <code lang="en" className="font-mono text-xs">
+            debug_id {debugId}
+          </code>
+        </p>
+      )}
     </div>
   );
+}
+
+/** hold.md "Tracking filing": a toast "Tracking filed" when filing completes while the page is open. */
+function useFiledToast(state: TrackingSummary["state"] | null): boolean {
+  const prev = useRef(state);
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const was = prev.current;
+    prev.current = state;
+    if (state !== "filed" || was === "filed" || was === null) return;
+    setShow(true);
+    const timer = setTimeout(() => {
+      setShow(false);
+    }, 6000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [state]);
+  return show;
 }
 
 function Review({
@@ -153,11 +182,20 @@ function Review({
         res.status === NETWORK_ERROR ? "NETWORK" : (refusalOf(res.body) ?? `HTTP_${String(res.status)}`),
       );
   }
+  // label above value below 640 px, so long PayPal ids keep one line (ui-reviewer M3-03 #5)
   const row = "flex flex-col gap-0.5 sm:flex-row sm:gap-3";
   return (
     <div className="flex flex-col gap-3" data-testid="tracking-review" data-action={action.id}>
       <h3 className="font-semibold">{t("reviewTitle")}</h3>
       <dl className="flex flex-col gap-2">
+        <div className={row}>
+          <dt className="text-text-muted sm:w-40">{t("action")}</dt>
+          <dd>
+            <code lang="en" className="font-mono text-sm">
+              add_tracking
+            </code>
+          </dd>
+        </div>
         <div className={row}>
           <dt className="text-text-muted sm:w-40">{t("carrier")}</dt>
           <dd className="flex flex-wrap items-center gap-2">
@@ -182,32 +220,35 @@ function Review({
         </div>
         <div className={row}>
           <dt className="text-text-muted sm:w-40">{t("order")}</dt>
-          <dd className="font-mono text-sm break-all">{p.order_id}</dd>
+          <dd className="font-mono text-xs">{p.order_id}</dd>
         </div>
         <div className={row}>
           <dt className="text-text-muted sm:w-40">{t("capture")}</dt>
-          <dd className="font-mono text-sm break-all">{p.capture_id}</dd>
+          <dd className="font-mono text-xs">{p.capture_id}</dd>
         </div>
         <div className={row}>
           <dt className="text-text-muted sm:w-40">{t("notify")}</dt>
-          <dd>{t("notifyNo")}</dd>
+          <dd className="flex flex-wrap items-center gap-2">
+            {t("notifyNo")}
+            <code lang="en" className="font-mono text-xs text-text-muted">
+              notify_payer: false
+            </code>
+          </dd>
         </div>
       </dl>
-      <p className="text-sm text-text-muted">
-        <code className="font-mono" data-testid="tracking-fingerprint">
-          {t("fingerprint", { fp: fingerprint(action.payload_sha256) })}
-        </code>
-      </p>
+      <div data-testid="tracking-fingerprint-block">
+        <Fingerprint sha={action.payload_sha256} previous={null} />
+      </div>
       {error === null ? null : (
         <p role="alert" className="text-status-error-fg" data-testid="tracking-error">
           {t("refused", { code: error })}
         </p>
       )}
       {online ? null : <p className="text-sm text-text-muted">{t("offline")}</p>}
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2 md:flex-row">
         <button
           type="button"
-          className={primary}
+          className={`${primary} md:w-auto`}
           disabled={!online}
           onClick={() => {
             setOpen(true);
@@ -368,65 +409,80 @@ export function TrackingCard({ hold, onChanged }: { hold: HoldItem; onChanged: (
   const [editing, setEditing] = useState(false);
   const [local, setLocal] = useState<ActionViewData | null>(null);
   const actionPath =
-    s?.actionId != null && (s.state === "proposed" || s.state === "failed")
-      ? `/api/actions/${s.actionId}`
+    s?.actionId != null && s.state !== "none" && s.state !== "filing"
+      ? `/api/actions/${s.actionId}/${s.state}`
       : null;
-  const { data: remote } = useSWR<ActionViewData, unknown>(actionPath, fetchAction);
+  const { data: remote } = useSWR<ActionViewData, unknown>(actionPath, (k: string) =>
+    fetchAction(k.slice(0, k.lastIndexOf("/"))),
+  );
+  const toast = useFiledToast(s?.state ?? null);
   if (s === null) return null;
   const action = local ?? (remote?.state === "proposed" ? remote : null);
   return (
-    <section
-      id="tracking"
-      tabIndex={-1}
-      aria-labelledby="tracking-heading"
-      className="flex scroll-mt-16 flex-col gap-3 rounded-lg border border-border bg-surface p-4"
-      data-testid="approval-card"
-      data-kind="add_tracking"
-      data-state={s.state}
-    >
-      <h3 id="tracking-heading" className="text-lg font-semibold">
-        {t("cardTitle")}
-      </h3>
-      {s.state === "filed" ? (
-        <Filed s={s} />
-      ) : s.state === "filing" ? (
-        <p role="status" className="flex items-center gap-2" data-testid="tracking-filing">
-          <Loader2 aria-hidden="true" size={16} className="spin" />
-          {t("filing")}
+    <>
+      {toast ? (
+        <p
+          role="status"
+          className="fixed inset-x-4 bottom-4 z-50 mx-auto flex max-w-sm items-center gap-2 rounded-md bg-status-completed-bg p-3 font-medium text-status-completed-fg shadow-lg"
+          data-testid="tracking-toast"
+        >
+          <CircleCheck aria-hidden="true" size={18} strokeWidth={1.75} />
+          {t("filed")}
         </p>
-      ) : (
-        <>
-          <p className="text-sm">{t("cardIntro")}</p>
-          {s.state === "failed" && remote?.refusal != null ? (
-            <p role="alert" className="text-status-error-fg">
-              {t("failed", { code: remote.refusal })}
-            </p>
-          ) : null}
-          {action !== null && !editing ? (
-            <Review
-              action={action}
-              s={s}
-              onEdit={() => {
-                setEditing(true);
-              }}
-              onApproved={() => {
-                setLocal(null);
-                onChanged();
-              }}
-            />
-          ) : (
-            <Form
-              holdId={hold.id}
-              s={s}
-              onProposed={(a) => {
-                setLocal(a);
-                setEditing(false);
-                onChanged();
-              }}
-            />
-          )}
-        </>
-      )}
-    </section>
+      ) : null}
+      <section
+        id="tracking"
+        tabIndex={-1}
+        aria-labelledby="tracking-heading"
+        className="flex scroll-mt-16 flex-col gap-3 rounded-lg border border-border bg-surface p-4"
+        data-testid="approval-card"
+        data-kind="add_tracking"
+        data-state={s.state}
+      >
+        <h3 id="tracking-heading" className="text-lg font-semibold">
+          {t("cardTitle")}
+        </h3>
+        {s.state === "filed" ? (
+          <Filed s={s} debugId={remote?.execution?.paypalDebugId ?? null} />
+        ) : s.state === "filing" ? (
+          <p role="status" className="flex items-center gap-2" data-testid="tracking-filing">
+            <Loader2 aria-hidden="true" size={16} className="spin" />
+            {t("filing")}
+          </p>
+        ) : (
+          <>
+            <p className="text-sm">{t("cardIntro")}</p>
+            {s.state === "failed" && remote?.refusal != null ? (
+              <p role="alert" className="text-status-error-fg">
+                {t("failed", { code: remote.refusal })}
+              </p>
+            ) : null}
+            {action !== null && !editing ? (
+              <Review
+                action={action}
+                s={s}
+                onEdit={() => {
+                  setEditing(true);
+                }}
+                onApproved={() => {
+                  setLocal(null);
+                  onChanged();
+                }}
+              />
+            ) : (
+              <Form
+                holdId={hold.id}
+                s={s}
+                onProposed={(a) => {
+                  setLocal(a);
+                  setEditing(false);
+                  onChanged();
+                }}
+              />
+            )}
+          </>
+        )}
+      </section>
+    </>
   );
 }

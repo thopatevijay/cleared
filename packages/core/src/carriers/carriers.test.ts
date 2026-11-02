@@ -146,6 +146,8 @@ describe("countries", () => {
   });
 
   it("display names drop the web address", () => {
-    expect(carrierDisplayName("Ekart logistics (ekartlogistics.com)")).toBe("Ekart logistics");
+    expect(carrierDisplayName("EKART", "Ekart logistics (ekartlogistics.com)")).toBe("Ekart");
+    expect(carrierDisplayName("IND_SHREEMARUTI", "Shree Maruti (shreemaruti.com)")).toBe("Shree Maruti");
+    expect(carrierDisplayName("ZZ", "ARAMEX")).toBe("Aramex");
   });
 });

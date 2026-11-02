@@ -30,7 +30,7 @@ test("route advice on an accepted carrier, none on an approved one; File trackin
   const advice = row.getByTestId("route-advice");
   await expect(advice).toHaveAttribute("data-flagged", "true");
   await expect(advice).toContainText(
-    "India Post Domestic: PayPal accepts it; it may not speed up the release. Faster: Delhivery India, DTDC India, Ekart logistics, BLUEDART",
+    "India Post: PayPal accepts it; it may not speed up the release. Faster: Delhivery, DTDC, Ekart, Blue Dart",
   );
   // icon + text: the warning icon is decorative, the words carry the meaning
   await expect(advice.locator("svg[aria-hidden='true']").first()).toBeAttached();
@@ -64,6 +64,9 @@ test("route advice on an accepted carrier, none on an approved one; File trackin
 
   await expect(page.locator("body")).not.toContainText(/not\s+approved/i);
   await axeClean(page, "dashboard-tracking");
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
   await capture(page, "en-dashboard-tracking", REVIEW_TRACKING);
 
   // HI
@@ -75,5 +78,8 @@ test("route advice on an accepted carrier, none on an approved one; File trackin
   await expect(hiRow.getByTestId("carrier-caveat")).toContainText("सैंडबॉक्स US खाते की सूची");
   await expect(hiRow.getByTestId("file-tracking")).toHaveText("ट्रैकिंग दर्ज करें");
   await axeClean(page, "dashboard-tracking-hi");
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
   await capture(page, "hi-dashboard-tracking", REVIEW_TRACKING, [360, 1440]);
 });

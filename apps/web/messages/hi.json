@@ -241,8 +241,8 @@
       "adviceTitle": "कूरियर सलाह",
       "chosen": "आपका कूरियर",
       "alternatives": "जल्दी रिलीज़ के लिए स्वीकृत कूरियर",
-      "sourceApproved": "स्रोत: स्वीकृत सूची",
-      "sourceAccepted": "स्रोत: PayPal कूरियर सूची",
+      "sourceApproved": "स्रोत: जल्दी रिलीज़ वाले कूरियर",
+      "sourceAccepted": "स्रोत: PayPal जिन कूरियर को मानता है",
       "sourceDate": "{date} को दर्ज",
       "sourceNoLink": "PayPal सैंडबॉक्स विक्रेता खाते (Add tracking info) में देखा गया; इस सूची का कोई सार्वजनिक लिंक नहीं है।",
       "sourceOpen": "स्रोत पेज खोलें",
@@ -273,7 +273,9 @@
       "filedDetail": "{carrier} · {number}",
       "failed": "PayPal ने पिछली ट्रैकिंग नहीं ली ({code})। जाँचकर फिर कोशिश करें।",
       "refused": "यह नहीं हो सका ({code})। जानकारी जाँचकर फिर कोशिश करें।",
-      "offline": "आप ऑफ़लाइन हैं। ट्रैकिंग दर्ज करने के लिए कनेक्शन चाहिए।"
+      "offline": "आप ऑफ़लाइन हैं। ट्रैकिंग दर्ज करने के लिए कनेक्शन चाहिए।",
+      "action": "कार्रवाई",
+      "filedAfterApproval": "आपकी मंज़ूरी के बाद दर्ज · PayPal"
     }
   },
   "audit": {

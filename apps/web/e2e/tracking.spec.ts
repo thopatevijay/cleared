@@ -37,6 +37,9 @@ test("File tracking → ApprovalCard → approve → filed; advice and button go
   await expect(card.getByTestId("carrier-select")).toHaveValue("INDIA_POST");
   await expect(card.getByTestId("tracking-number")).toHaveValue("EE123456789IN");
   await axeClean(page, "tracking-form");
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
   await capture(page, "en-hold-tracking-form", REVIEW_TRACKING);
 
   // follow the advice: Delhivery; review shows exactly what goes to PayPal
@@ -45,22 +48,27 @@ test("File tracking → ApprovalCard → approve → filed; advice and button go
   await card.getByTestId("tracking-review-button").click();
   const review = card.getByTestId("tracking-review");
   await expect(review).toContainText("IND_DELHIVERY");
+  await expect(review).toContainText("add_tracking");
+  await expect(review).toContainText("notify_payer: false");
   await expect(review.getByTestId("tier-badge")).toHaveAttribute("data-tier", "approved");
   await expect(review.getByTestId("review-number")).toHaveText("SPK123456");
   await expect(review).toContainText(s.orderId);
   await expect(review).toContainText(s.captureId);
-  const fp1 = await review.getByTestId("tracking-fingerprint").textContent();
+  const fp1 = await review.getByTestId("fingerprint").textContent();
   // editing a field creates a new fingerprint
   await review.getByTestId("tracking-edit").click();
   await card.getByTestId("tracking-number").fill("SPK123457");
   await card.getByTestId("tracking-review-button").click();
-  const fp2 = await card.getByTestId("tracking-fingerprint").textContent();
+  const fp2 = await card.getByTestId("fingerprint").textContent();
   expect(fp2).not.toEqual(fp1);
   await expect(page.getByTestId("route-advice-full").getByTestId("tier-badge")).toHaveAttribute(
     "data-tier",
     "approved",
   );
   await axeClean(page, "tracking-review");
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
   await capture(page, "en-hold-tracking-review", REVIEW_TRACKING);
 
   // approve by keyboard: initial focus "Go back", Tab → Send
@@ -78,14 +86,20 @@ test("File tracking → ApprovalCard → approve → filed; advice and button go
   await expect(page.getByTestId("tracking-filed")).toBeVisible({ timeout: 90_000 });
   await expect(page.getByTestId("tracking-filed")).toContainText("Tracking filed");
   await expect(page.getByTestId("tracking-filed")).toContainText("SPK123457");
+  await expect(page.getByTestId("tracking-toast")).toHaveText("Tracking filed");
+  // the stub replays the recorded M0-04 201 (paypal-debug-id f345140fb0d0d)
+  await expect(page.getByTestId("tracking-debug-id")).toContainText("debug_id f345140fb0d0d");
   const est = page.getByTestId("estimated-date");
   await expect(est).toHaveAttribute("data-rule", "goods_delivered");
-  await expect(est).toContainText("About 24 hours after the courier confirms delivery");
+  await expect(est).toContainText("About 24 hours after the courier confirms delivery · estimated");
   await expect(est.getByTestId("free-by")).toHaveCount(0);
   await expect(page.getByTestId("route-advice-full")).toHaveCount(0);
   await expect(page.getByTestId("tracking-form")).toHaveCount(0);
   await expect(page.getByTestId("hold-detail")).toHaveAttribute("data-state", "filed");
   await axeClean(page, "tracking-filed");
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
   await capture(page, "en-hold-tracking-filed", REVIEW_TRACKING);
 
   // the dashboard row: no advice line, no File tracking; "Why?" is back

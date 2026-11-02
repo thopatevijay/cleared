@@ -241,8 +241,8 @@
       "adviceTitle": "Route advice",
       "chosen": "Your carrier",
       "alternatives": "Approved carriers for a faster release",
-      "sourceApproved": "Source: approved list",
-      "sourceAccepted": "Source: PayPal carrier list",
+      "sourceApproved": "Source: carriers for faster release",
+      "sourceAccepted": "Source: carriers PayPal accepts",
       "sourceDate": "Recorded {date}",
       "sourceNoLink": "Seen in a PayPal sandbox seller account (Add tracking info); the list has no public link.",
       "sourceOpen": "Open the source page",
@@ -273,7 +273,9 @@
       "filedDetail": "{carrier} · {number}",
       "failed": "PayPal didn't take the last tracking ({code}). Check it and try again.",
       "refused": "That didn't work ({code}). Check the details and try again.",
-      "offline": "You're offline. Filing tracking needs a connection."
+      "offline": "You're offline. Filing tracking needs a connection.",
+      "action": "Action",
+      "filedAfterApproval": "Filed after your approval · PayPal"
     }
   },
   "audit": {

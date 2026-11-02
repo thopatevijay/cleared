@@ -70,7 +70,28 @@ export function adviseRoute(country: string | null, chosen?: string | ChosenCarr
   };
 }
 
-/** A carrier's name for people: PayPal's name without its parenthetical web address. */
-export function carrierDisplayName(name: string): string {
-  return name.replace(/\s*\([^)]*\)\s*/g, " ").trim();
+/** How sellers name the carriers route advice shows most (PayPal lists e.g. "BLUEDART", "Delhivery India"). */
+const DISPLAY: Readonly<Record<string, string>> = {
+  IND_DELHIVERY: "Delhivery",
+  DTDC_IN: "DTDC",
+  EKART: "Ekart",
+  BLUEDART: "Blue Dart",
+  XPRESSBEES: "Xpressbees",
+  IND_ECOM: "Ecom Express",
+  INDIA_POST: "India Post",
+  NIPOST_NG: "NIPOST",
+  IDN_JNE: "JNE Express",
+  TCS: "TCS",
+};
+
+/**
+ * A carrier's name for people: Cleared's short name for the common ones, else PayPal's name without its
+ * parenthetical web address, an all-caps single word title-cased ("XPRESSBEES" → "Xpressbees"). The PayPal
+ * code is always shown beside it.
+ */
+export function carrierDisplayName(code: string, name: string): string {
+  const known = DISPLAY[code];
+  if (known !== undefined) return known;
+  const plain = name.replace(/\s*\([^)]*\)\s*/g, " ").trim();
+  return /^[A-Z]{4,}$/.test(plain) ? plain.charAt(0) + plain.slice(1).toLowerCase() : plain;
 }
