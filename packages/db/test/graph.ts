@@ -41,7 +41,7 @@ async function seedAccounts(r: WorkspaceRepos): Promise<Ids & { users: string; a
     email: `link-${randomUUID()}@example.test`,
     requestedIpHash: sha(randomUUID()),
   });
-  const note = await r.notifications.insert({ kind: "dispute_opened" });
+  const note = await r.notifications.insert({ kind: "dispute_opened", dedupeKey: "dispute_opened:graph:once" });
   const run = await r.agentRuns.insert({
     task: "extract",
     inputHash: sha("in"),

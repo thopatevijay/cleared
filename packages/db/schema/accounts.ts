@@ -1,6 +1,6 @@
 // Accounts (ADR 0007): workspaces, sellers, sessions, magic links, notifications.
 import { sql } from "drizzle-orm";
-import { check, index, numeric, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { check, index, jsonb, numeric, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { createdAt, currency, pk, tstz } from "./columns.ts";
 import { locale, sessionKind, workspaceKind } from "./enums.ts";
 
@@ -115,10 +115,22 @@ export const notifications = pgTable(
      * here: `disputes` imports this module (`scoped`), so a reference would be a circular import.
      */
     disputeId: uuid("dispute_id"),
+    /** M3-08: what the notification links to (`hold` | `dispute` | `payment`, core NOTIFICATION_REF_TYPES) */
+    refType: text("ref_type"),
+    refId: uuid("ref_id"),
+    /** M3-08: `kind:ref_id:threshold` (core `dedupeKey`); unique per workspace, so each fires once */
+    dedupeKey: text("dedupe_key").notNull(),
+    /** M3-08: the template inputs (core NotificationDataSchema): amount, reason code, dates; never evidence */
+    data: jsonb("data").notNull().default({}),
+    /** M3-08: null until the send job ran; then sent | refused | no_recipient | failed */
+    emailStatus: text("email_status"),
+    /** M3-08: Resend's message id when sent */
+    emailId: text("email_id"),
   },
   (t) => [
     index("notifications_workspace_created_idx").on(t.workspaceId, t.createdAt),
-    // one alert per dispute and kind (dispute_deadline_72h / _24h); NULL dispute ids never collide
-    uniqueIndex("notifications_dispute_kind_key").on(t.disputeId, t.kind),
+    // M3-08: one row per (workspace, kind, ref, threshold); a deadline's threshold is its due date, so a
+    // renewed due date alerts again (BL-01 6536548146)
+    uniqueIndex("notifications_dedupe_key").on(t.workspaceId, t.dedupeKey),
   ],
 );
