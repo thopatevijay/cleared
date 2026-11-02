@@ -42,6 +42,11 @@ Gates are written to run verbatim from a fresh shell. Two things make that work 
   `grep -a skipped ci.log | grep -a '\.test\.ts' | grep -av '\.live\.test\.ts'` prints nothing (each
   vitest file line carries its path and its `| n skipped` count). A live test
   is named `*.live.test.ts` and skips only on a missing credential.
+- **msw timeout tests wait out the late response.** A delayed msw response whose request the client
+  already aborted makes the next request on that server fail with `HttpNetworkError` if it starts
+  before the delay ends (BL-01 6537331135). Serve the late answer with `LATE_RESPONSE_MS` and
+  `await settleLateResponse()` (`apps/worker/test/actions-support.ts`) before the next call to that
+  server or before the test returns.
 
 ## Design review
 Every ticket labelled `frontend` passes the `ui-reviewer` agent (independent of the builder) against `docs/design/` before merge.

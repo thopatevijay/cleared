@@ -21,12 +21,14 @@ import {
   ctxFor,
   disputesWithHttp,
   evidencePayload,
+  LATE_RESPONSE_MS,
   NOW,
   PDF_SHA,
   recordCalls,
   sceneWithDispute,
   serveDispute,
   serveWrite,
+  settleLateResponse,
   writes,
   type PayPalCall,
 } from "../../test/actions-support.ts";
@@ -71,9 +73,6 @@ async function evidenceScene() {
   );
   return { ...s, actionId };
 }
-
-/** Lets the delayed (timed-out) msw response finish, so it cannot reset the next test's connection. */
-const settleLateResponse = (): Promise<void> => new Promise((r) => setTimeout(r, 1_500));
 
 async function stateOf(ws: string, id: string) {
   const row = await getProposedAction(db, ws, id);
@@ -272,7 +271,7 @@ describe.skipIf(!dbAvailable)("action.execute (execute-action)", () => {
     const s = await evidenceScene();
     serveDispute(server, STATE.waiting, s.ids, s.ws);
     serveDispute(server, STATE.waiting, s.ids, s.ws);
-    serveWrite(server, s.ids, "provide-evidence", EVIDENCE_OK, 1_500); // answers after the 300 ms write timeout
+    serveWrite(server, s.ids, "provide-evidence", EVIDENCE_OK, LATE_RESPONSE_MS); // answers after the 300 ms write timeout
 
     expect(await execute(deps({ writeTimeoutMs: 300 }).d, s.actionId, s.ws)).toBe("unknown");
     expect(await stateOf(s.ws, s.actionId)).toEqual({ state: "unknown", code: null });

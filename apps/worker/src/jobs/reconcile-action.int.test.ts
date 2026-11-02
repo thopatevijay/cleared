@@ -21,11 +21,13 @@ import {
   ctxFor,
   disputesWithHttp,
   evidencePayload,
+  LATE_RESPONSE_MS,
   NOW,
   recordCalls,
   sceneWithDispute,
   serveDispute,
   serveWrite,
+  settleLateResponse,
   writes,
   type PayPalCall,
 } from "../../test/actions-support.ts";
@@ -55,14 +57,13 @@ async function unknownAction() {
   const { disputes } = disputesWithHttp(server);
   serveDispute(server, STATE.waiting, s.ids, s.ws);
   serveDispute(server, STATE.waiting, s.ids, s.ws);
-  serveWrite(server, s.ids, "provide-evidence", "paypal/disputes/full/write-evidence.2", 1_500);
+  serveWrite(server, s.ids, "provide-evidence", "paypal/disputes/full/write-evidence.2", LATE_RESPONSE_MS);
   const d = { db, publisher, disputes, now: () => NOW, killSwitchEnv: () => false, writeTimeoutMs: 300 };
   const out = await withTransaction(db, (tx) =>
     executeAction(d, { actionId, workspaceId: s.ws }, ctxFor(tx, {})),
   );
   expect(out).toBe("unknown");
-  // let the delayed (timed-out) msw response finish before the next PayPal call
-  await new Promise((r) => setTimeout(r, 1_500));
+  await settleLateResponse(); // before the next PayPal call (BL-01 6537331135)
   return { ...s, actionId, disputes };
 }
 
