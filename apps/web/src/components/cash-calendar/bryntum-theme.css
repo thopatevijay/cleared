@@ -47,6 +47,38 @@
 .cash-bryntum .b-toolbar .b-button .b-icon {
   color: var(--color-accent);
 }
+/* 44 px targets at every width (WCAG 2.5.8; Bryntum squeezes them below 640 px). */
+.cash-bryntum .b-toolbar .b-button {
+  min-width: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+}
+.cash-bryntum .b-toolbar {
+  height: auto;
+}
+.cash-bryntum .b-toolbar .b-toolbar-content {
+  flex-wrap: wrap;
+}
+
+/* Below 640 px: no event bars in cells (labels are never squeezed), only a count; the day's list opens
+   below the grid when the day is selected. */
+.cash-bryntum .cash-day-count {
+  display: none;
+}
+.cash-bryntum.cash-compact .b-cal-event-bar-container,
+.cash-bryntum.cash-compact .cash-day-total {
+  display: none;
+}
+.cash-bryntum.cash-compact .b-calendar-cell:has(> .cash-day-total) {
+  padding-bottom: 0;
+}
+.cash-bryntum.cash-compact .cash-day-count {
+  display: block;
+  padding: 0 0.4em;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-status-held-fg);
+}
 .cash-bryntum .b-week-num {
   color: var(--color-text-muted) !important;
 }

@@ -94,7 +94,18 @@ test("month view at 1440: every event, kind colours, day totals, table, axe, no 
   await expect(page.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(2);
 
   await axeClean(page, "calendar-month-1440");
-  await capture(page, "en-calendar-month", REVIEW_CAL, [768, 1440]);
+  await capture(page, "en-calendar-month", REVIEW_CAL, [375, 768, 1440]);
+
+  // Month at 375: no squeezed labels, a count per day; selecting the day lists it below the grid
+  await page.setViewportSize({ width: 375, height: 800 });
+  await expect(page.locator(".cash-bryntum.cash-compact")).toBeVisible();
+  const cell = page.locator(`.b-calendar-cell[data-date="${review?.date ?? ""}"]`);
+  await expect(cell.locator(".cash-day-count")).toHaveText("● 2");
+  await expect(cell.locator(".b-cal-event-bar-container")).toBeHidden();
+  await cell.locator(".b-day-num").click();
+  await expect(page.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(2);
+  await capture(page, "en-calendar-month-day", REVIEW_CAL, [375]);
+  await page.setViewportSize({ width: 1440, height: 900 });
   expect(calls, "requests that left localhost").toEqual([]);
   const trial = await page.evaluate(() =>
     Object.keys(localStorage).filter((k) => k.startsWith("b-calendar")),

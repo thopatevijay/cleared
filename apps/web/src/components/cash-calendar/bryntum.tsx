@@ -45,6 +45,23 @@ function useBryntumLocale(locale: string): boolean {
   return ready;
 }
 
+/** Below 640 px the month grid shows counts only (cash-calendar.md "375 px"). */
+function useCompact(): boolean {
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const on = () => {
+      setCompact(mq.matches);
+    };
+    on();
+    mq.addEventListener("change", on);
+    return () => {
+      mq.removeEventListener("change", on);
+    };
+  }, []);
+  return compact;
+}
+
 function useReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -58,6 +75,7 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
   const text = useCashText(p.locale);
   const ready = useBryntumLocale(p.locale);
   const reduced = useReducedMotion();
+  const compact = useCompact();
   const byId = useMemo(() => new Map(p.events.map((e) => [e.id, e])), [p.events]);
 
   const events = useMemo(
@@ -81,6 +99,12 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
     return by;
   }, [p.totals, p.locale]);
 
+  const countByDay = useMemo(() => {
+    const by = new Map<string, number>();
+    for (const e of p.events) by.set(e.date, (by.get(e.date) ?? 0) + 1);
+    return by;
+  }, [p.events]);
+
   const month = useMemo((): MonthViewConfig => {
     const eventRenderer: MonthViewConfig["eventRenderer"] = ({ eventRecord, renderData }) => {
       const e: CashEvent | undefined = byId.get(String(eventRecord.id));
@@ -91,12 +115,21 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
       return [{ tag: "span", className: "cash-ev-text", dataset: { cashEvent: e.id }, text: text.label(e) }];
     };
     const dayCellRenderer: MonthViewConfig["dayCellRenderer"] = (cell, dom) => {
-      const lines = totalsByDay.get(cell.key);
-      if (lines === undefined || lines.length === 0) return dom;
-      const total: DomConfig = { tag: "span", className: "cash-day-total", text: lines.join(" · ") };
-      // at the foot of the cell (bryntum-theme.css), so the event bars keep Bryntum's offsets
       const children = (dom as { children?: unknown }).children;
-      if (Array.isArray(children)) (children as DomConfig[]).push(total);
+      if (!Array.isArray(children)) return dom;
+      const lines = totalsByDay.get(cell.key) ?? [];
+      const n = countByDay.get(cell.key) ?? 0;
+      // at the foot of the cell (bryntum-theme.css), so the event bars keep Bryntum's offsets; below 640 px
+      // the bars are hidden and only the count shows (the selected day's list opens below the grid)
+      if (lines.length > 0)
+        (children as DomConfig[]).push({ tag: "span", className: "cash-day-total", text: lines.join(" · ") });
+      if (n > 0)
+        (children as DomConfig[]).push({
+          tag: "span",
+          className: "cash-day-count",
+          text: `● ${String(n)}`,
+          "aria-hidden": "true",
+        } as DomConfig);
       return dom;
     };
     return {
@@ -107,7 +140,7 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
       eventRenderer,
       dayCellRenderer,
     };
-  }, [byId, totalsByDay, reduced]);
+  }, [byId, totalsByDay, countByDay, reduced]);
 
   const onKeyDownCapture = (ev: KeyboardEvent<HTMLDivElement>) => {
     if (ev.key !== "Enter" && ev.key !== " ") return;
@@ -122,7 +155,7 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
   if (!ready) return null;
   return (
     <div
-      className="cash-bryntum h-[640px] md:h-[720px]"
+      className={`cash-bryntum h-[640px] md:h-[720px]${compact ? " cash-compact" : ""}`}
       data-testid="bryntum-calendar"
       data-engine={CASH_CALENDAR_ENGINE.name}
       onKeyDownCapture={onKeyDownCapture}
