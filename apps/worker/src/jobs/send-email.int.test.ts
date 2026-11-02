@@ -160,7 +160,7 @@ describe.skipIf(!dbAvailable)("notification.send_email", () => {
     expect(mail?.key).toBe(`notification-${sc.id}`);
     expect(mail?.body.to).toEqual([ALLOWED]);
     expect(mail?.body.subject).toBe(
-      "Reply to the $120.00 USD dispute is due in 18 hours (9 Nov, 10:29 GMT+5:30).",
+      "Reply to the $120.00 USD dispute is due in 18 hours (9 Nov, 10:29 IST).",
     );
     const d = (await sc.repos.notifications.get(sc.id))?.refId ?? "";
     expect(mail?.body.text).toContain(`${APP}/en/disputes/${d}`);

@@ -4,7 +4,8 @@ import type { Locale } from "../../accounts/workspace.ts";
 import type { Money } from "../../money.ts";
 import { toEpochMs, type Instant } from "../../time.ts";
 
-const intlLocale = (locale: Locale): string => (locale === "hi" ? "hi-IN" : "en-GB");
+// the web's `intlLocale` (apps/web/src/i18n/routing.ts): Indian English, Latin digits in HI
+const intlLocale = (locale: Locale): string => (locale === "hi" ? "hi-IN-u-nu-latn" : "en-IN");
 
 /** `$120.00 USD`: the symbol for recognition, the code so it is never ambiguous. */
 export function formatAmount(money: Money | null, locale: Locale): string {
@@ -37,7 +38,7 @@ export function zonedDate(at: Instant, locale: Locale, timeZone: string): ZonedD
     timeZone,
   }).format(d);
   const tz =
-    new Intl.DateTimeFormat("en-GB", { timeZone, timeZoneName: "short" })
+    new Intl.DateTimeFormat("en-IN", { timeZone, timeZoneName: "short" })
       .formatToParts(d)
       .find((p) => p.type === "timeZoneName")?.value ?? timeZone;
   return { date, time, tz };

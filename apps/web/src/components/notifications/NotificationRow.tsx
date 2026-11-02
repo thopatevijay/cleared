@@ -6,6 +6,7 @@ import { AlarmClock, CalendarCheck, Check, Hourglass, Scale, type LucideIcon } f
 import { useLocale, useTranslations } from "next-intl";
 import type { NotificationKind } from "@cleared/core";
 import { Link } from "../../i18n/navigation.ts";
+import { intlLocale, isAppLocale } from "../../i18n/routing.ts";
 import { formatTime } from "../../lib/format.ts";
 import type { NotificationItem } from "../../lib/notifications-view.ts";
 
@@ -27,7 +28,8 @@ export interface RowProps {
 
 export function NotificationRow({ item, timeZone, failed, offline, onMarkRead }: RowProps) {
   const t = useTranslations("notifications");
-  const locale = useLocale();
+  const raw = useLocale();
+  const locale = intlLocale(isAppLocale(raw) ? raw : "en");
   const { icon: Icon, tone } = KIND[item.kind];
   const unread = !item.read;
   return (

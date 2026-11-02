@@ -25,7 +25,7 @@ function t24(now: Instant) {
 describe("renderNotification", () => {
   it("T-24 in EN: amount, hours left, the date and time in the seller tz, one link", () => {
     const r = renderNotification(t24(addMinutes(DUE, -18 * 60)), ctx(addMinutes(DUE, -18 * 60)));
-    expect(r.sentence).toBe("Reply to the $120.00 USD dispute is due in 18 hours (2 Nov, 23:59 GMT+5:30).");
+    expect(r.sentence).toBe("Reply to the $120.00 USD dispute is due in 18 hours (2 Nov, 23:59 IST).");
     expect(r.subject).toBe(r.sentence);
     expect(r.url).toBe(`https://cleared.example/en/disputes/${D}`);
     expect(r.text).toContain(r.url);

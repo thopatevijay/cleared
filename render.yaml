@@ -119,6 +119,9 @@ services:
         fromService: { type: web, name: cleared-web, envVarKey: EMAIL_FROM }
       - key: EMAIL_RECIPIENT_ALLOWLIST
         fromService: { type: web, name: cleared-web, envVarKey: EMAIL_RECIPIENT_ALLOWLIST }
+      # M3-08: the link in every alert email. Not a secret; same value as cleared-web.
+      - key: APP_BASE_URL
+        value: https://cleared-web-gd1b.onrender.com
 
 databases:
   - name: cleared-db
