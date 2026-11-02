@@ -27,7 +27,7 @@ export default async function Dispute({
   const t = await getTranslations("disputes");
   return (
     <>
-      <SiteHeader skipTo="main" skipLabel="skipMain" />
+      <SiteHeader skipTo="main" skipLabel="skipMain" signedIn />
       <main
         id="main"
         tabIndex={-1}

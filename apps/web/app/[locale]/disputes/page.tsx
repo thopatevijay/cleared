@@ -22,7 +22,7 @@ export default async function Disputes({ params }: { params: Promise<{ locale: s
   const t = await getTranslations("disputes");
   return (
     <>
-      <SiteHeader skipTo="main" skipLabel="skipMain" />
+      <SiteHeader skipTo="main" skipLabel="skipMain" signedIn />
       <main
         id="main"
         tabIndex={-1}

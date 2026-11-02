@@ -21,7 +21,7 @@ export default async function Payments({ params }: { params: Promise<{ locale: s
   const t = await getTranslations("dashboard");
   return (
     <>
-      <SiteHeader skipTo="payments" skipLabel="skipPayments" />
+      <SiteHeader skipTo="payments" skipLabel="skipPayments" signedIn />
       <main id="main" className="mx-auto flex max-w-[720px] flex-col gap-6 px-4 py-6 xl:max-w-[1200px]">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <PaymentsView />

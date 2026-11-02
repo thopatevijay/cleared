@@ -39,7 +39,7 @@ export default async function PackPage({
   const t = await getTranslations("pack");
   return (
     <>
-      <SiteHeader skipTo="main" skipLabel="skipMain" />
+      <SiteHeader skipTo="main" skipLabel="skipMain" signedIn />
       <main
         id="main"
         tabIndex={-1}

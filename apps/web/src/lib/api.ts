@@ -27,10 +27,24 @@ async function read(res: Response): Promise<ApiResult> {
   };
 }
 
-export async function postJson(path: string, body: unknown, idempotencyKey: string): Promise<ApiResult> {
+export function postJson(path: string, body: unknown, idempotencyKey: string): Promise<ApiResult> {
+  return sendJson("POST", path, body, idempotencyKey);
+}
+
+/** M3-08: PATCH /api/notifications (mark read). */
+export function patchJson(path: string, body: unknown, idempotencyKey: string): Promise<ApiResult> {
+  return sendJson("PATCH", path, body, idempotencyKey);
+}
+
+async function sendJson(
+  method: "POST" | "PATCH",
+  path: string,
+  body: unknown,
+  idempotencyKey: string,
+): Promise<ApiResult> {
   try {
     const res = await fetch(path, {
-      method: "POST",
+      method,
       headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
       body: JSON.stringify(body),
       credentials: "same-origin",
