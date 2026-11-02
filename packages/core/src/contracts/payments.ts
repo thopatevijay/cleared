@@ -49,6 +49,20 @@ export const PaymentPackSchema = z.object({
 });
 export type PaymentPack = z.infer<typeof PaymentPackSchema>;
 
+/** M3-01: the payment's active hold as the dashboard row shows it (dashboard.md elements 7–10). */
+export const PaymentHoldSchema = z.object({
+  id: z.uuid(),
+  /** a `HOLD_TYPES` value */
+  type: z.string().min(1),
+  /** capture `status_details.reason`, verbatim */
+  reason: z.string().min(1),
+  /** the rule row (`holdRule(id)`) the estimate and its source come from */
+  ruleId: z.string().min(1),
+  estimatedReleaseAt: z.iso.datetime({ offset: true }).nullable(),
+  estimateUpperBoundAt: z.iso.datetime({ offset: true }).nullable(),
+});
+export type PaymentHold = z.infer<typeof PaymentHoldSchema>;
+
 export const PaymentItemSchema = z.object({
   id: z.uuid(),
   captureId: z.string().min(1),
@@ -64,6 +78,8 @@ export const PaymentItemSchema = z.object({
   updatedAt: z.iso.datetime({ offset: true }),
   /** null only for a payment stored before packs were created with it (migration 0010 backfills them) */
   pack: PaymentPackSchema.nullable(),
+  /** M3-01: the active derived hold; null when PayPal holds nothing on this capture */
+  hold: PaymentHoldSchema.nullable(),
 });
 export type PaymentItem = z.infer<typeof PaymentItemSchema>;
 
@@ -73,7 +89,7 @@ export const PaymentsResponseSchema = z.object({
   offset: z.number().int().min(0),
   limit: z.number().int().min(1).max(PAYMENTS_PAGE_MAX),
   summary: z.object({
-    /** Sum of mirrored PENDING captures, one entry per currency (never summed across currencies) */
+    /** M3-01: sum of active derived holds, one entry per currency (never summed across currencies) */
     held: z.array(AmountSchema),
     /** null until dispute support (M2-09) */
     inDispute: z.null(),

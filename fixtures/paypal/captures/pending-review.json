@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-26T11:24:21Z",
+    "env": "sandbox",
+    "ticket": "M3-01",
+    "scrubbed": true,
+    "note": "PayPal-wallet capture held for payment review: PENDING / PENDING_REVIEW (spike summary: capture_status + status_details)",
+    "source": "spike/results/wallet_review.json (the spike's summary of the response, copied verbatim; see PROVENANCE.md)"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}/capture",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "http": 201,
+      "order_status": "COMPLETED",
+      "capture_id": "5JB55617195805514",
+      "capture_status": "PENDING",
+      "status_details": {
+        "reason": "PENDING_REVIEW"
+      },
+      "error": null
+    }
+  }
+}

@@ -13,8 +13,10 @@ import {
   type WorkspaceId,
 } from "@cleared/core";
 import {
+  holdsRepo,
   packReadsRepo,
   platform,
+  type HoldRow,
   type PackStatus,
   SANDBOX_TEST_PAYMENT_QUEUE,
   withTransaction,
@@ -22,6 +24,7 @@ import {
   type Publisher,
 } from "@cleared/db";
 import { checkMutation } from "../csrf.ts";
+import { paymentHold } from "../holds/read.ts";
 import type { Deps } from "../deps.ts";
 import { withIdempotency } from "../idempotency.ts";
 import { apiError, correlationId, json } from "../respond.ts";
@@ -46,7 +49,7 @@ function toPack(st: PackStatus | undefined): PaymentPack | null {
   };
 }
 
-function toItem(p: PaymentRow, pack: PackStatus | undefined): PaymentItem {
+function toItem(p: PaymentRow, pack: PackStatus | undefined, hold: HoldRow | undefined): PaymentItem {
   return {
     id: p.id,
     captureId: p.captureId,
@@ -60,6 +63,7 @@ function toItem(p: PaymentRow, pack: PackStatus | undefined): PaymentItem {
     source: p.source,
     updatedAt: (p.paypalUpdatedAt ?? p.createdAt).toISOString(),
     pack: toPack(pack),
+    hold: hold === undefined ? null : paymentHold(hold),
   };
 }
 
@@ -82,21 +86,24 @@ export async function getPayments(req: Request, deps: Deps): Promise<Response> {
   }
   const v = workspaceViews(deps.db, session.workspaceId as WorkspaceId);
   const now = deps.now().getTime();
+  const holds = holdsRepo(deps.db, session.workspaceId);
   const [rows, total, held, today, recent] = await Promise.all([
     v.paymentsList.page(q.data.offset, q.data.limit),
     v.paymentsList.count(),
-    v.paymentsList.heldTotals(),
+    // M3-01 (dashboard.md 3a): the held total counts active derived holds only, per currency
+    holds.heldTotals(),
     v.testPaymentRequests.since(new Date(now - DAY_MS)),
     v.testPaymentRequests.since(new Date(now - WAITING_WINDOW_MS)),
   ]);
   const packs = packReadsRepo(deps.db, session.workspaceId as WorkspaceId);
-  const [arrived, packOf, proofReady] = await Promise.all([
+  const [arrived, packOf, proofReady, holdOf] = await Promise.all([
     recent.oldest === null ? 0 : v.paymentsList.countCreatedSince(recent.oldest),
     packs.forPayments(rows.map((r) => r.id)),
     packs.proofReadyCount(),
+    holds.activeByPayment(rows.map((r) => r.id)),
   ]);
   const body: PaymentsResponse = {
-    items: rows.map((r) => toItem(r, packOf.get(r.id))),
+    items: rows.map((r) => toItem(r, packOf.get(r.id), holdOf.get(r.id))),
     total,
     offset: q.data.offset,
     limit: q.data.limit,

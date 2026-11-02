@@ -9,6 +9,7 @@ import { getPayments, postTestPayment } from "../../src/server/handlers/payments
 import { getWorkspace } from "../../src/server/handlers/session-routes.ts";
 import { cookieFrom, freshIp, req, testDb, testDeps } from "../support/db.ts";
 import { dbAvailable } from "../support/db-available.ts";
+import { seedHeldPayment } from "../support/hold-seed.ts";
 
 let pub: Promise<Publisher> | undefined;
 const created: string[] = [];
@@ -43,7 +44,6 @@ describe.skipIf(!dbAvailable)("payments API (integration)", () => {
     const a = await demo();
     const b = await demo();
     const ra = forWorkspace(testDb(), WorkspaceIdSchema.parse(a.wsId));
-    const rb = forWorkspace(testDb(), WorkspaceIdSchema.parse(b.wsId));
     const ins = (r: typeof ra, amount: string, status: string, currency = "USD") =>
       r.payments.insert({
         captureId: randomUUID().slice(0, 17),
@@ -55,10 +55,11 @@ describe.skipIf(!dbAvailable)("payments API (integration)", () => {
         receivableAmount: "40.00",
         receivableCurrency: "USD",
       });
-    await ins(ra, "64.00", "PENDING");
+    // M3-01: the held total counts derived holds, so PENDING payments are seeded with theirs
+    await seedHeldPayment(testDb(), a.wsId, { amount: "64.00" });
     await ins(ra, "42.00", "COMPLETED");
-    await ins(ra, "5.00", "PENDING", "EUR");
-    await ins(rb, "999.00", "PENDING");
+    await seedHeldPayment(testDb(), a.wsId, { amount: "5.00", currency: "EUR" });
+    await seedHeldPayment(testDb(), b.wsId, { amount: "999.00" });
 
     const { status, body } = await list(a.cookie, `?workspaceId=${b.wsId}`);
     expect(status).toBe(200);

@@ -146,3 +146,11 @@ export {
   type ClientAcksRepo,
   type ScopeItemRef,
 } from "./repositories/client-acks.ts";
+export {
+  holdsRepo,
+  type DisputeRowForHold,
+  type HoldRow,
+  type HoldsRepo,
+  type HoldView,
+  type PaymentRowForHold,
+} from "./repositories/holds.ts";

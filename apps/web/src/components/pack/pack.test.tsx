@@ -148,6 +148,7 @@ const payment = (pack: PaymentItem["pack"]): PaymentItem => ({
   source: "webhook",
   updatedAt: "2026-10-31T10:00:00.000Z",
   pack,
+  hold: null,
 });
 
 describe("dashboard pack sub-line (AC 10) and Add proof", () => {

@@ -31,6 +31,8 @@ describe("payments contract (M1-07)", () => {
       source: "webhook",
       updatedAt: "2026-10-30T10:00:00.000Z",
       pack: null,
+      // M3-01: the active derived hold (null: PayPal holds nothing on this capture)
+      hold: null,
     };
     expect(PaymentItemSchema.parse(item)).toEqual(item);
     expect(PaymentItemSchema.safeParse({ ...item, amount: { value: "4,2", currency: "USD" } }).success).toBe(
