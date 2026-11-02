@@ -123,15 +123,21 @@ describe("record_service_completed payload (secondary)", () => {
 
   it("is the capture and status COMPLETED: no tracking number, no carrier (PayPal refuses one without the other)", () => {
     expect(payload).toEqual({ capture_id: "7AS90958XD7569923", status: "COMPLETED" });
-    expect(RecordServiceCompletedPayloadSchema.safeParse({ ...payload, carrier: "OTHER" }).success).toBe(false);
+    expect(RecordServiceCompletedPayloadSchema.safeParse({ ...payload, carrier: "OTHER" }).success).toBe(
+      false,
+    );
     expect(RecordServiceCompletedPayloadSchema.safeParse({ ...payload, tracking_number: "X1" }).success).toBe(
       false,
     );
-    expect(RecordServiceCompletedPayloadSchema.safeParse({ ...payload, status: "SHIPPED" }).success).toBe(false);
+    expect(RecordServiceCompletedPayloadSchema.safeParse({ ...payload, status: "SHIPPED" }).success).toBe(
+      false,
+    );
   });
 
   it("is executable, and its approval binds the payload hash", () => {
-    expect(parseExecutablePayload("record_service_completed", payload)?.kind).toBe("record_service_completed");
+    expect(parseExecutablePayload("record_service_completed", payload)?.kind).toBe(
+      "record_service_completed",
+    );
     const subject = {
       kind: "record_service_completed",
       state: "proposed" as const,
@@ -140,10 +146,12 @@ describe("record_service_completed payload (secondary)", () => {
       createdByRunId: null,
     };
     expect(checkApproval(subject, { payloadSha256: subject.payloadSha256 }).kind).toBe("allow");
-    expect(checkApproval(subject, { payloadSha256: canonicalHash({ ...payload, capture_id: "X" }) })).toEqual({
-      kind: "refuse",
-      code: "APPROVAL_HASH_MISMATCH",
-    });
+    expect(checkApproval(subject, { payloadSha256: canonicalHash({ ...payload, capture_id: "X" }) })).toEqual(
+      {
+        kind: "refuse",
+        code: "APPROVAL_HASH_MISMATCH",
+      },
+    );
   });
 
   it("maps action states onto the card's record state", () => {

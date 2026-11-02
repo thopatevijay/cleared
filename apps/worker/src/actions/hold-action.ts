@@ -115,7 +115,11 @@ export function sentAudit(row: ProposedActionRow, detail: Record<string, JsonVal
 }
 
 /** A send that threw: 4xx → `failed`; no answer / 5xx → `unknown` + `action.reconcile`. */
-export async function failedSend(run: HoldActionRun, error: unknown, label: string): Promise<HoldActionOutcome> {
+export async function failedSend(
+  run: HoldActionRun,
+  error: unknown,
+  label: string,
+): Promise<HoldActionOutcome> {
   const { rt, row } = run;
   const f = sendFailureOf(error);
   const outcome = classifySendFailure(f);

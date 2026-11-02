@@ -44,7 +44,11 @@ export async function executeRecordCompleted(run: CompletedRun): Promise<HoldAct
   const payload = await checkHoldAction(run, "record_service_completed");
   if (payload === null) return "failed";
   if (run.orders === undefined) {
-    await finish(run, { to: "failed", code: "PAYPAL_UNAVAILABLE", debugId: null }, { error: "no orders client" });
+    await finish(
+      run,
+      { to: "failed", code: "PAYPAL_UNAVAILABLE", debugId: null },
+      { error: "no orders client" },
+    );
     return "failed";
   }
   let meta: ResponseMeta | null = null;
@@ -111,11 +115,24 @@ async function succeeded(
     await appendActionAudit(rt.db, sentAudit(row, { status: r.status, debugId: r.debugId }), tx);
     await appendActionAudit(
       rt.db,
-      { workspaceId: row.workspaceId, actionId: row.id, actor: "system", action: "action.read_back", detail: { status: readBack.trackerStatus } },
+      {
+        workspaceId: row.workspaceId,
+        actionId: row.id,
+        actor: "system",
+        action: "action.read_back",
+        detail: { status: readBack.trackerStatus },
+      },
       tx,
     );
     // no hold change: the effect of this record on the release is unconfirmed (PayPal support)
-    await endAction(rt, tx, row, "executing", { to: "succeeded", debugId: r.debugId }, { debugId: r.debugId });
+    await endAction(
+      rt,
+      tx,
+      row,
+      "executing",
+      { to: "succeeded", debugId: r.debugId },
+      { debugId: r.debugId },
+    );
   });
 }
 
@@ -130,7 +147,11 @@ async function rejected(run: CompletedRun, r: Sent, errors: readonly string[]): 
       { paypalStatus: String(r.status), paypalDebugId: r.debugId, response: { errors: [...errors] } },
       tx,
     );
-    await appendActionAudit(rt.db, sentAudit(row, { status: r.status, debugId: r.debugId, outcome: "batch_error" }), tx);
+    await appendActionAudit(
+      rt.db,
+      sentAudit(row, { status: r.status, debugId: r.debugId, outcome: "batch_error" }),
+      tx,
+    );
     await endAction(
       rt,
       tx,

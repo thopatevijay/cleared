@@ -6,7 +6,10 @@
 import { z } from "zod";
 import { Sha256Schema, type Sha256 } from "../ids.ts";
 import { addMinutes, compareInstants, type Instant } from "../time.ts";
-import { RecordServiceCompletedPayloadSchema, type RecordServiceCompletedPayload } from "../holds/completed.ts";
+import {
+  RecordServiceCompletedPayloadSchema,
+  type RecordServiceCompletedPayload,
+} from "../holds/completed.ts";
 import type { Approval, ProposedAction } from "./action.ts";
 import type { ActionState } from "./state.ts";
 

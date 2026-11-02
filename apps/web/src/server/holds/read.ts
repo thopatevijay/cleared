@@ -13,6 +13,7 @@ import {
   type HoldItem,
   type HoldsResponse,
   type HoldType,
+  type CompletedSummary,
   type PaymentHold,
   type TrackingSummary,
   type WorkspaceId,
@@ -21,6 +22,7 @@ import { holdsRepo, platform, type ExplanationRow, type HoldRow, type HoldView }
 import { z } from "zod";
 import type { Deps } from "../deps.ts";
 import { trackingSummaries } from "../tracking/summaries.ts";
+import { completedSummaries } from "../completed/summaries.ts";
 
 const iso = (d: Date | null): string | null => (d === null ? null : d.toISOString());
 const holdType = (t: string): HoldType =>
@@ -45,10 +47,15 @@ export function paymentHold(h: HoldRow, tracking: TrackingSummary | null = null)
   };
 }
 
-export function holdItem(v: HoldView, tracking: TrackingSummary | null = null): HoldItem {
+export function holdItem(
+  v: HoldView,
+  tracking: TrackingSummary | null = null,
+  completed: CompletedSummary | null = null,
+): HoldItem {
   const { hold: h, payment: p, dispute: d } = v;
   return {
     ...paymentHold(h, tracking),
+    completed,
     paymentId: p.id,
     captureId: p.captureId,
     amount: { value: p.amount, currency: p.currency },
@@ -70,9 +77,12 @@ async function timezone(deps: Deps, ws: string): Promise<string> {
 export async function listHolds(deps: Deps, ws: WorkspaceId): Promise<HoldsResponse> {
   const repo = holdsRepo(deps.db, ws);
   const [views, held, tz] = await Promise.all([repo.listActive(), repo.heldTotals(), timezone(deps, ws)]);
-  const tracking = await trackingSummaries(deps.db, ws, views, tz);
+  const [tracking, completed] = await Promise.all([
+    trackingSummaries(deps.db, ws, views, tz),
+    completedSummaries(deps.db, ws, views),
+  ]);
   return HoldsResponseSchema.parse({
-    items: views.map((v) => holdItem(v, tracking.get(v.hold.id) ?? null)),
+    items: views.map((v) => holdItem(v, tracking.get(v.hold.id) ?? null, completed.get(v.hold.id) ?? null)),
     summary: { held, count: views.length },
     workspace: { timezone: tz },
   });
@@ -97,10 +107,13 @@ export async function holdDetail(deps: Deps, ws: WorkspaceId, rawId: string): Pr
   const v = await repo.view(rawId);
   if (v === null) return null;
   const tz = await timezone(deps, ws);
-  const tracking = await trackingSummaries(deps.db, ws, [v], tz);
+  const [tracking, completed] = await Promise.all([
+    trackingSummaries(deps.db, ws, [v], tz),
+    completedSummaries(deps.db, ws, [v]),
+  ]);
   const explanations = (await repo.explanations(v.hold.id)).flatMap((r) => holdExplanation(r) ?? []);
   return HoldDetailSchema.parse({
-    hold: holdItem(v, tracking.get(v.hold.id) ?? null),
+    hold: holdItem(v, tracking.get(v.hold.id) ?? null, completed.get(v.hold.id) ?? null),
     payment: { id: v.payment.id, status: v.payment.status, statusReason: v.payment.statusReason },
     workspace: { timezone: tz },
     explanations,

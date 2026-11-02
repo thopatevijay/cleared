@@ -31,11 +31,14 @@ describe("trackers-batch (M3-04)", () => {
   });
 
   it("a 404 read-back → not landed; any other error throws", async () => {
-    const e = (status: number) => new HttpStatusError("paypal", "GET", "https://x", status, "{}", {}, undefined);
+    const e = (status: number) =>
+      new HttpStatusError("paypal", "GET", "https://x", status, "{}", {}, undefined);
     expect(await readBackCompleted({ getLegacyTracker: () => Promise.reject(e(404)) }, CAPTURE)).toEqual({
       landed: false,
       status: null,
     });
-    await expect(readBackCompleted({ getLegacyTracker: () => Promise.reject(e(500)) }, CAPTURE)).rejects.toThrow();
+    await expect(
+      readBackCompleted({ getLegacyTracker: () => Promise.reject(e(500)) }, CAPTURE),
+    ).rejects.toThrow();
   });
 });

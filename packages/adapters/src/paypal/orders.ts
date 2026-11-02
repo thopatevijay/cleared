@@ -101,7 +101,10 @@ export interface PayPalOrdersClient {
   /** Orders v2 `POST /v2/checkout/orders/{id}/track` (201 + the order). */
   trackOrder(orderId: string, input: TrackInput): Promise<Order>;
   /** Legacy `POST /v1/shipping/trackers-batch`: status `COMPLETED`, no tracking number (services). */
-  markCompleted(captureIds: readonly string[], options?: MarkCompletedOptions): Promise<TrackersBatchResponse>;
+  markCompleted(
+    captureIds: readonly string[],
+    options?: MarkCompletedOptions,
+  ): Promise<TrackersBatchResponse>;
   /** Legacy `GET /v1/shipping/trackers/{transaction_id}-{tracking_number|NOTRACKER}`. */
   getLegacyTracker(captureId: string, trackingNumber?: string): Promise<LegacyTracker>;
 }

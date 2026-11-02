@@ -89,7 +89,12 @@ function deps(over: Partial<ExecuteActionDeps> = {}): ExecuteActionDeps {
   return {
     db,
     publisher,
-    disputes: { getDispute: missing, provideEvidence: missing, provideSupportingInfo: missing, acceptClaim: missing },
+    disputes: {
+      getDispute: missing,
+      provideEvidence: missing,
+      provideSupportingInfo: missing,
+      acceptClaim: missing,
+    },
     completed: orders(),
     now: () => NOW,
     killSwitchEnv: () => false,
@@ -136,7 +141,11 @@ async function scene(owned = true): Promise<Scene & { payload: JsonValue }> {
   created.push(w.id);
   const captureId = id();
   if (owned) {
-    await platform(db).resourceOwners.claim({ resourceType: "capture", resourceId: captureId, workspaceId: w.id });
+    await platform(db).resourceOwners.claim({
+      resourceType: "capture",
+      resourceId: captureId,
+      workspaceId: w.id,
+    });
   }
   const repos = forWorkspace(db, WorkspaceIdSchema.parse(w.id));
   const payment = await repos.payments.insert({
@@ -156,7 +165,13 @@ async function scene(owned = true): Promise<Scene & { payload: JsonValue }> {
     estimatedReleaseAt: ESTIMATE,
   });
   const payload: JsonValue = { capture_id: captureId, status: "COMPLETED" };
-  const actionId = await approvedAction(db, publisher, { ws: w.id, ids: {} as never }, "record_service_completed", payload);
+  const actionId = await approvedAction(
+    db,
+    publisher,
+    { ws: w.id, ids: {} as never },
+    "record_service_completed",
+    payload,
+  );
   return { ws: w.id, captureId, holdId: hold.id, actionId, payload };
 }
 
@@ -259,7 +274,10 @@ describe.skipIf(!dbAvailable)("record_service_completed (M3-04)", () => {
 
   it("a 200 with per-tracker errors fails PAYPAL_REJECTED and keeps the debug id", async () => {
     const s = await scene();
-    const body = JSON.stringify({ tracker_identifiers: [], errors: [{ name: "INVALID_REQUEST", message: "x" }] });
+    const body = JSON.stringify({
+      tracker_identifiers: [],
+      errors: [{ name: "INVALID_REQUEST", message: "x" }],
+    });
     serveBatch(s, { body });
     expect(await execute(deps(), s)).toBe("failed");
     expect(await stateOf(s)).toEqual({ state: "failed", code: "PAYPAL_REJECTED" });

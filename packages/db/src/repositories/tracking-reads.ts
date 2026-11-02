@@ -1,7 +1,7 @@
 // M3-03 reads behind a goods hold's tracking summary, workspace-scoped: the newest `add_tracking` action
 // per capture (the payload's `capture_id`; no extra column, so no migration), and the newest shipment
 // fact (M2-03 `extracted_facts.facts.shipment`) per payment.
-import { ShipmentFact, type Facts } from "@cleared/core";
+import { ShipmentFact, type Facts, type HoldActionKind } from "@cleared/core";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { Db } from "../client.ts";
 import type { Executor } from "../tx.ts";
@@ -11,32 +11,40 @@ import type { ProposedActionRow } from "./proposed-actions.ts";
 export type Shipment = NonNullable<Facts["shipment"]>;
 
 export function trackingReads(db: Db, ws: string) {
+  async function latestActionsByCapture(
+    kind: HoldActionKind,
+    captureIds: readonly string[],
+    ex: Executor = db,
+  ): Promise<Map<string, ProposedActionRow>> {
+    if (captureIds.length === 0) return new Map();
+    const capture = sql<string>`${proposedActions.payload}->>'capture_id'`;
+    const rows = await ex
+      .select()
+      .from(proposedActions)
+      .where(
+        and(
+          eq(proposedActions.workspaceId, ws),
+          eq(proposedActions.kind, kind),
+          inArray(capture, [...captureIds]),
+        ),
+      )
+      .orderBy(desc(proposedActions.createdAt), desc(proposedActions.id));
+    const out = new Map<string, ProposedActionRow>();
+    for (const r of rows) {
+      const id = (r.payload as { capture_id?: unknown }).capture_id;
+      if (typeof id === "string" && !out.has(id)) out.set(id, r);
+    }
+    return out;
+  }
+
   return {
     /** The newest `add_tracking` action per capture id. */
-    async latestTrackingActions(
-      captureIds: readonly string[],
-      ex: Executor = db,
-    ): Promise<Map<string, ProposedActionRow>> {
-      if (captureIds.length === 0) return new Map();
-      const capture = sql<string>`${proposedActions.payload}->>'capture_id'`;
-      const rows = await ex
-        .select()
-        .from(proposedActions)
-        .where(
-          and(
-            eq(proposedActions.workspaceId, ws),
-            eq(proposedActions.kind, "add_tracking"),
-            inArray(capture, [...captureIds]),
-          ),
-        )
-        .orderBy(desc(proposedActions.createdAt), desc(proposedActions.id));
-      const out = new Map<string, ProposedActionRow>();
-      for (const r of rows) {
-        const id = (r.payload as { capture_id?: unknown }).capture_id;
-        if (typeof id === "string" && !out.has(id)) out.set(id, r);
-      }
-      return out;
+    latestTrackingActions(captureIds: readonly string[], ex: Executor = db) {
+      return latestActionsByCapture("add_tracking", captureIds, ex);
     },
+
+    /** The newest action of a hold-action kind per capture id (M3-04 adds `record_service_completed`). */
+    latestActionsByCapture,
 
     /** The newest shipment fact in each payment's proof pack (any prompt version), re-validated. */
     async shipmentsByPayment(

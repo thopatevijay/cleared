@@ -92,9 +92,12 @@ export function walkToFiled(state: HoldState): HoldState {
 
 /** The calendar date (YYYY-MM-DD) of an instant in a time zone. */
 export function localDate(at: Instant, timeZone: string): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(
-    new Date(toEpochMs(at)),
-  );
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(toEpochMs(at)));
 }
 
 /** How far the zone is ahead of UTC at that moment, in ms. */
@@ -172,7 +175,14 @@ export function recordServiceCompletedPayload(captureId: string): RecordServiceC
 }
 
 /** Where the guided step stands on a service hold (hold.md action slot, M3-04). */
-export const COMPLETED_RECORD_STATES = ["none", "proposed", "recording", "recorded", "failed", "unknown"] as const;
+export const COMPLETED_RECORD_STATES = [
+  "none",
+  "proposed",
+  "recording",
+  "recorded",
+  "failed",
+  "unknown",
+] as const;
 
 export const CompletedSummarySchema = z.object({
   /** the seller's web-step confirmation */
@@ -184,6 +194,12 @@ export const CompletedSummarySchema = z.object({
   record: z.object({
     state: z.enum(COMPLETED_RECORD_STATES),
     actionId: z.uuid().nullable(),
+    /** PayPal's paypal-debug-id of the write, once sent */
+    debugId: z.string().nullable(),
+    /** the status PayPal reads the tracker back with (COMPLETED in M0-04 and live), once recorded */
+    readBack: z.string().nullable(),
+    /** the refusal code of a failed record */
+    refusal: z.string().nullable(),
   }),
 });
 export type CompletedSummary = z.infer<typeof CompletedSummarySchema>;

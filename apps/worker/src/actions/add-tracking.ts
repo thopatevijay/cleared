@@ -5,7 +5,15 @@
 // with PayPal-Request-Id = the action id. 2xx → `succeeded` + the execution row (status, paypal-debug-id) +
 // the hold walked to `filed` with the goods_delivered estimate and no date; 4xx → `failed`; no answer /
 // 5xx → `unknown`, settled by `reconcileTracking` from the order's trackers (never by resending).
-import { parseExecutablePayload, transitionHold, WorkspaceIdSchema, type AddTrackingPayload, type HoldEvent, type HoldState, type JsonValue } from "@cleared/core";
+import {
+  parseExecutablePayload,
+  transitionHold,
+  WorkspaceIdSchema,
+  type AddTrackingPayload,
+  type HoldEvent,
+  type HoldState,
+  type JsonValue,
+} from "@cleared/core";
 import { trackerFor, type Order, type PayPalOrdersClient, type ResponseMeta } from "@cleared/adapters";
 import {
   appendActionAudit,
