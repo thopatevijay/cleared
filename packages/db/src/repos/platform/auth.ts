@@ -94,7 +94,11 @@ export function authRepo(db: Db) {
 
     /** Demo workspaces created since `since`, optionally from one IP hash. */
     async countDemoWorkspacesSince(since: Date, ipHash?: string, tx?: Executor): Promise<number> {
-      const base = and(eq(workspaces.kind, "demo"), gte(workspaces.createdAt, since));
+      const base = and(
+        eq(workspaces.kind, "demo"),
+        eq(workspaces.synthetic, false),
+        gte(workspaces.createdAt, since),
+      );
       const where = ipHash === undefined ? base : and(base, eq(workspaces.createdIpHash, ipHash));
       const rows = await (tx ?? db).select({ n: count() }).from(workspaces).where(where);
       return rows[0]?.n ?? 0;
@@ -105,7 +109,9 @@ export function authRepo(db: Db) {
       const rows = await (tx ?? db)
         .select({ n: count() })
         .from(workspaces)
-        .where(and(eq(workspaces.kind, "demo"), gt(workspaces.expiresAt, now)));
+        .where(
+          and(eq(workspaces.kind, "demo"), eq(workspaces.synthetic, false), gt(workspaces.expiresAt, now)),
+        );
       return rows[0]?.n ?? 0;
     },
 

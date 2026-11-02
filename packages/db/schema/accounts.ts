@@ -1,6 +1,6 @@
 // Accounts (ADR 0007): workspaces, sellers, sessions, magic links, notifications.
 import { sql } from "drizzle-orm";
-import { check, index, jsonb, numeric, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, jsonb, numeric, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { createdAt, currency, pk, tstz } from "./columns.ts";
 import { locale, sessionKind, workspaceKind } from "./enums.ts";
 
@@ -19,6 +19,8 @@ export const workspaces = pgTable(
     createdIpHash: text("created_ip_hash"),
     /** per-workspace LLM budget in USD (demo: 0.10, ADR 0007); null = no per-workspace cap */
     llmBudgetUsd: numeric("llm_budget_usd"),
+    /** M3-09: the daily synthetic judge-path run's workspace; excluded from the demo caps, purged after */
+    synthetic: boolean("synthetic").notNull().default(false),
   },
   (t) => [
     index("workspaces_created_at_idx").on(t.createdAt),

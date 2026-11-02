@@ -8,6 +8,7 @@ import {
   smallint,
   integer,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
   text,
@@ -138,4 +139,23 @@ export const rateLimitHits = pgTable(
     at: tstz("at").notNull().defaultNow(),
   },
   (t) => [index("rate_limit_hits_bucket_at_idx").on(t.bucket, t.at)],
+);
+
+/**
+ * M3-09: one row per measured check: the reconcile tick (`reconcile`), the SLO checks (`slo.*`) and the
+ * synthetic judge path (`synthetic`, `synthetic.<step>`). `value`/`target` in the check's unit (seconds or
+ * a count); null value = nothing to measure. Read by `/readyz` (last reconcile) and the runbook (M4-07).
+ */
+export const opsChecks = pgTable(
+  "ops_checks",
+  {
+    id: pk(),
+    runAt: tstz("run_at").notNull().defaultNow(),
+    check: text("check").notNull(),
+    value: numeric("value", { mode: "number" }),
+    target: numeric("target", { mode: "number" }),
+    pass: boolean("pass").notNull(),
+    detail: jsonb("detail").notNull().default({}),
+  },
+  (t) => [index("ops_checks_check_run_at_idx").on(t.check, t.runAt)],
 );
