@@ -111,6 +111,20 @@ export interface ReconcileInput {
   readonly before: DisputeSnapshot;
 }
 
+/**
+ * The `action.unknown` audit detail's `before`: the snapshot reconcile compares with. M3-09's poll reads it
+ * back to give a stranded `unknown` action (its reconcile chain lost) one final try.
+ */
+export function beforeDetail(before: DisputeSnapshot): { before: Record<string, JsonValue> } {
+  return {
+    before: {
+      status: before.status,
+      allowedActions: [...before.allowedActions],
+      sellerSubmissions: before.sellerSubmissions,
+    },
+  };
+}
+
 export async function enqueueReconcile(
   rt: ActionRuntime,
   tx: Tx,

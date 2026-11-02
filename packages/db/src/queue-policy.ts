@@ -80,6 +80,14 @@ export const NOTIFICATION_SEND_EMAIL_QUEUE = "notification.send_email";
 /** M3-07: render the pack's scope snapshot PDF (`{workspaceId, packId}`); idempotent on the input hash. */
 export const SCOPE_SNAPSHOT_RENDER_QUEUE = "scope_snapshot.render";
 
+/**
+ * M3-09: the reconcile poll and the SLO checks, every 15 minutes (core `RECONCILE_CRON`). Plain cron ticks
+ * (no envelope), like the outbox relay: a singleton queue, so a tick never runs beside another one.
+ */
+export const OPS_RECONCILE_QUEUE = "ops.reconcile";
+/** M3-09: the daily synthetic judge path (≤ 30 min, core `SYNTHETIC_CRON`); the next day's run is its retry. */
+export const OPS_SYNTHETIC_QUEUE = "ops.synthetic";
+
 export const COMMAND_QUEUES: readonly QueueSpec[] = [
   // Resend dedupes on the notification id (Idempotency-Key), so a retry never sends twice. 5 retries with
   // backoff (2, 4, 8, 16, 32 s + jitter) ≈ 1 min, then the DLQ (Sentry) and the row says `failed`.

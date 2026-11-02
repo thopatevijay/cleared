@@ -21,7 +21,16 @@ if (process.argv.includes("--dry-run")) {
   const email = emailFromEnv(process.env);
   main(
     () =>
-      start(process.env, log, makeConnect({ log, registry: (rt) => defaultRegistry(rt, paypal, ai, email) })),
+      start(
+        process.env,
+        log,
+        makeConnect({
+          log,
+          registry: (rt) => defaultRegistry(rt, paypal, ai, email),
+          // M3-09: the reconcile poll and the synthetic run; off only for the stubbed local E2E
+          opsSchedules: process.env["OPS_SCHEDULES"] !== "off",
+        }),
+      ),
     log,
   );
 }

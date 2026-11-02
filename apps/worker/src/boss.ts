@@ -1,11 +1,14 @@
 // Wires the registry onto pg-boss (M1-03): creates each queue and its `.dlq`, starts its consumer with
 // concurrency 5 (architecture §12), starts a dead-letter consumer that logs and records the message,
-// and schedules the outbox relay every minute and the dispute deadline watcher every 15 (M2-06).
+// and schedules the outbox relay every minute, the dispute deadline watcher every 15 (M2-06), and the
+// reconcile poll every 15 plus the daily synthetic judge path (M3-09).
 import { correlationIdOrNew, reportError } from "@cleared/adapters";
 import { createPublisher, RELAY_CRON, RELAY_QUEUE, relayOutbox, type Db, type Queue } from "@cleared/db";
 import { consume, type ConsumeDeps, type Handler } from "./consume.ts";
 import { dlqName, ensureQueue } from "./queues.ts";
 import { scheduleDeadlineWatch } from "./jobs/deadline-watcher.ts";
+import { scheduleReconcile } from "./jobs/reconcile.ts";
+import { scheduleSynthetic } from "./jobs/synthetic-judge-path.ts";
 import type { Registry } from "./registry.ts";
 
 /** Jobs in flight per queue per worker process (architecture §12). */
@@ -17,6 +20,8 @@ export interface WireDeps extends ConsumeDeps {
   readonly db: Db;
   readonly boss: Queue;
   readonly pollingIntervalSeconds?: number;
+  /** M3-09: false skips the reconcile and synthetic schedules (`OPS_SCHEDULES=off`: local stubbed E2E) */
+  readonly opsSchedules?: boolean;
 }
 
 function workOptions(deps: WireDeps) {
@@ -67,9 +72,11 @@ export async function scheduleRelay(deps: WireDeps): Promise<void> {
 export async function wireWorker(deps: WireDeps, registry: Registry): Promise<void> {
   await wireRegistry(deps, registry);
   await scheduleRelay(deps);
+  const publisher = createPublisher(deps.db, deps.boss, correlationIdOrNew);
   // M3-08: the watcher's alerts enqueue their email jobs through the outbox publisher
-  await scheduleDeadlineWatch({
-    ...deps,
-    publisher: createPublisher(deps.db, deps.boss, correlationIdOrNew),
-  });
+  await scheduleDeadlineWatch({ ...deps, publisher });
+  // M3-09: the 15-minute reconcile poll + SLO checks, and the daily synthetic judge path
+  if (deps.opsSchedules === false) return;
+  await scheduleReconcile({ ...deps, publisher });
+  await scheduleSynthetic({ ...deps, publisher });
 }

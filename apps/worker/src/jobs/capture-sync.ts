@@ -23,6 +23,20 @@ import type { ConsumeContext, Handler } from "../consume.ts";
 
 export const UNOWNED_RETRY_WINDOW_MS = 10 * 60_000;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * BL-01 6568286398: the sandbox app has one webhook URL (production), so a local live run's resources reach
+ * production too. An unowned resource whose `custom_id` is a workspace id this database doesn't have was
+ * made by another environment: still quarantined and audited, but no Sentry warning (it is expected noise,
+ * and it would hide a real quarantine). A `custom_id` that is absent, not a uuid, or a workspace of this
+ * database still alerts.
+ */
+export async function fromAnotherEnvironment(db: Db, customId: string | null, tx: Tx): Promise<boolean> {
+  if (customId === null || !UUID.test(customId)) return false;
+  return (await platform(db).workspaces.get(customId, tx)) === null;
+}
+
 export const CaptureSyncInputSchema = z.object({
   captureId: z.string().regex(/^[A-Z0-9]{6,32}$/),
   /** `webhook_events.id` of the delivery that caused the sync; absent for other triggers. */
@@ -109,6 +123,8 @@ async function markEvent(
 
 async function quarantine(run: Run, reason: string, workspaceId: WorkspaceId | null): Promise<SyncOutcome> {
   const { mirror, input } = run;
+  const foreign =
+    reason === "unowned" && (await fromAnotherEnvironment(run.deps.db, mirror.customId, run.tx));
   await markEvent(run, { status: "quarantined", processedAt: run.deps.now(), quarantineReason: reason });
   await platform(run.deps.db).auth.auditSystem(
     {
@@ -120,11 +136,17 @@ async function quarantine(run: Run, reason: string, workspaceId: WorkspaceId | n
         orderId: mirror.orderId,
         customId: mirror.customId,
         eventId: input.eventId ?? null,
+        anotherEnvironment: foreign,
       },
     },
     run.tx,
   );
-  run.ctx.log.warn({ captureId: mirror.captureId, reason, workspaceId }, "capture quarantined");
+  const fields = { captureId: mirror.captureId, reason, workspaceId, anotherEnvironment: foreign };
+  if (foreign) {
+    run.ctx.log.info(fields, "capture quarantined: made by another environment");
+    return "quarantined";
+  }
+  run.ctx.log.warn(fields, "capture quarantined");
   reportQuarantine(reason, { extra: { captureId: mirror.captureId } }); // M1-08 alert (warning)
   return "quarantined";
 }
@@ -152,6 +174,8 @@ async function mirrorPayment(run: Run, workspaceId: WorkspaceId): Promise<SyncOu
           updateTime: prev.paypalUpdatedAt.toISOString() as Instant,
         };
   if (!applyMirror(prevRecord, next, updateTime).ok) return "stale";
+  // M3-09: the 15-minute reconcile re-reads every PENDING capture; one PayPal hasn't changed writes nothing
+  if (input.source === "poll" && prev !== null && sameAsStored(prev, next, updateTime)) return "unchanged";
   const values = paymentValues(mirror, next, input.source, updateTime, deps.now());
   if (prev === null) {
     const payment = await payments.insert(values, tx);
@@ -182,6 +206,18 @@ async function mirrorPayment(run: Run, workspaceId: WorkspaceId): Promise<SyncOu
     },
   });
   return "changed";
+}
+
+function sameAsStored(
+  prev: { status: string; statusReason: string | null; paypalUpdatedAt: Date | null },
+  next: StoredState,
+  updateTime: Instant,
+): boolean {
+  return (
+    prev.status === next.status &&
+    prev.statusReason === next.reason &&
+    prev.paypalUpdatedAt?.getTime() === Date.parse(updateTime)
+  );
 }
 
 function paymentValues(m: CaptureMirror, s: StoredState, source: SyncSource, updateTime: Instant, now: Date) {

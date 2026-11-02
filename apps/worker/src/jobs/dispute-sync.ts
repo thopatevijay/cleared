@@ -33,7 +33,7 @@ import {
 } from "@cleared/db";
 import { z } from "zod";
 import type { ConsumeContext, Handler } from "../consume.ts";
-import { OwnerPendingError, UNOWNED_RETRY_WINDOW_MS } from "./capture-sync.ts";
+import { fromAnotherEnvironment, OwnerPendingError, UNOWNED_RETRY_WINDOW_MS } from "./capture-sync.ts";
 import { applyDeadline } from "./deadline-watcher.ts";
 
 export const DisputeSyncInputSchema = z.object({
@@ -126,6 +126,8 @@ async function markEvent(
 
 async function quarantine(run: Run, reason: string, workspaceId: WorkspaceId | null): Promise<null> {
   const { mirror, input } = run;
+  const foreign =
+    reason === "unowned" && (await fromAnotherEnvironment(run.deps.db, mirror.customId, run.tx));
   await markEvent(run, { status: "quarantined", processedAt: run.deps.now(), quarantineReason: reason });
   await platform(run.deps.db).auth.auditSystem(
     {
@@ -137,11 +139,17 @@ async function quarantine(run: Run, reason: string, workspaceId: WorkspaceId | n
         captureId: mirror.captureId,
         customId: mirror.customId,
         eventId: input.eventId ?? null,
+        anotherEnvironment: foreign,
       },
     },
     run.tx,
   );
-  run.ctx.log.warn({ disputeId: mirror.disputeId, reason, workspaceId }, "dispute quarantined");
+  const fields = { disputeId: mirror.disputeId, reason, workspaceId, anotherEnvironment: foreign };
+  if (foreign) {
+    run.ctx.log.info(fields, "dispute quarantined: made by another environment");
+    return null;
+  }
+  run.ctx.log.warn(fields, "dispute quarantined");
   reportQuarantine(`dispute ${reason}`, { extra: { disputeId: mirror.disputeId } }); // M1-08 alert
   return null;
 }

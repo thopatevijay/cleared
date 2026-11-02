@@ -1,7 +1,7 @@
 // `paypal.dispute.sync` over the recorded M0-05 dispute GETs (M2-06 AC): fixture replay mirror and
 // allowed actions, out-of-order webhooks, duplicate jobs, quarantine, and the deadline applied on sync.
 import { randomUUID } from "node:crypto";
-import { createLogger } from "@cleared/adapters";
+import { createLogger, setAlertSink } from "@cleared/adapters";
 import { addMinutes, WorkspaceIdSchema, type Instant } from "@cleared/core";
 import {
   closeDb,
@@ -270,6 +270,39 @@ describe.skipIf(!dbAvailable)("paypal.dispute.sync (dispute-sync)", () => {
     });
     expect(await platform(db).resourceOwners.get("dispute", ids.disputeId)).toBeNull();
     expect(await topics(ids.disputeId)).toEqual([]);
+  });
+
+  it("BL-01 6568286398: an unowned dispute made by another environment is quarantined without a Sentry warning", async () => {
+    const messages: string[] = [];
+    setAlertSink({
+      captureException: () => "",
+      captureMessage: (m) => {
+        messages.push(m);
+        return "";
+      },
+    });
+    try {
+      const after = new Date(T0.getTime() + UNOWNED_RETRY_WINDOW_MS + 1_000);
+      // `custom` is a workspace id this database doesn't have: a local live run's resource reaching production
+      const foreign = freshIds();
+      serveDispute(server, STATE.open, foreign, randomUUID());
+      expect(
+        await run(webhook(foreign.disputeId, await webhookEvent("CUSTOMER.DISPUTE.CREATED", T0)), after),
+      ).toBe("quarantined");
+      const audit = await db.$client.query<{ detail: Record<string, unknown> }>(
+        "select detail from audit_log where action = 'paypal.dispute.quarantined' and detail->>'disputeId' = $1",
+        [foreign.disputeId],
+      );
+      expect(audit.rows[0]?.detail).toMatchObject({ reason: "unowned", anotherEnvironment: true });
+      expect(messages).toEqual([]);
+      // no `custom`: a real unowned resource still alerts
+      const unowned = freshIds();
+      serveDispute(server, STATE.open, unowned, null);
+      await run(webhook(unowned.disputeId, await webhookEvent("CUSTOMER.DISPUTE.CREATED", T0)), after);
+      expect(messages).toEqual(["webhook quarantined: dispute unowned"]);
+    } finally {
+      setAlertSink(undefined);
+    }
   });
 
   it("a `custom` naming another workspace is quarantined at once (mismatch), audited on the owner", async () => {

@@ -15,6 +15,8 @@ export interface ConnectOptions {
   /** A fixed registry, or one built once the pool and pg-boss exist (production: `defaultRegistry`). */
   readonly registry: Registry | ((rt: Runtime) => Registry);
   readonly pollingIntervalSeconds?: number;
+  /** M3-09: false skips the reconcile + synthetic schedules (`OPS_SCHEDULES=off`). */
+  readonly opsSchedules?: boolean;
   /** Heartbeat interval (default 30 s, M1-08). */
   readonly heartbeatIntervalMs?: number;
 }
@@ -32,6 +34,7 @@ export function makeConnect(opts: ConnectOptions): Connect {
             boss,
             log: opts.log,
             now: () => new Date(),
+            ...(opts.opsSchedules === undefined ? {} : { opsSchedules: opts.opsSchedules }),
             ...(opts.pollingIntervalSeconds === undefined
               ? {}
               : { pollingIntervalSeconds: opts.pollingIntervalSeconds }),

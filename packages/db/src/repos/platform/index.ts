@@ -7,6 +7,7 @@ import { platformFlagsRepo } from "./flags.ts";
 import { resourceOwnersRepo, webhookEventsRepo } from "./ingest.ts";
 import { consumerReceiptsRepo, outboxRepo, workerHeartbeatsRepo } from "./messaging.ts";
 import { disputeDeadlinesRepo } from "../workspace/disputes.ts";
+import { opsChecksRepo, reconcileTargetsRepo, sloSamplesRepo } from "./ops.ts";
 
 export function platform(db: Db) {
   return {
@@ -21,6 +22,10 @@ export function platform(db: Db) {
     workerHeartbeats: workerHeartbeatsRepo(db),
     disputeDeadlines: disputeDeadlinesRepo(db),
     flags: platformFlagsRepo(db),
+    // M3-09: the reconcile poll, the SLO checks and the synthetic judge path
+    opsChecks: opsChecksRepo(db),
+    reconcileTargets: reconcileTargetsRepo(db),
+    sloSamples: sloSamplesRepo(db),
   };
 }
 
@@ -31,3 +36,4 @@ export type * from "./auth.ts";
 export type * from "./ingest.ts";
 export type * from "./messaging.ts";
 export type * from "./flags.ts";
+export type * from "./ops.ts";

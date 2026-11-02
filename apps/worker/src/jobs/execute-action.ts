@@ -66,6 +66,7 @@ import {
 } from "../actions/add-tracking.ts";
 import { executeRecordCompleted, type CompletedWrites } from "../actions/record-service-completed.ts";
 import {
+  beforeDetail,
   endAction,
   enqueueReconcile,
   mirrorFetched,
@@ -146,7 +147,14 @@ async function claimAction(deps: ExecuteActionDeps, input: ExecuteActionInput): 
 async function recoverUnknown(deps: ExecuteActionDeps, row: ProposedActionRow): Promise<ExecuteOutcome> {
   await withTransaction(deps.db, async (tx) => {
     const mirror = await mirrorOf(deps, row, tx);
-    await endAction(deps, tx, row, "executing", { to: "unknown" }, { reason: "redelivered_while_executing" });
+    await endAction(
+      deps,
+      tx,
+      row,
+      "executing",
+      { to: "unknown" },
+      { reason: "redelivered_while_executing", ...beforeDetail(mirror) },
+    );
     await enqueueReconcile(
       deps,
       tx,
@@ -434,8 +442,15 @@ async function failedSend(run: Run, p: Prepared, error: unknown): Promise<Execut
       );
       return;
     }
-    await endAction(deps, tx, row, "executing", { to: "unknown" }, { failure: f.kind });
     const before = snapshotOf(p.before);
+    await endAction(
+      deps,
+      tx,
+      row,
+      "executing",
+      { to: "unknown" },
+      { failure: f.kind, ...beforeDetail(before) },
+    );
     await enqueueReconcile(
       deps,
       tx,

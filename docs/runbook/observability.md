@@ -57,13 +57,34 @@ Local equivalent: `pnpm --filter @cleared/web start | grep <id>` and the same fo
 | Endpoint | Meaning | Use |
 |---|---|---|
 | `GET /healthz` | Liveness. No dependencies, always `200 {"ok":true,"commit":…}` while the process runs | Render's health check (`healthCheckPath`) |
-| `GET /readyz` | Readiness. `200` only if all three checks pass, else `503`. Body `{"ok":bool,"checks":{"db":bool,"queue":bool,"worker":bool}}` | Gates (M1-GATE), smoke checks, a person checking the system |
+| `GET /readyz` | Readiness. `200` only if all four checks pass, else `503`. Body `{"ok":bool,"checks":{"db":bool,"queue":bool,"worker":bool,"reconcile":bool}}` | Gates (M1-GATE, M3-GATE), smoke checks, a person checking the system |
 
 `/readyz` checks run in parallel, and each has a 2 s timeout:
 
 - **`db`:** `select 1` on the web's pool.
 - **`queue`:** the pg-boss schema is reachable (`select version from pgboss.version`).
 - **`worker`:** the newest `worker_heartbeats.beat_at` is under 2 minutes old. Each worker process upserts its row at start and every 30 s (`workerId` is `RENDER_INSTANCE_ID`, or host:pid locally).
+- **`reconcile`** (M3-09): the newest `ops_checks` row with `check = 'reconcile'` is under 30 minutes old. The worker runs the reconcile tick once at boot and every 15 minutes (`ops.reconcile`, a singleton queue).
+
+## Reconcile poll, SLO checks and the synthetic judge path (M3-09)
+
+Every tick writes rows to `ops_checks (run_at, check, value, target, pass, detail)`:
+
+| `check` | Value (unit) | Target | Notes |
+|---|---|---|---|
+| `reconcile` | sub-jobs enqueued (count) | none | `detail`: `captures`, `disputes`, `actions`, `skippedActions` |
+| `slo.hold_visible_p99` | p99 seconds, last 24 h | < 120 | webhook `received_at` → `holds.created_at`; null = no samples (pass) |
+| `slo.approved_to_paypal_p99` | p99 seconds, last 24 h | < 300 | `approvals.approved_at` → `executions.created_at` of 2xx sends |
+| `slo.missed_deadlines` | count | 0 | open disputes past `seller_response_due_date` with no succeeded action |
+| `slo.synthetic_fresh` | seconds since the last passing synthetic run | < 93 600 (26 h) | breaches until the first daily run passes |
+| `synthetic`, `synthetic.<step>` | seconds | 1 800 overall; per step in core `SYNTHETIC_STEPS` | one set per run (03:00 UTC daily, or `pnpm --filter ./apps/worker run synthetic`) |
+
+A breached SLO raises a Sentry **warning** `SLO breach: <check>`, at most once per check per 6 hours (`detail.alerted`). A failed synthetic run raises a Sentry **error** `synthetic judge path failed at <step>`. Synthetic workspaces (`workspaces.synthetic`) are left out of the demo caps and the SLO samples, and are purged after each run. Local stubbed E2E sets `OPS_SCHEDULES=off` on the worker.
+
+```sql
+select run_at, "check", value, target, pass, detail from ops_checks
+where run_at > now() - interval '1 day' order by run_at desc limit 50;
+```
 
 **Why Render's health check stays on `/healthz`.** Render uses the health check to decide whether a new web deploy goes live and whether to restart the instance. If it used `/readyz`, a stopped worker or a database blip would block or roll back web deploys and restart a healthy web process, which fixes nothing. `/readyz` is for diagnosis, not for routing.
 
@@ -100,3 +121,5 @@ The verification-failure counter is per process, so with one web instance it cou
 | `RENDER_GIT_COMMIT` | set by Render | `release` on log lines and Sentry events |
 
 Source maps are not uploaded (that would need a Sentry auth token), so browser stack traces are minified. Server stack traces are readable as they are.
+
+**Local live runs reach production webhooks** (BL-01 6568286398). The sandbox app has one webhook URL (Render), so a capture or dispute made by a laptop run is delivered to production, which doesn't own it. Production still quarantines it and writes the `paypal.*.quarantined` audit row, now with `detail.anotherEnvironment = true`, but raises no Sentry warning when its `custom_id` is a workspace id this database doesn't have. An unowned resource with no `custom_id`, or one naming a workspace of this database, still alerts.

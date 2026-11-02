@@ -70,6 +70,8 @@ export default defineConfig({
           env: {
             ...shared,
             E2E_PAYPAL_STUB: live ? "" : "worker",
+            // M3-09: no reconcile poll over the seeded fixtures (it would re-mirror them from the stub)
+            OPS_SCHEDULES: live ? "on" : "off",
             // M2-05: locally the AI steps replay recorded OpenAI responses (e2e/support/openai-stub.ts); a
             // dummy key selects the real provider, whose calls the stub answers. Live runs inherit theirs.
             ...(live

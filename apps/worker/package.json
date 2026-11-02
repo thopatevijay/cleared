@@ -7,6 +7,7 @@
     "dev": "node --watch src/index.ts",
     "start": "node src/index.ts",
     "sandbox:pay": "node src/cli/sandbox-pay.ts",
+    "synthetic": "node src/cli/synthetic.ts",
     "build": "tsc --noEmit -p .",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
