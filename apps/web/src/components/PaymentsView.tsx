@@ -15,6 +15,7 @@ import { ApiError, getJson } from "../lib/api.ts";
 import { attentionRank, captureStatusKey, formatAmount } from "../lib/format.ts";
 import { EmptyState } from "./EmptyState.tsx";
 import { ErrorPanel } from "./ErrorPanel.tsx";
+import { SamplesLink } from "./holds/SampleScenarios.tsx";
 import { PaymentRow, WaitingRow } from "./PaymentRow.tsx";
 import { DisputesBand } from "./payments/DisputeLines.tsx";
 import { DisputeFilterChip, useDisputes } from "./payments/useDashboardDisputes.tsx";
@@ -227,6 +228,8 @@ export function PaymentsView() {
               ))}
             </ul>
           )}
+          {/* dashboard.md element 13 (M3-01): explainers, never payment rows */}
+          {proofOnly || disputeOnly ? null : <SamplesLink />}
         </section>
       </div>
     );

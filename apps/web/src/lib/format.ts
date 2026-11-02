@@ -118,6 +118,21 @@ export function dayKey(iso: string, timeZone: string): string {
   }
 }
 
+/** "29 Oct" in the workspace time zone (M3-01 estimated dates); `long` → "29 October 2026" (names). */
+export function formatDate(locale: string, iso: string, timeZone: string, long = false): string {
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      day: "numeric",
+      month: long ? "long" : "short",
+      ...(long ? { year: "numeric" as const } : {}),
+      timeZone,
+      numberingSystem: "latn",
+    }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
 /** "Fri 30 Oct" (a day group's heading). */
 export function formatDay(locale: string, iso: string, timeZone: string): string {
   try {

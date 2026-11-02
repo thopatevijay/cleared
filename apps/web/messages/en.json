@@ -122,6 +122,94 @@
     "quarantined": "Quarantined",
     "info": "Info"
   },
+  "holds": {
+    "title": "Held money",
+    "intro": "PayPal is holding these payments. Every release date is an estimate, shown with its source.",
+    "back": "Back to your payments",
+    "backToInbox": "Back to held money",
+    "total": "{amount} held in {count, plural, one {# payment} other {# payments}}",
+    "listHeading": "Held payments",
+    "order": "Newest first",
+    "empty": "No held money. Every payment is with you or on its way.",
+    "loading": "Loading held money…",
+    "errorTitle": "Couldn't load held money",
+    "errorOneTitle": "Couldn't load this hold",
+    "errorBody": "Check your connection and retry.",
+    "notFoundTitle": "Hold not found",
+    "notFoundBody": "This hold isn't in your workspace, or it no longer exists.",
+    "open": "Open the hold on {amount}",
+    "reason": {
+      "PENDING_REVIEW": "PayPal is reviewing this payment",
+      "BUYER_COMPLAINT": "Held because the buyer opened a dispute",
+      "CHARGEBACK": "Held because the buyer disputed the payment with their bank",
+      "other": "PayPal is holding this payment"
+    },
+    "est": {
+      "review": "Within 24 hours; up to 3 business days",
+      "dispute": "Released when the dispute is resolved",
+      "delivered": "About 24 hours after the courier confirms delivery",
+      "service": "About 7 days after you confirm the order as Completed",
+      "none": "PayPal gives no timeline for this reason"
+    },
+    "freeBy": "Free by {date}",
+    "upTo": "up to {date}",
+    "estimated": "estimated",
+    "source": "Source",
+    "sourceRetrieved": "Retrieved {date}",
+    "sourceOpen": "Open the source page",
+    "estimateName": "Estimated release {date}, source {source}",
+    "noTimelineName": "No release date from PayPal, source {source}",
+    "disputeDue": "Dispute reply due {date}",
+    "why": "Why?",
+    "whyName": "Why is {amount} held?",
+    "dontShip": "Don't ship yet: PayPal is reviewing this payment",
+    "trackingHelps": "Tracking can help release this",
+    "samplesLink": "Sample scenarios: limitation, reserve, new-seller hold",
+    "samples": {
+      "title": "Sample scenarios",
+      "intro": "Holds the sandbox can't produce, explained from PayPal's published rules. They show no amount from your payments and have no actions.",
+      "badge": "Sample scenario: sandbox can't produce this",
+      "whatPayPalSays": "What PayPal says",
+      "new_seller_21d": {
+        "title": "New-seller hold",
+        "body": "PayPal can hold a new seller's payments for up to 21 days. Cleared can't release them early or promise a date; PayPal decides."
+      },
+      "reserve": {
+        "title": "Reserve",
+        "body": "PayPal keeps a percentage of payments for a set number of days as a condition for processing. Cleared can't change a reserve; PayPal decides."
+      },
+      "limitation": {
+        "title": "Account limitation",
+        "body": "PayPal has limited the account. Cleared can't lift a limitation or promise a release; PayPal decides. This explains what PayPal usually asks for."
+      }
+    },
+    "detail": {
+      "h1": "Held: {amount}",
+      "opened": "Held since {time}",
+      "payment": "Open the payment",
+      "dispute": "Open dispute {id}",
+      "whyTitle": "Why it's held",
+      "ruleText": "Rule text from PayPal",
+      "estimateTitle": "Estimated release",
+      "actionTitle": "What you can do",
+      "nothingToDo": "Nothing to do. PayPal will update this payment; we'll tell you when it changes.",
+      "timelineTitle": "Timeline",
+      "released": "Released {time}",
+      "stillHeld": "Still held after the estimate. PayPal hasn't released it yet."
+    },
+    "timeline": {
+      "open": "Held",
+      "explained": "Explained",
+      "action_proposed": "Action proposed",
+      "approved": "Approved",
+      "filed": "Filed",
+      "released": "Released",
+      "still_held": "Still held"
+    },
+    "live": {
+      "released": "The hold on {amount} was released."
+    }
+  },
   "audit": {
     "title": "Audit log",
     "intro": "Every action on your workspace, oldest entries kept. Nothing here can be edited or deleted.",
