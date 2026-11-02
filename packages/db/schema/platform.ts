@@ -16,7 +16,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { workspaces } from "./accounts.ts";
-import { createdAt, pk, sha256, tstz } from "./columns.ts";
+import { createdAt, currency, money, pk, sha256, tstz } from "./columns.ts";
 import { paypalResourceType, webhookEventStatus } from "./enums.ts";
 
 /** ADR 0008: written when Cleared creates the resource; children inherit the owner on ingest. */
@@ -29,6 +29,8 @@ export const paypalResourceOwner = pgTable(
       .notNull()
       .references(() => workspaces.id),
     createdAt: createdAt(),
+    /** M3-10 (ADR 0019): the workspace this row moved from (the review-hold pool); its id may be the `custom_id` */
+    transferredFrom: uuid("transferred_from").references(() => workspaces.id),
   },
   (t) => [
     primaryKey({ name: "paypal_resource_owner_pkey", columns: [t.resourceType, t.resourceId] }),
@@ -158,4 +160,42 @@ export const opsChecks = pgTable(
     detail: jsonb("detail").notNull().default({}),
   },
   (t) => [index("ops_checks_check_run_at_idx").on(t.check, t.runAt)],
+);
+
+/**
+ * M3-10 (ADR 0019): the review-hold pool. One row per PayPal-wallet order the pool workspace created for a
+ * buyer to approve; `state` is core `REVIEW_POOL_STATES`, `purpose` core `REVIEW_POOL_PURPOSES`. Capture
+ * status and reason are PayPal's, verbatim. `assigned_workspace_id` is set once, by the assignment.
+ */
+export const reviewHoldPool = pgTable(
+  "review_hold_pool",
+  {
+    id: pk(),
+    orderId: text("order_id").notNull(),
+    poolWorkspaceId: uuid("pool_workspace_id")
+      .notNull()
+      .references(() => workspaces.id),
+    purpose: text("purpose").notNull(),
+    state: text("state").notNull().default("awaiting_buyer"),
+    amount: money("amount").notNull(),
+    currency: currency("currency").notNull(),
+    /** PayPal's `payer-action` link the buyer approves at (not a secret: it carries the order token only) */
+    approveUrl: text("approve_url").notNull(),
+    captureId: text("capture_id"),
+    captureStatus: text("capture_status"),
+    captureReason: text("capture_reason"),
+    capturedAt: tstz("captured_at"),
+    assignedWorkspaceId: uuid("assigned_workspace_id").references(() => workspaces.id),
+    assignedAt: tstz("assigned_at"),
+    createdAt: createdAt(),
+    updatedAt: tstz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("review_hold_pool_order_id_key").on(t.orderId),
+    uniqueIndex("review_hold_pool_capture_id_key").on(t.captureId),
+    index("review_hold_pool_assignable_idx").on(t.purpose, t.state, t.capturedAt),
+    index("review_hold_pool_assigned_idx").on(t.assignedWorkspaceId),
+    check("review_hold_pool_purpose", sql`${t.purpose} in ('judge', 'video')`),
+    check("review_hold_pool_state", sql`${t.state} in ('awaiting_buyer', 'held', 'not_held', 'released')`),
+  ],
 );

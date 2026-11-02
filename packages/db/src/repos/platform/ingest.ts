@@ -63,7 +63,13 @@ export function resourceOwnersRepo(db: Db) {
     get,
     /** Records the owner; an existing row is kept (the first owner wins) and returned as-is. */
     async claim(
-      owner: { resourceType: PayPalResourceType; resourceId: string; workspaceId: string },
+      owner: {
+        resourceType: PayPalResourceType;
+        resourceId: string;
+        workspaceId: string;
+        /** ADR 0019: a child of a moved resource inherits where its parent came from */
+        transferredFrom?: string | null;
+      },
       tx?: Executor,
     ): Promise<ResourceOwnerRow> {
       const ex = tx ?? db;
