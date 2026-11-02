@@ -6,7 +6,7 @@ import { sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { closeDb, createDb } from "../src/client.ts";
 import { platform } from "../src/repos/platform/index.ts";
-import { purgeSyntheticWorkspace } from "../src/repos/platform/ops.ts";
+import { purgeSyntheticWorkspace, PurgeNotPermittedError } from "../src/repos/platform/ops.ts";
 import { forWorkspace } from "../src/repos/workspace/index.ts";
 import { withTransaction } from "../src/tx.ts";
 import { dbAvailable, TEST_DATABASE_URL } from "./db-available.ts";
@@ -82,9 +82,14 @@ describe.skipIf(!dbAvailable)("ops (M3-09)", () => {
     const before = await rowsOf(ws.id);
     expect(Object.values(before).every((n) => n > 0) ? true : before).toBe(true);
     const deleted = await withTransaction(db, (tx) => purgeSyntheticWorkspace(ws.id, tx));
-    expect(deleted).toBeGreaterThan(SCOPED.length);
-    expect(Object.values(await rowsOf(ws.id)).every((n) => n === 0)).toBe(true);
-    expect(await platform(db).workspaces.get(ws.id)).toBeNull();
+    expect(deleted).toBeGreaterThan(SCOPED.length - 2);
+    const after = await rowsOf(ws.id);
+    // the AI spend rows stay (the global day cap counts them), and so does the synthetic workspace row
+    const { agent_runs: runs, agent_steps: steps, ...rest } = after;
+    expect(runs).toBe(before["agent_runs"]);
+    expect(steps).toBe(before["agent_steps"]);
+    expect(Object.values(rest).every((n) => n === 0) ? true : rest).toBe(true);
+    expect((await platform(db).workspaces.get(ws.id))?.synthetic).toBe(true);
     // the triggers are back
     await expect(db.$client.query("delete from audit_log where false")).rejects.toThrow(/append-only/);
     await expect(db.$client.query("delete from evidence_items where false")).rejects.toThrow(/append-only/);
@@ -98,6 +103,36 @@ describe.skipIf(!dbAvailable)("ops (M3-09)", () => {
       /non-synthetic/,
     );
     expect((await rowsOf(ws.id))["audit_log"]).toBe(1);
+    expect(await platform(db).workspaces.get(ws.id)).not.toBeNull();
+    // refused before any guard was lifted: the append-only triggers are untouched
+    await expect(db.$client.query("delete from audit_log where false")).rejects.toThrow(/append-only/);
+  });
+
+  it("refuses an unknown workspace id", async () => {
+    await expect(
+      withTransaction(db, (tx) => purgeSyntheticWorkspace("00000000-0000-4000-8000-000000000000", tx)),
+    ).rejects.toThrow(/non-synthetic/);
+  });
+
+  it("a role that doesn't own the append-only tables is refused before anything changes", async () => {
+    const ws = await create(true);
+    await platform(db).auth.auditSystem({ workspaceId: ws.id, action: "test.row", detail: {} });
+    // a non-owner, non-superuser role that can read and lock workspaces (like a least-privilege app role)
+    await db.$client.query(`do $$ begin
+      if not exists (select 1 from pg_roles where rolname = 'cleared_purge_test') then
+        create role cleared_purge_test nologin;
+      end if; end $$`);
+    await db.$client.query("grant usage on schema public to cleared_purge_test");
+    await db.$client.query("grant select, update on workspaces to cleared_purge_test");
+    await expect(
+      withTransaction(db, async (tx) => {
+        await tx.execute(sql`set local role cleared_purge_test`);
+        return purgeSyntheticWorkspace(ws.id, tx);
+      }),
+    ).rejects.toBeInstanceOf(PurgeNotPermittedError);
+    expect((await rowsOf(ws.id))["audit_log"]).toBe(1);
+    expect((await platform(db).workspaces.get(ws.id))?.synthetic).toBe(true);
+    await expect(db.$client.query("delete from audit_log where false")).rejects.toThrow(/append-only/);
   });
 
   it("leaves synthetic workspaces out of the demo caps", async () => {

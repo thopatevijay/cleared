@@ -39,8 +39,8 @@ export async function measureSlos(deps: SloDeps, tx?: Executor): Promise<OpsChec
   const since = new Date(now.getTime() - SLO_WINDOW_MS);
   const p = platform(deps.db);
   const [holdVisible, approved, deadlines, lastPass] = await Promise.all([
-    p.sloSamples.holdVisibleSeconds(since, tx),
-    p.sloSamples.approvedToPaypalSeconds(since, tx),
+    p.sloSamples.holdVisibleSeconds(since, now, tx),
+    p.sloSamples.approvedToPaypalSeconds(since, now, tx),
     p.sloSamples.deadlines(tx),
     p.opsChecks.latest(CHECK_NAMES.synthetic, { pass: true, before: now }, tx),
   ]);

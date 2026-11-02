@@ -59,7 +59,13 @@ describe.skipIf(!dbAvailable)("synthetic judge path (offline)", () => {
       [r.scenarioId],
     );
     expect(job.rows).toEqual([{ ws: r.workspaceId }]);
-    expect(await platform(db).workspaces.get(r.workspaceId)).toBeNull();
+    // purged: only the synthetic workspace row (and any AI spend rows) remain
+    expect((await platform(db).workspaces.get(r.workspaceId))?.synthetic).toBe(true);
+    const left = await db.$client.query(
+      "select count(*)::int as n from scenario_runs where workspace_id = $1",
+      [r.workspaceId],
+    );
+    expect(left.rows[0]).toEqual({ n: 0 });
     expect(alert).toHaveBeenCalledTimes(1);
     expect((alert.mock.calls[0]?.[0] as Error).message).toBe("synthetic judge path failed at capture");
     expect(alert.mock.calls[0]?.[1]).toMatchObject({ failedStep: "capture", scenarioId: r.scenarioId });
@@ -79,8 +85,7 @@ describe.skipIf(!dbAvailable)("synthetic judge path (offline)", () => {
     const sleep = vi.fn(async () => {
       if (sleep.mock.calls.length > 1) return;
       const run = await db.$client.query<{ id: string; workspace_id: string }>(
-        "select id, workspace_id from scenario_runs where created_at >= $1 order by created_at desc limit 1",
-        [since],
+        "select r.id, r.workspace_id from scenario_runs r join workspaces w on w.id = r.workspace_id where w.synthetic and r.state = 'capturing' order by r.created_at desc limit 1",
       );
       const { id, workspace_id: ws } = run.rows[0] ?? { id: "", workspace_id: "" };
       seen = { workspaceId: ws, flagged: (await platform(db).workspaces.get(ws))?.synthetic === true };

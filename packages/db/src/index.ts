@@ -53,7 +53,7 @@ export {
 export type { ScenarioRunRow } from "./repos/workspace/scenarios.ts";
 export { platform, type PlatformRepos } from "./repos/platform/index.ts";
 export type * from "./repos/platform/index.ts";
-export { purgeSyntheticWorkspace } from "./repos/platform/ops.ts";
+export { purgeSyntheticWorkspace, PurgeNotPermittedError } from "./repos/platform/ops.ts";
 export { seed, SEED_USER_EMAIL, SEED_USER_ID, SEED_WORKSPACE_ID } from "./seed.ts";
 export { WEBHOOK_EVENT_STATUSES, type WebhookEventStatus } from "../schema/enums.ts";
 export * from "./outbox/index.ts";

@@ -18,7 +18,7 @@ import {
   type OpsCheckResult,
   type SyntheticStep,
 } from "@cleared/core";
-import { reportError, type Logger } from "@cleared/adapters";
+import { reportError, reportWarning, type Logger } from "@cleared/adapters";
 import {
   OPS_SYNTHETIC_QUEUE,
   platform,
@@ -62,6 +62,8 @@ export interface SyntheticResult {
   readonly captureId: string | null;
   readonly disputeId: string | null;
   readonly purged: boolean;
+  /** the run's OpenAI spend (its `agent_runs`, kept by the purge) */
+  readonly aiCostUsd: number;
 }
 
 const sleepFor = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -113,10 +115,10 @@ async function walkSteps(deps: SyntheticDeps, state: ProbeState, start: Date): P
   return walk;
 }
 
-function rowsOf(walk: Walk, total: number): OpsCheckResult[] {
+function rowsOf(walk: Walk, total: number, aiCostUsd: number): OpsCheckResult[] {
   const steps = walk.steps.map((s) => ({ ...syntheticStepCheck(s.step, s.seconds), pass: s.pass }));
   const run = syntheticRunCheck(total, walk.failedStep);
-  return [...steps, { ...run, detail: { ...run.detail, error: walk.error } }];
+  return [...steps, { ...run, detail: { ...run.detail, error: walk.error, aiCostUsd } }];
 }
 
 async function purge(deps: SyntheticDeps, workspaceId: string): Promise<boolean> {
@@ -124,8 +126,12 @@ async function purge(deps: SyntheticDeps, workspaceId: string): Promise<boolean>
     await withTransaction(deps.db, (tx) => purgeSyntheticWorkspace(workspaceId, tx));
     return true;
   } catch (error) {
-    // the workspace stays synthetic (out of the caps and the samples) and expires in an hour
+    // the workspace stays synthetic (out of the caps and the samples) and expired (ADR 0013 addendum)
     deps.log.error({ workspaceId, err: error }, "synthetic workspace purge failed");
+    reportWarning("synthetic workspace purge failed", {
+      workspaceKind: "demo",
+      extra: { error: error instanceof Error ? error.message : String(error) },
+    });
     return false;
   }
 }
@@ -136,7 +142,8 @@ export async function runSyntheticJudgePath(deps: SyntheticDeps): Promise<Synthe
   const state = await startSyntheticRun(deps);
   const walk = await walkSteps(deps, state, start);
   const totalSeconds = secondsBetween(start, deps.now());
-  const rows = rowsOf(walk, totalSeconds);
+  const aiCostUsd = await platform(deps.db).opsChecks.workspaceAiCostUsd(state.workspaceId);
+  const rows = rowsOf(walk, totalSeconds, aiCostUsd);
   const pass = rows.at(-1)?.pass === true;
   await platform(deps.db).opsChecks.insert(
     rows.map((r) => ({
@@ -166,6 +173,7 @@ export async function runSyntheticJudgePath(deps: SyntheticDeps): Promise<Synthe
     steps: walk.steps,
     workspaceId: state.workspaceId,
     purged,
+    aiCostUsd,
     ...ids,
   };
 }

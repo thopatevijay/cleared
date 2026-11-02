@@ -22,7 +22,7 @@ function summary(r: SyntheticResult): string {
     ...lines,
     `  failed step: ${r.failedStep ?? "none"}${r.error === null ? "" : ` (${r.error})`}`,
     `  capture ${r.captureId ?? "-"} · dispute ${r.disputeId ?? "-"} · scenario ${r.scenarioId}`,
-    `  workspace purged: ${String(r.purged)}`,
+    `  workspace purged: ${String(r.purged)} · AI spend $${r.aiCostUsd.toFixed(4)}`,
   ].join("\n");
 }
 

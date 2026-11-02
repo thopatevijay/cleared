@@ -59,6 +59,8 @@ const created: string[] = [];
 const log = createLogger({ service: "worker-test", level: "silent" });
 const BASE = "https://api-m.sandbox.paypal.com";
 const captureGets: string[] = [];
+/** The ticks enqueue sub-jobs for every owned item in the shared test database: removed after the file. */
+const STARTED = new Date();
 
 const freshCapture = () => `R${randomBytes(6).toString("hex").toUpperCase()}0000P`;
 
@@ -144,6 +146,10 @@ describe.skipIf(!dbAvailable)("reconcile poll (integration)", () => {
   afterAll(async () => {
     server.close();
     await db.$client.query("delete from pgboss.job where data->>'workspaceId' = any($1)", [created]);
+    await db.$client.query(
+      "delete from pgboss.job where created_on >= $1 and (name = $2 or (name in ('paypal.capture.sync', 'paypal.dispute.sync') and data->'data'->>'source' = 'poll') or (name = 'action.reconcile' and (data->'data'->>'attempt')::int = 5))",
+      [STARTED, OPS_RECONCILE_QUEUE],
+    );
     await db.$client.query(
       "update outbox set published_at = now() where published_at is null and payload->>'workspaceId' = any($1)",
       [created],
