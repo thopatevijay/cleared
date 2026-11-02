@@ -29,6 +29,8 @@ const samples: Record<DomainEvent["type"], Record<string, unknown>> = {
   "pack.checked": { packId: UUID, checkedAt: AT },
   "hold.opened": { holdId: UUID, captureId: CAP, reason: "BUYER_COMPLAINT" },
   "hold.released": { holdId: UUID, captureId: CAP, releasedAt: AT },
+  "hold.explained": { holdId: UUID, explanationId: UUID, locale: "hi", origin: "ai" },
+  "hold.explain_requested": { holdId: UUID, locale: "hi" },
   "dispute.opened": {
     disputeId: "PP-R-UVC-10195076",
     captureId: CAP,
@@ -63,6 +65,8 @@ describe("domain events", () => {
       "pack.checked",
       "hold.opened",
       "hold.released",
+      "hold.explained",
+      "hold.explain_requested",
       "dispute.opened",
       "dispute.status_changed",
       "action.proposed",

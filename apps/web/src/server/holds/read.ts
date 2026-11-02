@@ -7,7 +7,9 @@ import {
   HOLD_TYPES,
   HoldDetailSchema,
   HoldsResponseSchema,
+  StoredExplanationSchema,
   type HoldDetail,
+  type HoldExplanation,
   type HoldItem,
   type HoldsResponse,
   type HoldType,
@@ -15,7 +17,7 @@ import {
   type TrackingSummary,
   type WorkspaceId,
 } from "@cleared/core";
-import { holdsRepo, platform, type HoldRow, type HoldView } from "@cleared/db";
+import { holdsRepo, platform, type ExplanationRow, type HoldRow, type HoldView } from "@cleared/db";
 import { z } from "zod";
 import type { Deps } from "../deps.ts";
 import { trackingSummaries } from "../tracking/summaries.ts";
@@ -76,16 +78,31 @@ export async function listHolds(deps: Deps, ws: WorkspaceId): Promise<HoldsRespo
   });
 }
 
+/** M3-02: a stored explanation (JSON in `explanations.text`); an unreadable row is left out, never shown raw. */
+export function holdExplanation(row: ExplanationRow): HoldExplanation | null {
+  let doc: unknown;
+  try {
+    doc = JSON.parse(row.text);
+  } catch {
+    return null;
+  }
+  const parsed = StoredExplanationSchema.safeParse(doc);
+  return parsed.success ? { ...parsed.data, id: row.id, createdAt: row.createdAt.toISOString() } : null;
+}
+
 /** null when the id is not a uuid, or the hold is absent, foreign, or on a capture this workspace doesn't own. */
 export async function holdDetail(deps: Deps, ws: WorkspaceId, rawId: string): Promise<HoldDetail | null> {
   if (!z.uuid().safeParse(rawId).success) return null;
-  const v = await holdsRepo(deps.db, ws).view(rawId);
+  const repo = holdsRepo(deps.db, ws);
+  const v = await repo.view(rawId);
   if (v === null) return null;
   const tz = await timezone(deps, ws);
   const tracking = await trackingSummaries(deps.db, ws, [v], tz);
+  const explanations = (await repo.explanations(v.hold.id)).flatMap((r) => holdExplanation(r) ?? []);
   return HoldDetailSchema.parse({
     hold: holdItem(v, tracking.get(v.hold.id) ?? null),
     payment: { id: v.payment.id, status: v.payment.status, statusReason: v.payment.statusReason },
     workspace: { timezone: tz },
+    explanations,
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 // Hold detail (hold.md "Detail", M3-01): header (amount, held badge + PayPal's reason, opened time, the
-// payment and dispute links), "Why it's held" (the rule's own words + Source until M3-02's explanation),
+// payment and dispute links), "Why it's held" (M3-02's EN/HI explanation, then the rule's own words + Source),
 // the estimated release in its full form, the action slot (M3-03 / M3-04 fill it), and the timeline
 // mirroring the hold machine. "#why" (the dashboard's "Why?") moves focus to the explanation section.
 // "Released" shows only when the hold is released, i.e. the mirrored capture left PENDING: the badge
@@ -18,6 +18,7 @@ import { EmptyState } from "../EmptyState.tsx";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 import { StatusBadge } from "../StatusBadge.tsx";
 import { EstimatedDate } from "./EstimatedDate.tsx";
+import { Explanation } from "./Explanation.tsx";
 import { AdviceLine, TrackingHint } from "./HeldLines.tsx";
 import { HOLDS_POLL_MS } from "./HoldsView.tsx";
 import { OfflineBanner, useLoadedAt } from "./Offline.tsx";
@@ -46,6 +47,7 @@ function Why({ d }: { d: HoldDetail }) {
         {released ? t("whyTitleReleased") : t("whyTitle")}
       </h2>
       <p>{reason(d.hold.reason)}</p>
+      <Explanation holdId={d.hold.id} explanations={d.explanations} released={released} />
       {source === null ? null : (
         <div className="flex flex-col gap-1 rounded-md border border-border bg-surface-sunken p-3">
           <p className="text-sm text-text-muted">{t("ruleText")}</p>

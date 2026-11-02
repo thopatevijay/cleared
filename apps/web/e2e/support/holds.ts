@@ -21,6 +21,8 @@ import { expect, type Page } from "@playwright/test";
 import { seedHeldPayment, type HeldPaymentOptions } from "../../test/support/hold-seed.ts";
 
 export const REVIEW_HOLDS = fileURLToPath(new URL("../../../../.review/M3-01/", import.meta.url));
+/** M3-02: the explanation captures for its ui-reviewer (gitignored). */
+export const REVIEW_EXPLAIN = fileURLToPath(new URL("../../../../.review/M3-02/", import.meta.url));
 
 async function withPublisher<T>(fn: (db: Db, pub: Publisher) => Promise<T>): Promise<T> {
   const db = createDb(databaseUrl());

@@ -1,6 +1,7 @@
 // Domain events (architecture §2 / §6): the outbox payloads. Each carries `version: 1`; a breaking change
 // to an event's data adds a new version, never edits this one. PayPal states travel as PayPal's raw strings.
 import { z } from "zod";
+import { LOCALES } from "./accounts/workspace.ts";
 import { ACTION_KINDS } from "./actions/action.ts";
 import {
   ActionIdSchema,
@@ -70,6 +71,18 @@ export const HoldReleasedEvent = event("hold.released", {
   captureId: CaptureIdSchema,
   releasedAt: InstantSchema,
 });
+/** M3-02: an explanation was written (with the hold's `open → explained` move, one transaction). */
+export const HoldExplainedEvent = event("hold.explained", {
+  holdId: HoldIdSchema,
+  explanationId: z.uuid(),
+  locale: z.enum(LOCALES),
+  origin: z.enum(["ai", "standard"]),
+});
+/** M3-02: the seller asked for the hold in a locale it has no explanation in yet (the EN/HI toggle). */
+export const HoldExplainRequestedEvent = event("hold.explain_requested", {
+  holdId: HoldIdSchema,
+  locale: z.enum(LOCALES),
+});
 export const DisputeOpenedEvent = event("dispute.opened", {
   disputeId: DisputeIdSchema,
   captureId: CaptureIdSchema.nullable(),
@@ -114,6 +127,8 @@ export const DomainEventSchema = z.discriminatedUnion("type", [
   PackCheckedEvent,
   HoldOpenedEvent,
   HoldReleasedEvent,
+  HoldExplainedEvent,
+  HoldExplainRequestedEvent,
   DisputeOpenedEvent,
   DisputeStatusChangedEvent,
   ActionProposedEvent,

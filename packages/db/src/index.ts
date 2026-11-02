@@ -155,6 +155,7 @@ export {
 export {
   holdsRepo,
   type DisputeRowForHold,
+  type ExplanationRow,
   type HoldRow,
   type HoldsRepo,
   type HoldView,
