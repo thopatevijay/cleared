@@ -24,6 +24,7 @@ export * from "./proof/extract.ts";
 export * from "./proof/scope-schema.ts";
 export * from "./proof/scope-check.ts";
 export * from "./proof/pack-view.ts";
+export * from "./proof/client-ack.ts";
 export * from "./contracts/packs.ts";
 export * from "./ports/blob-store.ts";
 export * from "./holds/index.ts";

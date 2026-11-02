@@ -394,7 +394,11 @@
       "file": "{type} file · {size}",
       "download": "Download",
       "downloadName": "Download the {kind} file added {time}",
-      "injection": "Contains text that looks like instructions; treated as data"
+      "injection": "Contains text that looks like instructions; treated as data",
+      "ackBy": "Confirmed by {name}, {time}",
+      "ackMeta": "IP {ip} · {browser}",
+      "ackScope": "Scope fingerprint",
+      "ackSource": "Recorded by Cleared from the client's link"
     },
     "intake": {
       "heading": "Add evidence",
@@ -429,6 +433,47 @@
     "empty": {
       "title": "No proof yet",
       "body": "Paste the client chat where you agreed the work, and add what you delivered. Cleared checks one against the other and cites every line."
+    },
+    "ack": {
+      "title": "Client acknowledgement",
+      "intro": "Ask your client to confirm the agreed scope. Their confirmation is added to this pack as client sign-off.",
+      "noScope": "Add the agreed scope first. Your client confirms that exact text.",
+      "addScope": "Add the agreed scope",
+      "create": "Create acknowledgement link",
+      "creating": "Creating…",
+      "createNew": "Create a new link",
+      "linkLabel": "Acknowledgement link",
+      "copy": "Copy link",
+      "copied": "Link copied",
+      "copyFailed": "Couldn't copy. The link is selected; copy it yourself.",
+      "created": "Link created.",
+      "shareYourself": "Send this link to your client yourself; Cleared doesn't email it. For security it is shown only now.",
+      "shownOnce": "Link created {time}; for security the link is shown once. Revoke and create a new one if you lost it.",
+      "expires": "Expires {date}",
+      "expiresWorkspace": "Expires {date}, when this demo workspace ends",
+      "status": {
+        "pending": "Waiting for your client",
+        "accepted": "Accepted",
+        "expired": "Expired",
+        "revoked": "Revoked",
+        "scope_changed": "Scope changed"
+      },
+      "acceptedAt": "Accepted {time}",
+      "inEvidence": "Recorded as client sign-off in Evidence.",
+      "viewEvidence": "View in evidence",
+      "earlierScope": "for an earlier version of the scope",
+      "expiredBody": "This link expired on {date} without a reply.",
+      "revokedBody": "You revoked this link on {date}.",
+      "scopeChanged": "The scope changed after you created this link, so the link no longer works.",
+      "revoke": "Revoke link",
+      "revokeConfirm": "Revoke this link? Your client won't be able to use it.",
+      "revokeYes": "Revoke",
+      "revoking": "Revoking…",
+      "keep": "Keep link",
+      "announceAccepted": "Your client confirmed the scope.",
+      "createError": "Couldn't create the link.",
+      "revokeError": "Couldn't revoke the link.",
+      "offline": "You're offline. Links can be changed when you reconnect."
     }
   },
   "disputes": {
@@ -765,6 +810,9 @@
       "sandbox_test_payment_requested": "Requested a sandbox test payment",
       "demo_created": "Demo workspace created",
       "auth_sign_in": "Signed in",
+      "ack_link_created": "Created a client acknowledgement link",
+      "ack_link_revoked": "Revoked the client acknowledgement link",
+      "ack_accepted": "Client confirmed the scope",
       "other": "{action}"
     },
     "what": {
@@ -801,5 +849,34 @@
       "recorded": "Recorded",
       "sentRefused": "Refused by PayPal ({status})"
     }
+  },
+  "ack": {
+    "metaTitle": "Confirm the agreed work",
+    "title": "Confirm the agreed work",
+    "from": "{seller} asks you to confirm the work you agreed for this payment.",
+    "sellerFallback": "The seller",
+    "amountLabel": "Payment",
+    "scopeHeading": "What was agreed",
+    "name": "Your name",
+    "nameHint": "As you would sign it.",
+    "agree": "I agree to this scope",
+    "recorded": "When you confirm, Cleared records your name, the time, your IP address and your browser. {seller} can see this record, and it may be sent to PayPal as evidence for this payment.",
+    "confirm": "Confirm",
+    "confirming": "Confirming…",
+    "error": {
+      "nameRequired": "Enter your name.",
+      "nameTooLong": "Use 120 characters or fewer.",
+      "agreeRequired": "Tick the box to confirm you agree."
+    },
+    "success": "Thanks, {name}. Your confirmation is recorded.",
+    "recordedAt": "Recorded {time}",
+    "successClose": "You can close this page. This link won't open again.",
+    "rateLimited": "Too many attempts. Try again in a few minutes.",
+    "neutralTitle": "This link can't be used",
+    "neutralBody": "Ask the person who sent it for a new one.",
+    "errorTitle": "Couldn't record your confirmation.",
+    "errorBody": "Your answer wasn't saved. Try again.",
+    "noscript": "Turn on JavaScript to confirm.",
+    "footer": "Cleared records this confirmation for the seller. PayPal sandbox demo."
   }
 }

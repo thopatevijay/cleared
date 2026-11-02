@@ -18,6 +18,7 @@ import useSWR from "swr";
 import { useRouter } from "../../i18n/navigation.ts";
 import { ApiError, getJson } from "../../lib/api.ts";
 import { useOnline } from "../../lib/use-online.ts";
+import { AckLinkPanel } from "./AckLink.tsx";
 import { PackLoading } from "./PackLoading.tsx";
 import { EmptyState } from "../EmptyState.tsx";
 import { ErrorPanel } from "../ErrorPanel.tsx";
@@ -180,6 +181,7 @@ function PackBody({
           </h2>
           <FactsList facts={view.facts} kindOf={kindOf} />
         </section>
+        <AckLinkPanel packId={view.pack.id} timeZone={tz} onAccepted={reload} />
       </div>
       <section
         aria-labelledby="evidence-heading"

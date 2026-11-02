@@ -1,5 +1,6 @@
 // Proof packs (1:1 with a payment), content-addressed blobs and immutable evidence items.
-import { index, integer, jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { check, index, integer, jsonb, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { scoped } from "./accounts.ts";
 import { agentRuns } from "./agent.ts";
 import { bytea, sha256, tstz } from "./columns.ts";
@@ -122,13 +123,27 @@ export const clientAcks = pgTable(
     packId: uuid("pack_id")
       .notNull()
       .references(() => proofPacks.id),
+    /** sha256 of the raw token; the token itself is never stored (M3-06) */
     tokenHash: text("token_hash").notNull(),
     acceptedAt: tstz("accepted_at"),
     ip: text("ip"),
     userAgent: text("user_agent"),
+    // M3-06: the link is bound to one scope evidence item and its sha256
+    scopeItemId: uuid("scope_item_id")
+      .notNull()
+      .references(() => evidenceItems.id),
+    scopeSha256: sha256("scope_sha256").notNull(),
+    /** 30 days or the workspace expiry, whichever is first */
+    expiresAt: tstz("expires_at").notNull(),
+    revokedAt: tstz("revoked_at"),
+    /** the `client_ack` evidence item written on acceptance */
+    evidenceItemId: uuid("evidence_item_id").references(() => evidenceItems.id),
   },
   (t) => [
     uniqueIndex("client_acks_token_hash_key").on(t.tokenHash),
     index("client_acks_workspace_created_idx").on(t.workspaceId, t.createdAt),
+    index("client_acks_pack_created_idx").on(t.packId, t.createdAt),
+    check("client_acks_final_once", sql`${t.acceptedAt} is null or ${t.revokedAt} is null`),
+    check("client_acks_accepted_complete", sql`(${t.acceptedAt} is null) = (${t.evidenceItemId} is null)`),
   ],
 );

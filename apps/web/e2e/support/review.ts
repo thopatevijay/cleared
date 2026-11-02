@@ -1,5 +1,5 @@
 // M2-05 review evidence (local only): axe with zero serious/critical findings, no horizontal scroll, and
-// screenshots at 360 / 375 / 768 / 1440 in light and dark under .review/M2-05/ (gitignored).
+// screenshots at 360 / 375 / 768 / 1440 in light and dark under .review/<ticket>/ (gitignored).
 import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
@@ -9,12 +9,16 @@ export const local = process.env["E2E_BASE_URL"] === undefined && process.env["E
 export const shots = local && process.env["E2E_SCREENSHOTS"] !== "0";
 export const REVIEW = fileURLToPath(new URL("../../../../.review/M2-05/", import.meta.url));
 
-export async function axe(page: Page, name: string): Promise<void> {
+/** The review directory of another ticket (M3-06 on): `.review/<ticket>/`. */
+export const reviewDir = (ticket: string): string =>
+  fileURLToPath(new URL(`../../../../.review/${ticket}/`, import.meta.url));
+
+export async function axe(page: Page, name: string, dir: string = REVIEW): Promise<void> {
   const result = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
     .analyze();
-  mkdirSync(`${REVIEW}axe`, { recursive: true });
-  writeFileSync(`${REVIEW}axe/${name}.json`, JSON.stringify(result.violations, null, 2));
+  mkdirSync(`${dir}axe`, { recursive: true });
+  writeFileSync(`${dir}axe/${name}.json`, JSON.stringify(result.violations, null, 2));
   const blocking = result.violations
     .filter((v) => v.impact === "serious" || v.impact === "critical")
     .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
@@ -33,8 +37,8 @@ async function noSideScroll(page: Page, name: string): Promise<void> {
  * Every width and theme: no horizontal scroll and axe clean. Screenshots only when `shots`; without them
  * the checks still run at 360 px and 1440 px in light.
  */
-export async function capture(page: Page, name: string): Promise<void> {
-  mkdirSync(REVIEW, { recursive: true });
+export async function capture(page: Page, name: string, dir: string = REVIEW): Promise<void> {
+  mkdirSync(dir, { recursive: true });
   const themes = shots ? (["light", "dark"] as const) : (["light"] as const);
   const widths = shots ? [360, 375, 768, 1440] : [360, 1440];
   for (const theme of themes) {
@@ -46,10 +50,10 @@ export async function capture(page: Page, name: string): Promise<void> {
         window.scrollTo(0, 0);
       });
       await noSideScroll(page, `${name}-${String(width)}`);
-      if (shots && width !== 360) {
-        await page.screenshot({ path: `${REVIEW}${name}-${String(width)}-${theme}.png`, fullPage: true });
+      if (shots) {
+        await page.screenshot({ path: `${dir}${name}-${String(width)}-${theme}.png`, fullPage: true });
       }
-      await axe(page, `${name}-${String(width)}-${theme}`);
+      await axe(page, `${name}-${String(width)}-${theme}`, dir);
     }
   }
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });

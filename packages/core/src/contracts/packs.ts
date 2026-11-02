@@ -2,6 +2,7 @@
 // the agent wrote (facts, rationales, quotes) is model output or evidence: data, rendered as plain text.
 import { z } from "zod";
 import { SYNC_SOURCES } from "../payments/payment.ts";
+import { ClientAckRecordSchema } from "../proof/client-ack.ts";
 import { FactsSchema } from "../proof/facts-schema.ts";
 import { PACK_STATES, VERDICTS } from "../proof/pack.ts";
 import { PACK_VIEW_STATES } from "../proof/pack-view.ts";
@@ -40,6 +41,8 @@ export type PackVerdict = z.infer<typeof PackVerdictSchema>;
 export const PackEvidenceSchema = EvidenceItemResponseSchema.extend({
   /** text that looks like instructions (scan or the extract step's report): shown, treated as data */
   injectionFlagged: z.boolean(),
+  /** M3-06: a `client_ack` item's record (typed name, time, IP, browser, scope fingerprint), else null */
+  clientAck: ClientAckRecordSchema.nullable(),
 });
 export type PackEvidence = z.infer<typeof PackEvidenceSchema>;
 
