@@ -41,46 +41,38 @@
   color: var(--color-text);
 }
 
-/* Toolbar buttons and week numbers: our accent and muted text (Bryntum's own fail contrast in dark). */
-.cash-bryntum .b-toolbar .b-button,
-.cash-bryntum .b-toolbar .b-button-label,
-.cash-bryntum .b-toolbar .b-button .b-icon {
-  color: var(--color-accent);
-}
-/* 44 px targets at every width (WCAG 2.5.8; Bryntum squeezes them below 640 px). */
-.cash-bryntum .b-toolbar .b-button {
-  min-width: 44px;
-  min-height: 44px;
-  flex-shrink: 0;
-}
-.cash-bryntum .b-toolbar {
-  height: auto;
-}
-.cash-bryntum .b-toolbar .b-toolbar-content {
-  flex-wrap: wrap;
+/* The month title ("November 2026") in the toolbar. */
+.cash-bryntum .b-calendar-view-desc,
+.cash-bryntum .b-calendar-view-desc-text {
+  color: var(--color-text) !important;
 }
 
-/* Below 640 px: no event bars in cells (labels are never squeezed), only a count; the day's list opens
-   below the grid when the day is selected. */
-.cash-bryntum .cash-day-count {
-  display: none;
-}
-.cash-bryntum.cash-compact .b-cal-event-bar-container,
-.cash-bryntum.cash-compact .cash-day-total {
-  display: none;
-}
-.cash-bryntum.cash-compact .b-calendar-cell:has(> .cash-day-total) {
-  padding-bottom: 0;
-}
-.cash-bryntum.cash-compact .cash-day-count {
-  display: block;
-  padding: 0 0.4em;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-status-held-fg);
-}
+/* No week numbers (they are links Bryntum adds to every row, and they crowd the 375 px grid). */
 .cash-bryntum .b-week-num {
-  color: var(--color-text-muted) !important;
+  display: none !important;
+}
+
+/* Day headers: the day number and the month-start label ("Nov 1") in our text token, light and dark. */
+.cash-bryntum .b-cal-cell-header {
+  color: var(--color-text);
+}
+.cash-bryntum .b-cal-cell-header * {
+  color: inherit;
+}
+/* Bryntum sets the month-start label ("Nov" in "Nov 1") to `color: initial` (black, invisible in dark). */
+.cash-bryntum .b-cal-cell-header .b-day-num strong,
+.cash-bryntum .b-calendar-cell .b-day-num > * {
+  color: var(--color-text) !important;
+}
+.cash-bryntum .b-calendar-cell.b-other-month .b-cal-cell-header {
+  color: var(--color-text-muted);
+}
+/* The selected day: accent fill with on-accent digits (Bryntum's marker hides the digits in dark). */
+.cash-bryntum .b-cal-cell-header.b-selected-date .b-day-num,
+.cash-bryntum .b-calendar-cell.b-selected-date .b-day-num {
+  background: var(--color-accent) !important;
+  color: var(--color-on-accent) !important;
+  border-radius: 50%;
 }
 
 /* Event bars: token fill/text per kind; labels wrap, never cut. */
@@ -130,28 +122,38 @@
   background: transparent !important;
 }
 
-/* The day's totals sit at the foot of the cell; the cell keeps room for them. */
-.cash-bryntum .b-calendar-cell {
-  position: relative;
-}
-.cash-bryntum .b-calendar-cell:has(> .cash-day-total) {
-  padding-bottom: 2.25rem;
-}
-.cash-bryntum .b-calendar-cell > .cash-day-total {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0.125rem;
+/* The day's totals per currency (short form) at the left of the day header. */
+.cash-bryntum .cash-day-total {
+  margin-inline-end: auto;
+  padding-inline-start: 0.4em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  white-space: nowrap;
 }
 
-/* The day's totals per currency, under the day number. */
-.cash-bryntum .cash-day-total {
+/* Below 1024 px: no event bars in cells (labels are never squeezed), only the count and one total per
+   currency; selecting the day opens its full list below the grid. */
+.cash-bryntum .cash-day-count {
+  display: none;
+}
+.cash-bryntum.cash-compact .b-cal-event-bar-container,
+.cash-bryntum.cash-compact .cash-day-total {
+  display: none;
+}
+.cash-bryntum.cash-compact .cash-day-count {
   display: block;
-  padding: 0 0.4em;
-  font-size: 0.75rem;
+  padding: 0 0.2em;
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
-  white-space: normal;
-  text-align: start;
+  color: var(--color-text);
+}
+.cash-bryntum.cash-compact .cash-day-count > span {
+  display: block;
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {

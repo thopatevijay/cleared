@@ -4,6 +4,7 @@
 // amount, kind label, "estimated", a Source disclosure); text wraps, never truncates. The next 30 days from
 // `initialDate`, extended 30 days at a time. Also the selected-day panel of the month view (`DayEvents`).
 import type { CashDayTotal, CashEvent } from "@cleared/core";
+import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Link } from "../../i18n/navigation.ts";
@@ -41,12 +42,13 @@ function EventRow({
           ev.preventDefault();
           onSelect(e);
         }}
-        className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 rounded-sm hover:underline"
+        className="flex min-h-11 items-center gap-3 rounded-sm hover:underline"
       >
         <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-pill ${pill}`}>
           <Icon aria-hidden="true" size={16} strokeWidth={1.75} />
         </span>
-        <span className="tabular text-lg font-semibold break-words">{text.label(e)}</span>
+        <span className="tabular min-w-0 flex-1 text-lg font-semibold break-words">{text.label(e)}</span>
+        <ChevronRight aria-hidden="true" size={20} strokeWidth={1.75} className="shrink-0 text-accent" />
       </Link>
       {e.source === null ? (
         <span className="pl-11 text-sm text-text-muted">{t("fromPayPal")}</span>

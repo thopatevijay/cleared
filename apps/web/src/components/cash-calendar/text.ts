@@ -60,6 +60,8 @@ export function useCashText(locale: string) {
     fullName: (e: CashEvent): string => `${label(e)}. ${name(e)}`,
     dayTotals,
     money: (a: Amount) => money(locale, a),
+    /** "$64.00" (symbol only: the compact 375 px day cell) */
+    short: (a: Amount) => formatAmount(locale, a).text,
     day: (date: string) => formatDayName(locale, date, false),
     dayLong: (date: string) => formatDayName(locale, date, true),
   };

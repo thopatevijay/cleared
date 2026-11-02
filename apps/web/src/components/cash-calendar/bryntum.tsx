@@ -10,6 +10,7 @@
 import type { CashEvent } from "@cleared/core";
 import type { DomConfig, EventModel, MonthViewConfig } from "@bryntum/calendar";
 import { BryntumCalendar } from "@bryntum/calendar-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import "@bryntum/calendar/calendar.css";
@@ -45,11 +46,86 @@ function useBryntumLocale(locale: string): boolean {
   return ready;
 }
 
-/** Below 640 px the month grid shows counts only (cash-calendar.md "375 px"). */
+/** A DomConfig's class names, given as a string or as a `{ name: true }` object. */
+function classOf(c: DomConfig): string {
+  const cls = (c as { className?: unknown }).className;
+  if (typeof cls === "string") return cls;
+  if (cls !== null && typeof cls === "object")
+    return Object.entries(cls as Record<string, unknown>)
+      .filter(([, on]) => on === true)
+      .map(([k]) => k)
+      .join(" ");
+  return "";
+}
+
+const firstOfMonth = (date: string): string => `${date.slice(0, 7)}-01`;
+
+/** `YYYY-MM-01` moved by `n` months. */
+function moveMonth(first: string, n: number): string {
+  const d = new Date(`${first}T12:00:00Z`);
+  d.setUTCMonth(d.getUTCMonth() + n, 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/** "November 2026" / "नवंबर 2026" */
+const monthTitle = (locale: string, first: string): string =>
+  new Intl.DateTimeFormat(locale, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+    numberingSystem: "latn",
+  }).format(new Date(`${first}T12:00:00Z`));
+
+/** Today, Previous month, Next month (44 px, named at every width) and the month shown (cash-calendar.md rule 4). */
+function MonthBar({
+  title,
+  onToday,
+  onMove,
+}: {
+  title: string;
+  onToday: () => void;
+  onMove: (n: number) => void;
+}) {
+  const t = useTranslations("calendar");
+  const btn =
+    "inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border-strong bg-surface px-3 font-medium text-accent hover:bg-surface-sunken";
+  return (
+    <div className="flex flex-wrap items-center gap-2" data-testid="month-bar">
+      <button type="button" className={btn} onClick={onToday}>
+        {t("today")}
+      </button>
+      <button
+        type="button"
+        className={btn}
+        aria-label={t("prev")}
+        onClick={() => {
+          onMove(-1);
+        }}
+      >
+        <ChevronLeft aria-hidden="true" size={20} strokeWidth={1.75} />
+      </button>
+      <button
+        type="button"
+        className={btn}
+        aria-label={t("next")}
+        onClick={() => {
+          onMove(1);
+        }}
+      >
+        <ChevronRight aria-hidden="true" size={20} strokeWidth={1.75} />
+      </button>
+      <h2 className="ml-1 text-xl font-semibold" aria-live="polite" data-testid="month-title">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+/** Below 1024 px the month grid shows counts only (cash-calendar.md "375 px"). */
 function useCompact(): boolean {
   const [compact, setCompact] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
+    const mq = window.matchMedia("(max-width: 1023px)");
     const on = () => {
       setCompact(mq.matches);
     };
@@ -76,6 +152,7 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
   const ready = useBryntumLocale(p.locale);
   const reduced = useReducedMotion();
   const compact = useCompact();
+  const [shown, setShown] = useState(() => firstOfMonth(p.initialDate));
   const byId = useMemo(() => new Map(p.events.map((e) => [e.id, e])), [p.events]);
 
   const events = useMemo(
@@ -105,6 +182,16 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
     return by;
   }, [p.events]);
 
+  // 375 px cells: "2 · €15.50 · $64.00" (count, then each currency's total, never summed across currencies)
+  const shortByDay = useMemo(() => {
+    const by = new Map<string, string[]>();
+    for (const x of p.totals) {
+      const value = x.estimated === "0" ? x.released : x.estimated;
+      by.set(x.date, [...(by.get(x.date) ?? []), text.short({ value, currency: x.currency })]);
+    }
+    return by;
+  }, [p.totals, p.locale]);
+
   const month = useMemo((): MonthViewConfig => {
     const eventRenderer: MonthViewConfig["eventRenderer"] = ({ eventRecord, renderData }) => {
       const e: CashEvent | undefined = byId.get(String(eventRecord.id));
@@ -117,30 +204,32 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
     const dayCellRenderer: MonthViewConfig["dayCellRenderer"] = (cell, dom) => {
       const children = (dom as { children?: unknown }).children;
       if (!Array.isArray(children)) return dom;
-      const lines = totalsByDay.get(cell.key) ?? [];
+      const short = shortByDay.get(cell.key) ?? [];
       const n = countByDay.get(cell.key) ?? 0;
-      // at the foot of the cell (bryntum-theme.css), so the event bars keep Bryntum's offsets; below 640 px
-      // the bars are hidden and only the count shows (the selected day's list opens below the grid)
-      if (lines.length > 0)
-        (children as DomConfig[]).push({ tag: "span", className: "cash-day-total", text: lines.join(" · ") });
+      const header = (children as DomConfig[]).find((c) => classOf(c).includes("b-cal-cell-header"));
+      const into = (header as { children?: unknown } | undefined)?.children;
+      const target = Array.isArray(into) ? (into as DomConfig[]) : (children as DomConfig[]);
+      // wide: "€15.50 · $64.00" at the left of the header (full words are on the bars and in the day list);
+      // below 1024 px the bars are hidden and the cell shows the count, then one total per currency
+      if (short.length > 0)
+        target.unshift({ tag: "span", className: "cash-day-total", text: short.join(" · ") });
       if (n > 0)
         (children as DomConfig[]).push({
           tag: "span",
           className: "cash-day-count",
-          text: `● ${String(n)}`,
-          "aria-hidden": "true",
-        } as DomConfig);
+          children: [String(n), ...short].map((line) => ({ tag: "span", text: line })),
+        });
       return dom;
     };
     return {
       animateTimeShift: !reduced,
       autoRowHeight: true,
       showWeekColumn: false,
-      eventHeight: 40,
+      eventHeight: 60,
       eventRenderer,
       dayCellRenderer,
     };
-  }, [byId, totalsByDay, countByDay, reduced]);
+  }, [byId, totalsByDay, countByDay, shortByDay, reduced]);
 
   const onKeyDownCapture = (ev: KeyboardEvent<HTMLDivElement>) => {
     if (ev.key !== "Enter" && ev.key !== " ") return;
@@ -154,47 +243,50 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
 
   if (!ready) return null;
   return (
-    <div
-      className={`cash-bryntum h-[640px] md:h-[720px]${compact ? " cash-compact" : ""}`}
-      data-testid="bryntum-calendar"
-      data-engine={CASH_CALENDAR_ENGINE.name}
-      onKeyDownCapture={onKeyDownCapture}
-    >
-      <BryntumCalendar
-        ariaLabel={t("calendarLabel")}
-        date={p.initialDate}
-        mode="month"
-        modes={{ day: null, week: null, year: null, agenda: null, month }}
-        sidebar={false}
-        readOnly
-        // No `timeZone`: days are already in the workspace zone (M0-09 measured a +1 day shift with it).
-        events={events}
-        tbar={{
-          items: {
-            modeSelector: null,
-            toggleSidebar: null,
-            todayButton: { text: t("today"), ariaLabel: t("today") },
-            prevButton: { ariaLabel: t("prev"), tooltip: t("prev") },
-            nextButton: { ariaLabel: t("next"), tooltip: t("next") },
-          },
+    <div className="flex flex-col gap-3">
+      <MonthBar
+        title={monthTitle(p.locale, shown)}
+        onToday={() => {
+          setShown(firstOfMonth(p.initialDate));
         }}
-        eventTooltipFeature={false}
-        eventMenuFeature={false}
-        scheduleMenuFeature={false}
-        scheduleTooltipFeature={false}
-        eventEditFeature={false}
-        dragFeature={false}
-        eventCopyPasteFeature={false}
-        onEventClick={({ eventRecord }: { eventRecord: EventModel }) => {
-          const e = byId.get(String(eventRecord.id));
-          if (e !== undefined) p.onSelect(e);
+        onMove={(n) => {
+          setShown(moveMonth(shown, n));
         }}
-        onDayNumberClick={({ date }: { date: Date }) => p.onDaySelect?.(ymd(date))}
-        onEmptyCellClick={({ date }: { date: Date }) => p.onDaySelect?.(ymd(date))}
-        onDateRangeChange={({ new: r }: { new: { startDate: Date; endDate: Date } }) =>
-          p.onRangeChange?.(ymd(r.startDate), addDays(ymd(r.endDate), -1))
-        }
       />
+      <div
+        className={`cash-bryntum h-[560px] md:h-[640px] xl:h-[720px]${compact ? " cash-compact" : ""}`}
+        data-testid="bryntum-calendar"
+        data-engine={CASH_CALENDAR_ENGINE.name}
+        onKeyDownCapture={onKeyDownCapture}
+      >
+        <BryntumCalendar
+          ariaLabel={t("calendarLabel")}
+          date={shown}
+          mode="month"
+          modes={{ day: null, week: null, year: null, agenda: null, month }}
+          sidebar={false}
+          readOnly
+          // No `timeZone`: days are already in the workspace zone (M0-09 measured a +1 day shift with it).
+          events={events}
+          tbar={null}
+          eventTooltipFeature={false}
+          eventMenuFeature={false}
+          scheduleMenuFeature={false}
+          scheduleTooltipFeature={false}
+          eventEditFeature={false}
+          dragFeature={false}
+          eventCopyPasteFeature={false}
+          onEventClick={({ eventRecord }: { eventRecord: EventModel }) => {
+            const e = byId.get(String(eventRecord.id));
+            if (e !== undefined) p.onSelect(e);
+          }}
+          onDayNumberClick={({ date }: { date: Date }) => p.onDaySelect?.(ymd(date))}
+          onEmptyCellClick={({ date }: { date: Date }) => p.onDaySelect?.(ymd(date))}
+          onDateRangeChange={({ new: r }: { new: { startDate: Date; endDate: Date } }) =>
+            p.onRangeChange?.(ymd(r.startDate), addDays(ymd(r.endDate), -1))
+          }
+        />
+      </div>
     </div>
   );
 }

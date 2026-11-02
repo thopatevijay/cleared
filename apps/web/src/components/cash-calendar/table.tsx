@@ -111,7 +111,7 @@ export function NoEstimate({ data, locale }: { data: CashCalendarResponse; local
             </Link>
             <span className="text-sm">
               {t("noEstimate")}{" "}
-              <span className="font-mono text-xs break-all text-text-muted">{n.reason}</span>
+              <span className="inline-block font-mono text-xs text-text-muted">{n.reason}</span>
             </span>
           </li>
         ))}

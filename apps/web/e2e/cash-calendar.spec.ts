@@ -5,12 +5,13 @@
 // every event in the range. All-day days stay on their date in browser zones behind and ahead of the
 // workspace zone (BL-01 6490771972). Empty, loading and error states. No request leaves localhost (the
 // trial's GTM snippet and bryntum.com/verify, BL-01 6491378837). Review captures go to .review/M3-05/.
+import { mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { CashCalendarResponseSchema, type CashCalendarResponse } from "@cleared/core";
 import { closeDb, createDb, databaseUrl } from "@cleared/db";
 import { expect, test, type Browser, type Cookie, type Page } from "@playwright/test";
 import { seedCash } from "../test/support/cash-seed.ts";
-import { capture, demoWorkspace, local, sql } from "./support/disputes.ts";
+import { axe, demoWorkspace, fits, local, shots, sql } from "./support/disputes.ts";
 import { axeClean } from "./support/holds.ts";
 
 const REVIEW_CAL = fileURLToPath(new URL("../../../.review/M3-05/", import.meta.url));
@@ -38,6 +39,46 @@ function external(page: Page): string[] {
     if (!["localhost", "127.0.0.1"].includes(u.hostname) && u.protocol !== "data:") out.push(r.url());
   });
   return out;
+}
+
+type Ready = (page: Page) => Promise<void>;
+const engineReady: Ready = async (p) => {
+  await expect(p.locator(".cash-bryntum [data-event-id]").first()).toBeAttached({ timeout: 60_000 });
+};
+const listReady: Ready = async (p) => {
+  await expect(p.getByTestId("calendar-area")).toHaveAttribute("data-view", "list");
+};
+
+/**
+ * ui-reviewer captures: a FRESH load per width and theme (what a seller on that device sees; a resized
+ * Bryntum grid is not), no horizontal scroll, axe (serious/critical) next to each shot, in .review/M3-05/.
+ */
+async function shoot(
+  page: Page,
+  path: string,
+  name: string,
+  widths: readonly number[],
+  ready: Ready,
+  after?: Ready,
+): Promise<void> {
+  for (const theme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: width < 768 ? 800 : 900 });
+      await page.goto(path);
+      await ready(page);
+      if (after) await after(page);
+      await page.waitForTimeout(300);
+      await fits(page, `${name}-${String(width)}`);
+      if (shots) {
+        mkdirSync(REVIEW_CAL, { recursive: true });
+        await page.screenshot({ path: `${REVIEW_CAL}${name}-${String(width)}-${theme}.png`, fullPage: true });
+      }
+      await axe(page, `${name}-${String(width)}-${theme}`, REVIEW_CAL);
+    }
+  }
+  await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
+  await page.setViewportSize({ width: 1440, height: 900 });
 }
 
 const events = (page: Page) => page.locator(".cash-bryntum [data-event-id]");
@@ -76,7 +117,7 @@ test("month view at 1440: every event, kind colours, day totals, table, axe, no 
   const review = cal.events.find((e) => e.amount.value === "64.00");
   await expect(
     page.locator(`.b-calendar-cell[data-date="${review?.date ?? ""}"] .cash-day-total`),
-  ).toHaveText("€15.50 EUR estimated · $64.00 USD estimated");
+  ).toHaveText("€15.50 · $64.00");
   await expect(page.getByRole("button", { name: "Previous month" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Next month" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Today" })).toBeVisible();
@@ -94,18 +135,24 @@ test("month view at 1440: every event, kind colours, day totals, table, axe, no 
   await expect(page.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(2);
 
   await axeClean(page, "calendar-month-1440");
-  await capture(page, "en-calendar-month", REVIEW_CAL, [375, 768, 1440]);
+  await shoot(page, "/en/calendar?view=month", "en-calendar-month", [375, 768, 1440], engineReady);
 
-  // Month at 375: no squeezed labels, a count per day; selecting the day lists it below the grid
+  // Month at 375: no squeezed labels, a count and the totals per day; selecting a day lists it below the grid
   await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto("/en/calendar?view=month");
+  await engineReady(page);
   await expect(page.locator(".cash-bryntum.cash-compact")).toBeVisible();
   const cell = page.locator(`.b-calendar-cell[data-date="${review?.date ?? ""}"]`);
-  await expect(cell.locator(".cash-day-count")).toHaveText("● 2");
+  await expect(cell.locator(".cash-day-count > span")).toHaveText(["2", "€15.50", "$64.00"]);
   await expect(cell.locator(".b-cal-event-bar-container")).toBeHidden();
+  await expect(page.getByTestId("day-panel")).toHaveText("Select a day to see its events.");
   await cell.locator(".b-day-num").click();
   await expect(page.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(2);
-  await capture(page, "en-calendar-month-day", REVIEW_CAL, [375]);
-  await page.setViewportSize({ width: 1440, height: 900 });
+  const pick: Ready = async (p) => {
+    await p.locator(`.b-calendar-cell[data-date="${review?.date ?? ""}"] .b-day-num`).click();
+    await expect(p.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(2);
+  };
+  await shoot(page, "/en/calendar?view=month", "en-calendar-month-day", [375], engineReady, pick);
   expect(calls, "requests that left localhost").toEqual([]);
   const trial = await page.evaluate(() =>
     Object.keys(localStorage).filter((k) => k.startsWith("b-calendar")),
@@ -168,13 +215,9 @@ test("list view at 360: the default below 768 px, no horizontal scroll, every ev
   await rows.first().getByTestId("cash-row-link").focus();
   await page.keyboard.press("Enter");
   await page.waitForURL(/\/en\/(holds|disputes)\//);
-  await page.goto("/en/calendar?view=list");
-  await capture(page, "en-calendar-list", REVIEW_CAL);
-  await page.goto("/hi/calendar?view=list");
-  await capture(page, "hi-calendar-list", REVIEW_CAL, [360, 1440]);
-  await page.goto("/hi/calendar?view=month");
-  await expect(events(page)).toHaveCount(cal.events.length, { timeout: 60_000 });
-  await capture(page, "hi-calendar-month", REVIEW_CAL, [1440]);
+  await shoot(page, "/en/calendar?view=list", "en-calendar-list", [360, 375, 768, 1440], listReady);
+  await shoot(page, "/hi/calendar?view=list", "hi-calendar-list", [360, 1440], listReady);
+  await shoot(page, "/hi/calendar?view=month", "hi-calendar-month", [375, 1440], engineReady);
   expect(calls, "requests that left localhost").toEqual([]);
 });
 
@@ -219,14 +262,23 @@ test("empty, loading and error states", async ({ page }) => {
   await expect(page.getByTestId("held-now")).toHaveText("Nothing held now");
   await expect(page.getByTestId("cash-table")).toContainText("Nothing in this range.");
   await axeClean(page, "calendar-empty");
-  await capture(page, "en-calendar-empty", REVIEW_CAL);
+  const emptyReady: Ready = async (p) => {
+    await expect(p.getByRole("heading", { name: "No held money." })).toBeVisible();
+  };
+  await shoot(page, "/en/calendar", "en-calendar-empty", [360, 375, 768, 1440], emptyReady);
 
+  // loading and error over a workspace with data: the server-rendered total and table stay true
+  await seeded(page);
   await page.route("**/api/cash-calendar**", () => undefined);
   await page.goto("/en/calendar");
   await expect(page.getByTestId("loading")).toBeVisible();
-  await expect(page.getByTestId("cash-table")).toBeVisible();
+  await expect(page.getByTestId("held-now")).toHaveText("€15.50 EUR + $264.00 USD held now");
+  await expect(page.getByTestId("cash-table-row")).toHaveCount(5);
   await axeClean(page, "calendar-loading");
-  await capture(page, "en-calendar-loading", REVIEW_CAL, [375, 1440]);
+  const loadingReady: Ready = async (p) => {
+    await expect(p.getByTestId("loading")).toBeVisible();
+  };
+  await shoot(page, "/en/calendar?view=month", "en-calendar-loading", [375, 1440], loadingReady);
   await page.unrouteAll({ behavior: "ignoreErrors" });
 
   await page.route("**/api/cash-calendar**", (route) =>
@@ -242,7 +294,11 @@ test("empty, loading and error states", async ({ page }) => {
   await page.goto("/en/calendar");
   await expect(page.getByText("Couldn't load the calendar")).toBeVisible();
   await expect(page.getByText("c0ffee00-5ce7-4d1e-9a7a-000000000305")).toBeVisible();
+  await expect(page.getByTestId("cash-table-row")).toHaveCount(5);
   await axeClean(page, "calendar-error");
-  await capture(page, "en-calendar-error", REVIEW_CAL, [375, 1440]);
+  const errorReady: Ready = async (p) => {
+    await expect(p.getByText("Couldn't load the calendar")).toBeVisible();
+  };
+  await shoot(page, "/en/calendar?view=month", "en-calendar-error", [375, 1440], errorReady);
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
