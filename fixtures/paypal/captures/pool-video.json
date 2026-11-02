@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-02T12:08:28.474Z",
+    "env": "sandbox",
+    "ticket": "M3-10",
+    "scrubbed": true,
+    "note": "review-hold pool capture GET (PayPal-wallet, Payment Review on)"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/captures/84S22913092039910",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json;charset=UTF-8",
+      "paypal-debug-id": "f131855f10f30"
+    },
+    "body": {
+      "id": "84S22913092039910",
+      "amount": {
+        "currency_code": "USD",
+        "value": "64.00"
+      },
+      "final_capture": true,
+      "seller_protection": {
+        "status": "NOT_ELIGIBLE"
+      },
+      "custom_id": "d8c7c981-f9c7-45b0-9250-05fb5a3fc95c",
+      "status": "PENDING",
+      "status_details": {
+        "reason": "PENDING_REVIEW"
+      },
+      "supplementary_data": {
+        "related_ids": {
+          "order_id": "0VU267969U7919544"
+        }
+      },
+      "payee": {
+        "email_address": "merchant-1@example.test",
+        "merchant_id": "MERCHANT-1"
+      },
+      "create_time": "2026-11-02T11:57:37Z",
+      "update_time": "2026-11-02T11:57:37Z",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/payments/captures/84S22913092039910",
+          "rel": "self",
+          "method": "GET"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/payments/captures/84S22913092039910/refund",
+          "rel": "refund",
+          "method": "POST"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/0VU267969U7919544",
+          "rel": "up",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}

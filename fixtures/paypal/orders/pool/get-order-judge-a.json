@@ -1,0 +1,119 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-02T12:08:23.653Z",
+    "env": "sandbox",
+    "ticket": "M3-10",
+    "scrubbed": true,
+    "note": "review-hold pool order after buyer approval + pool:capture"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders/4PC61975WK2620801",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f2312590320a0"
+    },
+    "body": {
+      "id": "4PC61975WK2620801",
+      "intent": "CAPTURE",
+      "status": "COMPLETED",
+      "payment_source": {
+        "paypal": {
+          "email_address": "payer-1@example.test",
+          "account_id": "ACCOUNT-1",
+          "account_status": "VERIFIED",
+          "name": {
+            "given_name": "Person 1",
+            "surname": "Person 2"
+          },
+          "address": {
+            "country_code": "IN"
+          }
+        }
+      },
+      "purchase_units": [
+        {
+          "reference_id": "review-pool-judge",
+          "amount": {
+            "currency_code": "USD",
+            "value": "64.00",
+            "breakdown": {}
+          },
+          "payee": {
+            "email_address": "merchant-1@example.test",
+            "merchant_id": "MERCHANT-1"
+          },
+          "description": "Logo design, 3 concepts",
+          "custom_id": "d8c7c981-f9c7-45b0-9250-05fb5a3fc95c",
+          "soft_descriptor": "PAYPAL *TEST STORE",
+          "payments": {
+            "captures": [
+              {
+                "id": "3LA86131WB155820G",
+                "status": "PENDING",
+                "status_details": {
+                  "reason": "PENDING_REVIEW"
+                },
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "64.00"
+                },
+                "final_capture": true,
+                "seller_protection": {
+                  "status": "NOT_ELIGIBLE"
+                },
+                "custom_id": "d8c7c981-f9c7-45b0-9250-05fb5a3fc95c",
+                "links": [
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/payments/captures/3LA86131WB155820G",
+                    "rel": "self",
+                    "method": "GET"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/payments/captures/3LA86131WB155820G/refund",
+                    "rel": "refund",
+                    "method": "POST"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/4PC61975WK2620801",
+                    "rel": "up",
+                    "method": "GET"
+                  }
+                ],
+                "create_time": "2026-11-02T11:57:31Z",
+                "update_time": "2026-11-02T11:57:31Z"
+              }
+            ]
+          }
+        }
+      ],
+      "payer": {
+        "name": {
+          "given_name": "Person 1",
+          "surname": "Person 2"
+        },
+        "email_address": "payer-1@example.test",
+        "payer_id": "PAYER-1",
+        "address": {
+          "country_code": "IN"
+        }
+      },
+      "create_time": "2026-11-02T11:57:31Z",
+      "update_time": "2026-11-02T11:57:31Z",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/4PC61975WK2620801",
+          "rel": "self",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}
