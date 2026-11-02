@@ -81,8 +81,6 @@ export interface TrackInput {
 
 /** M3-04: the `record_service_completed` write (trackers-batch). */
 export interface MarkCompletedOptions {
-  /** sent on each tracker when set (M3-04 sends `OTHER`: no carrier for a service) */
-  readonly carrier?: string;
   readonly timeoutMs?: number;
   readonly onResponse?: (meta: ResponseMeta) => void;
 }
@@ -219,11 +217,7 @@ export function createPayPalOrdersClient(options: PayPalOrdersClientOptions): Pa
         ...(o.timeoutMs === undefined ? {} : { timeoutMs: o.timeoutMs }),
         ...(o.onResponse === undefined ? {} : { onResponse: o.onResponse }),
         body: {
-          trackers: captureIds.map((id) => ({
-            transaction_id: id,
-            status: "COMPLETED",
-            ...(o.carrier === undefined ? {} : { carrier: o.carrier }),
-          })),
+          trackers: captureIds.map((id) => ({ transaction_id: id, status: "COMPLETED" })),
         },
       }),
     getLegacyTracker: (captureId, trackingNumber) =>

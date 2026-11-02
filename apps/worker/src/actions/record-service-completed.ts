@@ -1,6 +1,6 @@
 // `record_service_completed` (M3-04): the secondary, seller-approved API record of a service order as
-// Completed: legacy `POST /v1/shipping/trackers-batch` with status COMPLETED, no tracking number, carrier
-// OTHER. PayPal support said an API equivalence with the web step is "not available", so the effect on the
+// Completed: legacy `POST /v1/shipping/trackers-batch` with status COMPLETED, no tracking number and no
+// carrier (PayPal refuses a carrier without a tracking number: completed.ts). PayPal support said an API equivalence with the web step is "not available", so the effect on the
 // release is unconfirmed: this action NEVER touches the hold (no state move, no estimate). Only the seller's
 // web-step confirmation sets the service_completed estimate (apps/web handlers/completed.ts).
 // `action.execute` claims it (M2-08) and hands it here. Checks (hold-action.ts): kill switch, payload hash,
@@ -51,7 +51,6 @@ export async function executeRecordCompleted(run: CompletedRun): Promise<HoldAct
   let batch: TrackersBatchResponse;
   try {
     batch = await run.orders.markCompleted([payload.capture_id], {
-      carrier: payload.carrier,
       ...(run.writeTimeoutMs === undefined ? {} : { timeoutMs: run.writeTimeoutMs }),
       onResponse: (m) => (meta = m),
     });

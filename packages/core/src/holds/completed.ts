@@ -155,18 +155,20 @@ export function confirmServiceCompleted(i: ConfirmInput): Result<CompletedConfir
 }
 
 /**
- * The secondary API record (legacy `POST /v1/shipping/trackers-batch`): the capture, status COMPLETED, no
- * tracking number, carrier OTHER. Unknown keys are refused: the approval hash binds every field.
+ * The secondary API record (legacy `POST /v1/shipping/trackers-batch`): the capture and status COMPLETED,
+ * with no tracking number and no carrier. The ticket asked for `carrier: OTHER`, but PayPal refuses a carrier
+ * without a tracking number: live sandbox 400 INVALID_REQUEST / TRACKING_NUMBER_IS_MISSING (debug_id
+ * f168737fc6ae4, 2026-11-02), while the M0-04 request without a carrier is accepted. The payload is exactly
+ * what is sent. Unknown keys are refused: the approval hash binds every field.
  */
 export const RecordServiceCompletedPayloadSchema = z.strictObject({
   capture_id: z.string().regex(/^[A-Za-z0-9-]{1,64}$/),
   status: z.literal("COMPLETED"),
-  carrier: z.literal("OTHER"),
 });
 export type RecordServiceCompletedPayload = z.infer<typeof RecordServiceCompletedPayloadSchema>;
 
 export function recordServiceCompletedPayload(captureId: string): RecordServiceCompletedPayload {
-  return RecordServiceCompletedPayloadSchema.parse({ capture_id: captureId, status: "COMPLETED", carrier: "OTHER" });
+  return RecordServiceCompletedPayloadSchema.parse({ capture_id: captureId, status: "COMPLETED" });
 }
 
 /** Where the guided step stands on a service hold (hold.md action slot, M3-04). */

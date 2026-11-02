@@ -1,6 +1,6 @@
 // M3-04 AC 1 (core side): the seller's web-step confirmation sets the estimate to the confirmed date + 7 days
 // with `estimate_source = service_completed` (help129 quote + url) and walks the hold to `filed`; the date
-// rules; the Activity host per PAYPAL_ENV; the secondary payload (strict, carrier OTHER, no tracking number).
+// rules; the Activity host per PAYPAL_ENV; the secondary payload (strict, no carrier, no tracking number).
 import { describe, expect, it } from "vitest";
 import { canonicalHash } from "../agent/canonical-hash.ts";
 import { checkApproval, parseExecutablePayload } from "../actions/policy.ts";
@@ -121,8 +121,9 @@ describe("PayPal Activity link (M3-04 AC 4, core side)", () => {
 describe("record_service_completed payload (secondary)", () => {
   const payload = recordServiceCompletedPayload("7AS90958XD7569923");
 
-  it("is the capture, status COMPLETED, carrier OTHER and no tracking number", () => {
-    expect(payload).toEqual({ capture_id: "7AS90958XD7569923", status: "COMPLETED", carrier: "OTHER" });
+  it("is the capture and status COMPLETED: no tracking number, no carrier (PayPal refuses one without the other)", () => {
+    expect(payload).toEqual({ capture_id: "7AS90958XD7569923", status: "COMPLETED" });
+    expect(RecordServiceCompletedPayloadSchema.safeParse({ ...payload, carrier: "OTHER" }).success).toBe(false);
     expect(RecordServiceCompletedPayloadSchema.safeParse({ ...payload, tracking_number: "X1" }).success).toBe(
       false,
     );

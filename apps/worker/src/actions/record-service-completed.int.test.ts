@@ -1,6 +1,6 @@
 // `record_service_completed` (M3-04 AC 1 worker side + AC 2) over the recorded M0-04 trackers-batch exchange
 // (fixtures/paypal/tracking): an approved action sends one trackers-batch write (the capture, COMPLETED,
-// carrier OTHER, no tracking number), stores the execution (200 + paypal-debug-id) and the read-back status
+// no carrier, no tracking number: the recorded request), stores the execution (200 + paypal-debug-id) and the read-back status
 // COMPLETED, and leaves the hold exactly as it was (no state move, no estimate); a payload changed after
 // approval is refused with no write; a 200 with errors → failed; no answer → unknown → reconcile by reading
 // the tracker back (never resent).
@@ -155,7 +155,7 @@ async function scene(owned = true): Promise<Scene & { payload: JsonValue }> {
     estimateSource: "reason_OTHER",
     estimatedReleaseAt: ESTIMATE,
   });
-  const payload: JsonValue = { capture_id: captureId, status: "COMPLETED", carrier: "OTHER" };
+  const payload: JsonValue = { capture_id: captureId, status: "COMPLETED" };
   const actionId = await approvedAction(db, publisher, { ws: w.id, ids: {} as never }, "record_service_completed", payload);
   return { ws: w.id, captureId, holdId: hold.id, actionId, payload };
 }
@@ -212,7 +212,10 @@ describe.skipIf(!dbAvailable)("record_service_completed (M3-04)", () => {
     expect(await execute(deps(), s)).toBe("succeeded");
     expect(await stateOf(s)).toEqual({ state: "succeeded", code: null });
     expect(writes(calls).map((c) => `${c.method} ${c.path}`)).toEqual(["POST /v1/shipping/trackers-batch"]);
-    expect(bodies).toEqual([{ trackers: [{ transaction_id: s.captureId, status: "COMPLETED", carrier: "OTHER" }] }]);
+    // exactly the recorded M0-04 request body, with this scene's capture
+    expect(bodies).toEqual([
+      JSON.parse(JSON.stringify(BATCH.request.body).replaceAll(REC_CAPTURE, s.captureId)),
+    ]);
     expect(await executionForAction(db, s.ws, s.actionId)).toMatchObject({
       paypalStatus: "200",
       paypalDebugId: "f529566754294",
