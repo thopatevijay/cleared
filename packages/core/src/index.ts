@@ -28,6 +28,7 @@ export * from "./proof/client-ack.ts";
 export * from "./contracts/packs.ts";
 export * from "./ports/blob-store.ts";
 export * from "./holds/index.ts";
+export * from "./carriers/index.ts";
 export * from "./disputes/dispute.ts";
 export * from "./disputes/mirror.ts";
 export * from "./disputes/deadline.ts";

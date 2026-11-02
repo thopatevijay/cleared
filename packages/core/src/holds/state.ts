@@ -33,7 +33,12 @@ export const holdMachine: Machine<HoldState, HoldEvent> = {
   states: HOLD_STATES,
   events: HOLD_EVENTS,
   table: {
-    open: { explanation_written: "explained", capture_released: "released" },
+    // M3-03 (ADR 0017 addendum): a seller can file tracking before any explanation is written
+    open: {
+      explanation_written: "explained",
+      action_proposed: "action_proposed",
+      capture_released: "released",
+    },
     explained: { action_proposed: "action_proposed", capture_released: "released" },
     action_proposed: { action_approved: "approved", capture_released: "released" },
     approved: { action_filed: "filed", capture_released: "released" },

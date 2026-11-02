@@ -6,7 +6,7 @@
 import { addMinutes, toEpochMs, fromEpochMs, type Instant } from "../time.ts";
 
 /** Bump when a row's words, source or estimate change (M3-02 caches explanations per rule version). */
-export const HOLD_RULES_VERSION = 1;
+export const HOLD_RULES_VERSION = 2;
 
 /** The only label an estimate is ever shown with. */
 export const ESTIMATE_LABEL = "estimated";
@@ -81,7 +81,8 @@ const ORDERS_SPEC_URL = "https://developer.paypal.com/docs/api/orders/v2/#defini
 const HELP129_URL = "https://www.paypal.com/us/cshelp/article/how-can-i-release-my-payments-on-hold-help129";
 const HELP848_URL =
   "https://www.paypal.com/us/cshelp/article/new-paypal-account-%E2%80%93-payments-on-hold-and-accessing-your-money-quicker-help848";
-const SEARCH_NOTE = "quoted from a web search summary of the page (the page refuses automated fetches)";
+/** help129 and help848 were read in a browser on 2026-11-02 (both refuse automated fetches): BL-01 6569196122. */
+const BROWSER_READ = "2026-11-02";
 
 const HOLD_PANEL_QUOTE =
   "We're taking a closer look at this payment. It's required for some payments and normally takes up to 3 business days. Don't ship until we tell you it's ok.";
@@ -175,7 +176,7 @@ export const DISPUTE_HOLD_RULE: HoldRule = {
 
 export const GOODS_DELIVERED_RULE: HoldRule = {
   id: "goods_delivered",
-  version: 1,
+  version: 2,
   type: "goods",
   appliesTo: { kind: "action", action: "add_tracking" },
   sample: false,
@@ -186,9 +187,8 @@ export const GOODS_DELIVERED_RULE: HoldRule = {
       url: HELP129_URL,
       title: "PayPal Help Center: How can I release my payments on hold?",
       quote:
-        "Use one of our approved shipping carriers, and we'll release the hold approximately 24 hours after the courier confirms delivery to the buyer's address.",
-      retrieved_at: "2026-10-26",
-      note: SEARCH_NOTE,
+        "Use one of our approved shipping carriers, and we’ll release the hold approximately 24 hours after the courier confirms delivery to the buyer’s address.",
+      retrieved_at: BROWSER_READ,
     },
   ],
   advice: null,
@@ -196,7 +196,7 @@ export const GOODS_DELIVERED_RULE: HoldRule = {
 
 export const SERVICE_COMPLETED_RULE: HoldRule = {
   id: "service_completed",
-  version: 1,
+  version: 2,
   type: "service",
   appliesTo: { kind: "action", action: "mark_completed" },
   sample: false,
@@ -207,8 +207,7 @@ export const SERVICE_COMPLETED_RULE: HoldRule = {
       url: HELP129_URL,
       title: "PayPal Help Center: How can I release my payments on hold?",
       quote: "We'll release the hold 7 days after you confirm the order status as Completed.",
-      retrieved_at: "2026-10-26",
-      note: SEARCH_NOTE,
+      retrieved_at: BROWSER_READ,
     },
   ],
   advice: null,
@@ -233,9 +232,9 @@ export const SAMPLE_RULES: readonly HoldRule[] = [
   sampleRow("new_seller_21d", {
     url: HELP848_URL,
     title: "PayPal Help Center: New PayPal account, payments on hold",
-    quote: "for up to 21 days",
-    retrieved_at: "2026-10-26",
-    note: SEARCH_NOTE,
+    quote:
+      "As you begin your selling journey, or start selling after a while, we hold the initial payments you receive for up to 21 days.",
+    retrieved_at: BROWSER_READ,
   }),
   sampleRow("reserve", {
     url: EVENT_CODES_URL,

@@ -1,0 +1,33 @@
+{
+ "source": "PARTIAL until P-51: the codes recorded in the research note (notes/feasibility.md, 'Shipped by' dropdown check) from the owner's sandbox browser on 2026-10-26: sandbox.paypal.com > Activity > a payment > Add Tracking Info > Shipped by (read only, nothing saved). The full list (834 codes seen that day) is captured in M3-03 with the owner's session.",
+ "captured_at": "2026-10-26",
+ "account": "US sandbox business",
+ "partial": true,
+ "seen_total": 834,
+ "count": 23,
+ "codes": [
+  "IND_DELHIVERY",
+  "DTDC_IN",
+  "EKART",
+  "BLUEDART",
+  "XPRESSBEES",
+  "IND_ECOM",
+  "NIPOST_NG",
+  "IDN_JNE",
+  "IDN_POS",
+  "NINJAVAN_ID",
+  "TCS",
+  "ARE_EMIRATES_POST",
+  "SOUTH_AFRICAN_POST_OFFICE",
+  "BRA_CORREIOS",
+  "MEX_ESTAFETA",
+  "VNM_VIETNAM_POST",
+  "THA_THAILAND_POST",
+  "MYS_MYS_POST",
+  "USPS",
+  "UPS",
+  "FEDEX",
+  "DHL",
+  "OTHER"
+ ]
+}
