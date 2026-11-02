@@ -44,6 +44,12 @@ export {
 } from "./repos/workspace/evidence.ts";
 export { TEST_PAYMENT_REQUESTED, type CurrencyTotal } from "./repos/workspace/payments-list.ts";
 export type { DisputeRow, WatchedDispute } from "./repos/workspace/disputes.ts";
+export {
+  EMAIL_STATUSES,
+  NOTIFICATIONS_MAX_LIMIT,
+  type EmailStatus,
+  type NotificationRow,
+} from "./repos/workspace/notifications.ts";
 export type { ScenarioRunRow } from "./repos/workspace/scenarios.ts";
 export { platform, type PlatformRepos } from "./repos/platform/index.ts";
 export type * from "./repos/platform/index.ts";

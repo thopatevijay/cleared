@@ -2,7 +2,7 @@
 // concurrency 5 (architecture §12), starts a dead-letter consumer that logs and records the message,
 // and schedules the outbox relay every minute and the dispute deadline watcher every 15 (M2-06).
 import { correlationIdOrNew, reportError } from "@cleared/adapters";
-import { RELAY_CRON, RELAY_QUEUE, relayOutbox, type Db, type Queue } from "@cleared/db";
+import { createPublisher, RELAY_CRON, RELAY_QUEUE, relayOutbox, type Db, type Queue } from "@cleared/db";
 import { consume, type ConsumeDeps, type Handler } from "./consume.ts";
 import { dlqName, ensureQueue } from "./queues.ts";
 import { scheduleDeadlineWatch } from "./jobs/deadline-watcher.ts";
@@ -67,5 +67,9 @@ export async function scheduleRelay(deps: WireDeps): Promise<void> {
 export async function wireWorker(deps: WireDeps, registry: Registry): Promise<void> {
   await wireRegistry(deps, registry);
   await scheduleRelay(deps);
-  await scheduleDeadlineWatch(deps);
+  // M3-08: the watcher's alerts enqueue their email jobs through the outbox publisher
+  await scheduleDeadlineWatch({
+    ...deps,
+    publisher: createPublisher(deps.db, deps.boss, correlationIdOrNew),
+  });
 }

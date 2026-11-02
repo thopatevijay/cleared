@@ -22,6 +22,7 @@ export * from "./obs/context.ts";
 export * from "./obs/log.ts";
 export * from "./email/sender.ts";
 export * from "./email/resend.ts";
+export * from "./email/env.ts";
 export * from "./email/templates/render.ts";
 export * from "./obs/redact.ts";
 export * from "./obs/http-logging.ts";

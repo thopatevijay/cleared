@@ -1,5 +1,5 @@
-// Deadline watcher (M2-06 AC): with the clock at due − 71 h one `dispute_deadline_72h`; at due − 23 h one
-// `dispute_deadline_24h`; re-runs add none; at due − 59 min `deadline_state = closed_for_action`. Plus the
+// Deadline watcher (M2-06 AC): with the clock at due − 71 h one `deadline_t72`; at due − 23 h one
+// `deadline_t24`; re-runs add none; at due − 59 min `deadline_state = closed_for_action`. Plus the
 // 15-minute cron is registered with pg-boss.
 import { randomUUID } from "node:crypto";
 import { createLogger } from "@cleared/adapters";
@@ -7,6 +7,7 @@ import { addMinutes, WorkspaceIdSchema, type Instant } from "@cleared/core";
 import {
   closeDb,
   createDb,
+  createPublisher,
   createQueue,
   DISPUTE_DEADLINE_WATCH_CRON,
   DISPUTE_DEADLINE_WATCH_QUEUE,
@@ -48,7 +49,8 @@ async function kinds(d: Awaited<ReturnType<typeof dispute>>): Promise<string[]> 
   return (await d.repo.notificationsFor(d.id)).map((n) => n.kind);
 }
 
-const tick = (now: Date) => runDeadlineWatch({ db, log, now: () => now });
+const tick = (now: Date) =>
+  runDeadlineWatch({ db, publisher: createPublisher(db, boss), log, now: () => now });
 
 describe.skipIf(!dbAvailable)("deadline watcher", () => {
   beforeAll(async () => {
@@ -69,21 +71,21 @@ describe.skipIf(!dbAvailable)("deadline watcher", () => {
 
     await tick(before(71 * 60));
     expect((await d.repo.get(d.id))?.deadlineState).toBe("t72");
-    expect(await kinds(d)).toEqual(["dispute_deadline_72h"]);
+    expect(await kinds(d)).toEqual(["deadline_t72"]);
     await tick(before(71 * 60 - 15));
     await tick(before(70 * 60));
-    expect(await kinds(d)).toEqual(["dispute_deadline_72h"]);
+    expect(await kinds(d)).toEqual(["deadline_t72"]);
 
     await tick(before(23 * 60));
     expect((await d.repo.get(d.id))?.deadlineState).toBe("t24");
-    expect(await kinds(d)).toEqual(["dispute_deadline_72h", "dispute_deadline_24h"]);
+    expect(await kinds(d)).toEqual(["deadline_t72", "deadline_t24"]);
     await tick(before(23 * 60 - 15));
     await tick(before(2 * 60));
-    expect(await kinds(d)).toEqual(["dispute_deadline_72h", "dispute_deadline_24h"]);
+    expect(await kinds(d)).toEqual(["deadline_t72", "deadline_t24"]);
 
     await tick(before(59));
     expect((await d.repo.get(d.id))?.deadlineState).toBe("closed_for_action");
-    expect(await kinds(d)).toEqual(["dispute_deadline_72h", "dispute_deadline_24h"]);
+    expect(await kinds(d)).toEqual(["deadline_t72", "deadline_t24"]);
     // closed_for_action is no longer scanned
     const watched = await platform(db).disputeDeadlines.watched(5_000);
     expect(watched.some((w) => w.id === d.id)).toBe(false);
@@ -92,7 +94,7 @@ describe.skipIf(!dbAvailable)("deadline watcher", () => {
   it("first seen inside 24 h: only the 24 h alert", async () => {
     const d = await dispute("WAITING_FOR_SELLER_RESPONSE", RECORDED_DUE);
     await tick(before(10 * 60));
-    expect(await kinds(d)).toEqual(["dispute_deadline_24h"]);
+    expect(await kinds(d)).toEqual(["deadline_t24"]);
   });
 
   it("resolved disputes and disputes without a due date are not watched", async () => {
@@ -105,7 +107,15 @@ describe.skipIf(!dbAvailable)("deadline watcher", () => {
   });
 
   it("the watcher is scheduled every 15 minutes", async () => {
-    await scheduleDeadlineWatch({ db, boss, log, now: () => new Date(), pollingIntervalSeconds: 0.5 });
+    const publisher = createPublisher(db, boss);
+    await scheduleDeadlineWatch({
+      db,
+      boss,
+      publisher,
+      log,
+      now: () => new Date(),
+      pollingIntervalSeconds: 0.5,
+    });
     const schedules = await boss.getSchedules();
     expect(schedules.find((s) => s.name === DISPUTE_DEADLINE_WATCH_QUEUE)).toMatchObject({
       cron: DISPUTE_DEADLINE_WATCH_CRON,

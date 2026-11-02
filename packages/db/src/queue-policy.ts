@@ -75,7 +75,13 @@ export const SCENARIO_POLL_QUEUE = "scenario.poll";
 /** M2-10: the sandbox decision (adjudicate SELLER_FAVOR); never retried (Disputes writes aren't idempotent). */
 export const SCENARIO_DECIDE_QUEUE = "scenario.decide";
 
+/** M3-08: email one notification (`{notificationId, workspaceId}`); the in-app row is already committed. */
+export const NOTIFICATION_SEND_EMAIL_QUEUE = "notification.send_email";
+
 export const COMMAND_QUEUES: readonly QueueSpec[] = [
+  // Resend dedupes on the notification id (Idempotency-Key), so a retry never sends twice. 5 retries with
+  // backoff (2, 4, 8, 16, 32 s + jitter) ≈ 1 min, then the DLQ (Sentry) and the row says `failed`.
+  { name: NOTIFICATION_SEND_EMAIL_QUEUE, expireInSeconds: 60, retryLimit: 5 },
   // 12 retries with the 300 s cap ≈ 28 min minimum: longer than the 10-minute unowned-capture window.
   { name: PAYPAL_CAPTURE_SYNC_QUEUE, expireInSeconds: 60, retryLimit: 12 },
   { name: SANDBOX_TEST_PAYMENT_QUEUE, expireInSeconds: 120, retryLimit: 3 },

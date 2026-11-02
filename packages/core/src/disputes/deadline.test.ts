@@ -53,19 +53,19 @@ describe("deadlineState", () => {
 describe("deadlineNotification / evaluateDeadline", () => {
   it("only t72 and t24 call for an alert", () => {
     expect(deadlineNotification("ok")).toBeNull();
-    expect(deadlineNotification("t72")).toBe("dispute_deadline_72h");
-    expect(deadlineNotification("t24")).toBe("dispute_deadline_24h");
+    expect(deadlineNotification("t72")).toBe("deadline_t72");
+    expect(deadlineNotification("t24")).toBe("deadline_t24");
     expect(deadlineNotification("closed_for_action")).toBeNull();
   });
 
   it("an open dispute with a due date is evaluated", () => {
     expect(evaluateDeadline({ dueDate: DUE, open: true, now: at(71 * 60) })).toEqual({
       state: "t72",
-      notify: "dispute_deadline_72h",
+      notify: "deadline_t72",
     });
     expect(evaluateDeadline({ dueDate: DUE, open: true, now: at(23 * 60) })).toEqual({
       state: "t24",
-      notify: "dispute_deadline_24h",
+      notify: "deadline_t24",
     });
     expect(evaluateDeadline({ dueDate: DUE, open: true, now: at(59) })).toEqual({
       state: "closed_for_action",

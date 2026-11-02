@@ -12,7 +12,7 @@ export const DEADLINE_STATES = ["ok", "t72", "t24", "closed_for_action"] as cons
 export type DeadlineState = (typeof DEADLINE_STATES)[number];
 
 /** Notification kinds the watcher writes, once each per dispute. */
-export const DEADLINE_NOTIFICATION_KINDS = ["dispute_deadline_72h", "dispute_deadline_24h"] as const;
+export const DEADLINE_NOTIFICATION_KINDS = ["deadline_t72", "deadline_t24"] as const;
 export type DeadlineNotificationKind = (typeof DEADLINE_NOTIFICATION_KINDS)[number];
 
 export const DEADLINE_T72_HOURS = 72;
@@ -33,8 +33,8 @@ export function deadlineState(dueDate: Instant, now: Instant): DeadlineState {
  * alert, not both). `ok` and `closed_for_action` call for none: past the cutoff no action can be filed.
  */
 export function deadlineNotification(state: DeadlineState): DeadlineNotificationKind | null {
-  if (state === "t72") return "dispute_deadline_72h";
-  if (state === "t24") return "dispute_deadline_24h";
+  if (state === "t72") return "deadline_t72";
+  if (state === "t24") return "deadline_t24";
   return null;
 }
 

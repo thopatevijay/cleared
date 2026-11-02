@@ -26,18 +26,6 @@ export function disputesRepo(db: Db, ws: string) {
         .returning({ id: s.disputes.id });
       return rows.length > 0;
     },
-    /**
-     * Writes the dispute's `kind` notification unless one exists (unique per dispute + kind). True when
-     * this call wrote it, so a re-run or a concurrent watcher adds none.
-     */
-    async notifyOnce(disputeRowId: string, kind: string, tx?: Executor): Promise<boolean> {
-      const rows = await (tx ?? db)
-        .insert(s.notifications)
-        .values({ workspaceId: ws, disputeId: disputeRowId, kind })
-        .onConflictDoNothing({ target: [s.notifications.disputeId, s.notifications.kind] })
-        .returning({ id: s.notifications.id });
-      return rows.length > 0;
-    },
     /** The dispute's notifications (oldest first). */
     async notificationsFor(disputeRowId: string, tx?: Executor): Promise<Row<typeof s.notifications>[]> {
       return (tx ?? db)
@@ -56,6 +44,10 @@ export interface WatchedDispute {
   readonly status: string;
   readonly sellerResponseDueDate: Date;
   readonly deadlineState: DeadlineState;
+  /** M3-08: the alert's template inputs */
+  readonly amount: string | null;
+  readonly currency: string | null;
+  readonly reason: string | null;
 }
 
 /** Platform read for the deadline watcher: every unresolved dispute with a due date, in every workspace. */
@@ -70,6 +62,9 @@ export function disputeDeadlinesRepo(db: Db) {
           status: s.disputes.status,
           sellerResponseDueDate: s.disputes.sellerResponseDueDate,
           deadlineState: s.disputes.deadlineState,
+          amount: s.disputes.amount,
+          currency: s.disputes.currency,
+          reason: s.disputes.reason,
         })
         .from(s.disputes)
         .where(

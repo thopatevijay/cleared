@@ -1,14 +1,18 @@
 // The page header (landing and dashboard): skip link (first Tab stop), the text wordmark, the language
-// switch. Sticky, 56 px.
+// switch, and on signed-in pages the notification bell (M3-08). Sticky, 56 px.
 import { useTranslations } from "next-intl";
 import { LanguageSwitch } from "./LanguageSwitch.tsx";
+import { NotificationBell } from "./notifications/NotificationBell.tsx";
 
 export function SiteHeader({
   skipTo,
   skipLabel,
+  signedIn = false,
 }: {
   skipTo: string;
   skipLabel: "skipMain" | "skipPayments";
+  /** pages behind a session show the bell */
+  signedIn?: boolean;
 }) {
   const t = useTranslations("common");
   return (
@@ -24,7 +28,10 @@ export function SiteHeader({
           <span className="font-[family-name:var(--font-atkinson)] text-xl leading-none font-bold" lang="en">
             {t("wordmark")}
           </span>
-          <LanguageSwitch />
+          <div className="flex items-center gap-2">
+            {signedIn ? <NotificationBell /> : null}
+            <LanguageSwitch />
+          </div>
         </div>
       </header>
     </>

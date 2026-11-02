@@ -23,7 +23,7 @@ export default async function Audit({ params }: { params: Promise<{ locale: stri
   const t = await getTranslations("audit");
   return (
     <>
-      <SiteHeader skipTo="main" skipLabel="skipMain" />
+      <SiteHeader skipTo="main" skipLabel="skipMain" signedIn />
       <main
         id="main"
         tabIndex={-1}

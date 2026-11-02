@@ -5,6 +5,7 @@ import type { Db } from "../../client.ts";
 import * as s from "../../../schema/index.ts";
 import type { Executor } from "../../tx.ts";
 import { disputesRepo } from "./disputes.ts";
+import { notificationsRepo } from "./notifications.ts";
 import { paymentsListRepo, testPaymentRequestsRepo } from "./payments-list.ts";
 import { scenarioRunsRepo } from "./scenarios.ts";
 import { findOneInScope, mutableScopedRepo, scopedRepo, type Row } from "./scoped.ts";
@@ -15,7 +16,7 @@ function repos(db: Db, ws: string) {
     users: m(s.users),
     sessions: m(s.sessions),
     magicLinks: m(s.magicLinks),
-    notifications: m(s.notifications),
+    notifications: notificationsRepo(db, ws),
     payments: {
       ...m(s.payments),
       getByCaptureId: (captureId: string, tx?: Executor): Promise<Row<typeof s.payments> | null> =>

@@ -246,7 +246,7 @@ async function mirrorDispute(run: Run, workspaceId: WorkspaceId): Promise<Disput
       );
     }
   }
-  await applyDeadline(deps.db, row, deps.now(), tx);
+  await applyDeadline(deps, row, deps.now(), tx);
   if (outcome !== "unchanged" && mirror.captureId !== null) {
     await deps.publisher.enqueue(
       tx,

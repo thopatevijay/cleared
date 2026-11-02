@@ -11,7 +11,7 @@ import { routing } from "./src/i18n/routing.ts";
 import { SESSION_COOKIE } from "./src/lib/session-cookie.ts";
 
 const intl = createMiddleware(routing);
-const PROTECTED = /^\/(en|hi)\/(payments|audit|disputes)(\/|$)/;
+const PROTECTED = /^\/(en|hi)\/(payments|audit|disputes|notifications)(\/|$)/;
 const ACK_PAGE = /^\/(en|hi)\/ack\/[^/]+\/?$/;
 
 export function ackCsp(nonce: string): string {

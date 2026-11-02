@@ -878,5 +878,35 @@
     "errorBody": "आपका जवाब सेव नहीं हुआ। फिर कोशिश करें।",
     "noscript": "पुष्टि करने के लिए JavaScript चालू करें।",
     "footer": "Cleared यह पुष्टि विक्रेता के लिए दर्ज करता है। PayPal सैंडबॉक्स डेमो।"
+  },
+  "notifications": {
+    "bell": "सूचनाएँ, {count} अपठित",
+    "bellNone": "सूचनाएँ",
+    "title": "सूचनाएँ",
+    "new": "नई",
+    "newPrefix": "नई:",
+    "markAll": "सभी को पढ़ा हुआ मानें",
+    "markOne": "पढ़ा हुआ मानें: {sentence}",
+    "seeAll": "सभी देखें",
+    "close": "बंद करें",
+    "back": "भुगतानों पर वापस",
+    "emptyTitle": "कोई सूचना नहीं",
+    "empty": "जब PayPal पैसा रोकेगा या किसी विवाद में जवाब चाहिए होगा, हम यहाँ बताएँगे।",
+    "loadError": "सूचनाएँ लोड नहीं हो सकीं",
+    "markFailed": "पढ़ा हुआ नहीं माना जा सका।",
+    "offline": "आप ऑफ़लाइन हैं",
+    "emailNotSent": "ईमेल नहीं भेजा गया",
+    "allMarked": "सभी सूचनाएँ पढ़ी हुई मानी गईं",
+    "announce": "{count, plural, one {# नई सूचना} other {# नई सूचनाएँ}}: {sentence}",
+    "loading": "सूचनाएँ लोड हो रही हैं",
+    "kind": {
+      "hold_opened": "रोका गया",
+      "dispute_opened": "विवाद",
+      "deadline_t72": "समय-सीमा",
+      "deadline_t24": "समय-सीमा",
+      "completed_reminder": "याद दिलाना"
+    },
+    "markShort": "पढ़ा हुआ मानें",
+    "retry": "फिर कोशिश करें"
   }
 }

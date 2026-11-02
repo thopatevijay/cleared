@@ -1,6 +1,11 @@
 // What the auth handlers need, injected so tests can pass their own clock, database and email sender.
 // Route files call `getDeps()`, built lazily on the first request (never at build time).
-import { createResendSender, withRecipientGuard, type EmailSender } from "@cleared/adapters";
+import {
+  createResendSender,
+  unconfiguredSender,
+  withRecipientGuard,
+  type EmailSender,
+} from "@cleared/adapters";
 import { createDb, databaseUrl, type Db } from "@cleared/db";
 import { authConfigFromEnv, type AuthConfig } from "./config.ts";
 
@@ -12,14 +17,7 @@ export interface Deps {
   readonly now: () => Date;
 }
 
-/** A sender for environments with no Resend key: refuses and logs, so sign-in fails closed. */
-const unconfiguredSender: EmailSender = {
-  send() {
-    console.warn(JSON.stringify({ service: "email", msg: "email refused", reason: "resend_not_configured" }));
-    return Promise.resolve({ kind: "refused", reason: "not_configured" });
-  },
-};
-
+/** No Resend key: `unconfiguredSender` refuses and logs, so sign-in fails closed. */
 export function emailSenderFor(config: AuthConfig): EmailSender {
   if (config.resend === null) return unconfiguredSender;
   return withRecipientGuard(createResendSender(config.resend), config.emailAllowlist);

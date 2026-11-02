@@ -1,8 +1,8 @@
 // Deadline watcher (M2-06): every 15 minutes, and on each dispute sync, place every open dispute against
 // its `seller_response_due_date` (core `evaluateDeadline`) and
 // - set `disputes.deadline_state` (ok | t72 | t24 | closed_for_action at due − 1 h)
-// - write the `dispute_deadline_72h` / `dispute_deadline_24h` notification once (unique per dispute + kind;
-//   M3-08 emails them).
+// - write the `deadline_t72` / `deadline_t24` notification once per (dispute, due date), with its email job
+//   (M3-08, deadline-alerts.ts).
 // The cron tick is a plain pg-boss job (like the outbox relay): no envelope, nothing to dedupe; each
 // dispute is applied in its own transaction so one failure never blocks the rest.
 import {
@@ -11,7 +11,7 @@ import {
   isDisputeOpen,
   mapDisputeState,
   type DeadlineState,
-  type DeadlineNotificationKind,
+  type NotificationKind,
   type WorkspaceId,
 } from "@cleared/core";
 import type { Logger } from "@cleared/adapters";
@@ -24,40 +24,40 @@ import {
   queueSpec,
   withTransaction,
   type Db,
-  type Executor,
+  type Publisher,
   type Queue,
+  type Tx,
 } from "@cleared/db";
+import type { NotifyDeps } from "../consumers/notifications.ts";
+import { alertDeadline, type AlertTarget } from "./deadline-alerts.ts";
 
-export interface DeadlineTarget {
-  readonly id: string;
-  readonly workspaceId: string;
+export interface DeadlineTarget extends AlertTarget {
   readonly status: string;
-  readonly sellerResponseDueDate: Date | null;
 }
 
 export interface DeadlineApplied {
   readonly state: DeadlineState;
-  readonly notified: DeadlineNotificationKind | null;
+  readonly notified: NotificationKind | null;
 }
 
-/** Applies the deadline position at `now` to one stored dispute (state + one-time alert). */
+/** Applies the deadline position at `now` to one stored dispute (state + one-time alert with its email job). */
 export async function applyDeadline(
-  db: Db,
+  deps: NotifyDeps,
   d: DeadlineTarget,
   now: Date,
-  tx?: Executor,
+  tx: Tx,
 ): Promise<DeadlineApplied> {
-  const repo = forWorkspace(db, d.workspaceId as WorkspaceId).disputes;
+  const repo = forWorkspace(deps.db, d.workspaceId as WorkspaceId).disputes;
+  const open = isDisputeOpen(mapDisputeState({ status: d.status, stage: null, outcomeCode: null }));
   const evaluation = evaluateDeadline({
     dueDate: d.sellerResponseDueDate === null ? null : fromEpochMs(d.sellerResponseDueDate.getTime()),
-    open: isDisputeOpen(mapDisputeState({ status: d.status, stage: null, outcomeCode: null })),
+    open,
     now: fromEpochMs(now.getTime()),
   });
   // Not watched (no due date, or resolved): nothing is pending against a deadline.
   const state = evaluation?.state ?? "ok";
   await repo.setDeadlineState(d.id, state, tx);
-  const kind = evaluation?.notify ?? null;
-  const notified = kind !== null && (await repo.notifyOnce(d.id, kind, tx)) ? kind : null;
+  const notified = await alertDeadline(deps, tx, d, open, now);
   return { state, notified };
 }
 
@@ -68,13 +68,18 @@ export interface WatchResult {
 }
 
 /** One watcher tick over every open dispute with a due date. */
-export async function runDeadlineWatch(deps: { db: Db; now: () => Date; log: Logger }): Promise<WatchResult> {
+export async function runDeadlineWatch(deps: {
+  db: Db;
+  publisher: Publisher;
+  now: () => Date;
+  log: Logger;
+}): Promise<WatchResult> {
   const watched = await platform(deps.db).disputeDeadlines.watched();
   let notified = 0;
   let failed = 0;
   for (const d of watched) {
     try {
-      const r = await withTransaction(deps.db, (tx) => applyDeadline(deps.db, d, deps.now(), tx));
+      const r = await withTransaction(deps.db, (tx) => applyDeadline(deps, d, deps.now(), tx));
       if (r.notified !== null) {
         notified += 1;
         deps.log.info(
@@ -94,6 +99,7 @@ export async function runDeadlineWatch(deps: { db: Db; now: () => Date; log: Log
 export async function scheduleDeadlineWatch(deps: {
   db: Db;
   boss: Queue;
+  publisher: Publisher;
   log: Logger;
   now: () => Date;
   pollingIntervalSeconds?: number;

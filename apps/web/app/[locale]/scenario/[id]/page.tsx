@@ -27,7 +27,7 @@ export default async function Scenario({ params }: { params: Promise<{ locale: s
   const t = await getTranslations("scenario");
   return (
     <>
-      <SiteHeader skipTo="main" skipLabel="skipMain" />
+      <SiteHeader skipTo="main" skipLabel="skipMain" signedIn />
       <main
         id="main"
         tabIndex={-1}

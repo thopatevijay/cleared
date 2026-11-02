@@ -298,6 +298,6 @@ describe.skipIf(!dbAvailable)("paypal.dispute.sync (dispute-sync)", () => {
     const row = await repo(ws).getByDisputeId(ids.disputeId);
     expect(row?.deadlineState).toBe("t72");
     const notes = await repo(ws).notificationsFor(row?.id ?? "");
-    expect(notes.map((n) => n.kind)).toEqual(["dispute_deadline_72h"]);
+    expect(notes.map((n) => n.kind)).toEqual(["deadline_t72"]);
   });
 });

@@ -68,7 +68,7 @@ export async function sql(text: string, params: unknown[]): Promise<void> {
   }
 }
 
-export async function axe(page: Page, name: string, dir = REVIEW): Promise<void> {
+export async function axe(page: Page, name: string, dir: string = REVIEW): Promise<void> {
   const result = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
     .analyze();
@@ -89,19 +89,23 @@ export async function fits(page: Page, label: string): Promise<void> {
   expect(sw, `horizontal scroll on ${label}`).toBeLessThanOrEqual(cw);
 }
 
-/** 360 (the AC width) + 375 / 768 / 1440 in light and dark, with axe on each (ui-reviewer evidence). */
-export async function capture(page: Page, name: string, dir = REVIEW): Promise<void> {
+/**
+ * 360 (the AC width) + 375 / 768 / 1440 in light and dark, with axe on each (ui-reviewer evidence), into
+ * `dir` (default .review/M2-09/; M3-08 passes its own).
+ */
+export async function capture(
+  page: Page,
+  name: string,
+  dir: string = REVIEW,
+  widths: readonly number[] = [360, 375, 768, 1440],
+): Promise<void> {
   for (const theme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
-    for (const width of [360, 375, 768, 1440]) {
+    for (const width of widths) {
       await page.setViewportSize({ width, height: width < 768 ? 800 : 900 });
       await fits(page, `${name}-${String(width)}`);
       if (shots) {
         mkdirSync(dir, { recursive: true });
-        // from the top, so the sticky header isn't drawn mid-page in the full-page shot
-        await page.evaluate(() => {
-          window.scrollTo(0, 0);
-        });
         await page.screenshot({ path: `${dir}${name}-${String(width)}-${theme}.png`, fullPage: true });
       }
       await axe(page, `${name}-${String(width)}-${theme}`, dir);

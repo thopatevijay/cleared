@@ -878,5 +878,35 @@
     "errorBody": "Your answer wasn't saved. Try again.",
     "noscript": "Turn on JavaScript to confirm.",
     "footer": "Cleared records this confirmation for the seller. PayPal sandbox demo."
+  },
+  "notifications": {
+    "bell": "Notifications, {count} unread",
+    "bellNone": "Notifications",
+    "title": "Notifications",
+    "new": "New",
+    "newPrefix": "New:",
+    "markAll": "Mark all as read",
+    "markOne": "Mark as read: {sentence}",
+    "seeAll": "See all",
+    "close": "Close",
+    "back": "Back to payments",
+    "emptyTitle": "No notifications",
+    "empty": "We'll tell you here when PayPal holds money or a dispute needs a reply.",
+    "loadError": "Couldn't load notifications",
+    "markFailed": "Couldn't mark as read.",
+    "offline": "You're offline",
+    "emailNotSent": "Email not sent",
+    "allMarked": "All notifications marked as read",
+    "announce": "{count, plural, one {# new notification} other {# new notifications}}: {sentence}",
+    "loading": "Loading notifications",
+    "kind": {
+      "hold_opened": "Held",
+      "dispute_opened": "Dispute",
+      "deadline_t72": "Deadline",
+      "deadline_t24": "Deadline",
+      "completed_reminder": "Reminder"
+    },
+    "markShort": "Mark as read",
+    "retry": "Retry"
   }
 }
