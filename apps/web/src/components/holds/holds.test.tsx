@@ -11,6 +11,7 @@ import hi from "../../../messages/hi.json" with { type: "json" };
 import { PaymentRow } from "../PaymentRow.tsx";
 import { EstimatedDate } from "./EstimatedDate.tsx";
 import { AdviceLine } from "./HeldLines.tsx";
+import { ReviewPoolNote } from "./ReviewPoolNote.tsx";
 import { SampleScenarios } from "./SampleScenarios.tsx";
 
 const html = (node: ReactNode, locale: "en" | "hi" = "en"): string =>
@@ -171,5 +172,14 @@ describe("sample scenarios", () => {
     expect(text(out)).not.toMatch(/\$\d/);
     expect(out).not.toContain("700");
     expect(text(out)).toContain("Account limitation");
+  });
+});
+
+describe("review-hold pool explainer (M3-10)", () => {
+  it("badged, with the ticket's words in EN and a HI translation", () => {
+    const out = html(<ReviewPoolNote />);
+    expect(text(out)).toContain("Sandbox Review holds need a buyer approval; see README for timing");
+    expect(out).toContain('data-testid="review-pool-note"');
+    expect(text(html(<ReviewPoolNote />, "hi"))).toContain("README");
   });
 });

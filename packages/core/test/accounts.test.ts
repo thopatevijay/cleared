@@ -74,6 +74,20 @@ describe("resolveOwner (ADR 0008)", () => {
       customId: OTHER,
     });
   });
+  it("owned: a pool row moved to a judge keeps the pool's custom_id (ADR 0019)", () => {
+    const POOL = "2d0b5e3a-7f4c-4a81-8c9d-2e3f4a5b6c7d" as WorkspaceId;
+    expect(resolveOwner({ customId: POOL, ownerRow: { workspaceId: WS, transferredFrom: POOL } })).toEqual({
+      kind: "owned",
+      workspaceId: WS,
+    });
+    // any other custom_id is still a mismatch, transferred or not
+    expect(resolveOwner({ customId: OTHER, ownerRow: { workspaceId: WS, transferredFrom: POOL } }).kind).toBe(
+      "mismatch",
+    );
+    expect(resolveOwner({ customId: OTHER, ownerRow: { workspaceId: WS, transferredFrom: null } }).kind).toBe(
+      "mismatch",
+    );
+  });
   it("unowned: no owner row, even when custom_id looks like a workspace (never trusted alone)", () => {
     expect(resolveOwner({ customId: WS, ownerRow: null })).toEqual({ kind: "unowned", customId: WS });
     expect(resolveOwner({ customId: null, ownerRow: null })).toEqual({ kind: "unowned", customId: null });

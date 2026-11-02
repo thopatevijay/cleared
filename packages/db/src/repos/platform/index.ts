@@ -8,6 +8,7 @@ import { resourceOwnersRepo, webhookEventsRepo } from "./ingest.ts";
 import { consumerReceiptsRepo, outboxRepo, workerHeartbeatsRepo } from "./messaging.ts";
 import { disputeDeadlinesRepo } from "../workspace/disputes.ts";
 import { opsChecksRepo, reconcileTargetsRepo, sloSamplesRepo } from "./ops.ts";
+import { reviewHoldPoolRepo } from "./pool.ts";
 
 export function platform(db: Db) {
   return {
@@ -26,6 +27,8 @@ export function platform(db: Db) {
     opsChecks: opsChecksRepo(db),
     reconcileTargets: reconcileTargetsRepo(db),
     sloSamples: sloSamplesRepo(db),
+    // M3-10: the review-hold pool (ADR 0019)
+    reviewHoldPool: reviewHoldPoolRepo(db),
   };
 }
 
@@ -37,3 +40,4 @@ export type * from "./ingest.ts";
 export type * from "./messaging.ts";
 export type * from "./flags.ts";
 export type * from "./ops.ts";
+export type * from "./pool.ts";

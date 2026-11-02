@@ -93,7 +93,13 @@ async function ownerOf(run: Run): Promise<WorkspaceId | null> {
     (mirror.captureId === null ? null : await owners.get("capture", mirror.captureId, tx));
   const owner = resolveOwner({
     customId: mirror.customId,
-    ownerRow: ownerRow === null ? null : { workspaceId: ownerRow.workspaceId as WorkspaceId },
+    ownerRow:
+      ownerRow === null
+        ? null
+        : {
+            workspaceId: ownerRow.workspaceId as WorkspaceId,
+            transferredFrom: ownerRow.transferredFrom as WorkspaceId | null,
+          },
   });
   if (owner.kind === "mismatch") return quarantine(run, "custom_id_mismatch", owner.workspaceId);
   if (owner.kind === "unowned") {
@@ -104,7 +110,12 @@ async function ownerOf(run: Run): Promise<WorkspaceId | null> {
     return quarantine(run, "unowned", null);
   }
   await owners.claim(
-    { resourceType: "dispute", resourceId: mirror.disputeId, workspaceId: owner.workspaceId },
+    {
+      resourceType: "dispute",
+      resourceId: mirror.disputeId,
+      workspaceId: owner.workspaceId,
+      transferredFrom: ownerRow?.transferredFrom ?? null, // ADR 0019: a dispute on a moved capture
+    },
     tx,
   );
   return owner.workspaceId;

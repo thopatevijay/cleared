@@ -7,6 +7,8 @@ export type PayPalResourceType = (typeof PAYPAL_RESOURCE_TYPES)[number];
 
 export interface OwnerRow {
   readonly workspaceId: WorkspaceId;
+  /** ADR 0019: the workspace the row was moved from (review-hold pool); its id may still be the `custom_id` */
+  readonly transferredFrom?: WorkspaceId | null;
 }
 
 export type Ownership =
@@ -23,7 +25,8 @@ export function resolveOwner(input: {
 }): Ownership {
   const { customId, ownerRow } = input;
   if (ownerRow === null) return { kind: "unowned", customId };
-  if (customId !== null && customId !== ownerRow.workspaceId) {
+  const named = customId === ownerRow.workspaceId || customId === (ownerRow.transferredFrom ?? undefined);
+  if (customId !== null && !named) {
     return { kind: "mismatch", workspaceId: ownerRow.workspaceId, customId };
   }
   return { kind: "owned", workspaceId: ownerRow.workspaceId };

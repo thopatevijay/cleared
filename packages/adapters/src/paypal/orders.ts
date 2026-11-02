@@ -61,8 +61,25 @@ export interface CreateOrderInput {
   readonly description?: string;
   /** With a card the order is `COMPLETED` at create (M0-04); without one it stays `CREATED`. */
   readonly card?: CardSource;
+  /**
+   * M3-10: a PayPal-wallet order a buyer approves in a browser (link rel `payer-action`); it stays
+   * `CREATED` until then. Never with `card`.
+   */
+  readonly wallet?: WalletSource;
   /** `PayPal-Request-Id`: same id → PayPal replays the first result instead of a second order. */
   readonly requestId: string;
+}
+
+export interface WalletSource {
+  readonly returnUrl: string;
+  readonly cancelUrl: string;
+}
+
+/** The buyer-approval URL of a wallet order (`payer-action`; older responses call it `approve`). */
+export function approvalUrl(order: Order): string | null {
+  const link =
+    order.links?.find((l) => l.rel === "payer-action") ?? order.links?.find((l) => l.rel === "approve");
+  return link?.href ?? null;
 }
 
 export interface TrackInput {
@@ -172,6 +189,7 @@ export function createPayPalOrdersClient(options: PayPalOrdersClientOptions): Pa
             },
           ],
           ...(input.card === undefined ? {} : { payment_source: cardSource(input.card) }),
+          ...(input.wallet === undefined ? {} : { payment_source: walletSource(input.wallet) }),
         },
       }),
     confirmCard: (orderId, card, requestId) =>
@@ -244,6 +262,19 @@ function cardSource(card: CardSource) {
 }
 
 /** PayPal ids are [A-Z0-9-]; anything else is a bug or an injection attempt. */
+function walletSource(w: WalletSource) {
+  return {
+    paypal: {
+      experience_context: {
+        return_url: w.returnUrl,
+        cancel_url: w.cancelUrl,
+        user_action: "PAY_NOW",
+        shipping_preference: "NO_SHIPPING",
+      },
+    },
+  };
+}
+
 function seg(id: string): string {
   if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) throw new Error(`invalid PayPal id segment: ${JSON.stringify(id)}`);
   return id;

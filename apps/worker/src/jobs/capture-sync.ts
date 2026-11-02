@@ -87,7 +87,13 @@ export async function syncCapture(
     (mirror.orderId === null ? null : await owners.get("order", mirror.orderId, ctx.tx));
   const owner = resolveOwner({
     customId: mirror.customId,
-    ownerRow: ownerRow === null ? null : { workspaceId: ownerRow.workspaceId as WorkspaceId },
+    ownerRow:
+      ownerRow === null
+        ? null
+        : {
+            workspaceId: ownerRow.workspaceId as WorkspaceId,
+            transferredFrom: ownerRow.transferredFrom as WorkspaceId | null,
+          },
   });
   if (owner.kind === "mismatch") return quarantine(run, "custom_id_mismatch", owner.workspaceId);
   if (owner.kind === "unowned") {
@@ -98,7 +104,12 @@ export async function syncCapture(
     return quarantine(run, "unowned", null);
   }
   await owners.claim(
-    { resourceType: "capture", resourceId: mirror.captureId, workspaceId: owner.workspaceId },
+    {
+      resourceType: "capture",
+      resourceId: mirror.captureId,
+      workspaceId: owner.workspaceId,
+      transferredFrom: ownerRow?.transferredFrom ?? null, // ADR 0019: a moved order's capture
+    },
     ctx.tx,
   );
   const outcome = await mirrorPayment(run, owner.workspaceId);

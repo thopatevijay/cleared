@@ -9,7 +9,7 @@ import { MIGRATIONS_FOLDER, runMigrations } from "../src/migrate.ts";
 import { seed, SEED_USER_EMAIL, SEED_WORKSPACE_ID } from "../src/seed.ts";
 import { dbAvailable, TEST_DATABASE_URL } from "./db-available.ts";
 
-/** §5, in its order, then the extensions (consumer_receipts: M1-03; worker_heartbeats: M1-08; platform_flags: M2-02; scenario_runs: M2-10; rate_limit_hits: M3-06; ops_checks: M3-09). */
+/** §5, in its order, then the extensions (consumer_receipts: M1-03; worker_heartbeats: M1-08; platform_flags: M2-02; scenario_runs: M2-10; rate_limit_hits: M3-06; ops_checks: M3-09; review_hold_pool: M3-10). */
 const EXPECTED_TABLES = [
   "workspaces",
   "users",
@@ -43,11 +43,13 @@ const EXPECTED_TABLES = [
   "scenario_runs",
   "rate_limit_hits",
   "ops_checks",
+  "review_hold_pool",
 ];
 
 const EXTENSION_COLUMNS: Record<string, string[]> = {
   webhook_events: ["status", "processed_at", "correlation_id", "quarantine_reason"],
   workspaces: ["created_ip_hash", "llm_budget_usd", "synthetic"],
+  paypal_resource_owner: ["transferred_from"],
   sessions: ["workspace_id", "user_id", "kind", "token_hash", "expires_at", "last_seen_at"],
   agent_runs: ["prompt_version", "correlation_id", "output", "error"],
   agent_steps: ["kind", "detail", "correlation_id"],
@@ -63,6 +65,7 @@ const PLATFORM_TABLES = new Set([
   "platform_flags",
   "rate_limit_hits",
   "ops_checks",
+  "review_hold_pool",
   "workspaces",
 ]);
 

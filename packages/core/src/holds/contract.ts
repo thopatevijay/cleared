@@ -50,7 +50,11 @@ export const HoldsResponseSchema = z.object({
     held: z.array(AmountSchema),
     count: z.number().int().min(0),
   }),
-  workspace: z.object({ timezone: z.string().min(1) }),
+  workspace: z.object({
+    timezone: z.string().min(1),
+    /** M3-10: demo workspaces: a judge-pool review hold was assigned, or none was available; null for sellers */
+    reviewPool: z.enum(["assigned", "none"]).nullable().optional(),
+  }),
 });
 export type HoldsResponse = z.infer<typeof HoldsResponseSchema>;
 

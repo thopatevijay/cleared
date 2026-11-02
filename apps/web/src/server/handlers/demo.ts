@@ -1,5 +1,6 @@
 // POST /api/demo (M1-05, ADR 0007): an anonymous demo workspace and session, within the per-IP and
-// global caps (checked under an advisory lock in the creating transaction).
+// global caps (checked under an advisory lock in the creating transaction). M3-10: the same transaction
+// assigns the workspace one held judge-pool review hold, when one is available.
 import { compareInstants, DEMO_WORKSPACE_EXPIRES_AT, type Instant } from "@cleared/core";
 import { platform, withTransaction, type Tx } from "@cleared/db";
 import { z } from "zod";
@@ -72,5 +73,8 @@ async function createDemo(
     { workspaceId: ws.id, action: "demo.created", detail: { sessionId: session.sessionId, ipHash: r.ip } },
     tx,
   );
+  // M3-10 (ADR 0019): one held judge-pool payment, when one is available and under 20 h old; it moves to
+  // this workspace in this transaction with a `pool.assigned` audit entry. None → the inbox explains why.
+  await p.reviewHoldPool.assign({ workspaceId: ws.id, purpose: "judge", now: deps.now() }, tx);
   return { cookie: session.cookie };
 }

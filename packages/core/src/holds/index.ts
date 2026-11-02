@@ -7,3 +7,5 @@ export * from "./contract.ts";
 export * from "./completed.ts";
 // M3-02: the hold explanation (explain_hold@v1) lives under ai/ and is exported with the holds.
 export * from "../ai/explain-hold/index.ts";
+// M3-10: the review-hold pool's rules (ADR 0019).
+export * from "./pool.ts";
