@@ -1,7 +1,7 @@
 // M3-01: hold derivation over the recorded captures, the cited rule table's coverage of the Orders spec
 // enum, the sources and the "estimated" label, and that sample rows can never be derived.
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { fixtureJson } from "../../test/helpers/hold-fixtures.ts";
 import { PENDING_REASONS } from "../payments/capture.ts";
 import { parseInstant, type Instant } from "../time.ts";
 import { deriveHold } from "./derive.ts";
@@ -15,8 +15,6 @@ import {
 } from "./rules.ts";
 import { holdMachine, HOLD_STATES, isHoldActive, transitionHold } from "./state.ts";
 
-const FIXTURES = new URL("../../../../fixtures/", import.meta.url);
-
 interface Body {
   status?: string;
   capture_status?: string;
@@ -26,8 +24,7 @@ interface Body {
 }
 
 function body(path: string): Body {
-  const f = JSON.parse(readFileSync(new URL(path, FIXTURES), "utf8")) as { response: { body: Body } };
-  return f.response.body;
+  return (fixtureJson(path) as { response: { body: Body } }).response.body;
 }
 
 function at(raw: string): Instant {
@@ -111,9 +108,10 @@ describe("deriveHold over recorded captures", () => {
 });
 
 describe("cited rule table", () => {
-  const spec = JSON.parse(
-    readFileSync(new URL("paypal/spec/capture-status-details-reason.json", FIXTURES), "utf8"),
-  ) as { enum: string[]; descriptions: Record<string, string> };
+  const spec = fixtureJson("paypal/spec/capture-status-details-reason.json") as {
+    enum: string[];
+    descriptions: Record<string, string>;
+  };
 
   it("has a row for every capture_status_details.reason in the Orders spec", () => {
     expect(spec.enum.length).toBeGreaterThanOrEqual(12);
