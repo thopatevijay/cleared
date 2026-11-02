@@ -21,7 +21,7 @@ export interface EstimateInput {
 
 const Dot = () => (
   <span aria-hidden="true" className="text-text-muted">
-    ·
+    {" · "}
   </span>
 );
 

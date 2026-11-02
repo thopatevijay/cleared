@@ -19,11 +19,15 @@ export function AdviceLine({ ruleId }: { ruleId: string }) {
   const source = advice === null ? undefined : rule?.sources[advice.sourceIndex];
   if (advice === null || source === undefined) return null;
   return (
-    <p className="flex flex-wrap items-center gap-x-2 text-sm" data-testid="advice-line">
-      <TriangleAlert aria-hidden="true" size={16} strokeWidth={1.75} className="text-status-held-fg" />
-      <span className="font-medium">{t("dontShip")}</span>
+    <div className="flex flex-col items-start text-sm" data-testid="advice-line">
+      <p className="flex items-start gap-2">
+        <span className="flex h-[1lh] shrink-0 items-center">
+          <TriangleAlert aria-hidden="true" size={16} strokeWidth={1.75} className="text-status-held-fg" />
+        </span>
+        <span className="font-medium">{t("dontShip")}</span>
+      </p>
       <RuleSource source={source} />
-    </p>
+    </div>
   );
 }
 

@@ -22,7 +22,13 @@ import {
   PAYPAL_SANDBOX_BASE_URL,
   VENDOR_TIMEOUTS_MS,
 } from "@cleared/adapters";
-import { codePoints, mapReason, requestedEvidenceTypes, ScenarioViewSchema, type ScenarioView } from "@cleared/core";
+import {
+  codePoints,
+  mapReason,
+  requestedEvidenceTypes,
+  ScenarioViewSchema,
+  type ScenarioView,
+} from "@cleared/core";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { DisputeDetailSchema, type DisputeDetail, type Draft } from "../src/lib/dispute-view.ts";
 import en from "../messages/en.json" with { type: "json" };
@@ -51,7 +57,11 @@ const step = (scope: Page | Locator, key: string) => scope.locator(`[data-step="
 type EvidenceDraft = Draft & { action: NonNullable<Draft["action"]>; pdf: NonNullable<Draft["pdf"]> };
 
 /** The real M2-07 evidence draft, once its proposal waits for the seller; fails fast on "not drafted". */
-async function waitForEvidenceDraft(page: Page, disputeId: string, timeoutMs: number): Promise<EvidenceDraft> {
+async function waitForEvidenceDraft(
+  page: Page,
+  disputeId: string,
+  timeoutMs: number,
+): Promise<EvidenceDraft> {
   const until = Date.now() + timeoutMs;
   let last: DisputeDetail | null = null;
   while (Date.now() < until) {

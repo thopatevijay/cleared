@@ -25,12 +25,16 @@ export function SamplesLink() {
   return (
     <Link
       href="/holds#samples"
-      className="inline-flex min-h-11 flex-wrap items-center gap-2 self-start text-accent underline underline-offset-2"
+      className="inline-flex min-h-11 items-start gap-2 self-start py-2 text-accent"
       data-testid="samples-link"
     >
-      <FlaskConical aria-hidden="true" size={16} strokeWidth={1.75} />
-      {t("samplesLink")}
-      <ChevronRight aria-hidden="true" size={16} strokeWidth={1.75} />
+      <span className="flex h-[1lh] shrink-0 items-center">
+        <FlaskConical aria-hidden="true" size={16} strokeWidth={1.75} />
+      </span>
+      <span className="underline underline-offset-2">{t("samplesLink")}</span>
+      <span className="flex h-[1lh] shrink-0 items-center">
+        <ChevronRight aria-hidden="true" size={16} strokeWidth={1.75} />
+      </span>
     </Link>
   );
 }

@@ -68,12 +68,12 @@ export async function sql(text: string, params: unknown[]): Promise<void> {
   }
 }
 
-export async function axe(page: Page, name: string): Promise<void> {
+export async function axe(page: Page, name: string, dir = REVIEW): Promise<void> {
   const result = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
     .analyze();
-  mkdirSync(`${REVIEW}axe`, { recursive: true });
-  writeFileSync(`${REVIEW}axe/${name}.json`, JSON.stringify(result.violations, null, 2));
+  mkdirSync(`${dir}axe`, { recursive: true });
+  writeFileSync(`${dir}axe/${name}.json`, JSON.stringify(result.violations, null, 2));
   const blocking = result.violations
     .filter((v) => v.impact === "serious" || v.impact === "critical")
     .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
@@ -90,17 +90,17 @@ export async function fits(page: Page, label: string): Promise<void> {
 }
 
 /** 360 (the AC width) + 375 / 768 / 1440 in light and dark, with axe on each (ui-reviewer evidence). */
-export async function capture(page: Page, name: string): Promise<void> {
+export async function capture(page: Page, name: string, dir = REVIEW): Promise<void> {
   for (const theme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
     for (const width of [360, 375, 768, 1440]) {
       await page.setViewportSize({ width, height: width < 768 ? 800 : 900 });
       await fits(page, `${name}-${String(width)}`);
       if (shots) {
-        mkdirSync(REVIEW, { recursive: true });
-        await page.screenshot({ path: `${REVIEW}${name}-${String(width)}-${theme}.png`, fullPage: true });
+        mkdirSync(dir, { recursive: true });
+        await page.screenshot({ path: `${dir}${name}-${String(width)}-${theme}.png`, fullPage: true });
       }
-      await axe(page, `${name}-${String(width)}-${theme}`);
+      await axe(page, `${name}-${String(width)}-${theme}`, dir);
     }
   }
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
