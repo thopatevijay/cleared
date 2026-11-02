@@ -145,7 +145,7 @@ async function seedHeld(
     capturedAt,
     state: "held",
   });
-  const payment = await forWorkspace(db, pool).payments.insert({
+  const payment = await forWorkspace(db, pool as WorkspaceId).payments.insert({
     captureId,
     orderId,
     amount: "64.00",
@@ -420,7 +420,7 @@ describe.skipIf(!dbAvailable)("review-hold pool (integration)", () => {
     expect((await platform(db).reviewHoldPool.assignedTo(judge))?.id).toBe(b.poolId);
     // the judge's holds API reads it now (workspace-scoped)
     expect((await forWorkspace(db, judge).payments.get(b.paymentId))?.captureId).toBe(b.captureId);
-    expect(await forWorkspace(db, a.pool).payments.get(b.paymentId)).toBeNull();
+    expect(await forWorkspace(db, a.pool as WorkspaceId).payments.get(b.paymentId)).toBeNull();
   });
 
   it("AC 1: two parallel assignments never get the same capture", async () => {
