@@ -2,7 +2,7 @@
 // - AC 1: pool:create writes the order owner rows; an assignment moves exactly one held row (owner rows,
 //   payment, hold, explanation) with a `pool.assigned` audit entry; two parallel assignments never share a capture
 // - AC 2: rows that aren't pool-owned, are released, or are 20 h old are never assigned
-// - AC 3: fixture replay of the spike's PENDING_REVIEW capture: pool:capture marks the row held, enqueues the
+// - AC 3: fixture replay of the live pool's PENDING_REVIEW capture (M3-10, 2026-11-02): pool:capture marks the row held, enqueues the
 //   capture sync, and the M3-01 holds consumer opens a hold with rule `payment_review`
 // - AC 5: the CLI's output carries no token or credential
 // - a moved capture keeps the pool's custom_id and still syncs into the judge workspace (not quarantined)
@@ -304,31 +304,39 @@ describe.skipIf(!dbAvailable)("review-hold pool (integration)", () => {
       currency: "USD",
       approveUrl: `https://www.sandbox.paypal.com/checkoutnow?token=${orderId}`,
     });
-    // the spike's recorded capture (5JB55617195805514): status and reason verbatim, a fresh id, the synthetic $64.00
-    const spike = loadFixture("paypal/captures/pending-review").response.body as {
-      capture_status: string;
-      status_details: { reason: string };
-    };
-    const shape = JSON.parse(responseText(loadFixture("paypal/orders/get-capture-a"))) as Record<
+    // M3-10's live pool, recorded 2026-11-02 (fixtures/paypal/captures/PROVENANCE.md): the video row's capture
+    // (84S22913092039910) and its order, status and reason verbatim; the ids, custom_id and times are this
+    // test's, so a re-run on the same database never collides
+    const recorded = JSON.parse(responseText(loadFixture("paypal/captures/pool-video"))) as Record<
       string,
       unknown
     >;
+    expect([recorded["status"], recorded["status_details"]]).toEqual([
+      "PENDING",
+      { reason: "PENDING_REVIEW" },
+    ]);
     const capture = {
-      ...shape,
+      ...recorded,
       id: captureId,
-      status: spike.capture_status,
-      status_details: spike.status_details,
-      amount: { currency_code: "USD", value: "64.00" },
       custom_id: pool,
       supplementary_data: { related_ids: { order_id: orderId } },
       create_time: new Date(now.getTime() - 60_000).toISOString(),
       update_time: new Date(now.getTime() - 60_000).toISOString(),
     };
-    const order = (status: string, captures: unknown[]) => ({
-      id: orderId,
-      status,
-      purchase_units: [{ custom_id: pool, payments: { captures } }],
-    });
+    const recordedOrder = JSON.parse(responseText(loadFixture("paypal/orders/pool/get-order-video"))) as {
+      purchase_units: Record<string, unknown>[];
+    } & Record<string, unknown>;
+    // the capture call answers with the recorded (COMPLETED) order; the APPROVED read before it can't be
+    // recorded after the fact (PayPal reports COMPLETED once captured), so it carries the status only
+    const order = (status: string, captures: unknown[]) =>
+      status === "APPROVED"
+        ? { id: orderId, status, purchase_units: [{ custom_id: pool }] }
+        : {
+            ...recordedOrder,
+            id: orderId,
+            status,
+            purchase_units: [{ ...recordedOrder.purchase_units[0], custom_id: pool, payments: { captures } }],
+          };
     let captureRequestId: string | null = null;
     server.use(
       http.get(`${BASE}/v2/checkout/orders/${orderId}`, () => HttpResponse.json(order("APPROVED", []))),

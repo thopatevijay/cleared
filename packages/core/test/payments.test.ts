@@ -23,8 +23,9 @@ describe("capture mapping against the recorded sandbox fixtures (M0-04 / M0-05)"
 
   it("finds every capture body in fixtures/paypal/orders and fixtures/paypal/disputes", () => {
     // 7 direct GET capture responses + 5 captures inside order responses (recorded 2026-10-29), plus
-    // M1-04 (2026-10-30): 2 capture GETs and 1 capture inside the test-payment capture response
-    expect(bodies.length).toBe(15);
+    // M1-04 (2026-10-30): 2 capture GETs and 1 capture inside the test-payment capture response, plus
+    // M3-10 (2026-11-02): 3 captures inside the live review-hold pool's order GETs (orders/pool/)
+    expect(bodies.length).toBe(18);
     expect(new Set(bodies.map((b) => b.file.split("/")[0]))).toEqual(new Set(["orders", "disputes"]));
   });
 
@@ -51,6 +52,18 @@ describe("capture mapping against the recorded sandbox fixtures (M0-04 / M0-05)"
       status: { kind: "known", value: "PENDING" },
       reason: { kind: "known", value: "BUYER_COMPLAINT" },
     });
+  });
+
+  it("maps the live review-hold pool's captures (M3-10) as PENDING / PENDING_REVIEW", () => {
+    const pool = bodies.filter((b) => b.file.startsWith("orders/pool/"));
+    expect(pool).toHaveLength(3);
+    for (const b of pool) {
+      const r = mapCapture(b.body);
+      expect(r.ok && r.value.state).toEqual({
+        status: { kind: "known", value: "PENDING" },
+        reason: { kind: "known", value: "PENDING_REVIEW" },
+      });
+    }
   });
 
   it("reads amount, receivable, order id, custom_id and update_time from a GET capture", () => {
