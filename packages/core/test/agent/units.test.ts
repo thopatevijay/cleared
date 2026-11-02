@@ -72,6 +72,23 @@ describe("limits", () => {
     expect(() => parseAgentConfig({ LLM_DAILY_CAP_USD: "-1" })).toThrow();
   });
 
+  it("a present-but-blank model id or cap falls back to the pinned default (BL-01 6537625497)", () => {
+    const blank = parseAgentConfig({
+      OPENAI_MODEL_SMALL: "",
+      OPENAI_MODEL_LARGE: "  ",
+      LLM_WORKSPACE_CAP_USD: "",
+      LLM_DAILY_CAP_USD: "",
+    });
+    expect(blank).toMatchObject({
+      models: { small: "gpt-6-luna", large: "gpt-6.1-terra" },
+      workspaceCapUsd: 0.1,
+      dailyCapUsd: 1,
+    });
+    expect(parseAgentConfig({ OPENAI_MODEL_SMALL: "m-small" }).models.small).toBe("m-small");
+    expect(parseAgentConfig({ LLM_DAILY_CAP_USD: "0" }).dailyCapUsd).toBe(0);
+    expect(() => parseAgentConfig({ LLM_DAILY_CAP_USD: "abc" })).toThrow();
+  });
+
   it("the global window is the UTC day", () => {
     expect(utcDayStart(Date.parse("2026-10-31T23:59:59.999+05:30")).toISOString()).toBe(
       "2026-10-31T00:00:00.000Z",
