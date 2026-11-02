@@ -79,6 +79,14 @@ export interface TrackInput {
   readonly onResponse?: (meta: ResponseMeta) => void;
 }
 
+/** M3-04: the `record_service_completed` write (trackers-batch). */
+export interface MarkCompletedOptions {
+  /** sent on each tracker when set (M3-04 sends `OTHER`: no carrier for a service) */
+  readonly carrier?: string;
+  readonly timeoutMs?: number;
+  readonly onResponse?: (meta: ResponseMeta) => void;
+}
+
 /** The same shape as the disputes client's `WriteResponseMeta`. */
 export interface ResponseMeta {
   readonly status: number;
@@ -95,7 +103,7 @@ export interface PayPalOrdersClient {
   /** Orders v2 `POST /v2/checkout/orders/{id}/track` (201 + the order). */
   trackOrder(orderId: string, input: TrackInput): Promise<Order>;
   /** Legacy `POST /v1/shipping/trackers-batch`: status `COMPLETED`, no tracking number (services). */
-  markCompleted(captureIds: readonly string[]): Promise<TrackersBatchResponse>;
+  markCompleted(captureIds: readonly string[], options?: MarkCompletedOptions): Promise<TrackersBatchResponse>;
   /** Legacy `GET /v1/shipping/trackers/{transaction_id}-{tracking_number|NOTRACKER}`. */
   getLegacyTracker(captureId: string, trackingNumber?: string): Promise<LegacyTracker>;
 }
@@ -203,12 +211,20 @@ export function createPayPalOrdersClient(options: PayPalOrdersClientOptions): Pa
           notify_payer: input.notifyPayer ?? false,
         },
       }),
-    markCompleted: (captureIds) =>
+    markCompleted: (captureIds, o = {}) =>
       call({
         method: "POST",
         path: "/v1/shipping/trackers-batch",
         schema: TrackersBatchResponseSchema,
-        body: { trackers: captureIds.map((id) => ({ transaction_id: id, status: "COMPLETED" })) },
+        ...(o.timeoutMs === undefined ? {} : { timeoutMs: o.timeoutMs }),
+        ...(o.onResponse === undefined ? {} : { onResponse: o.onResponse }),
+        body: {
+          trackers: captureIds.map((id) => ({
+            transaction_id: id,
+            status: "COMPLETED",
+            ...(o.carrier === undefined ? {} : { carrier: o.carrier }),
+          })),
+        },
       }),
     getLegacyTracker: (captureId, trackingNumber) =>
       call({

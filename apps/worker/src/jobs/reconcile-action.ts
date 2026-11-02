@@ -16,6 +16,7 @@ import { appendActionAudit, executionForAction, getProposedAction, type Tx } fro
 import { z } from "zod";
 import type { ConsumeContext, Handler } from "../consume.ts";
 import { onTrackingReconciled, trackingLanded } from "../actions/add-tracking.ts";
+import { completedLanded } from "../actions/record-service-completed.ts";
 import {
   DisputeSnapshotSchema,
   endAction,
@@ -37,6 +38,8 @@ export interface ReconcileActionDeps extends ActionRuntime {
   readonly disputes: Pick<PayPalDisputesClient, "getDispute">;
   /** M3-03 `add_tracking`: the order re-read that shows the tracker */
   readonly orders?: Pick<PayPalOrdersClient, "getOrder">;
+  /** M3-04 `record_service_completed`: the NOTRACKER tracker read-back */
+  readonly completed?: Pick<PayPalOrdersClient, "getLegacyTracker">;
 }
 
 export type ReconcileOutcome = "skipped" | "succeeded" | "retry_scheduled" | "failed";
@@ -56,6 +59,7 @@ export async function reconcileAction(
   const row = await getProposedAction(deps.db, input.workspaceId, input.actionId, { tx, lock: true });
   if (row?.state !== "unknown") return "skipped";
   if (row.kind === "add_tracking") return reconcileTracking(deps, tx, row, input, ctx);
+  if (row.kind === "record_service_completed") return reconcileCompleted(deps, tx, row, input, ctx);
   const disputeId = z.object({ dispute_id: z.string() }).parse(row.payload).dispute_id;
   // a failed re-read throws: the job retries (queue policy) without spending a reconcile try
   const fetched = await deps.disputes.getDispute(disputeId);
@@ -104,6 +108,34 @@ async function reconcileTracking(
   const outcome = await settle(deps, tx, row, input, verdict);
   if (outcome === "succeeded") await onTrackingReconciled(deps.db, row, tx);
   return outcome;
+}
+
+/** M3-04: an `unknown` Completed record landed when PayPal reads the capture's tracker back as COMPLETED. */
+async function reconcileCompleted(
+  deps: ReconcileActionDeps,
+  tx: Tx,
+  row: NonNullable<Awaited<ReturnType<typeof getProposedAction>>>,
+  input: ReconcileInput,
+  ctx: ConsumeContext,
+): Promise<ReconcileOutcome> {
+  // no client or a failed read throws: the job retries (queue policy) without spending a try
+  if (deps.completed === undefined) throw new Error("reconcile record_service_completed: no client");
+  const r = await completedLanded(deps.completed, row);
+  const verdict: ReconcileVerdict = r.landed ? "landed" : "not_landed";
+  await appendActionAudit(
+    deps.db,
+    {
+      workspaceId: row.workspaceId,
+      actionId: row.id,
+      actor: "system",
+      action: "action.reconcile",
+      detail: { attempt: input.attempt, verdict, trackerStatus: r.trackerStatus },
+    },
+    tx,
+  );
+  ctx.log.info({ actionId: row.id, attempt: input.attempt, verdict }, "completed reconcile");
+  // like a direct success, a landed record changes no hold (its effect on release is unconfirmed)
+  return settle(deps, tx, row, input, verdict);
 }
 
 async function settle(

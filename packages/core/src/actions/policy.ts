@@ -6,6 +6,7 @@
 import { z } from "zod";
 import { Sha256Schema, type Sha256 } from "../ids.ts";
 import { addMinutes, compareInstants, type Instant } from "../time.ts";
+import { RecordServiceCompletedPayloadSchema, type RecordServiceCompletedPayload } from "../holds/completed.ts";
 import type { Approval, ProposedAction } from "./action.ts";
 import type { ActionState } from "./state.ts";
 
@@ -84,12 +85,13 @@ export const AddTrackingPayloadSchema = z
   });
 export type AddTrackingPayload = z.infer<typeof AddTrackingPayloadSchema>;
 
-/** The kinds the worker executes (M2-08; `add_tracking` M3-03). Completed (M3-04) joins here later. */
+/** The kinds the worker executes (M2-08; `add_tracking` M3-03; `record_service_completed` M3-04). */
 export const EXECUTABLE_PAYLOAD_SCHEMAS = {
   provide_evidence: ProvideEvidencePayloadSchema,
   provide_supporting_info: ProvideSupportingInfoPayloadSchema,
   accept_claim: AcceptClaimPayloadSchema,
   add_tracking: AddTrackingPayloadSchema,
+  record_service_completed: RecordServiceCompletedPayloadSchema,
 } as const;
 export type ExecutableKind = keyof typeof EXECUTABLE_PAYLOAD_SCHEMAS;
 export const EXECUTABLE_KINDS = Object.keys(EXECUTABLE_PAYLOAD_SCHEMAS) as ExecutableKind[];
@@ -101,10 +103,17 @@ export type ExecutablePayload =
       readonly payload: z.infer<typeof ProvideSupportingInfoPayloadSchema>;
     }
   | { readonly kind: "accept_claim"; readonly payload: z.infer<typeof AcceptClaimPayloadSchema> }
-  | { readonly kind: "add_tracking"; readonly payload: AddTrackingPayload };
+  | { readonly kind: "add_tracking"; readonly payload: AddTrackingPayload }
+  | { readonly kind: "record_service_completed"; readonly payload: RecordServiceCompletedPayload };
 
-/** The executable payloads that act on a dispute (all but `add_tracking`). */
-export type DisputeExecutablePayload = Exclude<ExecutablePayload, { readonly kind: "add_tracking" }>;
+/** The executable payloads that act on a hold's capture, not on a dispute (M3-03, M3-04). */
+export const HOLD_ACTION_KINDS = ["add_tracking", "record_service_completed"] as const;
+export type HoldActionKind = (typeof HOLD_ACTION_KINDS)[number];
+export const isHoldActionKind = (kind: string): kind is HoldActionKind =>
+  (HOLD_ACTION_KINDS as readonly string[]).includes(kind);
+
+/** The executable payloads that act on a dispute (all but the hold actions). */
+export type DisputeExecutablePayload = Exclude<ExecutablePayload, { readonly kind: HoldActionKind }>;
 
 export function isExecutableKind(kind: string): kind is ExecutableKind {
   return Object.hasOwn(EXECUTABLE_PAYLOAD_SCHEMAS, kind);
