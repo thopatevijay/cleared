@@ -132,7 +132,9 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
     // The events dispute sync emits (M2-06); M2-07 drafts on them (M3 may add more consumers).
     { queue: queueSpec("dispute.opened"), handler: draft },
     { queue: queueSpec("dispute.status_changed"), handler: draft },
-    // The action events (M2-08); M2-09 / M3-08 consume them for real.
+    // The action events (M2-08); M2-09 / M3-08 consume them for real. `action.proposed` too, or its
+    // outbox rows stay unpublished and the relay re-sends them every minute (BL-01 6568052054).
+    { queue: queueSpec("action.proposed"), handler: recordEvent },
     { queue: queueSpec("action.approved"), handler: recordEvent },
     { queue: queueSpec("action.executed"), handler: recordEvent },
     { queue: queueSpec("action.failed"), handler: recordEvent },
