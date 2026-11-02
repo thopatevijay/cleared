@@ -73,6 +73,16 @@ export interface TrackInput {
   readonly carrierNameOther?: string;
   readonly notifyPayer?: boolean;
   readonly requestId: string;
+  /** M3-03: per-call timeout of the write (the client default otherwise) */
+  readonly timeoutMs?: number;
+  /** M3-03: sees the 2xx status and `paypal-debug-id` (errors carry theirs on PayPalApiError) */
+  readonly onResponse?: (meta: ResponseMeta) => void;
+}
+
+/** The same shape as the disputes client's `WriteResponseMeta`. */
+export interface ResponseMeta {
+  readonly status: number;
+  readonly debugId: string | undefined;
 }
 
 export interface PayPalOrdersClient {
@@ -103,6 +113,8 @@ interface CallOptions<S extends z.ZodType> {
   readonly body?: unknown;
   readonly requestId?: string;
   readonly representation?: boolean;
+  readonly timeoutMs?: number;
+  readonly onResponse?: (meta: ResponseMeta) => void;
 }
 
 export function createPayPalOrdersClient(options: PayPalOrdersClientOptions): PayPalOrdersClient {
@@ -121,8 +133,10 @@ export function createPayPalOrdersClient(options: PayPalOrdersClientOptions): Pa
           headers: { ...headers, authorization: `Bearer ${bearer}` },
           ...(o.body === undefined ? {} : { body: JSON.stringify(o.body) }),
           idempotent: o.method === "GET" || o.requestId !== undefined,
+          ...(o.timeoutMs === undefined ? {} : { timeoutMs: o.timeoutMs }),
         }),
       );
+      o.onResponse?.({ status: res.status, debugId: res.debugId });
       return o.schema.parse(JSON.parse(res.bodyText));
     } catch (err) {
       if (err instanceof HttpStatusError) throw new PayPalApiError(err);
@@ -179,6 +193,8 @@ export function createPayPalOrdersClient(options: PayPalOrdersClientOptions): Pa
         path: `/v2/checkout/orders/${seg(orderId)}/track`,
         schema: OrderSchema,
         requestId: input.requestId,
+        ...(input.timeoutMs === undefined ? {} : { timeoutMs: input.timeoutMs }),
+        ...(input.onResponse === undefined ? {} : { onResponse: input.onResponse }),
         body: {
           capture_id: input.captureId,
           tracking_number: input.trackingNumber,

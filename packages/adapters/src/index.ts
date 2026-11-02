@@ -9,6 +9,7 @@ export * from "./http/errors.ts";
 export { createBreaker, type Breaker, type BreakerState } from "./http/breaker.ts";
 export * from "./paypal/token.ts";
 export * from "./paypal/orders.ts";
+export * from "./paypal/tracking.ts";
 export * from "./paypal/schemas.ts";
 export * from "./paypal/disputes.ts";
 export * from "./paypal/disputes.schemas.ts";

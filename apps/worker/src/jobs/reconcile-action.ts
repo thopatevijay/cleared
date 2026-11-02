@@ -11,10 +11,11 @@ import {
   reconcileVerdict,
   type ReconcileVerdict,
 } from "@cleared/core";
-import type { PayPalDisputesClient } from "@cleared/adapters";
+import type { PayPalDisputesClient, PayPalOrdersClient } from "@cleared/adapters";
 import { appendActionAudit, executionForAction, getProposedAction, type Tx } from "@cleared/db";
 import { z } from "zod";
 import type { ConsumeContext, Handler } from "../consume.ts";
+import { onTrackingReconciled, trackingLanded } from "../actions/add-tracking.ts";
 import {
   DisputeSnapshotSchema,
   endAction,
@@ -34,6 +35,8 @@ export const ReconcileActionInputSchema = z.object({
 
 export interface ReconcileActionDeps extends ActionRuntime {
   readonly disputes: Pick<PayPalDisputesClient, "getDispute">;
+  /** M3-03 `add_tracking`: the order re-read that shows the tracker */
+  readonly orders?: Pick<PayPalOrdersClient, "getOrder">;
 }
 
 export type ReconcileOutcome = "skipped" | "succeeded" | "retry_scheduled" | "failed";
@@ -52,6 +55,7 @@ export async function reconcileAction(
   const { tx } = ctx;
   const row = await getProposedAction(deps.db, input.workspaceId, input.actionId, { tx, lock: true });
   if (row?.state !== "unknown") return "skipped";
+  if (row.kind === "add_tracking") return reconcileTracking(deps, tx, row, input, ctx);
   const disputeId = z.object({ dispute_id: z.string() }).parse(row.payload).dispute_id;
   // a failed re-read throws: the job retries (queue policy) without spending a reconcile try
   const fetched = await deps.disputes.getDispute(disputeId);
@@ -71,6 +75,35 @@ export async function reconcileAction(
   );
   ctx.log.info({ actionId: row.id, attempt: input.attempt, verdict }, "action reconcile");
   return settle(deps, tx, row, input, verdict);
+}
+
+/** M3-03: an `unknown` tracking write landed when the order lists its tracker (capture + tracking number). */
+async function reconcileTracking(
+  deps: ReconcileActionDeps,
+  tx: Tx,
+  row: NonNullable<Awaited<ReturnType<typeof getProposedAction>>>,
+  input: ReconcileInput,
+  ctx: ConsumeContext,
+): Promise<ReconcileOutcome> {
+  // no client or a failed re-read throws: the job retries (queue policy) without spending a try
+  if (deps.orders === undefined) throw new Error("reconcile add_tracking: no orders client");
+  const r = await trackingLanded(deps.orders, row);
+  const verdict: ReconcileVerdict = r.landed ? "landed" : "not_landed";
+  await appendActionAudit(
+    deps.db,
+    {
+      workspaceId: row.workspaceId,
+      actionId: row.id,
+      actor: "system",
+      action: "action.reconcile",
+      detail: { attempt: input.attempt, verdict, trackerStatus: r.trackerStatus },
+    },
+    tx,
+  );
+  ctx.log.info({ actionId: row.id, attempt: input.attempt, verdict }, "tracking reconcile");
+  const outcome = await settle(deps, tx, row, input, verdict);
+  if (outcome === "succeeded") await onTrackingReconciled(deps.db, row, tx);
+  return outcome;
 }
 
 async function settle(

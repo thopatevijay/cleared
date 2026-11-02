@@ -106,6 +106,7 @@ export function defaultRegistry(
         db: rt.db,
         publisher,
         disputes: paypal.disputes,
+        orders: paypal.orders, // M3-03 add_tracking
         now: () => new Date(),
         killSwitchEnv: () => killSwitchFromEnv(process.env),
       }),
@@ -116,6 +117,7 @@ export function defaultRegistry(
         db: rt.db,
         publisher,
         disputes: paypal.disputes,
+        orders: paypal.orders,
         now: () => new Date(),
       }),
     },
