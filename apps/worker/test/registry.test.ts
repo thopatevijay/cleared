@@ -12,7 +12,13 @@ import { defaultRegistry } from "../src/registry.ts";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 /** Product source (tests excluded) that may emit domain events. */
-const SOURCE_DIRS = ["apps/worker/src", "apps/web/app", "apps/web/src", "packages/adapters/src", "packages/db/src"];
+const SOURCE_DIRS = [
+  "apps/worker/src",
+  "apps/web/app",
+  "apps/web/src",
+  "packages/adapters/src",
+  "packages/db/src",
+];
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
@@ -45,7 +51,9 @@ describe("default registry", () => {
   it("has a consumer for every domain event the product emits", () => {
     const emitted = emittedEventTypes();
     // the scan finds the emitters it must (outbox writers in the worker, db and adapters)
-    expect(emitted).toEqual(expect.arrayContaining(["action.proposed", "evidence.added", "payment.captured"]));
+    expect(emitted).toEqual(
+      expect.arrayContaining(["action.proposed", "evidence.added", "payment.captured"]),
+    );
     expect(emitted.filter((t) => !queues.includes(t))).toEqual([]);
   });
 
