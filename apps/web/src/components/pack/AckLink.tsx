@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { intlLocale, isAppLocale } from "../../i18n/routing.ts";
 import { getJson, postJson, type ApiResult } from "../../lib/api.ts";
-import { formatDay, formatTime } from "../../lib/format.ts";
+import { formatTime } from "../../lib/format.ts";
 import { useOnline } from "../../lib/use-online.ts";
 import { openEvidence } from "./Citation.tsx";
 
@@ -45,7 +45,14 @@ function useDates(timeZone: string) {
   const raw = useLocale();
   const locale = intlLocale(isAppLocale(raw) ? raw : "en");
   return {
-    day: (iso: string) => formatDay(locale, iso, timeZone),
+    day: (iso: string) =>
+      new Intl.DateTimeFormat(locale, {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone,
+        numberingSystem: "latn",
+      }).format(new Date(iso)),
     time: (iso: string) => formatTime(locale, iso, timeZone),
   };
 }
@@ -73,6 +80,8 @@ function CopyBox({ url, onCopied }: { url: string; onCopied: (ok: boolean) => vo
           value={url}
           onFocus={(e) => {
             e.currentTarget.select();
+            // read from "https://", not from wherever the selection scrolled to
+            e.currentTarget.scrollLeft = 0;
           }}
           data-testid="ack-url"
           className="min-h-11 w-full rounded-md border border-border-strong bg-surface-sunken px-3 font-mono text-sm"
@@ -264,6 +273,7 @@ export function AckLinkPanel({
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [live, setLive] = useState("");
+  const [copyNote, setCopyNote] = useState<string | null>(null);
   const announced = useAcceptedAnnouncement(data, onAccepted);
 
   const run = async (
@@ -320,9 +330,22 @@ export function AckLinkPanel({
         onCreate={create}
         onRevoke={revoke}
         onCopied={(ok) => {
-          setLive(ok ? t("copied") : t("copyFailed"));
+          const note = ok ? t("copied") : t("copyFailed");
+          setLive(note);
+          setCopyNote(note);
+          window.setTimeout(() => {
+            setCopyNote(null);
+          }, 4000);
         }}
       />
+      {copyNote !== null && url !== null ? (
+        <p
+          className="self-start rounded-md bg-text px-3 py-2 text-sm text-surface"
+          data-testid="ack-copy-note"
+        >
+          {copyNote}
+        </p>
+      ) : null}
       {failure !== null ? (
         <p role="alert" className="rounded-md bg-status-error-bg p-3 text-status-error-fg">
           {t(failure.what === "create" ? "createError" : "revokeError")}

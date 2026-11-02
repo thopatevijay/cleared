@@ -4,6 +4,7 @@
 import {
   EXTRACT_PROMPT,
   packViewState,
+  parseClientAckText,
   quoteInContext,
   scanForInjection,
   type PackCitation,
@@ -102,6 +103,7 @@ export async function loadPackView(deps: Deps, ws: WorkspaceId, packId: string):
     evidence: items.map((i) => ({
       ...toEvidenceItem(i, i),
       injectionFlagged: reported.has(i.id) || (i.text !== null && scanForInjection(i.id, i.text).length > 0),
+      clientAck: i.kind === "client_ack" && i.text !== null ? parseClientAckText(i.text) : null,
     })),
     workspace: { timezone: workspace?.timezone ?? "UTC" },
   };

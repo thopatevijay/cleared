@@ -295,7 +295,11 @@
       "file": "{type} file · {size}",
       "download": "Download",
       "downloadName": "Download the {kind} file added {time}",
-      "injection": "Contains text that looks like instructions; treated as data"
+      "injection": "Contains text that looks like instructions; treated as data",
+      "ackBy": "Confirmed by {name}, {time}",
+      "ackMeta": "IP {ip} · {browser}",
+      "ackScope": "Scope fingerprint {short}",
+      "ackSource": "Recorded by Cleared from the client's link"
     },
     "intake": {
       "heading": "Add evidence",

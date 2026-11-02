@@ -9,6 +9,7 @@ import {
   AckSubmitSchema,
   AckTokenSchema,
   clientAckEvidence,
+  parseClientAckText,
   type AckLinkFacts,
 } from "./client-ack.ts";
 
@@ -106,5 +107,13 @@ describe("client-ack evidence", () => {
     const parsed = JSON.parse(e.text) as Record<string, string>;
     expect(parsed["user_agent"]).toHaveLength(512);
     expect(parsed["typed_name"]).toBe('<script>"x"</script>');
+  });
+  it("parses back into the record the evidence list shows", () => {
+    expect(parseClientAckText(clientAckEvidence(record).text)).toEqual({
+      ...record,
+      acceptedAt: NOW.toISOString(),
+    });
+    expect(parseClientAckText("not json")).toBeNull();
+    expect(parseClientAckText('{"typed_name":"x"}')).toBeNull();
   });
 });

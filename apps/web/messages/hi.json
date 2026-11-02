@@ -295,7 +295,11 @@
       "file": "{type} फ़ाइल · {size}",
       "download": "डाउनलोड करें",
       "downloadName": "{time} पर जोड़ी गई {kind} फ़ाइल डाउनलोड करें",
-      "injection": "इसमें निर्देश जैसा पाठ है; इसे सिर्फ़ डेटा माना गया है"
+      "injection": "इसमें निर्देश जैसा पाठ है; इसे सिर्फ़ डेटा माना गया है",
+      "ackBy": "{name} ने {time} पर पुष्टि की",
+      "ackMeta": "IP {ip} · {browser}",
+      "ackScope": "दायरे का फ़िंगरप्रिंट {short}",
+      "ackSource": "क्लाइंट के लिंक से Cleared ने दर्ज किया"
     },
     "intake": {
       "heading": "सबूत जोड़ें",

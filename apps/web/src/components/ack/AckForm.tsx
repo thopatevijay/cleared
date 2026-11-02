@@ -67,13 +67,21 @@ function Success({ name, at }: { name: string; at: string }) {
   const t = useTranslations("ack");
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
+  // The client has no workspace: their own browser's time zone, named.
   const time = new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
     numberingSystem: "latn",
   }).format(new Date(at));
   return (
-    <section className="flex flex-col items-start gap-3" data-testid="ack-success">
+    <section
+      className="flex flex-col items-start gap-3 rounded-lg border border-border bg-surface p-6"
+      data-testid="ack-success"
+    >
       <CircleCheck aria-hidden="true" size={32} strokeWidth={1.75} className="text-status-completed-fg" />
       <h2 ref={heading} tabIndex={-1} className="text-xl font-semibold">
         {t("success", { name })}

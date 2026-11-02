@@ -94,6 +94,43 @@ export function clientAckEvidence(r: AckRecord): { readonly text: string; readon
   return { text, sha256: sha256Hex(evidenceHashInput({ kind: "text", text })) };
 }
 
+/** A `client_ack` item's record as the evidence list shows it (parsed from its canonical text). */
+export const ClientAckRecordSchema = z.object({
+  typedName: z.string(),
+  acceptedAt: z.iso.datetime(),
+  ip: z.string(),
+  userAgent: z.string(),
+  scopeSha256: z.string(),
+});
+export type ClientAckRecord = z.infer<typeof ClientAckRecordSchema>;
+
+const StoredAckText = z.object({
+  typed_name: z.string(),
+  accepted_at: z.iso.datetime(),
+  ip: z.string(),
+  user_agent: z.string(),
+  scope_sha256: z.string(),
+});
+
+/** Parses a `client_ack` item's text; null when it is not the canonical shape. */
+export function parseClientAckText(text: string): ClientAckRecord | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  const p = StoredAckText.safeParse(raw);
+  if (!p.success) return null;
+  return {
+    typedName: p.data.typed_name,
+    acceptedAt: p.data.accepted_at,
+    ip: p.data.ip,
+    userAgent: p.data.user_agent,
+    scopeSha256: p.data.scope_sha256,
+  };
+}
+
 /** The seller's view of the pack's newest link (GET /api/packs/:packId/ack-links). */
 export const AckLinkViewSchema = z.object({
   /** the pack's current scope item, or null: no link can be created yet */

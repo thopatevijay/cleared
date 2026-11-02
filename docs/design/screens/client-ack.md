@@ -15,7 +15,7 @@ PayPal asks service sellers for "an invoice or a contract signed by both parties
 - **Revoke confirm** (inline, replaces the action row; no modal): `pack.ack.revokeConfirm` text + "Revoke" (Destructive) and "Keep link" (Secondary). Never adjacent to "Copy link" at 375: the confirm row sits below the expiry line.
 
 **Public page.** No session, no site navigation. Minimal `header`: wordmark "Cleared" (text), `SandboxBadge` ("Sandbox"), `LanguageSwitch` (EN | हिं). `main`, max width 640 px, in order:
-1. h1 `ack.title`; line `ack.from` with the seller's display name (plain text).
+1. h1 `ack.title`; line `ack.from` with the seller's display name (plain text; `ack.sellerFallback` when there is none).
 2. `MoneyCell` (amount + ISO code; no receivable line, no PayPal IDs, no buyer details).
 3. h2 `ack.scopeHeading`, then the **scope block**: plain text only (`white-space: pre-wrap; overflow-wrap: anywhere`), body font (not mono), `surface-sunken`, 1 px `border`, `radius-md`, `p-4`, `dir="auto"`. `max-height: 50vh` (min 240 px) with `overflow-y: auto`; when it scrolls it is a focusable region (`tabindex="0"`, `role="region"`, `aria-label` = `ack.scopeHeading`) with the standard inset focus ring.
 4. Form: "Your name" text input (`autocomplete="name"`, `maxlength="120"`, hint `ack.nameHint`), checkbox "I agree to this scope" (24 px box; the whole label row is the 44 px hit area), the recorded-data note `ack.recorded` (`text-sm`, `text-muted`, `info` icon), then **Confirm** (Primary, full width at 375, 48 px high).
@@ -46,16 +46,19 @@ PayPal asks service sellers for "an invoice or a contract signed by both parties
 | Copy failed | unchanged | The input text is selected; toast `pack.ack.copyFailed` |
 | Offline | unchanged | Actions disabled with "You're offline. Links can be changed when you reconnect." |
 
+The `client_ack` item in the Evidence list renders as a plain-language record, not raw JSON: `pack.list.ackBy`, `pack.list.ackMeta`, `pack.list.ackScope` (scope sha256, 8-character mono short form), `pack.list.ackSource`. The typed name appears only here.
+
 ## States: public page
 | State | What shows |
 |---|---|
 | Form (default) | Layout above. Server-rendered; no loading skeleton. `<noscript>`: "Turn on JavaScript to confirm." |
 | Validation error | Field-level: `aria-invalid="true"`, message below the field linked by `aria-describedby`, `circle-x` + `danger` text; focus moves to the first invalid field. Values kept |
 | Submitting | Confirm busy: "Confirming…" (`aria-busy`), inputs read only |
-| Success | Form replaced by a panel: `circle-check` (completed colours) + h2 `ack.success` + "Recorded {time} {tz}" (visitor's browser time zone, absolute) + `ack.successClose`. Focus moves to the h2. The typed name renders as plain text |
-| Scope changed | Inline band (`status-held-bg`, `circle-dashed`, `role="alert"`): `ack.scopeChanged`. Form disabled |
+| Success | Form replaced by a panel: `circle-check` (completed colours) + h2 `ack.success` + `ack.recordedAt` "Recorded {time}", where {time} is one formatted string that already includes the zone abbreviation (visitor's browser time zone, absolute) + `ack.successClose`. Focus moves to the h2. The typed name renders as plain text |
+| Scope changed | No distinct state (ticket AC 3): a scope-changed token gets the neutral page, on load and on submit (a submit that returns it replaces the form with the neutral page) |
+| No seller display name | `users.display_name` is unset (always in demo workspaces): `ack.from` and `ack.recorded` use `ack.sellerFallback` "The seller" for {seller} |
 | Rate limited (429) | Inline band above Confirm (`role="alert"`): `ack.rateLimited`. Values kept; Confirm re-enabled |
-| Neutral (invalid, unknown, expired, revoked, already accepted) | One identical page and HTTP status for every case: `lock` icon (32 px), h1 `ack.neutralTitle`, `ack.neutralBody`. No seller name, amount or scope; no hint of which case it is |
+| Neutral (invalid, unknown, expired, revoked, scope changed, already accepted) | One identical page and HTTP status for every case: `lock` icon (32 px), h1 `ack.neutralTitle`, `ack.neutralBody`. No seller name, amount or scope; no hint of which case it is |
 | Error (5xx / network) | `ErrorPanel` "Couldn't record your confirmation." + "Your answer wasn't saved. Try again." + Retry (resubmits the kept values) + Reference |
 
 ## Interactions
@@ -110,8 +113,13 @@ PayPal asks service sellers for "an invoice or a contract signed by both parties
 | pack.ack.announceAccepted | Your client confirmed the scope. | आपके क्लाइंट ने दायरे की पुष्टि कर दी। |
 | pack.ack.createError / revokeError | Couldn't create the link. / Couldn't revoke the link. | लिंक नहीं बन सका। / लिंक रद्द नहीं हो सका। |
 | pack.ack.offline | You're offline. Links can be changed when you reconnect. | आप ऑफ़लाइन हैं। दोबारा जुड़ने पर लिंक बदले जा सकते हैं। |
+| pack.list.ackBy | Confirmed by {name}, {time} | {name} ने {time} पर पुष्टि की |
+| pack.list.ackMeta | IP {ip} · {browser} | IP {ip} · {browser} |
+| pack.list.ackScope | Scope fingerprint {short} | दायरे का फ़िंगरप्रिंट {short} |
+| pack.list.ackSource | Recorded by Cleared from the client's link | क्लाइंट के लिंक से Cleared ने दर्ज किया |
 | ack.metaTitle | Confirm the agreed work · Cleared | तय काम की पुष्टि · Cleared |
 | ack.title | Confirm the agreed work | तय काम की पुष्टि करें |
+| ack.sellerFallback | The seller | विक्रेता |
 | ack.from | {seller} asks you to confirm the work you agreed for this payment. | {seller} आपसे इस भुगतान के लिए तय काम की पुष्टि करने को कह रहे हैं। |
 | ack.scopeHeading | What was agreed | क्या तय हुआ था |
 | ack.name | Your name | आपका नाम |
@@ -123,9 +131,8 @@ PayPal asks service sellers for "an invoice or a contract signed by both parties
 | ack.error.nameTooLong | Use 120 characters or fewer. | 120 या उससे कम अक्षर इस्तेमाल करें। |
 | ack.error.agreeRequired | Tick the box to confirm you agree. | सहमति की पुष्टि के लिए बॉक्स पर टिक करें। |
 | ack.success | Thanks, {name}. Your confirmation is recorded. | धन्यवाद, {name}। आपकी पुष्टि दर्ज हो गई है। |
-| ack.recordedAt | Recorded {time} {tz} | {time} {tz} पर दर्ज |
+| ack.recordedAt | Recorded {time} | {time} पर दर्ज |
 | ack.successClose | You can close this page. This link won't open again. | आप यह पेज बंद कर सकते हैं। यह लिंक दोबारा नहीं खुलेगा। |
-| ack.scopeChanged | The scope changed; ask the seller for a new link. | दायरा बदल गया है; विक्रेता से नया लिंक माँगें। |
 | ack.rateLimited | Too many attempts. Try again in a few minutes. | बहुत ज़्यादा कोशिशें हुईं। कुछ मिनट बाद फिर कोशिश करें। |
 | ack.neutralTitle | This link can't be used | यह लिंक इस्तेमाल नहीं हो सकता |
 | ack.neutralBody | Ask the person who sent it for a new one. | जिसने इसे भेजा है, उनसे नया लिंक माँगें। |
