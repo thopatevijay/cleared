@@ -23,6 +23,7 @@ import {
 } from "@cleared/db";
 import type { AiRuntime } from "./ai.ts";
 import type { Handler } from "./consume.ts";
+import { holdsHandler } from "./consumers/holds.ts";
 import { captureSyncHandler } from "./jobs/capture-sync.ts";
 import { killSwitchFromEnv } from "./jobs/action-runtime.ts";
 import { disputeSyncHandler } from "./jobs/dispute-sync.ts";
@@ -67,6 +68,8 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
   };
   // M2-07: a dispute with an evidence action and a checked pack gets a draft + proposal (seller approves)
   const draft = draftDisputeHandler({ db: rt.db, ...ai, disputes: paypal.disputes, now: () => new Date() });
+  // M3-01: derive or release the payment's hold from the mirrored capture
+  const holds = holdsHandler({ db: rt.db, publisher, now: () => new Date() });
   return [
     {
       queue: queueSpec(PAYPAL_CAPTURE_SYNC_QUEUE),
@@ -127,12 +130,12 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
     { queue: queueSpec(SCENARIO_CHARGEBACK_QUEUE), handler: scenarioChargebackHandler(scenario) },
     { queue: queueSpec(SCENARIO_POLL_QUEUE), handler: scenarioPollHandler(scenario) },
     { queue: queueSpec(SCENARIO_DECIDE_QUEUE), handler: scenarioDecideHandler(scenario) },
-    // The events capture sync emits. Consuming them marks the outbox row published (so the relay does
-    // not re-send it); M3-01 replaces these with hold derivation.
-    { queue: queueSpec("payment.captured"), handler: recordEvent },
-    { queue: queueSpec("payment.status_changed"), handler: recordEvent },
-    // The events dispute sync emits (M2-06); M2-07 drafts on them (M3 may add more consumers).
-    { queue: queueSpec("dispute.opened"), handler: draft },
+    // The events capture sync emits: M3-01 derives (or releases) the payment's hold from the mirror.
+    { queue: queueSpec("payment.captured"), handler: holds },
+    { queue: queueSpec("payment.status_changed"), handler: holds },
+    // The events dispute sync emits (M2-06): M3-01 links the dispute-held payment's hold, then M2-07
+    // drafts (one entry per queue; both handlers are idempotent and share the delivery's transaction).
+    { queue: queueSpec("dispute.opened"), handler: inOrder(holds, draft) },
     { queue: queueSpec("dispute.status_changed"), handler: draft },
     // The action events (M2-08); M2-09 / M3-08 consume them for real. `action.proposed` too, or its
     // outbox rows stay unpublished and the relay re-sends them every minute (BL-01 6568052054).
@@ -141,7 +144,17 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
     { queue: queueSpec("action.executed"), handler: recordEvent },
     { queue: queueSpec("action.failed"), handler: recordEvent },
     { queue: queueSpec("action.unknown"), handler: recordEvent },
+    // M3-01's hold events; M3-08 consumes `hold.opened` for alerts.
+    { queue: queueSpec("hold.opened"), handler: recordEvent },
+    { queue: queueSpec("hold.released"), handler: recordEvent },
   ];
+}
+
+/** Runs handlers one after another in the same delivery (one registry entry per queue). */
+export function inOrder(...handlers: readonly Handler[]): Handler {
+  return async (data, ctx) => {
+    for (const h of handlers) await h(data, ctx);
+  };
 }
 
 /** Logs the event; the receipt and `published_at` are written by `consume()`. */

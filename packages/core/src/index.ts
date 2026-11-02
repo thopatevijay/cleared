@@ -26,7 +26,7 @@ export * from "./proof/scope-check.ts";
 export * from "./proof/pack-view.ts";
 export * from "./contracts/packs.ts";
 export * from "./ports/blob-store.ts";
-export * from "./holds/hold.ts";
+export * from "./holds/index.ts";
 export * from "./disputes/dispute.ts";
 export * from "./disputes/mirror.ts";
 export * from "./disputes/deadline.ts";

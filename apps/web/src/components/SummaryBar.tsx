@@ -1,4 +1,5 @@
-// Summary bar (components.md): the held total per currency (from mirrored PENDING captures, M1-07), the
+// Summary bar (components.md): the held total per currency (M3-01: active derived holds; a link to the
+// held-money inbox), the
 // "in dispute" total per currency (M2-09; "—" when disputes fail to load) and the proof-ready count
 // (M2-05). One fact per line at 375 px.
 import type { Amount } from "@cleared/core";
@@ -111,7 +112,21 @@ export function SummaryBar({
       className="tabular flex flex-col gap-1 text-2xl font-bold md:flex-row md:flex-wrap md:gap-x-6 md:text-money"
       data-testid="summary"
     >
-      <Fact icon={Hourglass}>{held.length === 0 ? t("nothingHeld") : t("held", { amount: heldText })}</Fact>
+      {held.length === 0 ? (
+        <Fact icon={Hourglass}>{t("nothingHeld")}</Fact>
+      ) : (
+        // M3-01: derived holds per currency; opens the held-money inbox
+        <Link
+          href="/holds"
+          className="inline-flex min-h-11 items-start gap-2 underline decoration-border-strong underline-offset-4 hover:decoration-accent"
+          data-testid="summary-held"
+        >
+          <span className="flex h-[1lh] shrink-0 items-center">
+            <Hourglass aria-hidden="true" size={22} strokeWidth={1.75} className="text-text-muted" />
+          </span>
+          <span>{t("held", { amount: heldText })}</span>
+        </Link>
+      )}
       <DisputeFact inDispute={inDispute} active={filter === "dispute"} />
       <ProofReadyFact count={proofReady} active={filter === "proof-ready"} />
     </p>

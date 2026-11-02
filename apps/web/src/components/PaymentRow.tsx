@@ -9,6 +9,7 @@ import { Link } from "../i18n/navigation.ts";
 import { intlLocale, isAppLocale } from "../i18n/routing.ts";
 import type { DisputeSummary } from "../lib/dispute-view.ts";
 import { captureStatusKey, formatAmount, formatTime, type StatusKey } from "../lib/format.ts";
+import { HeldLines } from "./holds/HeldLines.tsx";
 import { VerdictWord } from "./pack/VerdictBadge.tsx";
 import { MoneyCell } from "./MoneyCell.tsx";
 import { DisputeLines } from "./payments/DisputeLines.tsx";
@@ -80,9 +81,12 @@ export function PaymentRow({
   const t = useTranslations("row");
   const raw = useLocale();
   const locale = intlLocale(isAppLocale(raw) ? raw : "en");
-  const key = captureStatusKey(p.status);
+  // M3-01: the `held` badge means a derived hold (counted in the held total); a PENDING capture without
+  // one (PayPal gave no reason) shows the neutral badge with PayPal's enum, so badges and total agree.
+  const status = captureStatusKey(p.status);
+  const key = status === "held" && p.hold === null ? "info" : status;
   // PayPal's exact enum beside the badge (copy rule 6): PENDING shows `status_details.reason`.
-  const detail = key === "held" ? (p.statusReason ?? p.status) : p.status;
+  const detail = p.status === "PENDING" ? (p.statusReason ?? p.status) : p.status;
   const f = formatAmount(locale, p.amount);
   const amount = `${f.text} ${f.code}`;
   return (
@@ -91,6 +95,7 @@ export function PaymentRow({
       data-testid="payment-row"
       data-status={p.status}
       data-dispute={dispute === null ? undefined : dispute.disputeId}
+      data-hold={p.hold === null ? undefined : p.hold.id}
     >
       <span
         aria-hidden="true"
@@ -111,7 +116,10 @@ export function PaymentRow({
             </Link>
           )}
           <span className="font-mono text-xs break-all text-text-muted">{p.captureId}</span>
-          {p.pack !== null && !p.pack.hasEvidence ? <AddProof p={p} amount={amount} /> : null}
+          {/* one row action: a held row's "Why?" (M3-01) replaces "Add proof" */}
+          {p.pack !== null && !p.pack.hasEvidence && p.hold === null ? (
+            <AddProof p={p} amount={amount} />
+          ) : null}
           {p.pack !== null ? <PackLine pack={p.pack} /> : null}
         </div>
         <div className="flex flex-col gap-1 md:items-end md:text-right">
@@ -127,6 +135,12 @@ export function PaymentRow({
             {p.source === "webhook" ? t("viaWebhook") : t("viaPoll")}
           </span>
         </div>
+        {p.hold === null ? null : (
+          <div className="md:col-span-2">
+            {/* a dispute row's single action is the dispute's own ("Review and approve") */}
+            <HeldLines hold={p.hold} amount={amount} timeZone={timeZone} action={dispute === null} />
+          </div>
+        )}
         {dispute === null ? null : (
           <div className="md:col-span-2">
             <DisputeLines d={dispute} timeZone={timeZone} />

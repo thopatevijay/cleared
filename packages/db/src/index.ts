@@ -136,3 +136,11 @@ export {
   type DisputeListRow,
   type DraftWithAction,
 } from "./repositories/dispute-views.ts";
+export {
+  holdsRepo,
+  type DisputeRowForHold,
+  type HoldRow,
+  type HoldsRepo,
+  type HoldView,
+  type PaymentRowForHold,
+} from "./repositories/holds.ts";

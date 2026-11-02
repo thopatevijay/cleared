@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "recorded_at": "2026-10-28T00:00:00Z",
+    "env": "sandbox",
+    "ticket": "M3-01",
+    "scrubbed": true,
+    "note": "the same capture after PayPal released the review hold: COMPLETED, status_details null",
+    "source": "spike/results/wallet_review_after.json (the spike's summary of the response, copied verbatim; see PROVENANCE.md)"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v2/payments/captures/5JB55617195805514",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "http": 200,
+      "status": "COMPLETED",
+      "status_details": null,
+      "seller_protection": {
+        "status": "ELIGIBLE",
+        "dispute_categories": [
+          "ITEM_NOT_RECEIVED",
+          "UNAUTHORIZED_TRANSACTION"
+        ]
+      },
+      "create_time": "2026-10-26T11:24:21Z",
+      "update_time": "2026-10-27T11:24:26Z"
+    }
+  }
+}
