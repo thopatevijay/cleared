@@ -20,9 +20,23 @@ export const CARRIER_NAME_OTHER_MAX = 64;
 const ApiCarriersSchema = z.object({
   source: z.url(),
   retrieved_at: z.iso.date(),
+  /** M3-03 AC 1: codes not on the developer page, each proven by its own source (see PROVENANCE.md) */
+  additional_sources: z
+    .array(z.object({ id: z.string().min(1), title: z.string().min(1), date: z.iso.date(), evidence: z.string().min(1) }))
+    .default([]),
   count: z.number().int().positive(),
   carriers: z
-    .array(z.object({ code: z.string().regex(/^[A-Z0-9_]+$/), name: z.string().min(1), country: z.string() }))
+    .array(
+      z.object({
+        code: z.string().regex(/^[A-Z0-9_]+$/),
+        name: z.string().min(1),
+        country: z.string(),
+        /** absent: on the developer page; else an `additional_sources` id */
+        source: z.string().min(1).optional(),
+        /** PayPal's debug id of the call that proved the code (with `source`) */
+        debug_id: z.string().regex(/^[a-z0-9]+$/).optional(),
+      }),
+    )
     .min(1),
 });
 
@@ -30,7 +44,6 @@ const DropdownSchema = z.object({
   source: z.string().min(1),
   captured_at: z.iso.date(),
   account: z.string().min(1),
-  partial: z.boolean().optional(),
   count: z.number().int().positive(),
   codes: z.array(z.string().regex(/^[A-Z0-9_]+$/)).min(1),
 });
@@ -75,7 +88,6 @@ export const TIER_SOURCES: Readonly<Record<CarrierTier, TierSource>> = {
     title: `PayPal "Shipped by" list in Add tracking info (${SHIPPED_BY_DROPDOWN.account})`,
     url: null,
     date: SHIPPED_BY_DROPDOWN.captured_at,
-    ...(SHIPPED_BY_DROPDOWN.partial === true ? { note: "partial list" } : {}),
   },
   accepted: API_SOURCE,
   other: API_SOURCE,

@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-02T07:55:24.812Z",
+    "env": "sandbox",
+    "ticket": "M3-03",
+    "scrubbed": true,
+    "note": "legacy tracker read-back for IND_DELHIVERY"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE892A5A27",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f399010da7700"
+    },
+    "body": {
+      "transaction_id": "82D672095U929030G",
+      "tracking_number": "CLRPROBE892A5A27",
+      "status": "SHIPPED",
+      "carrier": "IND_DELHIVERY",
+      "notify_buyer": false,
+      "shipment_direction": "FORWARD",
+      "shipment_uploader": "MERCHANT",
+      "account_id": "ACCOUNT-1",
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE892A5A27",
+          "rel": "self",
+          "method": "GET",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE892A5A27",
+          "rel": "replace",
+          "method": "PUT",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE892A5A27",
+          "rel": "edit",
+          "method": "PATCH",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers",
+          "rel": "self",
+          "method": "POST",
+          "encType": "application/json"
+        }
+      ]
+    }
+  }
+}

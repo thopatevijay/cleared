@@ -104,6 +104,7 @@ grep on every run. (The patterns are not copied here, because this README would 
 | `paypal/oauth` | `token`, `terminate-token` | M0-04 |
 | `paypal/orders` | `create-goods-a`, `create-goods-a-replay`, `get-order-a`, `get-capture-a`, `create-goods-b`, `create-service-c` | M0-04 |
 | `paypal/tracking` | `track-ind-delhivery`, `track-other`, `trackers-batch-completed`, `get-legacy-tracker` | M0-04 |
+| `paypal/tracking/carrier-probe` | one track per probed "Shipped by" code + `IND_DELHIVERY` control (`<code>`), each read back (`<code>-get`), `negative-control`, `results.json` summary (`PROVENANCE.md`) | M3-03 |
 | `paypal/errors` | `400-validation`, `404-capture`, `401-revoked-token` (+`.2`, `.3`), `capture-already-captured` | M0-04 |
 | `paypal/disputes/full` | chargeback → every distinct state (`state-N-<status>`) → `write-supporting-info`, `write-evidence`, `write-adjudicate` (each = re-check GET + `.2` write) → `capture-N-<status>` (hold and release) | M0-05 |
 | `paypal/disputes/unknown` | chargeback, states, `guard-refused-evidence` (GET only: refused client-side), `before`, `timeout-precheck-get`, `after-timeout`, `retry-same-request-id-failed`, `after-retry`, `raw-retry-same-request-id` | M0-05 |

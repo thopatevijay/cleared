@@ -14,7 +14,7 @@ For goods, PayPal help129 says: "Use one of our approved shipping carriers, and 
 ## Scope
 - **Data files** (recorded, never hand-typed):
   - `packages/core/data/carriers/shipped-by-dropdown.json`: `{ source, captured_at, account: "US sandbox business", count, codes[] }`. Captured read-only from the owner's logged-in sandbox browser: Activity → a payment → More actions → Add tracking info → "Shipped by" options; nothing saved. **Owner step (~10 min):** the owner opens the session; the worker reads the options with claude-in-chrome.
-  - `packages/core/data/carriers/api-carriers.json`: code, name, country, from developer.paypal.com/docs/tracking/reference/carriers/, with `source` + `retrieved_at`.
+  - `packages/core/data/carriers/api-carriers.json`: code, name, country, from developer.paypal.com/docs/tracking/reference/carriers/, with `source` + `retrieved_at`. *Amended 2026-11-02 (owner decision on #35: probe, then amend):* a dropdown code missing from that page is probed against the sandbox track API. If PayPal accepts it, it's added with a per-carrier `source` (an `additional_sources` id) and its `debug_id`. If PayPal rejects it, it goes into a named exception list (data plus the subset test), each entry citing the dropdown capture and the rejecting `debug_id`. The 2026-11-02 probe accepted all 9 gaps (`fixtures/paypal/tracking/carrier-probe/`), so the exception list is empty.
   - A test asserts `count == codes.length`. If the count differs from the 834 seen on 2026-10-26, the PR notes it (source of truth = the new capture).
 - **Two-tier map** in `packages/core/src/carriers/` (no I/O):
   - `approved`: in the dropdown. Copy: "faster release expected: about 24 h after delivery is confirmed".
@@ -38,7 +38,7 @@ For goods, PayPal help129 says: "Use one of our approved shipping carriers, and 
 - Hindi copy review: M4-03
 
 ## Acceptance Criteria
-- [ ] Both data files exist with `source`, `captured_at`/`retrieved_at` and a count; a test checks that every dropdown code except `OTHER` exists in the API list
+- [ ] Both data files exist with `source`, `captured_at`/`retrieved_at` and a count; a test checks that every dropdown code except `OTHER` exists in the API list. The API list is the developer page plus the sandbox-probed codes, each citing its source and `debug_id`. The only allowed exceptions are codes named in an exception list, each citing the 2026-11-02 dropdown capture and PayPal's rejecting `debug_id` (empty after the 2026-11-02 probe). Any other gap fails the test. *(Amended 2026-11-02, owner decision on #35.)*
 - [ ] Tests: IND_DELHIVERY, DTDC_IN, EKART, BLUEDART, NIPOST_NG, IDN_JNE and TCS are `approved`; INDIA_POST, KENYA_POST, NIGERIAN_POST, GHANA_POST, PAKISTAN_POST, BANGLADESH_POST, EGYPT_POST, JTEXPRESS_PH and SPX_PH are `accepted`; free text is `other`
 - [ ] `adviseRoute("IN", "INDIA_POST")` flags it and returns approved IN alternatives (unit test)
 - [ ] Fixture replay (M0-04 `track` fixtures): an approved `add_tracking` executes, and the execution + audit rows are written; a changed payload after approval is refused (hash mismatch)

@@ -1,12 +1,20 @@
 {
  "source": "https://developer.paypal.com/docs/tracking/reference/carriers/",
  "retrieved_at": "2026-11-02",
- "note": "Parsed from the page's tables (Carrier, Enumerated value, Country code). Country is PayPal's ISO alpha-3 code or GLOBAL. Codes listed twice on the page are kept once.",
+ "note": "Parsed from the page's tables (Carrier, Enumerated value, Country code). Country is PayPal's ISO alpha-3 code or GLOBAL. Codes listed twice on the page are kept once. Codes with a per-carrier `source` are not on that page: they come from the entry in `additional_sources` (name from the \"Shipped by\" label, country GLOBAL).",
  "duplicates_on_page": [
   "JAWAR",
   "SHOPLINE"
  ],
- "count": 1202,
+ "additional_sources": [
+  {
+   "id": "sandbox-track-probe",
+   "title": "PayPal sandbox Orders v2 track API: 201 for each code, stored carrier read back verbatim (legacy GET /v1/shipping/trackers); a code on no list is refused (400 INVALID_PARAMETER_VALUE, debug_id f9460114c83d6)",
+   "date": "2026-11-02",
+   "evidence": "fixtures/paypal/tracking/carrier-probe/ (results.json, PROVENANCE.md)"
+  }
+ ],
+ "count": 1211,
  "carriers": [
   {
    "code": "A2B_BA",
@@ -6017,6 +6025,69 @@
    "code": "VNM_VIETTELPOST",
    "name": "ViettelPost",
    "country": "VNM"
+  },
+  {
+   "code": "_2EBOX",
+   "name": "2ebox courier",
+   "country": "GLOBAL",
+   "source": "sandbox-track-probe",
+   "debug_id": "f1004920a1b33"
+  },
+  {
+   "code": "_360LION",
+   "name": "360 Lion Express",
+   "country": "GLOBAL",
+   "source": "sandbox-track-probe",
+   "debug_id": "f6370968aa085"
+  },
+  {
+   "code": "_3JMSLOGISTICS",
+   "name": "3JMS Logistics",
+   "country": "GLOBAL",
+   "source": "sandbox-track-probe",
+   "debug_id": "f95073268e45e"
+  },
+  {
+   "code": "_4_72",
+   "name": "4-72 Entregando",
+   "country": "GLOBAL",
+   "source": "sandbox-track-probe",
+   "debug_id": "f643330fcd9ba"
+  },
+  {
+   "code": "_6LS",
+   "name": "6ls.com",
+   "country": "GLOBAL",
+   "source": "sandbox-track-probe",
+   "debug_id": "f648177a107d9"
+  },
+  {
+   "code": "BEL_DHL",
+   "name": "DHL Benelux",
+   "country": "GLOBAL",
+   "source": "sandbox-track-probe",
+   "debug_id": "f995548bea25e"
+  },
+  {
+   "code": "GLS_ITALY",
+   "name": "GLS Italy",
+   "country": "GLOBAL",
+   "source": "sandbox-track-probe",
+   "debug_id": "f4904818bdf60"
+  },
+  {
+   "code": "JITSU",
+   "name": "Jitsu",
+   "country": "GLOBAL",
+   "source": "sandbox-track-probe",
+   "debug_id": "f8119415e302a"
+  },
+  {
+   "code": "SKYEXPRESS_INTERNATIONAL",
+   "name": "SkyExpress Internationals",
+   "country": "GLOBAL",
+   "source": "sandbox-track-probe",
+   "debug_id": "f965748fd1edb"
   }
  ]
 }

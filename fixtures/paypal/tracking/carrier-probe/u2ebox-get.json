@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-02T07:55:25.838Z",
+    "env": "sandbox",
+    "ticket": "M3-03",
+    "scrubbed": true,
+    "note": "legacy tracker read-back for _2EBOX"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE66D1AE69",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f899555f0bfb3"
+    },
+    "body": {
+      "transaction_id": "82D672095U929030G",
+      "tracking_number": "CLRPROBE66D1AE69",
+      "status": "SHIPPED",
+      "carrier": "_2EBOX",
+      "notify_buyer": false,
+      "shipment_direction": "FORWARD",
+      "shipment_uploader": "MERCHANT",
+      "account_id": "ACCOUNT-1",
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE66D1AE69",
+          "rel": "self",
+          "method": "GET",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE66D1AE69",
+          "rel": "replace",
+          "method": "PUT",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE66D1AE69",
+          "rel": "edit",
+          "method": "PATCH",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers",
+          "rel": "self",
+          "method": "POST",
+          "encType": "application/json"
+        }
+      ]
+    }
+  }
+}
