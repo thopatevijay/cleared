@@ -102,7 +102,7 @@ export interface CaptureResult {
   readonly orderId: string;
   readonly purpose: string;
   /** what this run did */
-  readonly result: "held" | "not_held" | "waiting_for_buyer" | "released" | "still_held";
+  readonly result: "held" | "not_held" | "waiting_for_buyer" | "released" | "still_held" | "error";
   readonly orderStatus: string | null;
   readonly captureId: string | null;
   readonly captureStatus: string | null;
@@ -112,9 +112,28 @@ export interface CaptureResult {
 export async function capturePool(deps: PoolDeps): Promise<CaptureResult[]> {
   const repo = platform(deps.db).reviewHoldPool;
   const out: CaptureResult[] = [];
-  for (const row of await repo.inState(["awaiting_buyer"])) out.push(await captureOne(deps, row));
-  for (const row of await repo.inState(["held"])) out.push(await refreshHeld(deps, row));
+  for (const row of await repo.inState(["awaiting_buyer"]))
+    out.push(await perRow(row, () => captureOne(deps, row)));
+  for (const row of await repo.inState(["held"])) out.push(await perRow(row, () => refreshHeld(deps, row)));
   return out;
+}
+
+/** One row's failure (an expired or unknown order, PayPal down) is reported and the others still run. */
+async function perRow(row: ReviewHoldPoolRow, fn: () => Promise<CaptureResult>): Promise<CaptureResult> {
+  try {
+    return await fn();
+  } catch (error) {
+    return {
+      orderId: row.orderId,
+      purpose: row.purpose,
+      result: "error",
+      orderStatus: null,
+      captureId: row.captureId,
+      captureStatus: null,
+      // the message only (method, URL, status): never a request header or body
+      captureReason: error instanceof Error ? error.message : "failed",
+    };
+  }
 }
 
 const repo = (deps: PoolDeps) => platform(deps.db).reviewHoldPool;

@@ -340,6 +340,7 @@ describe.skipIf(!dbAvailable)("review-hold pool (integration)", () => {
     );
     const { code, out } = await run(["capture"], now);
     expect(code).toBe(0);
+    expect(out).toMatch(/pool rows checked, 0 failed/);
     expect(out).toContain(`${orderId}  held`);
     expect(out).toContain(`${captureId}  PENDING/PENDING_REVIEW`);
     expect(out).not.toMatch(CREDENTIAL);
@@ -388,6 +389,35 @@ describe.skipIf(!dbAvailable)("review-hold pool (integration)", () => {
     );
     expect(status.out).toContain("about 24 h after capture (estimated, rule payment_review)");
     expect(status.out).not.toMatch(CREDENTIAL);
+  });
+
+  it("pool:capture reports a row PayPal doesn't know and still checks the others (exit 1)", async () => {
+    const now = isolatedNow();
+    const pool = (await platform(db).reviewHoldPool.poolWorkspaceId()) ?? (await workspace("seller"));
+    const orderId = fresh("X");
+    await platform(db).reviewHoldPool.insert({
+      orderId,
+      poolWorkspaceId: pool,
+      purpose: "judge",
+      amount: "48.00",
+      currency: "USD",
+      approveUrl: `https://www.sandbox.paypal.com/checkoutnow?token=${orderId}`,
+    });
+    server.use(
+      http.get(`${BASE}/v2/checkout/orders/${orderId}`, () =>
+        HttpResponse.json(
+          { name: "RESOURCE_NOT_FOUND", message: "not found", debug_id: "abc123" },
+          { status: 404 },
+        ),
+      ),
+    );
+    const { code, out } = await run(["capture"], now);
+    expect(code).toBe(1);
+    expect(out).toMatch(new RegExp(`judge\\s+${orderId}\\s+error`));
+    expect(out).toMatch(/pool rows checked, 1 failed/);
+    expect(out).not.toMatch(CREDENTIAL);
+    // retire it so later runs on this database don't keep failing on it
+    await db.$client.query("update review_hold_pool set state = 'not_held' where order_id = $1", [orderId]);
   });
 
   it("AC 1: an assignment moves exactly one held row, with its payment, hold and explanation, and audits it", async () => {

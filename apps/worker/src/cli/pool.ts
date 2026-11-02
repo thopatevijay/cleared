@@ -73,13 +73,18 @@ export async function runPool(
       const results = await capturePool(await deps.paypal());
       for (const r of results) {
         const paypal =
-          r.captureStatus === null ? (r.orderStatus ?? "-") : `${r.captureStatus}/${r.captureReason ?? "-"}`;
+          r.result === "error"
+            ? (r.captureReason ?? "-")
+            : r.captureStatus === null
+              ? (r.orderStatus ?? "-")
+              : `${r.captureStatus}/${r.captureReason ?? "-"}`;
         io.out(
           `${r.purpose.padEnd(5)}  ${r.orderId}  ${r.result.padEnd(17)}  ${r.captureId ?? "-"}  ${paypal}`,
         );
       }
-      io.out(`${String(results.length)} pool rows checked`);
-      return 0;
+      const failed = results.filter((r) => r.result === "error").length;
+      io.out(`${String(results.length)} pool rows checked, ${String(failed)} failed`);
+      return failed === 0 ? 0 : 1;
     }
     case "assign": {
       const workspaceId = arg(rest, "--workspace");
