@@ -60,6 +60,9 @@ test("held row, estimate with Source, Don't ship yet, Why?, held total, samples 
   const plain = page.locator('[data-testid="payment-row"]:not([data-hold])');
   await expect(plain).toHaveCount(1);
   await expect(plain.getByTestId("held-lines")).toHaveCount(0);
+  // badges agree with the total: no derived hold, no `held` badge (PayPal's PENDING enum stays beside)
+  await expect(plain).not.toContainText("Held");
+  await expect(plain).toContainText("PENDING");
 
   // samples link ends the list; no $700 row
   const link = page.getByTestId("samples-link");

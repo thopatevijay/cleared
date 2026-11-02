@@ -81,9 +81,12 @@ export function PaymentRow({
   const t = useTranslations("row");
   const raw = useLocale();
   const locale = intlLocale(isAppLocale(raw) ? raw : "en");
-  const key = captureStatusKey(p.status);
+  // M3-01: the `held` badge means a derived hold (counted in the held total); a PENDING capture without
+  // one (PayPal gave no reason) shows the neutral badge with PayPal's enum, so badges and total agree.
+  const status = captureStatusKey(p.status);
+  const key = status === "held" && p.hold === null ? "info" : status;
   // PayPal's exact enum beside the badge (copy rule 6): PENDING shows `status_details.reason`.
-  const detail = key === "held" ? (p.statusReason ?? p.status) : p.status;
+  const detail = p.status === "PENDING" ? (p.statusReason ?? p.status) : p.status;
   const f = formatAmount(locale, p.amount);
   const amount = `${f.text} ${f.code}`;
   return (

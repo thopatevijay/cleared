@@ -130,7 +130,7 @@
     "total": "{amount} held in {count, plural, one {# payment} other {# payments}}",
     "listHeading": "Held payments",
     "order": "Newest first",
-    "empty": "No held money. Every payment is with you or on its way.",
+    "empty": "Every payment is with you or on its way.",
     "loading": "Loading held money…",
     "errorTitle": "Couldn't load held money",
     "errorOneTitle": "Couldn't load this hold",
@@ -195,7 +195,11 @@
       "nothingToDo": "Nothing to do. PayPal will update this payment; we'll tell you when it changes.",
       "timelineTitle": "Timeline",
       "released": "Released {time}",
-      "stillHeld": "Still held after the estimate. PayPal hasn't released it yet."
+      "stillHeld": "Still held after the estimate. PayPal hasn't released it yet.",
+      "h1Released": "Released: {amount}",
+      "whyTitleReleased": "Why it was held",
+      "wasHeld": "Was held for",
+      "stillHeldCheck": "Check this payment in your PayPal account. PayPal decides when it is released; we'll show the release as soon as PayPal reports it."
     },
     "timeline": {
       "open": "Held",
@@ -208,6 +212,13 @@
     },
     "live": {
       "released": "The hold on {amount} was released."
+    },
+    "emptyTitle": "No held money.",
+    "offline": "You're offline. Showing what was loaded at {time}.",
+    "step": {
+      "done": "done",
+      "current": "now",
+      "notReached": "not reached yet"
     }
   },
   "audit": {

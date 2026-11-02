@@ -95,7 +95,12 @@ export function EstimatedDate({
           )}
         </span>
       ) : null}
-      {source === null || (!full && at !== null) ? null : <RuleSource source={source} />}
+      {/* the full form cites every source behind its bounds (payment review: 24 h and 3 business days) */}
+      {full ? (
+        rule?.sources.map((s) => <RuleSource key={s.title} source={s} />)
+      ) : source === null || at !== null ? null : (
+        <RuleSource source={source} />
+      )}
     </div>
   );
 }

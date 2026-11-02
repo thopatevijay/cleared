@@ -120,7 +120,7 @@ const freshCapture = () => `T${randomBytes(6).toString("hex").toUpperCase()}0000
 
 describe.skipIf(!dbAvailable)("holds consumer (integration)", () => {
   beforeAll(async () => {
-    server.listen({ onUnhandledRequest: "error" });
+    server.listen({ onUnhandledFrame: "error" });
     boss = await createQueue(db, { background: false, max: 2 });
   });
   afterEach(() => {

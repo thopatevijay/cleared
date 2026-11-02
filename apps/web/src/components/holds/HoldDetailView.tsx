@@ -3,11 +3,12 @@
 // payment and dispute links), "Why it's held" (the rule's own words + Source until M3-02's explanation),
 // the estimated release in its full form, the action slot (M3-03 / M3-04 fill it), and the timeline
 // mirroring the hold machine. "#why" (the dashboard's "Why?") moves focus to the explanation section.
-// "Released" shows only when the hold is released, i.e. the mirrored capture left PENDING.
+// "Released" shows only when the hold is released, i.e. the mirrored capture left PENDING: the badge
+// then mirrors the capture (COMPLETED), the old reason stays as history, and the release leads.
 import { HoldDetailSchema, HOLD_STATES, type HoldDetail, type HoldState } from "@cleared/core";
-import { SearchX } from "lucide-react";
+import { Circle, CircleCheck, CircleDot, SearchX } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { Link, useRouter } from "../../i18n/navigation.ts";
 import { ApiError, getJson } from "../../lib/api.ts";
@@ -19,6 +20,7 @@ import { StatusBadge } from "../StatusBadge.tsx";
 import { EstimatedDate } from "./EstimatedDate.tsx";
 import { AdviceLine, TrackingHint } from "./HeldLines.tsx";
 import { HOLDS_POLL_MS } from "./HoldsView.tsx";
+import { OfflineBanner, useLoadedAt } from "./Offline.tsx";
 import { RuleSource } from "./RuleSource.tsx";
 import { ruleOf, useReasonText } from "./text.ts";
 
@@ -29,6 +31,7 @@ function Why({ d }: { d: HoldDetail }) {
   const t = useTranslations("holds.detail");
   const reason = useReasonText();
   const source = ruleOf(d.hold.ruleId)?.sources[0] ?? null;
+  const released = d.hold.state === "released";
   return (
     <section
       id="why"
@@ -38,7 +41,7 @@ function Why({ d }: { d: HoldDetail }) {
       data-testid="why-section"
     >
       <h2 id="why-heading" className="text-xl font-semibold">
-        {t("whyTitle")}
+        {released ? t("whyTitleReleased") : t("whyTitle")}
       </h2>
       <p>{reason(d.hold.reason)}</p>
       {source === null ? null : (
@@ -50,86 +53,135 @@ function Why({ d }: { d: HoldDetail }) {
           <RuleSource source={source} />
         </div>
       )}
-      {d.hold.state === "released" ? null : <AdviceLine ruleId={d.hold.ruleId} />}
+      {released ? null : <AdviceLine ruleId={d.hold.ruleId} />}
     </section>
   );
 }
 
+/** Still held after the filing, or past the latest date the rule estimates (PayPal hasn't released it). */
+function stillHeld(h: HoldDetail["hold"], now: number): boolean {
+  const last = h.estimateUpperBoundAt ?? h.estimatedReleaseAt;
+  return h.state === "still_held" || (last !== null && Date.parse(last) < now);
+}
+
 function Estimate({ d }: { d: HoldDetail }) {
   const t = useTranslations("holds.detail");
+  const tl = useTranslations("holds.timeline");
   const locale = useUiLocale();
+  const [now] = useState(() => Date.now());
   const h = d.hold;
   const tz = d.workspace.timezone;
   return (
     <section aria-labelledby="estimate-heading" className="flex flex-col gap-2">
       <h2 id="estimate-heading" className="text-xl font-semibold">
-        {t("estimateTitle")}
+        {h.state === "released" ? tl("released") : t("estimateTitle")}
       </h2>
       {h.state === "released" && h.releasedAt !== null ? (
-        <p className="flex flex-wrap items-center gap-2" data-testid="released">
-          <StatusBadge status="completed" detail={d.payment.status} />
-          <span>{t("released", { time: formatTime(locale, h.releasedAt, tz) })}</span>
-        </p>
+        <p data-testid="released">{t("released", { time: formatTime(locale, h.releasedAt, tz) })}</p>
       ) : (
         <EstimatedDate e={{ ...h, disputeDueAt: h.dispute?.dueDate ?? null }} timeZone={tz} full />
       )}
-      {h.state === "still_held" ? <p>{t("stillHeld")}</p> : null}
+      {h.state === "released" || !stillHeld(h, now) ? null : (
+        <div className="flex flex-col gap-1" data-testid="still-held">
+          <p className="font-medium">{t("stillHeld")}</p>
+          <p className="text-text-muted">{t("stillHeldCheck")}</p>
+        </div>
+      )}
     </section>
   );
 }
 
+type StepMark = "done" | "current" | "notReached";
+const MARK = { done: CircleCheck, current: CircleDot, notReached: Circle } as const;
+
+/** The steps shown: a released hold shows only held → released (skipped steps are not claimed). */
+function timelineSteps(state: HoldState): HoldState[] {
+  if (state === "released") return ["open", "released"];
+  const path = HOLD_STATES.filter((s) => s !== "released" && s !== "still_held");
+  return state === "still_held" ? [...path, "still_held"] : [...path, "released"];
+}
+
 function Timeline({ state }: { state: HoldState }) {
   const t = useTranslations("holds");
-  const steps = HOLD_STATES.filter((s) => s !== (state === "still_held" ? "released" : "still_held"));
+  const steps = timelineSteps(state);
+  const at = steps.indexOf(state);
   return (
     <section aria-labelledby="timeline-heading" className="flex flex-col gap-2">
       <h2 id="timeline-heading" className="text-xl font-semibold">
         {t("detail.timelineTitle")}
       </h2>
-      <ol className="flex flex-col gap-1" data-testid="timeline">
-        {steps.map((s) => (
-          <li
-            key={s}
-            aria-current={s === state ? "step" : undefined}
-            className={s === state ? "font-semibold" : "text-text-muted"}
-          >
-            {t(`timeline.${s}`)}
-          </li>
-        ))}
+      <ol className="flex flex-col gap-2" data-testid="timeline">
+        {steps.map((s, i) => {
+          const mark: StepMark = i < at ? "done" : i === at ? "current" : "notReached";
+          const Icon = MARK[mark];
+          return (
+            <li
+              key={s}
+              aria-current={mark === "current" ? "step" : undefined}
+              className={`flex items-center gap-2 ${mark === "notReached" ? "text-text-muted" : ""}`}
+              data-mark={mark}
+            >
+              <Icon aria-hidden="true" size={18} strokeWidth={1.75} />
+              <span className={mark === "current" ? "font-semibold" : ""} data-testid="step-label">
+                {t(`timeline.${s}`)}
+              </span>
+              <span className="text-sm text-text-muted">({t(`step.${mark}`)})</span>
+            </li>
+          );
+        })}
       </ol>
     </section>
   );
 }
 
-function Detail({ d }: { d: HoldDetail }) {
+function Header({ d }: { d: HoldDetail }) {
   const t = useTranslations("holds.detail");
   const locale = useUiLocale();
   const h = d.hold;
   const f = formatAmount(locale, h.amount);
+  const released = h.state === "released";
+  return (
+    <header className="flex flex-col gap-2">
+      <h1 className="tabular text-2xl font-bold">
+        {t(released ? "h1Released" : "h1", { amount: `${f.text} ${f.code}` })}
+      </h1>
+      {/* the badge mirrors the capture now; a released hold keeps its old reason as history */}
+      <StatusBadge status={released ? "completed" : "held"} detail={released ? d.payment.status : h.reason} />
+      {released ? (
+        <p className="text-sm text-text-muted" data-testid="was-held">
+          {t("wasHeld")} <code lang="en">{h.reason}</code>
+        </p>
+      ) : null}
+      <p className="text-sm text-text-muted">
+        <time dateTime={h.openedAt}>
+          {t("opened", { time: formatTime(locale, h.openedAt, d.workspace.timezone) })}
+        </time>
+      </p>
+      <p className="flex flex-wrap gap-x-4">
+        <Link href={`/payments/${h.paymentId}/pack`} className={linkClass}>
+          {t("payment")}
+        </Link>
+        {h.dispute === null ? null : (
+          <Link href={`/disputes/${h.dispute.id}`} className={linkClass} data-testid="dispute-link">
+            {t("dispute", { id: h.dispute.disputeId })}
+          </Link>
+        )}
+      </p>
+    </header>
+  );
+}
+
+function Detail({ d }: { d: HoldDetail }) {
+  const t = useTranslations("holds.detail");
+  const h = d.hold;
+  const released = h.state === "released";
   return (
     <div className="flex flex-col gap-6" data-testid="hold-detail" data-state={h.state}>
-      <header className="flex flex-col gap-2">
-        <h1 className="tabular text-2xl font-bold">{t("h1", { amount: `${f.text} ${f.code}` })}</h1>
-        <StatusBadge status={h.state === "released" ? "completed" : "held"} detail={h.reason} />
-        <p className="text-sm text-text-muted">
-          <time dateTime={h.openedAt}>
-            {t("opened", { time: formatTime(locale, h.openedAt, d.workspace.timezone) })}
-          </time>
-        </p>
-        <p className="flex flex-wrap gap-x-4">
-          <Link href={`/payments/${h.paymentId}/pack`} className={linkClass}>
-            {t("payment")}
-          </Link>
-          {h.dispute === null ? null : (
-            <Link href={`/disputes/${h.dispute.id}`} className={linkClass} data-testid="dispute-link">
-              {t("dispute", { id: h.dispute.disputeId })}
-            </Link>
-          )}
-        </p>
-      </header>
+      <Header d={d} />
+      {released ? <Estimate d={d} /> : null}
       <Why d={d} />
-      <Estimate d={d} />
-      {h.state === "released" ? null : (
+      {released ? null : <Estimate d={d} />}
+      {released ? null : (
         <section aria-labelledby="action-heading" className="flex flex-col gap-2" data-testid="action-slot">
           <h2 id="action-heading" className="text-xl font-semibold">
             {t("actionTitle")}
@@ -150,6 +202,7 @@ export function HoldDetailView({ id }: { id: string }) {
     refreshWhenHidden: false,
     keepPreviousData: true,
   });
+  const loadedAt = useLoadedAt(data);
   const focused = useRef(false);
   useEffect(() => {
     if (error instanceof ApiError && error.status === 401) router.replace("/?ended=1");
@@ -160,7 +213,13 @@ export function HoldDetailView({ id }: { id: string }) {
     document.getElementById("why")?.focus();
   }, [data]);
 
-  if (data !== undefined) return <Detail d={data} />;
+  if (data !== undefined)
+    return (
+      <>
+        <OfflineBanner loadedAt={loadedAt} timeZone={data.workspace.timezone} />
+        <Detail d={data} />
+      </>
+    );
   if (error instanceof ApiError && error.status === 404)
     return <EmptyState icon={SearchX} title={t("notFoundTitle")} body={t("notFoundBody")} />;
   if (error !== undefined)

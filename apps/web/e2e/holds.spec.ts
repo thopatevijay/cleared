@@ -15,7 +15,8 @@ test("empty, loading and error states; the samples always show", async ({ page }
   await demoWorkspace(page);
   await page.goto("/en/holds");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Held money");
-  await expect(page.getByText("No held money. Every payment is with you or on its way.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No held money." })).toBeVisible();
+  await expect(page.getByText("Every payment is with you or on its way.")).toBeVisible();
   const samples = page.getByTestId("sample");
   await expect(samples).toHaveCount(3);
   for (const s of await samples.all()) {
@@ -76,16 +77,31 @@ test("inbox and detail with a derived PENDING_REVIEW hold; PayPal's release", as
   const est = detail.getByTestId("estimated-date");
   await expect(est).toContainText("Within 24 hours; up to 3 business days · estimated");
   await expect(est).toContainText(/Free by \d{1,2} \w{3} · up to \d{1,2} \w{3}/);
-  await est.getByTestId("source-toggle").click();
-  await expect(est.getByTestId("source-quote")).toContainText(
+  // the full estimate cites both bounds: T2105 (24 h) and the Holds panel (3 business days)
+  await expect(est.getByTestId("source-toggle")).toHaveCount(2);
+  await est.getByTestId("source-toggle").nth(0).click();
+  await est.getByTestId("source-toggle").nth(1).click();
+  await expect(est.getByTestId("source-quote").nth(0)).toContainText(
     "PayPal reviews the transaction for up to 24 hours.",
   );
-  await expect(est.getByTestId("source-link")).toHaveAttribute("href", /transaction-event-codes/);
+  await expect(est.getByTestId("source-quote").nth(1)).toContainText("normally takes up to 3 business days");
+  await expect(est.getByTestId("source-link").nth(0)).toHaveAttribute("href", /transaction-event-codes/);
+  // the recorded capture's estimate (Oct 2026) has passed: still held, with what to check
+  await expect(detail.getByTestId("still-held")).toContainText("Still held after the estimate.");
   await expect(detail.getByTestId("advice-line")).toContainText("Don't ship yet");
   await expect(detail.getByTestId("action-slot")).toContainText("Nothing to do.");
-  await expect(detail.locator('[aria-current="step"]')).toHaveText("Held");
+  await expect(detail.locator('[aria-current="step"] [data-testid="step-label"]')).toHaveText("Held");
+  await expect(detail.locator('[data-mark="notReached"]')).toHaveCount(5);
   await axeClean(page, "hold-detail");
   await capture(page, "en-hold-detail", REVIEW_HOLDS);
+
+  // offline: the last data stays, with the banner
+  await page.context().setOffline(true);
+  await expect(page.getByTestId("offline-banner")).toContainText("You're offline.");
+  await expect(detail).toBeVisible();
+  await capture(page, "en-hold-detail-offline", REVIEW_HOLDS);
+  await page.context().setOffline(false);
+  await expect(page.getByTestId("offline-banner")).toHaveCount(0);
 
   // HI
   await page.goto(`/hi/holds/${s.holdId}`);
@@ -103,16 +119,46 @@ test("inbox and detail with a derived PENDING_REVIEW hold; PayPal's release", as
   await expect(page.getByTestId("hold-detail")).toHaveAttribute("data-state", "released", {
     timeout: 60_000,
   });
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Released: $64.00 USD");
   await expect(page.getByTestId("released")).toContainText("Released");
-  await expect(page.locator('[aria-current="step"]')).toHaveText("Released");
+  await expect(page.getByTestId("was-held")).toContainText("PENDING_REVIEW");
+  await expect(page.getByTestId("hold-detail").locator("header")).toContainText("COMPLETED");
+  await expect(page.locator('[aria-current="step"] [data-testid="step-label"]')).toHaveText("Released");
+  await expect(page.getByTestId("step-label")).toHaveText(["Held", "Released"]);
   await axeClean(page, "hold-released");
   await capture(page, "en-hold-released", REVIEW_HOLDS);
   await page.goto("/en/holds");
-  await expect(page.getByText("No held money. Every payment is with you or on its way.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No held money." })).toBeVisible();
 
   // not found (another workspace's or no such hold)
   await page.goto("/en/holds/00000000-0000-4000-8000-000000000000");
   await expect(page.getByText("Hold not found")).toBeVisible();
   await axeClean(page, "hold-not-found");
   await capture(page, "en-hold-not-found", REVIEW_HOLDS);
+});
+
+test("inbox variants: dispute-linked, no-timeline and review holds; held total per currency", async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  const ws = await demoWorkspace(page);
+  const review = await seedHeld(ws);
+  const dispute = await seedHeld(ws, { amount: "120.00", reason: "BUYER_COMPLAINT" });
+  const echeck = await seedHeld(ws, { amount: "15.00", currency: "EUR", reason: "ECHECK" });
+  await page.goto("/en/holds");
+  await expect(page.getByTestId("holds-total")).toHaveText("€15.00 EUR + $184.00 USD held in 3 payments");
+  const row = (id: string) => page.locator(`[data-testid="hold-row"][data-hold="${id}"]`);
+  await expect(row(dispute.holdId)).toContainText("Held because the buyer opened a dispute");
+  await expect(row(dispute.holdId).getByTestId("estimated-date")).toContainText(
+    "Released when the dispute is resolved",
+  );
+  await expect(row(dispute.holdId)).not.toContainText("Free by");
+  await expect(row(echeck.holdId).getByTestId("estimated-date")).toContainText(
+    "PayPal gives no timeline for this reason",
+  );
+  await expect(row(review.holdId).getByTestId("estimated-date")).toContainText("estimated");
+  await axeClean(page, "holds-variants");
+  await capture(page, "en-holds-variants", REVIEW_HOLDS);
+  await page.goto("/hi/holds");
+  await capture(page, "hi-holds-variants", REVIEW_HOLDS);
 });

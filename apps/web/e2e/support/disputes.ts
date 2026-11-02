@@ -98,6 +98,10 @@ export async function capture(page: Page, name: string, dir = REVIEW): Promise<v
       await fits(page, `${name}-${String(width)}`);
       if (shots) {
         mkdirSync(dir, { recursive: true });
+        // from the top, so the sticky header isn't drawn mid-page in the full-page shot
+        await page.evaluate(() => {
+          window.scrollTo(0, 0);
+        });
         await page.screenshot({ path: `${dir}${name}-${String(width)}-${theme}.png`, fullPage: true });
       }
       await axe(page, `${name}-${String(width)}-${theme}`, dir);

@@ -18,6 +18,7 @@ import { MoneyCell } from "../MoneyCell.tsx";
 import { StatusBadge } from "../StatusBadge.tsx";
 import { HeldLines } from "./HeldLines.tsx";
 import { SampleScenarios } from "./SampleScenarios.tsx";
+import { OfflineBanner, useLoadedAt } from "./Offline.tsx";
 import { useReasonText } from "./text.ts";
 
 export const HOLDS_POLL_MS = 5_000;
@@ -123,6 +124,7 @@ export function HoldsView() {
     keepPreviousData: true,
   });
   const announcement = useReleases(data?.items);
+  const loadedAt = useLoadedAt(data);
   useEffect(() => {
     if (error instanceof ApiError && error.status === 401) router.replace("/?ended=1");
   }, [error, router]);
@@ -140,7 +142,7 @@ export function HoldsView() {
       />
     );
   else if (data.items.length === 0)
-    body = <EmptyState icon={CircleCheck} title={t("listHeading")} body={t("empty")} />;
+    body = <EmptyState icon={CircleCheck} title={t("emptyTitle")} body={t("empty")} />;
   else {
     const total = data.summary.held
       .map((a) => {
@@ -169,6 +171,7 @@ export function HoldsView() {
   }
   return (
     <div className="flex flex-col gap-8">
+      {data === undefined ? null : <OfflineBanner loadedAt={loadedAt} timeZone={data.workspace.timezone} />}
       {body}
       <SampleScenarios />
       <p aria-live="polite" className="sr-only" data-testid="live-region">
