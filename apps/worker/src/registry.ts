@@ -1,7 +1,9 @@
 // The one place consumers are registered (M1-03). Each entry is a queue (created with its `.dlq`) and
 // its idempotent handler; `boss.ts` wires every entry with the same concurrency, retry and DLQ policy.
 // Queue specs come from @cleared/db (`KNOWN_QUEUES`), which `migrate` also creates (M1-04).
-// M2 and M3 add theirs here.
+// M2 and M3 add theirs here. One entry per queue (test/registry.test.ts): a second consumer of a queue
+// that already has one (`pack.checked`, `dispute.*` run the M2-07 draft) composes with it inside that
+// entry, running both idempotent handlers, and never replaces it (BL-01 6538667217).
 import { correlationIdOrNew } from "@cleared/adapters";
 import {
   ACTION_EXECUTE_QUEUE,

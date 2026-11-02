@@ -48,4 +48,10 @@ describe("default registry", () => {
     expect(emitted).toEqual(expect.arrayContaining(["action.proposed", "evidence.added", "payment.captured"]));
     expect(emitted.filter((t) => !queues.includes(t))).toEqual([]);
   });
+
+  // BL-01 6538667217: two `work()` calls on one queue would compete for its jobs (each job reaches one
+  // of them), so a second consumer of e.g. `pack.checked` silently skips drafting for some packs.
+  it("registers each queue once (a second consumer composes into the entry, never competes)", () => {
+    expect(queues.filter((q, i) => queues.indexOf(q) !== i)).toEqual([]);
+  });
 });
