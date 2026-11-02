@@ -5,7 +5,6 @@
 // the fixed wording. Rendering (pdf-lib) lives in packages/adapters; the job in apps/worker.
 import { z } from "zod";
 import { canonicalHash } from "../agent/canonical-hash.ts";
-import type { JsonValue } from "../actions/canonical-json.ts";
 import { Sha256Schema, type Sha256 } from "../ids.ts";
 import { EVIDENCE_KINDS, type EvidenceKind } from "./evidence.ts";
 
@@ -82,7 +81,7 @@ export interface ScopeSnapshotDocument extends ScopeSnapshotContent {
 
 /** The job's idempotency key per pack: equal content → the existing snapshot, never a second one. */
 export function scopeSnapshotInputHash(content: ScopeSnapshotContent): Sha256 {
-  return canonicalHash(ScopeSnapshotContentSchema.parse(content) as unknown as JsonValue);
+  return canonicalHash(ScopeSnapshotContentSchema.parse(content));
 }
 
 /** `scope_snapshot.render` job payload (seller button, or a `client_ack` arriving). */

@@ -242,7 +242,7 @@ describe.skipIf(!dbAvailable)("scope_snapshot.render (M3-07, compose Postgres)",
     expect((await evidenceRepo(db, ws).packs.getOwned(packId))?.state).toBe("stale"); // M3-06 AC 6 holds
     const noAi: AiProvider = {
       complete: () => Promise.reject(new Error("the AI must not run")),
-    } as unknown as AiProvider;
+    };
     const event = {
       type: "evidence.added" as const,
       version: 1 as const,
