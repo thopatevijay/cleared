@@ -121,3 +121,5 @@ The verification-failure counter is per process, so with one web instance it cou
 | `RENDER_GIT_COMMIT` | set by Render | `release` on log lines and Sentry events |
 
 Source maps are not uploaded (that would need a Sentry auth token), so browser stack traces are minified. Server stack traces are readable as they are.
+
+**Local live runs reach production webhooks** (BL-01 6568286398). The sandbox app has one webhook URL (Render), so a capture or dispute made by a laptop run is delivered to production, which doesn't own it. Production still quarantines it and writes the `paypal.*.quarantined` audit row, now with `detail.anotherEnvironment = true`, but raises no Sentry warning when its `custom_id` is a workspace id this database doesn't have. An unowned resource with no `custom_id`, or one naming a workspace of this database, still alerts.
