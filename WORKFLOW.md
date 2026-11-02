@@ -34,6 +34,20 @@ Gates are written to run verbatim from a fresh shell. Two things make that work 
   Variables already in your shell win over the file (Node's `--env-file` never overrides them), so the
   exported `DATABASE_URL` above still points at your own stack.
 
+## Test conventions
+- **Skips in CI are live tests only.** CI runs with `REQUIRE_DB=1`, so a DB-dependent test fails
+  instead of skipping: the DB skip count is always 0. CI has no PayPal or OpenAI credentials, so every
+  `*.live.test.ts` file skips (BL-01 6536548556). A non-zero `skipped` count is expected; the check is
+  that every skipped file is a live one. On a saved CI log (`gh run view <id> --log > ci.log`),
+  `grep -a skipped ci.log | grep -a '\.test\.ts' | grep -av '\.live\.test\.ts'` prints nothing (each
+  vitest file line carries its path and its `| n skipped` count). A live test
+  is named `*.live.test.ts` and skips only on a missing credential.
+- **msw timeout tests wait out the late response.** A delayed msw response whose request the client
+  already aborted makes the next request on that server fail with `HttpNetworkError` if it starts
+  before the delay ends (BL-01 6537331135). Serve the late answer with `LATE_RESPONSE_MS` and
+  `await settleLateResponse()` (`apps/worker/test/actions-support.ts`) before the next call to that
+  server or before the test returns.
+
 ## Design review
 Every ticket labelled `frontend` passes the `ui-reviewer` agent (independent of the builder) against `docs/design/` before merge.
 

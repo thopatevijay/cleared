@@ -24,7 +24,7 @@ Each line is marked **K** (known, with its source) or **A** (assumed, with how i
 | Availability | 99% through the judging window (until 2026-12-15); RPO 24 h; RTO 1 h | A |
 | Data | Relational core; evidence files ≤ 10 MB each (PayPal evidence limit), ~20 MB per pack; < 1 GB at launch; strong consistency for money, actions and approvals | K: PayPal Disputes API limits |
 | Security | Minimum PII (India DPDP Act, GDPR principles); synthetic personas in the demo; secrets only in the platform environment | K |
-| Global | EN + HI at launch; original and receivable currency as PayPal returns them; UTC stored, seller time zone shown; WCAG 2.2 AA | K |
+| Global | EN + HI at launch; original and receivable currency as PayPal returns them; UTC stored, seller time zone shown; WCAG 2.2 AA; mobile-first layouts hold at both 360 px (the Playwright ACs) and 375 px (the design system and design review), with no horizontal scroll or clipping at either | K |
 | Budget | Launch ceiling ≤ $50/month (≈ $20 hosting + LLM hard cap $1/day). The 100× figure comes from the per-pack cost measured in M0 | A: M0 spike + owner approval |
 | Feedback loops | Local check ≤ 2 min; PR CI ≤ 5 min; environment reset ≤ 2 min | K: engineering standard |
 

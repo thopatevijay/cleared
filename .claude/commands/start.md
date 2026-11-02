@@ -191,7 +191,7 @@ Re-read the issue body. Then, **mechanically**:
 The implementing session never reviews its own UI. Before landing:
 
 1. Capture screenshots of every screen the ticket touched with Playwright: widths **375 / 768 /
-   1440**, **light and dark**, plus loading / empty / error states where the ticket defines them.
+   1440**, plus **360** when an AC names it (BL-01 6527539802: both narrow widths must hold), **light and dark**, plus loading / empty / error states where the ticket defines them.
    Save to `.review/<TICKET-ID>/` (gitignored: review evidence stays local). Copy only a shot the
    README or a doc embeds into `docs/screenshots/` (tracked).
 2. Run axe on the same pages; save the JSON next to the screenshots.

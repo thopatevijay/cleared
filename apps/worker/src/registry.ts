@@ -1,7 +1,9 @@
 // The one place consumers are registered (M1-03). Each entry is a queue (created with its `.dlq`) and
 // its idempotent handler; `boss.ts` wires every entry with the same concurrency, retry and DLQ policy.
 // Queue specs come from @cleared/db (`KNOWN_QUEUES`), which `migrate` also creates (M1-04).
-// M2 and M3 add theirs here.
+// M2 and M3 add theirs here. One entry per queue (test/registry.test.ts): a second consumer of a queue
+// that already has one (`pack.checked`, `dispute.*` run the M2-07 draft) composes with it inside that
+// entry, running both idempotent handlers, and never replaces it (BL-01 6538667217).
 import { correlationIdOrNew } from "@cleared/adapters";
 import {
   ACTION_EXECUTE_QUEUE,
@@ -132,7 +134,9 @@ export function defaultRegistry(rt: Runtime, paypal: PayPalClients, ai: AiRuntim
     // The events dispute sync emits (M2-06); M2-07 drafts on them (M3 may add more consumers).
     { queue: queueSpec("dispute.opened"), handler: draft },
     { queue: queueSpec("dispute.status_changed"), handler: draft },
-    // The action events (M2-08); M2-09 / M3-08 consume them for real.
+    // The action events (M2-08); M2-09 / M3-08 consume them for real. `action.proposed` too, or its
+    // outbox rows stay unpublished and the relay re-sends them every minute (BL-01 6568052054).
+    { queue: queueSpec("action.proposed"), handler: recordEvent },
     { queue: queueSpec("action.approved"), handler: recordEvent },
     { queue: queueSpec("action.executed"), handler: recordEvent },
     { queue: queueSpec("action.failed"), handler: recordEvent },

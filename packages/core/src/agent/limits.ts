@@ -23,13 +23,20 @@ const flag = z
   .enum(["true", "false", "1", "0", ""])
   .optional()
   .transform((v) => v === "true" || v === "1");
-const usd = (fallback: number) => z.coerce.number().nonnegative().optional().default(fallback);
+/**
+ * A key that is present but blank (`OPENAI_MODEL_SMALL=` in a `.env`) means unset, so the pinned default
+ * applies; zod's `.default()` alone only covers an absent key (BL-01 6537625497).
+ */
+const blankAsUnset = (v: unknown): unknown => (typeof v === "string" && v.trim() === "" ? undefined : v);
+const usd = (fallback: number) =>
+  z.preprocess(blankAsUnset, z.coerce.number().nonnegative().optional().default(fallback));
+const modelId = (pinned: string) => z.preprocess(blankAsUnset, z.string().min(1).optional().default(pinned));
 
 /** The environment the harness reads. Callers pass `process.env`; the core never reads it itself. */
 export const AgentEnvSchema = z.object({
   AGENT_KILL_SWITCH: flag,
-  OPENAI_MODEL_SMALL: z.string().min(1).default("gpt-6-luna"),
-  OPENAI_MODEL_LARGE: z.string().min(1).default("gpt-6.1-terra"),
+  OPENAI_MODEL_SMALL: modelId("gpt-6-luna"),
+  OPENAI_MODEL_LARGE: modelId("gpt-6.1-terra"),
   LLM_WORKSPACE_CAP_USD: usd(0.1),
   LLM_DAILY_CAP_USD: usd(1),
 });

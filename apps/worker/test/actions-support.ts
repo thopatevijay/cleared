@@ -74,6 +74,17 @@ export function disputesWithHttp(server: SetupServer) {
   return { http: h, disputes: createPayPalDisputesClient({ http: h, tokens, env: () => "sandbox" }) };
 }
 
+/** How late a timeout test's write response answers (well after the test's write timeout). */
+export const LATE_RESPONSE_MS = 1_500;
+
+/**
+ * msw pitfall (BL-01 6537331135): a delayed response whose request the client already aborted makes the
+ * NEXT request on that msw server fail with `HttpNetworkError` if it starts before the delay ends. Every
+ * timeout test awaits this before its next PayPal call or before it returns.
+ */
+export const settleLateResponse = (ms: number = LATE_RESPONSE_MS): Promise<void> =>
+  new Promise((r) => setTimeout(r, ms));
+
 /** Serves a recorded write response (`fixture`) for `path` once; `waitMs` delays it (timeout tests). */
 export function serveWrite(server: SetupServer, ids: Ids, op: string, fixture: string, waitMs = 0): void {
   const f = loadFixture(fixture);
