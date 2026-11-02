@@ -102,16 +102,19 @@ describe.skipIf(KEY === "" || !dbAvailable)("explain-hold LIVE (M3-02, OPENAI bu
     ["PENDING_REVIEW", "hi", "payment-review-hi"],
     ["BUYER_COMPLAINT", "en", "dispute-hold-en"],
     ["BUYER_COMPLAINT", "hi", "dispute-hold-hi"],
-  ] as const)("%s in %s: an AI explanation, with tokens, cost and latency in agent_runs", async (reason, locale, name) => {
-    const { out, runs, stored, sourceRef } = await explainLive(reason, locale, name);
-    expect(out).toMatchObject({ status: "written", origin: "ai", runStatus: "succeeded", locale });
-    expect(stored.origin).toBe("ai");
-    expect(sourceRef).toBe(reason === "PENDING_REVIEW" ? "payment_review" : "dispute_hold");
-    const run = runs[0];
-    expect(run?.status).toBe("succeeded");
-    expect(run?.tokens_in).toBeGreaterThan(0);
-    expect(run?.tokens_out).toBeGreaterThan(0);
-    expect(Number(run?.cost_usd)).toBeGreaterThan(0);
-    expect(run?.latency_ms).toBeLessThan(MAX_LATENCY_MS);
-  });
+  ] as const)(
+    "%s in %s: an AI explanation, with tokens, cost and latency in agent_runs",
+    async (reason, locale, name) => {
+      const { out, runs, stored, sourceRef } = await explainLive(reason, locale, name);
+      expect(out).toMatchObject({ status: "written", origin: "ai", runStatus: "succeeded", locale });
+      expect(stored.origin).toBe("ai");
+      expect(sourceRef).toBe(reason === "PENDING_REVIEW" ? "payment_review" : "dispute_hold");
+      const run = runs[0];
+      expect(run?.status).toBe("succeeded");
+      expect(run?.tokens_in).toBeGreaterThan(0);
+      expect(run?.tokens_out).toBeGreaterThan(0);
+      expect(Number(run?.cost_usd)).toBeGreaterThan(0);
+      expect(run?.latency_ms).toBeLessThan(MAX_LATENCY_MS);
+    },
+  );
 });

@@ -92,7 +92,8 @@ function promiseProblems(text: string): string[] {
   const out: string[] = [];
   for (const re of PROMISE_WORDS) {
     const m = re.exec(text);
-    if (m) out.push(`promise_word: "${m[0]}" promises an outcome; PayPal decides holds, so say what is estimated`);
+    if (m)
+      out.push(`promise_word: "${m[0]}" promises an outcome; PayPal decides holds, so say what is estimated`);
   }
   for (const s of sentences(text))
     for (const re of WILL_RELEASE) {
@@ -105,7 +106,11 @@ function promiseProblems(text: string): string[] {
   return out;
 }
 
-const fieldsOf = (out: ExplainHoldOutput): string[] => [out.summary, out.whatPayPalIsDoing, ...out.whatYouCanDo];
+const fieldsOf = (out: ExplainHoldOutput): string[] => [
+  out.summary,
+  out.whatPayPalIsDoing,
+  ...out.whatYouCanDo,
+];
 
 /** Every number the input may lend the answer: the rule's quotes and titles, and PayPal's reason. */
 function allowedNumbers(input: ExplainHoldInput): Set<string> {

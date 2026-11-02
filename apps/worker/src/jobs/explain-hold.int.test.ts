@@ -13,7 +13,15 @@ import {
   type Locale,
   type WorkspaceId,
 } from "@cleared/core";
-import { closeDb, createDb, createPublisher, createQueue, holdsRepo, withTransaction, type Queue } from "@cleared/db";
+import {
+  closeDb,
+  createDb,
+  createPublisher,
+  createQueue,
+  holdsRepo,
+  withTransaction,
+  type Queue,
+} from "@cleared/db";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { dbAvailable, url } from "../../test/helpers.ts";
 import {
@@ -62,7 +70,9 @@ async function explain(
     publisher: createPublisher(db, boss),
     now: () => new Date("2026-10-26T12:00:00Z"),
   };
-  return withTransaction(db, (tx) => explainForEvent(deps, holdEvent(ws, holdId, o.locale), { ...explainCtx(), tx }));
+  return withTransaction(db, (tx) =>
+    explainForEvent(deps, holdEvent(ws, holdId, o.locale), { ...explainCtx(), tx }),
+  );
 }
 
 async function stored(holdId: string) {
@@ -74,7 +84,9 @@ async function stored(holdId: string) {
 }
 
 async function holdState(holdId: string): Promise<string | undefined> {
-  const r = await db.$client.query<{ state: string }>("select state::text from holds where id = $1", [holdId]);
+  const r = await db.$client.query<{ state: string }>("select state::text from holds where id = $1", [
+    holdId,
+  ]);
   return r.rows[0]?.state;
 }
 
@@ -157,7 +169,11 @@ describe.skipIf(!dbAvailable)("explain_hold workflow (msw replay + compose Postg
     });
     const [row] = await stored(holdId);
     expect(row?.source_ref).toBe("payment_review");
-    expect(row?.doc).toMatchObject({ origin: "standard", promptVersion: "fallback@v1", ruleId: "payment_review" });
+    expect(row?.doc).toMatchObject({
+      origin: "standard",
+      promptVersion: "fallback@v1",
+      ruleId: "payment_review",
+    });
     expect(row?.doc.summary).not.toContain("3 Nov");
     expect((await agentRuns(db, ws)).map((x) => x.status)).toEqual(["failed_output"]);
     expect(await holdState(holdId)).toBe("explained");
@@ -168,7 +184,12 @@ describe.skipIf(!dbAvailable)("explain_hold workflow (msw replay + compose Postg
     const { holdId } = await heldPayment(db, ws);
     const out = await explain(ws, holdId, { env: { AGENT_KILL_SWITCH: "true" } });
     expect(calls).toBe(0);
-    expect(out).toMatchObject({ status: "written", origin: "standard", runStatus: "kill_switch", runId: null });
+    expect(out).toMatchObject({
+      status: "written",
+      origin: "standard",
+      runStatus: "kill_switch",
+      runId: null,
+    });
     expect((await stored(holdId))[0]?.doc.origin).toBe("standard");
   });
 

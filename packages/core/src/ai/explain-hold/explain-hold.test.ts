@@ -17,11 +17,17 @@ const review: HoldFacts = {
   estimatedReleaseAt: fromEpochMs(Date.parse("2026-10-27T11:24:21Z")),
   timeZone: "Asia/Kolkata",
 };
-const dispute: HoldFacts = { ...review, ruleId: "dispute_hold", reason: "BUYER_COMPLAINT", estimatedReleaseAt: null };
+const dispute: HoldFacts = {
+  ...review,
+  ruleId: "dispute_hold",
+  reason: "BUYER_COMPLAINT",
+  estimatedReleaseAt: null,
+};
 
 const ok: ExplainHoldOutput = {
   summary: "PayPal is reviewing your payment of {amount}.",
-  whatPayPalIsDoing: "It reviews some payments for up to 24 hours; the release at {estimated_release} is estimated.",
+  whatPayPalIsDoing:
+    "It reviews some payments for up to 24 hours; the release at {estimated_release} is estimated.",
   whatYouCanDo: ["Don't ship yet."],
   ruleId: "payment_review",
 };
@@ -59,10 +65,12 @@ describe("explain_hold guardrails", () => {
 
   it('rejects a fabricated date ("released on 3 Nov"), even though 3 is in the quote', () => {
     expect(numbersIn(input.rule.sources.map((s) => s.quote).join(" "))).toContain("3");
-    expect(codes({ summary: "Your money will be released on 3 Nov (estimated)." })).toContain("date_expression");
-    expect(codes({ summary: "पैसा 3 नवंबर को अनुमानित रूप से मिलेगा।" }, explainHoldInput(review, "hi"))).toContain(
+    expect(codes({ summary: "Your money will be released on 3 Nov (estimated)." })).toContain(
       "date_expression",
     );
+    expect(
+      codes({ summary: "पैसा 3 नवंबर को अनुमानित रूप से मिलेगा।" }, explainHoldInput(review, "hi")),
+    ).toContain("date_expression");
     expect(codes({ summary: "Expect it by Friday, estimated." })).toEqual(["date_expression"]);
     expect(dateExpressionIn("You may ship once PayPal says so.")).toBeNull();
   });
@@ -78,16 +86,25 @@ describe("explain_hold guardrails", () => {
 
   it("rejects a slot the hold doesn't have", () => {
     const d = explainHoldInput(dispute, "en");
-    expect(codes({ summary: "Held until {estimated_release}, estimated.", whatPayPalIsDoing: "It holds it.", ruleId: "dispute_hold" }, d)).toEqual([
-      "unknown_slot",
-    ]);
+    expect(
+      codes(
+        {
+          summary: "Held until {estimated_release}, estimated.",
+          whatPayPalIsDoing: "It holds it.",
+          ruleId: "dispute_hold",
+        },
+        d,
+      ),
+    ).toEqual(["unknown_slot"]);
     expect(codes({ summary: "Paid by {buyer_name}." })).toEqual(["unknown_slot"]);
   });
 
   it("rejects promise words, EN and HI", () => {
     expect(codes({ summary: "Your release is guaranteed." })).toEqual(["promise_word"]);
     expect(codes({ summary: "PayPal will release the money soon." })).toEqual(["promise_word"]);
-    expect(codes({ summary: "PayPal will release the money at {estimated_release} (estimated)." })).toEqual([]);
+    expect(codes({ summary: "PayPal will release the money at {estimated_release} (estimated)." })).toEqual(
+      [],
+    );
     const hi = explainHoldInput(review, "hi");
     expect(codes({ summary: "पैसा ज़रूर रिलीज़ हो जाएगा।" }, hi)).toEqual(["promise_word", "promise_word"]);
     expect(codes({ summary: "अनुमान है कि पैसा रिलीज़ हो जाएगा।" }, hi)).toEqual([]);
@@ -98,7 +115,9 @@ describe("explain_hold guardrails", () => {
   });
 
   it("rejects the wrong language", () => {
-    expect(codes({ summary: "PayPal is reviewing it." }, explainHoldInput(review, "hi"))).toEqual(["wrong_language"]);
+    expect(codes({ summary: "PayPal is reviewing it." }, explainHoldInput(review, "hi"))).toEqual([
+      "wrong_language",
+    ]);
     expect(codes({ summary: "PayPal जाँच कर रहा है।" })).toEqual(["wrong_language"]);
   });
 });
@@ -121,7 +140,12 @@ describe("the standard explanation (fallback)", () => {
   );
 
   it("has its own text for the four derivable rows with a workflow", () => {
-    expect(FALLBACK_RULE_IDS).toEqual(["payment_review", "dispute_hold", "goods_delivered", "service_completed"]);
+    expect(FALLBACK_RULE_IDS).toEqual([
+      "payment_review",
+      "dispute_hold",
+      "goods_delivered",
+      "service_completed",
+    ]);
     expect(fallbackExplanation("reason_ECHECK", "hi").summary).toContain("PayPal");
   });
 });
@@ -144,7 +168,13 @@ describe("rendering (code fills the values)", () => {
   });
 
   it("keeps markup as plain text (rendering escapes it; nothing is stripped or interpreted here)", () => {
-    const s = renderExplanation({ ...ok, summary: "<b>Held</b> {amount}" }, review, "en", "ai", "explain_hold@v1");
+    const s = renderExplanation(
+      { ...ok, summary: "<b>Held</b> {amount}" },
+      review,
+      "en",
+      "ai",
+      "explain_hold@v1",
+    );
     expect(s.summary).toBe("<b>Held</b> 64.00 USD");
   });
 });

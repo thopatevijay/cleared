@@ -188,7 +188,7 @@
       "ai": "AI explanation",
       "standard": "Standard explanation (no AI summary right now)",
       "doingTitle": "What PayPal is doing",
-      "canDoTitle": "What you can do",
+      "canDoTitle": "Steps you can take",
       "pending": "Writing a plain-language explanation… usually under 30 seconds.",
       "unavailable": "Couldn't ask for this explanation. PayPal's rule text is below."
     },

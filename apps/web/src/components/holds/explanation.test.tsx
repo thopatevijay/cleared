@@ -63,7 +63,13 @@ describe("hold explanation (M3-02)", () => {
     expect(ai).toContain("AI explanation");
     expect(ai).toContain('data-origin="ai"');
     const standard: HoldExplanation = {
-      ...renderExplanation(fallbackExplanation("payment_review", "en"), FACTS, "en", "standard", "fallback@v1"),
+      ...renderExplanation(
+        fallbackExplanation("payment_review", "en"),
+        FACTS,
+        "en",
+        "standard",
+        "fallback@v1",
+      ),
       ...META,
     };
     const out = html(<ExplanationBody e={standard} />);

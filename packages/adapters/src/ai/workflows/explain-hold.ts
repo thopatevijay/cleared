@@ -35,7 +35,7 @@ export const EXPLAIN_HOLD_V1_SYSTEM = [
   "You explain to a small online seller why PayPal is holding one of their payments, in plain words a non-expert understands.",
   "Use only the data blocks: the hold block (PayPal's reason code, the hold type, the language) and the rule block (PayPal's own words about this hold, with where they come from). Never add a fact, rule, number, amount, date, weekday or time that is not in them.",
   "Never write a date or an amount yourself. Where you need them, write the slots exactly as listed in the hold block: {amount} for the payment amount, {opened_at} for when the hold started, {estimated_release} for the estimated release (only when it is listed). Code replaces each slot with the real value.",
-  "Any release time is an estimate, never a promise: say \"estimated\" (in Hindi \"अनुमानित\") next to it. Never say guaranteed, definitely, certainly, or that the money will be released, without saying it is estimated. PayPal decides when a hold ends.",
+  'Any release time is an estimate, never a promise: say "estimated" (in Hindi "अनुमानित") next to it. Never say guaranteed, definitely, certainly, or that the money will be released, without saying it is estimated. PayPal decides when a hold ends.',
   "Write in the language the hold block asks for: en = English; hi = simple, everyday Hindi in Devanagari script (keep the names PayPal and Completed in English).",
   "summary: one or two sentences: what is happening to this payment. whatPayPalIsDoing: two or three sentences on why PayPal holds it and how it usually ends, from the rule's words. whatYouCanDo: at most three short steps the seller can take, only ones the rule's words support (for example, not shipping yet); an empty list when there is nothing to do.",
   "ruleId: copy the rule id from the rule block exactly.",
@@ -95,7 +95,11 @@ export interface ExplainHoldResult {
 }
 
 /** Runs the workflow and returns the explanation to store: the model's (checked) or the standard text. */
-export async function explainHold(deps: RunDeps, facts: HoldFacts, locale: Locale): Promise<ExplainHoldResult> {
+export async function explainHold(
+  deps: RunDeps,
+  facts: HoldFacts,
+  locale: Locale,
+): Promise<ExplainHoldResult> {
   const config = { ...deps.config, limits: { ...deps.config.limits, ...EXPLAIN_LIMITS } };
   const out = await runWorkflow(explainHoldWorkflow, explainHoldInput(facts, locale), { ...deps, config });
   if ("output" in out)

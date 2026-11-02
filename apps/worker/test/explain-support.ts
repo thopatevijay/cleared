@@ -34,7 +34,11 @@ export async function heldPayment(
 ): Promise<{ holdId: string; paymentId: string }> {
   const captureId = `M302${randomBytes(6).toString("hex").toUpperCase()}`;
   const repos = forWorkspace(db, ws);
-  await platform(db).resourceOwners.claim({ resourceType: "capture", resourceId: captureId, workspaceId: ws });
+  await platform(db).resourceOwners.claim({
+    resourceType: "capture",
+    resourceId: captureId,
+    workspaceId: ws,
+  });
   const p = await repos.payments.insert({
     captureId,
     amount,

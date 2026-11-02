@@ -67,12 +67,7 @@
                 "maxLength": 80
               }
             },
-            "required": [
-              "summary",
-              "whatPayPalIsDoing",
-              "whatYouCanDo",
-              "ruleId"
-            ],
+            "required": ["summary", "whatPayPalIsDoing", "whatYouCanDo", "ruleId"],
             "additionalProperties": false
           },
           "strict": true
@@ -174,12 +169,7 @@
                 "maxLength": 80
               }
             },
-            "required": [
-              "summary",
-              "whatPayPalIsDoing",
-              "whatYouCanDo",
-              "ruleId"
-            ],
+            "required": ["summary", "whatPayPalIsDoing", "whatYouCanDo", "ruleId"],
             "additionalProperties": false
           },
           "strict": true

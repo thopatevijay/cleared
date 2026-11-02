@@ -63,7 +63,11 @@ export function explainHoldHandler(deps: ExplainHoldDeps): Handler {
 }
 
 /** `hold.opened` explains in the workspace's locale; `hold.explain_requested` in the locale asked for. */
-export async function explainForEvent(deps: ExplainHoldDeps, data: unknown, ctx: Ctx): Promise<ExplainOutcome> {
+export async function explainForEvent(
+  deps: ExplainHoldDeps,
+  data: unknown,
+  ctx: Ctx,
+): Promise<ExplainOutcome> {
   const e = DomainEventSchema.parse(data);
   if (e.type !== "hold.opened" && e.type !== "hold.explain_requested")
     throw new Error(`explain-hold: unexpected event ${e.type}`);

@@ -90,8 +90,11 @@ test("inbox and detail with a derived PENDING_REVIEW hold; PayPal's release", as
   await expect(detail.getByTestId("still-held")).toContainText("Still held after the estimate.");
   await expect(detail.getByTestId("advice-line")).toContainText("Don't ship yet");
   await expect(detail.getByTestId("action-slot")).toContainText("Nothing to do.");
-  await expect(detail.locator('[aria-current="step"] [data-testid="step-label"]')).toHaveText("Held");
-  await expect(detail.locator('[data-mark="notReached"]')).toHaveCount(5);
+  // M3-02: the worker explains the hold on `hold.opened` (open → explained)
+  await expect(detail.getByTestId("explanation")).toBeVisible({ timeout: 60_000 });
+  await expect(detail.locator('[aria-current="step"] [data-testid="step-label"]')).toHaveText("Explained");
+  await expect(detail.locator('[data-mark="done"]')).toHaveCount(1);
+  await expect(detail.locator('[data-mark="notReached"]')).toHaveCount(4);
   await axeClean(page, "hold-detail");
   await capture(page, "en-hold-detail", REVIEW_HOLDS);
 
@@ -163,7 +166,9 @@ test("inbox variants: dispute-linked, no-timeline and review holds; held total p
   await capture(page, "hi-holds-variants", REVIEW_HOLDS);
 });
 
-test("M3-02 explanation: AI in EN, the HI toggle, the standard text and the pending state", async ({ page }) => {
+test("M3-02 explanation: AI in EN, the HI toggle, the standard text and the pending state", async ({
+  page,
+}) => {
   test.setTimeout(300_000);
   const ws = await demoWorkspace(page);
   const s = await seedHeld(ws);
@@ -191,19 +196,27 @@ test("M3-02 explanation: AI in EN, the HI toggle, the standard text and the pend
   // no recording for an eCheck hold: the model call fails, the standard text is shown and labelled
   const echeck = await seedHeld(ws, { amount: "15.00", currency: "EUR", reason: "ECHECK" });
   await page.goto(`/en/holds/${echeck.holdId}`);
-  await expect(page.getByTestId("explanation")).toHaveAttribute("data-origin", "standard", { timeout: 60_000 });
-  await expect(page.getByTestId("explanation")).toContainText("Standard explanation (no AI summary right now)");
+  await expect(page.getByTestId("explanation")).toHaveAttribute("data-origin", "standard", {
+    timeout: 60_000,
+  });
+  await expect(page.getByTestId("explanation")).toContainText(
+    "Standard explanation (no AI summary right now)",
+  );
   await axeClean(page, "hold-explanation-standard");
   await capture(page, "en-hold-explanation-standard", REVIEW_EXPLAIN);
 
-  // pending: the detail as it reads before the worker has written one (explanations held back)
+  // pending: the detail as the API returns it before the worker's write (hold `open`, no explanation yet)
   await page.route(`**/api/holds/${s.holdId}`, async (route) => {
     const res = await route.fetch();
-    const body = (await res.json()) as Record<string, unknown>;
-    await route.fulfill({ response: res, json: { ...body, explanations: [] } });
+    const body = (await res.json()) as { hold: Record<string, unknown> };
+    await route.fulfill({
+      response: res,
+      json: { ...body, hold: { ...body.hold, state: "open" }, explanations: [] },
+    });
   });
   await page.goto(`/en/holds/${s.holdId}`);
   await expect(page.getByTestId("explanation-pending")).toContainText("usually under 30 seconds");
+  await expect(page.locator('[aria-current="step"] [data-testid="step-label"]')).toHaveText("Held");
   await axeClean(page, "hold-explanation-pending");
   await capture(page, "en-hold-explanation-pending", REVIEW_EXPLAIN);
 });

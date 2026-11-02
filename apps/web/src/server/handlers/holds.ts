@@ -44,8 +44,13 @@ export async function postHoldExplanation(
   const session = await requireSession(req, deps);
   if (session instanceof Response) return session;
   const body = ExplanationRequestSchema.safeParse(await readJson(req));
-  if (!body.success) return apiError(400, "invalid_request", 'Send { locale: "en" | "hi" }.', correlationId(req));
-  const scope = { scopeId: session.sessionId, route: EXPLAIN_ROUTE.replace(":id", rawId), key: check.idempotencyKey };
+  if (!body.success)
+    return apiError(400, "invalid_request", 'Send { locale: "en" | "hi" }.', correlationId(req));
+  const scope = {
+    scopeId: session.sessionId,
+    route: EXPLAIN_ROUTE.replace(":id", rawId),
+    key: check.idempotencyKey,
+  };
   return withIdempotency(req, deps, scope, () =>
     requestExplanation(req, deps, publisher, session.workspaceId as WorkspaceId, rawId, body.data.locale),
   ).then((res) => withRenewal(res, session));
