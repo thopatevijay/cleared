@@ -188,7 +188,9 @@ export async function assignVideo(db: Db, workspaceId: string, now: Date): Promi
   );
 }
 
-function hours(ms: number): string {
+/** An age; a capture time ahead of this clock (another clock, or a test row) reads as 0 min. */
+function hours(raw: number): string {
+  const ms = Math.max(0, raw);
   const h = ms / 3_600_000;
   return h < 1 ? `${String(Math.round(ms / 60_000))} min` : `${h.toFixed(1)} h`;
 }
