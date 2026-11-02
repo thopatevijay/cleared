@@ -26,7 +26,12 @@ export const HoldItemSchema = z.object({
   ruleId: z.string().min(1),
   /** dispute-linked holds: our dispute row id, PayPal's id, status and reply deadline */
   dispute: z
-    .object({ id: z.uuid(), disputeId: z.string().min(1), status: z.string().min(1), dueDate: when.nullable() })
+    .object({
+      id: z.uuid(),
+      disputeId: z.string().min(1),
+      status: z.string().min(1),
+      dueDate: when.nullable(),
+    })
     .nullable(),
 });
 export type HoldItem = z.infer<typeof HoldItemSchema>;

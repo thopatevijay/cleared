@@ -101,7 +101,11 @@ describe("deriveHold over recorded captures", () => {
   });
 
   it("an unknown future reason keeps PayPal's string and falls back to the OTHER row", () => {
-    const h = deriveHold({ status: "PENDING", reason: "SOMETHING_NEW", updateTime: at("2026-10-26T00:00:00Z") });
+    const h = deriveHold({
+      status: "PENDING",
+      reason: "SOMETHING_NEW",
+      updateTime: at("2026-10-26T00:00:00Z"),
+    });
     expect(h).toMatchObject({ reason: "SOMETHING_NEW", estimateRuleId: "reason_OTHER" });
   });
 });
