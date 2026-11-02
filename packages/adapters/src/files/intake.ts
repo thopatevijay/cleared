@@ -36,7 +36,11 @@ export type NewEvidence =
   | { readonly type: "file"; readonly kind: SellerEvidenceKind; readonly file: PreparedFile }
   | {
       readonly type: "text";
-      readonly kind: SellerEvidenceKind;
+      /**
+       * `client_ack` is written by Cleared itself (M3-06, the buyer's acceptance), never from a seller's
+       * request: the intake routes parse the kind with `SellerEvidenceKindSchema`.
+       */
+      readonly kind: SellerEvidenceKind | "client_ack";
       readonly text: string;
       readonly sha256: Sha256;
     };
