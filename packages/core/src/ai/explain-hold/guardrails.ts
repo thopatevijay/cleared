@@ -76,7 +76,7 @@ const PROMISE_WORDS: readonly RegExp[] = [
   /पक्का|पक्की/,
   /निश्चित रूप से/,
   /वादा/,
-  /(?:ज़रूर|जरूर)(?!त)/, // not ज़रूरत ("need")
+  /(?:ज़रूर|जरूर)(?!त|ी|ि)/, // not ज़रूरत ("need") or ज़रूरी ("necessary")
 ];
 /** A release stated as certain; allowed only in a sentence that also says it is estimated. */
 const WILL_RELEASE: readonly RegExp[] = [
@@ -140,7 +140,8 @@ export function explainHoldProblems(out: ExplainHoldOutput, input: ExplainHoldIn
     problems.push(`rule_id_mismatch: ruleId is "${out.ruleId}"; it must be "${input.rule.id}"`);
   const allowed = allowedNumbers(input);
   for (const field of fieldsOf(out)) {
-    const withoutSlots = field.replace(/\{[a-z_]{1,40}\}/g, " ");
+    // NFC: a precomposed nukta letter (U+095B ज़) and ज + nukta compare equal
+    const withoutSlots = field.normalize("NFC").replace(/\{[a-z_]{1,40}\}/g, " ");
     for (const n of numbersIn(withoutSlots))
       if (!allowed.has(n))
         problems.push(`foreign_number: ${n} is not in the data; never add a number, amount or date`);

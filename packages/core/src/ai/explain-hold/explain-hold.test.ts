@@ -92,6 +92,9 @@ describe("explain_hold guardrails", () => {
     expect(codes({ summary: "पैसा ज़रूर रिलीज़ हो जाएगा।" }, hi)).toEqual(["promise_word", "promise_word"]);
     expect(codes({ summary: "अनुमान है कि पैसा रिलीज़ हो जाएगा।" }, hi)).toEqual([]);
     expect(codes({ summary: "आपको किसी कार्रवाई की ज़रूरत नहीं है।" }, hi)).toEqual([]);
+    // the live HI answer's "ज़रूरी" (necessary) is not "ज़रूर" (surely); precomposed U+095B too
+    expect(codes({ summary: "कुछ भुगतानों के लिए यह ज़रूरी होती है।" }, hi)).toEqual([]);
+    expect(codes({ summary: "पैसा ज़रूर आएगा।" }, hi)).toEqual(["promise_word"]);
   });
 
   it("rejects the wrong language", () => {

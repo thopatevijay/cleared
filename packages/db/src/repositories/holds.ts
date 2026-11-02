@@ -10,6 +10,7 @@ import type { CurrencyTotal } from "../repos/workspace/payments-list.ts";
 export type HoldRow = typeof s.holds.$inferSelect;
 export type PaymentRowForHold = typeof s.payments.$inferSelect;
 export type DisputeRowForHold = typeof s.disputes.$inferSelect;
+export type ExplanationRow = typeof s.explanations.$inferSelect;
 
 export interface HoldView {
   readonly hold: HoldRow;
@@ -98,6 +99,17 @@ export function holdsRepo(db: Db, ws: string) {
         .where(and(active, inArray(s.holds.paymentId, [...paymentIds])))
         .orderBy(asc(s.holds.openedAt));
       return new Map(rows.map((r) => [r.hold.paymentId, r.hold]));
+    },
+    /** M3-02: the newest explanation per locale of one hold in this workspace (at most one per locale). */
+    async explanations(holdId: string, ex: Executor = db): Promise<ExplanationRow[]> {
+      const rows = await ex
+        .select()
+        .from(s.explanations)
+        .where(and(eq(s.explanations.workspaceId, ws), eq(s.explanations.holdId, holdId)))
+        .orderBy(desc(s.explanations.createdAt), desc(s.explanations.id));
+      const newest = new Map<string, ExplanationRow>();
+      for (const r of rows) if (!newest.has(r.locale)) newest.set(r.locale, r);
+      return [...newest.values()].sort((a, b) => a.locale.localeCompare(b.locale));
     },
     /** Amounts held by active derived holds, per currency (exact numeric sums; never across currencies). */
     async heldTotals(ex: Executor = db): Promise<CurrencyTotal[]> {

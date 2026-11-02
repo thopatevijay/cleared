@@ -32,6 +32,7 @@ import { captureSyncHandler } from "./jobs/capture-sync.ts";
 import { killSwitchFromEnv } from "./jobs/action-runtime.ts";
 import { disputeSyncHandler } from "./jobs/dispute-sync.ts";
 import { draftDisputeHandler } from "./jobs/draft-dispute.ts";
+import { explainHoldHandler } from "./jobs/explain-hold.ts";
 import { executeActionHandler } from "./jobs/execute-action.ts";
 import { reconcileActionHandler } from "./jobs/reconcile-action.ts";
 import { checkScopeHandler } from "./jobs/check-scope.ts";
@@ -80,6 +81,8 @@ export function defaultRegistry(
   const draft = draftDisputeHandler({ db: rt.db, ...ai, disputes: paypal.disputes, now: () => new Date() });
   // M3-01: derive or release the payment's hold from the mirrored capture
   const holds = holdsHandler({ db: rt.db, publisher, now: () => new Date() });
+  // M3-02: explain a hold (explain_hold@v1, or the standard text) in the workspace's or the asked locale
+  const explain = explainHoldHandler({ db: rt.db, publisher, ...ai, now: () => new Date() });
   return [
     {
       queue: queueSpec(PAYPAL_CAPTURE_SYNC_QUEUE),
@@ -158,9 +161,13 @@ export function defaultRegistry(
     { queue: queueSpec("action.executed"), handler: recordEvent },
     { queue: queueSpec("action.failed"), handler: recordEvent },
     { queue: queueSpec("action.unknown"), handler: recordEvent },
-    // M3-01's hold events. M3-08: `hold.opened` writes the `hold_opened` notification (and its email job).
-    { queue: queueSpec("hold.opened"), handler: holdOpenedHandler(notifications) },
+    // M3-01's hold events. M3-08: `hold.opened` writes the `hold_opened` notification (and its email job),
+    // then M3-02 explains the hold (one entry per queue; both idempotent, in the delivery's transaction).
+    { queue: queueSpec("hold.opened"), handler: inOrder(holdOpenedHandler(notifications), explain) },
     { queue: queueSpec("hold.released"), handler: recordEvent },
+    // M3-02: the EN/HI toggle asks for a locale without an explanation; `hold.explained` is recorded.
+    { queue: queueSpec("hold.explain_requested"), handler: explain },
+    { queue: queueSpec("hold.explained"), handler: recordEvent },
     // M3-08: every new notification row enqueues one `notification.send_email` job.
     {
       queue: queueSpec(NOTIFICATION_SEND_EMAIL_QUEUE),
