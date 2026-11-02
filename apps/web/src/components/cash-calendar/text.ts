@@ -11,6 +11,22 @@ const money = (locale: string, a: Amount): string => {
   return `${f.text} ${f.code}`;
 };
 
+/** "$420" for whole amounts, "€15.50" otherwise: the 375 px day cell (the full amount is in the day list). */
+function shortAmount(locale: string, a: Amount): string {
+  const whole = /\.0+$/.test(a.value);
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: a.currency,
+      currencyDisplay: "narrowSymbol",
+      numberingSystem: "latn",
+      ...(whole ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {}),
+    }).format(Number(a.value));
+  } catch {
+    return formatAmount(locale, a).text;
+  }
+}
+
 function formatDayName(locale: string, date: string, long: boolean): string {
   return new Intl.DateTimeFormat(locale, {
     weekday: long ? "long" : "short",
@@ -61,7 +77,7 @@ export function useCashText(locale: string) {
     dayTotals,
     money: (a: Amount) => money(locale, a),
     /** "$64.00" (symbol only: the compact 375 px day cell) */
-    short: (a: Amount) => formatAmount(locale, a).text,
+    short: (a: Amount) => shortAmount(locale, a),
     day: (date: string) => formatDayName(locale, date, false),
     dayLong: (date: string) => formatDayName(locale, date, true),
   };

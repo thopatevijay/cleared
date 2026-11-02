@@ -52,7 +52,7 @@ export default async function Calendar({
       const f = formatAmount(ui, a);
       return `${f.text} ${f.code}`;
     })
-    .join(" + ");
+    .join(" · ");
   return (
     <>
       <SiteHeader skipTo="main" skipLabel="skipMain" />

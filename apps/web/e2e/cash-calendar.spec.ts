@@ -101,7 +101,7 @@ test("month view at 1440: every event, kind colours, day totals, table, axe, no 
   ]);
   await page.goto("/en/calendar");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cash calendar");
-  await expect(page.getByTestId("held-now")).toHaveText("€15.50 EUR + $264.00 USD held now");
+  await expect(page.getByTestId("held-now")).toHaveText("€15.50 EUR · $264.00 USD held now");
   await expect(page.getByTestId("calendar-area")).toHaveAttribute("data-view", "month");
   await expect(events(page)).toHaveCount(cal.events.length, { timeout: 60_000 });
   for (const e of cal.events) {
@@ -145,8 +145,19 @@ test("month view at 1440: every event, kind colours, day totals, table, axe, no 
   await engineReady(page);
   await expect(page.locator(".cash-bryntum.cash-compact")).toBeVisible();
   const cell = page.locator(`.b-calendar-cell[data-date="${review?.date ?? ""}"]`);
-  await expect(cell.locator(".cash-day-count > span")).toHaveText(["2", "€15.50", "$64.00"]);
+  await expect(cell.locator(".cash-day-count > span")).toHaveText(["2", "€15.50", "$64"]);
   await expect(cell.locator(".b-cal-event-bar-container")).toBeHidden();
+  // no day-cell line is clipped at 375 or 360 (the M0-09 failure)
+  for (const width of [375, 360]) {
+    await page.setViewportSize({ width, height: 800 });
+    const clipped = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>(".cash-day-count > span")]
+        .filter((s) => s.scrollWidth > s.clientWidth + 0.5)
+        .map((s) => s.innerText),
+    );
+    expect(clipped, `clipped day-cell lines at ${String(width)}`).toEqual([]);
+  }
+  await page.setViewportSize({ width: 375, height: 800 });
   await expect(page.getByTestId("day-panel")).toHaveText("Select a day to see its events.");
   await cell.locator(".b-day-num").click();
   await expect(page.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(2);
@@ -274,7 +285,7 @@ test("empty, loading and error states", async ({ page }) => {
   await page.route("**/api/cash-calendar**", () => undefined);
   await page.goto("/en/calendar");
   await expect(page.getByTestId("loading")).toBeVisible();
-  await expect(page.getByTestId("held-now")).toHaveText("€15.50 EUR + $264.00 USD held now");
+  await expect(page.getByTestId("held-now")).toHaveText("€15.50 EUR · $264.00 USD held now");
   await expect(page.getByTestId("cash-table-row")).toHaveCount(5);
   await axeClean(page, "calendar-loading");
   const loadingReady: Ready = async (p) => {
