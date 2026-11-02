@@ -1,0 +1,228 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-02T07:54:41.692Z",
+    "env": "sandbox",
+    "ticket": "M3-03",
+    "scrubbed": true,
+    "note": "carrier probe: _4_72 (dummy tracking number, notify_payer false)"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P/track",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "0a482462-08df-4625-916a-4cabaa08dab5"
+    },
+    "body": {
+      "capture_id": "82D672095U929030G",
+      "tracking_number": "CLRPROBE43B7130B",
+      "carrier": "_4_72",
+      "notify_payer": false
+    }
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f643330fcd9ba"
+    },
+    "body": {
+      "id": "5PK45642M3832004P",
+      "intent": "CAPTURE",
+      "status": "COMPLETED",
+      "payment_source": {
+        "card": {
+          "name": "Person 1",
+          "last_digits": "1111",
+          "expiry": "2030-12",
+          "brand": "VISA",
+          "type": "UNKNOWN",
+          "bin_details": {}
+        }
+      },
+      "purchase_units": [
+        {
+          "reference_id": "default",
+          "amount": {
+            "currency_code": "USD",
+            "value": "42.00",
+            "breakdown": {}
+          },
+          "payee": {
+            "email_address": "merchant-1@example.test",
+            "merchant_id": "MERCHANT-1"
+          },
+          "description": "Cleared sandbox test payment",
+          "custom_id": "860163cf-51de-46cd-872f-6f21eced4e0a",
+          "soft_descriptor": "TEST STORE",
+          "shipping": {
+            "trackers": [
+              {
+                "id": "82D672095U929030G-CLRPROBE892A5A27",
+                "status": "SHIPPED",
+                "items": [],
+                "links": [
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P",
+                    "rel": "up",
+                    "method": "GET"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P/trackers/82D672095U929030G-CLRPROBE892A5A27",
+                    "rel": "update",
+                    "method": "PATCH"
+                  }
+                ],
+                "notify_payer": false
+              },
+              {
+                "id": "82D672095U929030G-CLRPROBE66D1AE69",
+                "status": "SHIPPED",
+                "items": [],
+                "links": [
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P",
+                    "rel": "up",
+                    "method": "GET"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P/trackers/82D672095U929030G-CLRPROBE66D1AE69",
+                    "rel": "update",
+                    "method": "PATCH"
+                  }
+                ],
+                "notify_payer": false
+              },
+              {
+                "id": "82D672095U929030G-CLRPROBE7B8FE067",
+                "status": "SHIPPED",
+                "items": [],
+                "links": [
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P",
+                    "rel": "up",
+                    "method": "GET"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P/trackers/82D672095U929030G-CLRPROBE7B8FE067",
+                    "rel": "update",
+                    "method": "PATCH"
+                  }
+                ],
+                "notify_payer": false
+              },
+              {
+                "id": "82D672095U929030G-CLRPROBE5D0E28E5",
+                "status": "SHIPPED",
+                "items": [],
+                "links": [
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P",
+                    "rel": "up",
+                    "method": "GET"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P/trackers/82D672095U929030G-CLRPROBE5D0E28E5",
+                    "rel": "update",
+                    "method": "PATCH"
+                  }
+                ],
+                "notify_payer": false
+              },
+              {
+                "id": "82D672095U929030G-CLRPROBE43B7130B",
+                "status": "SHIPPED",
+                "links": [
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P",
+                    "rel": "up",
+                    "method": "GET"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P/trackers/82D672095U929030G-CLRPROBE43B7130B",
+                    "rel": "update",
+                    "method": "PATCH"
+                  }
+                ],
+                "notify_payer": false
+              }
+            ]
+          },
+          "supplementary_data": {
+            "risk": {
+              "risk_level_indicator": "HIGH_RISK"
+            }
+          },
+          "payments": {
+            "captures": [
+              {
+                "id": "82D672095U929030G",
+                "status": "COMPLETED",
+                "amount": {
+                  "currency_code": "USD",
+                  "value": "42.00"
+                },
+                "final_capture": true,
+                "seller_protection": {
+                  "status": "NOT_ELIGIBLE"
+                },
+                "seller_receivable_breakdown": {
+                  "gross_amount": {
+                    "currency_code": "USD",
+                    "value": "42.00"
+                  },
+                  "paypal_fee": {
+                    "currency_code": "USD",
+                    "value": "1.58"
+                  },
+                  "net_amount": {
+                    "currency_code": "USD",
+                    "value": "40.42"
+                  }
+                },
+                "custom_id": "860163cf-51de-46cd-872f-6f21eced4e0a",
+                "links": [
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/payments/captures/82D672095U929030G",
+                    "rel": "self",
+                    "method": "GET"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/payments/captures/82D672095U929030G/refund",
+                    "rel": "refund",
+                    "method": "POST"
+                  },
+                  {
+                    "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P",
+                    "rel": "up",
+                    "method": "GET"
+                  }
+                ],
+                "create_time": "2026-11-02T07:54:32Z",
+                "update_time": "2026-11-02T07:54:32Z",
+                "network_transaction_reference": {
+                  "id": "CARD-1",
+                  "network": "VISA"
+                },
+                "processor_response": {
+                  "cvv_code": "M",
+                  "response_code": "0000"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "create_time": "2026-11-02T07:54:32Z",
+      "update_time": "2026-11-02T07:54:32Z",
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P",
+          "rel": "self",
+          "method": "GET"
+        }
+      ]
+    }
+  }
+}

@@ -20,9 +20,23 @@ export const CARRIER_NAME_OTHER_MAX = 64;
 const ApiCarriersSchema = z.object({
   source: z.url(),
   retrieved_at: z.iso.date(),
+  /** M3-03 AC 1: codes not on the developer page, each proven by its own source (see PROVENANCE.md) */
+  additional_sources: z
+    .array(z.object({ id: z.string().min(1), title: z.string().min(1), date: z.iso.date(), evidence: z.string().min(1) }))
+    .default([]),
   count: z.number().int().positive(),
   carriers: z
-    .array(z.object({ code: z.string().regex(/^[A-Z0-9_]+$/), name: z.string().min(1), country: z.string() }))
+    .array(
+      z.object({
+        code: z.string().regex(/^[A-Z0-9_]+$/),
+        name: z.string().min(1),
+        country: z.string(),
+        /** absent: on the developer page; else an `additional_sources` id */
+        source: z.string().min(1).optional(),
+        /** PayPal's debug id of the call that proved the code (with `source`) */
+        debug_id: z.string().regex(/^[a-z0-9]+$/).optional(),
+      }),
+    )
     .min(1),
 });
 

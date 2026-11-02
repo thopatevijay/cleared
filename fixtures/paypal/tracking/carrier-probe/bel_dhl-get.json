@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-02T07:55:32.201Z",
+    "env": "sandbox",
+    "ticket": "M3-03",
+    "scrubbed": true,
+    "note": "legacy tracker read-back for BEL_DHL"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBEAE67A26F",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f414997f94fca"
+    },
+    "body": {
+      "transaction_id": "82D672095U929030G",
+      "tracking_number": "CLRPROBEAE67A26F",
+      "status": "SHIPPED",
+      "carrier": "BEL_DHL",
+      "notify_buyer": false,
+      "shipment_direction": "FORWARD",
+      "shipment_uploader": "MERCHANT",
+      "account_id": "ACCOUNT-1",
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBEAE67A26F",
+          "rel": "self",
+          "method": "GET",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBEAE67A26F",
+          "rel": "replace",
+          "method": "PUT",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBEAE67A26F",
+          "rel": "edit",
+          "method": "PATCH",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers",
+          "rel": "self",
+          "method": "POST",
+          "encType": "application/json"
+        }
+      ]
+    }
+  }
+}

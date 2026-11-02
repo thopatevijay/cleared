@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-02T07:54:49.528Z",
+    "env": "sandbox",
+    "ticket": "M3-03",
+    "scrubbed": true,
+    "note": "Summary of the carrier probe (scripts/spikes/m3-03-carrier-probe.ts): ids and PayPal debug ids only; the exchanges are the sibling files"
+  },
+  "probed_at": "2026-11-02T07:54:49.528Z",
+  "env": "sandbox",
+  "endpoint": "POST /v2/checkout/orders/{id}/track",
+  "order_id": "5PK45642M3832004P",
+  "capture_id": "82D672095U929030G",
+  "calls": 14,
+  "results": [
+    {
+      "code": "IND_DELHIVERY",
+      "status": 201,
+      "debug_id": "f945378bbb0f4",
+      "error_name": null,
+      "issue": null,
+      "description": null,
+      "fixture": "tracking/carrier-probe/ind_delhivery"
+    },
+    {
+      "code": "_2EBOX",
+      "status": 201,
+      "debug_id": "f1004920a1b33",
+      "error_name": null,
+      "issue": null,
+      "description": null,
+      "fixture": "tracking/carrier-probe/u2ebox"
+    },
+    {
+      "code": "_360LION",
+      "status": 201,
+      "debug_id": "f6370968aa085",
+      "error_name": null,
+      "issue": null,
+      "description": null,
+      "fixture": "tracking/carrier-probe/u360lion"
+    },
+    {
+      "code": "_3JMSLOGISTICS",
+      "status": 201,
+      "debug_id": "f95073268e45e",
+      "error_name": null,
+      "issue": null,
+      "description": null,
+      "fixture": "tracking/carrier-probe/u3jmslogistics"
+    },
+    {
+      "code": "_4_72",
+      "status": 201,
+      "debug_id": "f643330fcd9ba",
+      "error_name": null,
+      "issue": null,
+      "description": null,
+      "fixture": "tracking/carrier-probe/u4_72"
+    },
+    {
+      "code": "_6LS",
+      "status": 201,
+      "debug_id": "f648177a107d9",
+      "error_name": null,
+      "issue": null,
+      "description": null,
+      "fixture": "tracking/carrier-probe/u6ls"
+    },
+    {
+      "code": "BEL_DHL",
+      "status": 201,
+      "debug_id": "f995548bea25e",
+      "error_name": null,
+      "issue": null,
+      "description": null,
+      "fixture": "tracking/carrier-probe/bel_dhl"
+    },
+    {
+      "code": "GLS_ITALY",
+      "status": 201,
+      "debug_id": "f4904818bdf60",
+      "error_name": null,
+      "issue": null,
+      "description": null,
+      "fixture": "tracking/carrier-probe/gls_italy"
+    },
+    {
+      "code": "JITSU",
+      "status": 201,
+      "debug_id": "f8119415e302a",
+      "error_name": null,
+      "issue": null,
+      "description": null,
+      "fixture": "tracking/carrier-probe/jitsu"
+    },
+    {
+      "code": "SKYEXPRESS_INTERNATIONAL",
+      "status": 201,
+      "debug_id": "f965748fd1edb",
+      "error_name": null,
+      "issue": null,
+      "description": null,
+      "fixture": "tracking/carrier-probe/skyexpress_international"
+    }
+  ],
+  "stored": [
+    {
+      "code": "IND_DELHIVERY",
+      "stored_carrier": "IND_DELHIVERY",
+      "status": "SHIPPED",
+      "fixture": "tracking/carrier-probe/ind_delhivery-get"
+    },
+    {
+      "code": "_2EBOX",
+      "stored_carrier": "_2EBOX",
+      "status": "SHIPPED",
+      "fixture": "tracking/carrier-probe/u2ebox-get"
+    },
+    {
+      "code": "_360LION",
+      "stored_carrier": "_360LION",
+      "status": "SHIPPED",
+      "fixture": "tracking/carrier-probe/u360lion-get"
+    },
+    {
+      "code": "_3JMSLOGISTICS",
+      "stored_carrier": "_3JMSLOGISTICS",
+      "status": "SHIPPED",
+      "fixture": "tracking/carrier-probe/u3jmslogistics-get"
+    },
+    {
+      "code": "_4_72",
+      "stored_carrier": "_4_72",
+      "status": "SHIPPED",
+      "fixture": "tracking/carrier-probe/u4_72-get"
+    },
+    {
+      "code": "_6LS",
+      "stored_carrier": "_6LS",
+      "status": "SHIPPED",
+      "fixture": "tracking/carrier-probe/u6ls-get"
+    },
+    {
+      "code": "BEL_DHL",
+      "stored_carrier": "BEL_DHL",
+      "status": "SHIPPED",
+      "fixture": "tracking/carrier-probe/bel_dhl-get"
+    },
+    {
+      "code": "GLS_ITALY",
+      "stored_carrier": "GLS_ITALY",
+      "status": "SHIPPED",
+      "fixture": "tracking/carrier-probe/gls_italy-get"
+    },
+    {
+      "code": "JITSU",
+      "stored_carrier": "JITSU",
+      "status": "SHIPPED",
+      "fixture": "tracking/carrier-probe/jitsu-get"
+    },
+    {
+      "code": "SKYEXPRESS_INTERNATIONAL",
+      "stored_carrier": "SKYEXPRESS_INTERNATIONAL",
+      "status": "SHIPPED",
+      "fixture": "tracking/carrier-probe/skyexpress_international-get"
+    }
+  ],
+  "negative_control": {
+    "code": "CLEARED_NOT_A_CARRIER",
+    "status": 400,
+    "debug_id": "f9460114c83d6",
+    "error_name": "INVALID_REQUEST",
+    "issue": "INVALID_PARAMETER_VALUE",
+    "description": "The value of a field is invalid.",
+    "fixture": "tracking/carrier-probe/negative-control"
+  }
+}

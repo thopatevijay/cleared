@@ -29,6 +29,27 @@ describe("carrier data files", () => {
     expect(SHIPPED_BY_DROPDOWN.codes).toContain("OTHER");
   });
 
+  it("every API-list code from outside the developer page cites a known source and a PayPal debug id", () => {
+    const sources = new Set(API_CARRIERS.additional_sources.map((s) => s.id));
+    const extra = API_CARRIERS.carriers.filter((c) => c.source !== undefined);
+    // Exactly the 9 dropdown codes the sandbox track API accepted on 2026-11-02 (fixtures/paypal/tracking/carrier-probe/).
+    expect(extra.map((c) => c.code)).toEqual([
+      "_2EBOX",
+      "_360LION",
+      "_3JMSLOGISTICS",
+      "_4_72",
+      "_6LS",
+      "BEL_DHL",
+      "GLS_ITALY",
+      "JITSU",
+      "SKYEXPRESS_INTERNATIONAL",
+    ]);
+    for (const c of extra) {
+      expect(sources.has(c.source ?? "")).toBe(true);
+      expect(c.debug_id).toMatch(/^[a-z0-9]+$/);
+    }
+  });
+
   it("no code is listed twice", () => {
     expect(new Set(API_CARRIERS.carriers.map((c) => c.code)).size).toBe(API_CARRIERS.count);
     expect(new Set(SHIPPED_BY_DROPDOWN.codes).size).toBe(SHIPPED_BY_DROPDOWN.count);

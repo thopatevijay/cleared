@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-02T07:55:34.732Z",
+    "env": "sandbox",
+    "ticket": "M3-03",
+    "scrubbed": true,
+    "note": "legacy tracker read-back for SKYEXPRESS_INTERNATIONAL"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE1D038A6B",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f5858009f04d8"
+    },
+    "body": {
+      "transaction_id": "82D672095U929030G",
+      "tracking_number": "CLRPROBE1D038A6B",
+      "status": "SHIPPED",
+      "carrier": "SKYEXPRESS_INTERNATIONAL",
+      "notify_buyer": false,
+      "shipment_direction": "FORWARD",
+      "shipment_uploader": "MERCHANT",
+      "account_id": "ACCOUNT-1",
+      "links": [
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE1D038A6B",
+          "rel": "self",
+          "method": "GET",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE1D038A6B",
+          "rel": "replace",
+          "method": "PUT",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers/82D672095U929030G-CLRPROBE1D038A6B",
+          "rel": "edit",
+          "method": "PATCH",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api-m.sandbox.paypal.com/v1/shipping/trackers",
+          "rel": "self",
+          "method": "POST",
+          "encType": "application/json"
+        }
+      ]
+    }
+  }
+}

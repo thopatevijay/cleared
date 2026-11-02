@@ -2,7 +2,7 @@
 
 | File | What it is | Source | Date |
 |---|---|---|---|
-| `api-carriers.json` | PayPal's tracking API carrier enum: code, name, country | https://developer.paypal.com/docs/tracking/reference/carriers/ (parsed from the page's tables) | 2026-11-02 |
+| `api-carriers.json` | PayPal's tracking API carrier enum: code, name, country | https://developer.paypal.com/docs/tracking/reference/carriers/ (parsed from the page's tables), plus 9 codes from the sandbox track probe (`additional_sources`, below) | 2026-11-02 |
 | `shipped-by-dropdown.json` | The codes of the "Shipped by" list in Add Tracking Info (the `approved` tier) | PayPal sandbox Business web UI, US sandbox business account | 2026-11-02 |
 | `shipped-by-dropdown.capture.tsv` | The raw capture behind `shipped-by-dropdown.json`: one `code<TAB>label` line per option, in the UI's order | as above | 2026-11-02 |
 
@@ -25,4 +25,10 @@
   searching the page HTML): `_2EBOX`, `_360LION`, `_3JMSLOGISTICS`, `_4_72`, `_6LS`, `BEL_DHL`,
   `GLS_ITALY`, `JITSU`, `SKYEXPRESS_INTERNATIONAL`. The page has `SKYEXPRESSINTERNATIONAL` (same name,
   "SkyExpress Internationals") but none of the other eight, under any code or name. The capture is kept
-  as recorded; see the M3-03 follow-up PR for how this is resolved.
+  as recorded.
+- **Resolved by a sandbox probe (owner decision on #35: probe, then amend).** The sandbox Orders v2 track
+  API accepted all 9 codes (201) and stored each one verbatim, while it refused a code that is on no list
+  (400 `INVALID_PARAMETER_VALUE`). So `api-carriers.json` now lists the 9 after the page's 1,202 codes.
+  Each has `source: "sandbox-track-probe"` (see `additional_sources`) and its own `debug_id`, so the
+  count is 1,211. Evidence: `fixtures/paypal/tracking/carrier-probe/` (`results.json`, `PROVENANCE.md`).
+  The subset test is unchanged, and its exception list is empty.

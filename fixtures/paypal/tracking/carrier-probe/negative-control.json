@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-02T07:55:35.723Z",
+    "env": "sandbox",
+    "ticket": "M3-03",
+    "scrubbed": true,
+    "note": "negative control: CLEARED_NOT_A_CARRIER is on neither list"
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api-m.sandbox.paypal.com/v2/checkout/orders/5PK45642M3832004P/track",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json",
+      "paypal-request-id": "40a59190-dcb8-491e-83f9-f54a3b3f0dea"
+    },
+    "body": {
+      "capture_id": "82D672095U929030G",
+      "tracking_number": "CLRPROBE4BD7EE87",
+      "carrier": "CLEARED_NOT_A_CARRIER",
+      "notify_payer": false
+    }
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f9460114c83d6"
+    },
+    "body": {
+      "name": "INVALID_REQUEST",
+      "message": "Request is not well-formed, syntactically incorrect, or violates schema.",
+      "debug_id": "f9460114c83d6",
+      "details": [
+        {
+          "field": "/carrier",
+          "value": "CLEARED_NOT_A_CARRIER",
+          "location": "body",
+          "issue": "INVALID_PARAMETER_VALUE",
+          "description": "The value of a field is invalid."
+        }
+      ],
+      "links": [
+        {
+          "href": "https://developer.paypal.com/docs/api/orders/v2/#error-INVALID_PARAMETER_VALUE",
+          "rel": "information_link",
+          "encType": "application/json"
+        }
+      ]
+    }
+  }
+}
