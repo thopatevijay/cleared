@@ -16,7 +16,7 @@ import {
 } from "@cleared/core";
 import { CircleCheck, CircleX, Copy, ExternalLink, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Link } from "../../i18n/navigation.ts";
 import { NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
 import { formatDate } from "../../lib/format.ts";
@@ -32,12 +32,12 @@ import { ruleOf } from "./text.ts";
 const primary =
   "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 font-semibold text-on-accent disabled:opacity-70 sm:w-auto";
 const secondary =
-  "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-border-strong px-4 font-medium sm:w-auto";
+  "inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-border-strong px-4 font-medium md:w-auto";
 
 function CopyId({ id, onCopied }: { id: string; onCopied: () => void }) {
   const t = useTranslations("holds.completed");
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <div className="flex flex-col gap-2 md:flex-row md:items-center">
       <code
         lang="en"
         className="rounded-sm bg-surface-sunken px-3 py-2 font-mono text-sm [overflow-wrap:anywhere]"
@@ -147,6 +147,7 @@ function Confirm({
   const [today] = useState(() => localDate(fromEpochMs(Date.now()), timeZone));
   const opened = localDate(fromEpochMs(Date.parse(hold.openedAt)), timeZone);
   const openedDate = formatDate(locale, hold.openedAt, timeZone);
+  const todayDate = formatDate(locale, new Date().toISOString(), timeZone);
   const [on, setOn] = useState(today);
   const [busy, setBusy] = useState(false);
   const [fieldError, setFieldError] = useState<DateError>(null);
@@ -184,26 +185,38 @@ function Confirm({
         void submit();
       }}
     >
-      <label className="flex flex-col gap-1" htmlFor={`${id}-date`}>
-        <span className="font-medium">{t("dateLabel")}</span>
-        <input
-          id={`${id}-date`}
-          type="date"
-          className="min-h-11 w-full min-w-[200px] rounded-md border border-border-strong bg-surface px-3 text-text sm:w-auto"
-          value={on}
-          min={opened}
-          max={today}
-          readOnly={busy}
-          aria-invalid={fieldError === null ? undefined : true}
-          aria-describedby={describedBy}
-          onChange={(e) => {
-            setOn(e.target.value);
-          }}
-          data-testid="completed-date"
-        />
-      </label>
+      <div className="flex flex-col gap-3 md:flex-row md:items-end">
+        <label className="flex flex-col gap-1" htmlFor={`${id}-date`}>
+          <span className="font-medium">{t("dateLabel")}</span>
+          <input
+            id={`${id}-date`}
+            type="date"
+            className="min-h-12 w-full min-w-[200px] rounded-md border border-border-strong bg-surface px-3 text-text aria-invalid:border-2 aria-invalid:border-status-error-fg md:w-auto"
+            value={on}
+            min={opened}
+            max={today}
+            readOnly={busy}
+            aria-invalid={fieldError === null ? undefined : true}
+            aria-describedby={describedBy}
+            onChange={(e) => {
+              setOn(e.target.value);
+            }}
+            data-testid="completed-date"
+          />
+        </label>
+        <button
+          type="submit"
+          className={primary}
+          disabled={busy || !online}
+          aria-busy={busy || undefined}
+          data-testid="completed-submit"
+        >
+          {busy ? <Loader2 aria-hidden="true" size={16} className="spin" /> : null}
+          {busy ? t("saving") : t("confirm")}
+        </button>
+      </div>
       <span id={`${id}-hint`} className="text-sm text-text-muted">
-        {t("dateHint", { openedDate })}
+        {t("dateHint", { openedDate, today: todayDate })}
       </span>
       {fieldError === null ? null : (
         <p id={`${id}-err`} role="alert" className="flex items-center gap-2 text-status-error-fg">
@@ -216,16 +229,6 @@ function Confirm({
           {t("offline")}
         </p>
       )}
-      <button
-        type="submit"
-        className={primary}
-        disabled={busy || !online}
-        aria-busy={busy || undefined}
-        data-testid="completed-submit"
-      >
-        {busy ? <Loader2 aria-hidden="true" size={16} className="spin" /> : null}
-        {busy ? t("saving") : t("confirm")}
-      </button>
       {saveError === null ? null : (
         <p role="alert" className="text-status-error-fg" data-testid="completed-error">
           {saveError}
@@ -243,8 +246,8 @@ function Confirmed({
 }: {
   d: HoldDetail;
   confirmedAt: string;
-  headingRef: React.RefObject<HTMLHeadingElement | null>;
-  children: React.ReactNode;
+  headingRef: RefObject<HTMLHeadingElement | null>;
+  children: ReactNode;
 }) {
   const t = useTranslations("holds.completed");
   const locale = useUiLocale();
@@ -252,32 +255,35 @@ function Confirmed({
   const tz = d.workspace.timezone;
   return (
     <div className="flex flex-col gap-3" data-testid="completed-done">
-      <h4
+      <h3
+        id="completed-heading"
         ref={headingRef}
         tabIndex={-1}
-        className="flex items-center gap-2 font-semibold"
+        className="flex items-center gap-2 text-lg font-semibold"
         data-testid="completed-done-heading"
       >
         <CircleCheck aria-hidden="true" size={18} strokeWidth={1.75} className="text-status-completed-fg" />
         {t("done", { date: formatDate(locale, confirmedAt, tz) })}
-      </h4>
+      </h3>
       <EstimatedDate e={d.hold} timeZone={tz} />
-      <Link
-        href="/audit"
-        className="inline-flex min-h-11 items-center self-start text-accent underline underline-offset-2"
-      >
-        {t("auditLink")}
-      </Link>
-      <button
-        type="button"
-        className="inline-flex min-h-11 items-center self-start text-sm text-accent underline underline-offset-2"
-        aria-expanded={open}
-        onClick={() => {
-          setOpen(!open);
-        }}
-      >
-        {open ? t("hideSteps") : t("showSteps")}
-      </button>
+      <div className="flex flex-col">
+        <Link
+          href="/audit"
+          className="inline-flex min-h-11 items-center self-start text-accent underline underline-offset-2"
+        >
+          {t("auditLink")}
+        </Link>
+        <button
+          type="button"
+          className="inline-flex min-h-11 items-center self-start text-sm text-accent underline underline-offset-2"
+          aria-expanded={open}
+          onClick={() => {
+            setOpen(!open);
+          }}
+        >
+          {open ? t("hideSteps") : t("showSteps")}
+        </button>
+      </div>
       {open ? children : null}
     </div>
   );
@@ -310,10 +316,8 @@ export function GuidedCompleted({ d, onChanged }: { d: HoldDetail; onChanged: ()
   );
   return (
     <section
-      id="completed"
-      tabIndex={-1}
-      aria-labelledby="completed-heading"
-      className="flex scroll-mt-16 flex-col gap-4 rounded-lg border border-border bg-surface p-4"
+      aria-labelledby={confirmedAt === null ? "completed" : "completed-heading"}
+      className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4"
       data-testid="guided-completed"
       data-confirmed={confirmedAt === null ? "no" : "yes"}
     >
@@ -321,11 +325,11 @@ export function GuidedCompleted({ d, onChanged }: { d: HoldDetail; onChanged: ()
       <p className="sr-only" aria-live="polite">
         {announce}
       </p>
-      <h3 id="completed-heading" className="text-lg font-semibold">
-        {t("title")}
-      </h3>
       {confirmedAt === null ? (
         <>
+          <h3 id="completed" tabIndex={-1} className="scroll-mt-16 text-lg font-semibold">
+            {t("title")}
+          </h3>
           {guide}
           <Confirm
             hold={d.hold}

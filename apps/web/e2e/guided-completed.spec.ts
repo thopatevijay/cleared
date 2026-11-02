@@ -9,7 +9,7 @@
 import { expect, test } from "@playwright/test";
 import { capture, demoWorkspace, local } from "./support/disputes.ts";
 import { axeClean } from "./support/holds.ts";
-import { REVIEW_COMPLETED, seedService } from "./support/completed.ts";
+import { REVIEW_COMPLETED, seedRecord, seedService } from "./support/completed.ts";
 
 test.describe.configure({ mode: "serial" });
 test.skip(!local, "local only");
@@ -28,7 +28,8 @@ test("guided Completed step: API record (unconfirmed, estimate unchanged), then 
   const s = await seedService(ws, new Date(Date.now() - 2 * 24 * 3600 * 1000));
   await page.goto(`/en/holds/${s.holdId}#completed`);
   const slot = page.getByTestId("guided-completed");
-  await expect(slot).toBeFocused({ timeout: 15_000 });
+  // "#completed" moves focus to the step's heading
+  await expect(page.locator("#completed")).toBeFocused({ timeout: 15_000 });
 
   // A: the guide on the sandbox host, the capture id, the support quote
   const link = slot.getByTestId("activity-link");
@@ -95,7 +96,8 @@ test("guided Completed step: API record (unconfirmed, estimate unchanged), then 
   await expect(page.getByTestId("hold-detail")).toHaveAttribute("data-state", "filed");
   const est = page.getByTestId("estimated-date").first();
   await expect(est).toHaveAttribute("data-rule", "service_completed");
-  await expect(est).toContainText("estimated");
+  await expect(est).toContainText(/About \d{1,2} \w{3} · estimated/);
+  await expect(est).not.toContainText("Free by");
   await expect(page.getByTestId("timeline")).toContainText("Marked Completed in PayPal by you");
   await expect(record.getByTestId("unconfirmed-badge")).toBeVisible();
   await axeClean(page, "completed-done");
@@ -123,4 +125,127 @@ test("date validation: a future date is refused inline; nothing changes", async 
   await axeClean(page, "completed-date-error");
   await top(page);
   await capture(page, "en-completed-date-error", REVIEW_COMPLETED, [360, 1440]);
+});
+
+const DAY = 24 * 3600 * 1000;
+
+test("states: loading, error, not found, saving, save failed, offline, before-opened, dialog, API card states", async ({
+  page,
+  context,
+}) => {
+  test.setTimeout(900_000);
+  const W = [375, 1440] as const;
+  const ws = await demoWorkspace(page);
+  const s = await seedService(ws, new Date(Date.now() - 2 * DAY));
+  const url = `/en/holds/${s.holdId}`;
+  const api = `**/api/holds/${s.holdId}`;
+  const slot = page.getByTestId("guided-completed");
+
+  // loading: the detail (and its slot) never answers
+  await page.route(api, () => undefined);
+  await page.goto(url);
+  await expect(page.getByTestId("loading")).toBeVisible();
+  await capture(page, "en-completed-loading", REVIEW_COMPLETED, W);
+  await page.unroute(api);
+  // error
+  await page.route(api, (r) =>
+    r.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: { code: "internal", message: "x", correlationId: "c0ffee00-e2e0-4000-8000-000000000000" },
+      }),
+    }),
+  );
+  await page.goto(url);
+  await expect(page.getByRole("button", { name: /retry/i })).toBeVisible({ timeout: 15_000 });
+  await capture(page, "en-completed-error", REVIEW_COMPLETED, W);
+  await page.unroute(api);
+  // not found (no such hold in this workspace)
+  await page.goto("/en/holds/00000000-0000-4000-8000-000000000000");
+  await expect(page.getByText("Hold not found")).toBeVisible({ timeout: 15_000 });
+  await capture(page, "en-completed-not-found", REVIEW_COMPLETED, W);
+
+  // a date before the hold opened
+  await page.goto(url);
+  await expect(slot).toBeVisible({ timeout: 15_000 });
+  await slot.getByTestId("completed-date").fill(new Date(Date.now() - 5 * DAY).toISOString().slice(0, 10));
+  await slot.getByTestId("completed-submit").click();
+  await expect(slot.getByRole("alert")).toContainText("PayPal started holding this payment that day");
+  await axeClean(page, "completed-before-opened");
+  await top(page);
+  await capture(page, "en-completed-before-opened", REVIEW_COMPLETED, W);
+
+  // save failed (network)
+  await page.goto(url);
+  await page.route(`${api}/completed`, (r) => r.abort());
+  await slot.getByTestId("completed-submit").click();
+  await expect(slot.getByTestId("completed-error")).toHaveText(
+    "Couldn't save your confirmation. Nothing changed. Try again.",
+  );
+  await axeClean(page, "completed-save-failed");
+  await top(page);
+  await capture(page, "en-completed-save-failed", REVIEW_COMPLETED, W);
+  await page.unroute(`${api}/completed`);
+
+  // offline: both writes disabled with the reason; the Activity link stays usable
+  await page.goto(url);
+  await expect(slot).toBeVisible({ timeout: 15_000 });
+  await slot.getByTestId("record-toggle").click();
+  await context.setOffline(true);
+  await expect(slot.getByTestId("completed-submit")).toBeDisabled();
+  await expect(slot.getByTestId("record-review-button")).toBeDisabled();
+  await expect(slot).toContainText("You're offline. Reconnect to save this.");
+  await expect(slot.getByTestId("activity-link")).toBeVisible();
+  await top(page);
+  await capture(page, "en-completed-offline", REVIEW_COMPLETED, W);
+  await context.setOffline(false);
+
+  // 44 px targets below 768 in the slot; the confirm dialog
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto(url);
+  await slot.getByTestId("record-toggle").click();
+  await slot.getByRole("button", { name: "Why unconfirmed?" }).click();
+  await slot.getByTestId("record-review-button").click();
+  await expect(slot.getByTestId("record-approve")).toBeVisible();
+  for (const name of ["Why unconfirmed?", "Copy full fingerprint", "Approve and record"]) {
+    const box = await slot.getByRole("button", { name }).first().boundingBox();
+    expect(box?.height ?? 0, name).toBeGreaterThanOrEqual(44);
+  }
+  const copy = await slot.getByTestId("copy-id").boundingBox();
+  expect(copy?.height ?? 0).toBeGreaterThanOrEqual(44);
+  await slot.getByTestId("record-approve").click();
+  await expect(page.getByTestId("record-confirm")).toBeVisible();
+  await expect(page.getByTestId("record-confirm").getByRole("button", { name: "Go back" })).toBeFocused();
+  await axeClean(page, "record-dialog");
+  await capture(page, "en-completed-record-dialog", REVIEW_COMPLETED, W);
+  await page.keyboard.press("Escape");
+
+  // saving (last on this hold: unrouting lets the held request through, which confirms it)
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(url);
+  await page.route(`${api}/completed`, () => undefined);
+  await slot.getByTestId("completed-submit").click();
+  await expect(slot.getByTestId("completed-submit")).toHaveText("Saving…");
+  await expect(slot.getByTestId("completed-date")).toHaveAttribute("readonly", "");
+  await top(page);
+  await capture(page, "en-completed-saving", REVIEW_COMPLETED, W);
+  await page.unroute(`${api}/completed`);
+
+  // the API card's recording / failed / unknown states (seeded; nothing moves them)
+  for (const [state, code, testId] of [
+    ["executing", null, "record-recording"],
+    ["failed", "PAYPAL_REJECTED", "record-failed"],
+    ["unknown", null, "record-unknown"],
+  ] as const) {
+    const h = await seedService(ws, new Date(Date.now() - 2 * DAY));
+    await seedRecord(ws, h.captureId, state, code);
+    await page.goto(`/en/holds/${h.holdId}`);
+    await slot.getByTestId("record-toggle").click();
+    await expect(slot.getByTestId(testId)).toBeVisible({ timeout: 15_000 });
+    await expect(slot.getByTestId("unconfirmed-badge")).toBeVisible();
+    await axeClean(page, `record-${state}`);
+    await top(page);
+    await capture(page, `en-completed-record-${state}`, REVIEW_COMPLETED, W);
+  }
 });

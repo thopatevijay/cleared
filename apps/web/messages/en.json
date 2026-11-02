@@ -301,7 +301,7 @@
       "step3": "Update the order status to Completed.",
       "supportCaption": "PayPal support, 26 Oct 2026",
       "dateLabel": "Date you marked it Completed",
-      "dateHint": "Today or earlier, not before {openedDate}",
+      "dateHint": "Today ({today}) or earlier, not before {openedDate}",
       "confirm": "I marked it Completed in PayPal",
       "saving": "Saving…",
       "error": {
@@ -339,7 +339,7 @@
         "dialogConfirm": "Record with PayPal",
         "dialogCancel": "Go back",
         "recording": "Recording with PayPal…",
-        "recorded": "Recorded after your approval · PayPal reads COMPLETED · debug_id {debugId}",
+        "recorded": "Recorded after your approval · PayPal reads <code>COMPLETED</code> · debug_id {debugId}",
         "recordedNoRead": "Recorded after your approval · debug_id {debugId}",
         "recordedToast": "Recorded with PayPal",
         "failed": "PayPal didn't record it: {reason}",

@@ -301,7 +301,7 @@
       "step3": "ऑर्डर का स्टेटस बदलकर Completed करें।",
       "supportCaption": "PayPal सपोर्ट, 26 अक्टू॰ 2026 (जवाब अंग्रेज़ी में)",
       "dateLabel": "Completed करने की तारीख़",
-      "dateHint": "आज या उससे पहले, पर {openedDate} से पहले नहीं",
+      "dateHint": "आज ({today}) या उससे पहले, पर {openedDate} से पहले नहीं",
       "confirm": "मैंने PayPal में Completed कर दिया",
       "saving": "सेव हो रहा है…",
       "error": {
@@ -339,7 +339,7 @@
         "dialogConfirm": "PayPal में दर्ज करें",
         "dialogCancel": "वापस जाएँ",
         "recording": "PayPal में दर्ज हो रहा है…",
-        "recorded": "आपकी मंज़ूरी के बाद दर्ज हुआ · PayPal में स्टेटस COMPLETED · debug_id {debugId}",
+        "recorded": "आपकी मंज़ूरी के बाद दर्ज हुआ · PayPal में स्टेटस <code>COMPLETED</code> · debug_id {debugId}",
         "recordedNoRead": "आपकी मंज़ूरी के बाद दर्ज हुआ · debug_id {debugId}",
         "recordedToast": "PayPal में दर्ज हो गया",
         "failed": "PayPal ने इसे दर्ज नहीं किया: {reason}",

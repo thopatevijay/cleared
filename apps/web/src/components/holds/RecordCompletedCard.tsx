@@ -147,11 +147,23 @@ function Status({ record }: { record: CompletedSummary["record"] }) {
     );
   if (record.state === "recorded")
     return (
-      <p className="flex flex-wrap items-center gap-2" data-testid="record-recorded">
-        <CircleCheck aria-hidden="true" size={18} strokeWidth={1.75} className="text-status-completed-fg" />
-        <span className="[overflow-wrap:anywhere]">
+      <p className="flex items-start gap-2" data-testid="record-recorded">
+        <CircleCheck
+          aria-hidden="true"
+          size={18}
+          strokeWidth={1.75}
+          className="mt-0.5 shrink-0 text-status-completed-fg"
+        />
+        <span className="min-w-0 [overflow-wrap:anywhere]">
           {record.readBack === "COMPLETED"
-            ? t("recorded", { debugId: record.debugId ?? "—" })
+            ? t.rich("recorded", {
+                debugId: record.debugId ?? "—",
+                code: (chunks) => (
+                  <code lang="en" className="font-mono text-sm">
+                    {chunks}
+                  </code>
+                ),
+              })
             : t("recordedNoRead", { debugId: record.debugId ?? "—" })}
         </span>
       </p>
