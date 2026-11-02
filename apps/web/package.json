@@ -12,6 +12,8 @@
     "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest"
   },
   "dependencies": {
+    "@bryntum/calendar": "npm:@bryntum/calendar-trial@7.3.8",
+    "@bryntum/calendar-react": "7.3.8",
     "@cleared/adapters": "workspace:*",
     "@cleared/core": "workspace:*",
     "@cleared/db": "workspace:*",

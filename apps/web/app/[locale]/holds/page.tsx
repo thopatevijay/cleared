@@ -20,6 +20,7 @@ export default async function Holds({ params }: { params: Promise<{ locale: stri
   const { locale } = await params;
   if ((await pageSession()) === null) redirect(`/${locale}?ended=1`);
   const t = await getTranslations("holds");
+  const tc = await getTranslations("calendar");
   return (
     <>
       <SiteHeader skipTo="main" skipLabel="skipMain" />
@@ -32,6 +33,14 @@ export default async function Holds({ params }: { params: Promise<{ locale: stri
         </Link>
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <p className="max-w-prose">{t("intro")}</p>
+        {/* M3-05: when the held money is estimated to free up, across payments */}
+        <Link
+          href="/calendar"
+          className="inline-flex min-h-11 items-center self-start text-accent underline underline-offset-2"
+          data-testid="calendar-link"
+        >
+          {tc("linkHint")}
+        </Link>
         <HoldsView />
       </main>
       <DashboardFooter />

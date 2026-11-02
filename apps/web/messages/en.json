@@ -1053,5 +1053,63 @@
     },
     "markShort": "Mark as read",
     "retry": "Retry"
+  },
+  "calendar": {
+    "title": "Cash calendar",
+    "intro": "When held money is estimated to free up, what PayPal released, and when dispute replies are due.",
+    "heldNow": "{amount} held now",
+    "heldNone": "Nothing held now",
+    "viewLabel": "View",
+    "view": {
+      "list": "List",
+      "month": "Month"
+    },
+    "kind": {
+      "estimated": "{amount} · estimated",
+      "deadline": "Reply due · {amount}",
+      "released": "{amount} released",
+      "completedDue": "Completed + 7 days · estimated"
+    },
+    "kindName": {
+      "estimated_release": "estimated release",
+      "dispute_deadline": "dispute reply due",
+      "released": "released, from PayPal",
+      "service_completed_due": "Completed + 7 days"
+    },
+    "estimated": "estimated",
+    "sourceName": "source {source}",
+    "fromPayPal": "PayPal's date",
+    "table": {
+      "caption": "Upcoming releases and deadlines",
+      "date": "Date",
+      "event": "Event",
+      "amount": "Amount",
+      "source": "Estimate source",
+      "show": "Show as table",
+      "none": "Nothing in this range."
+    },
+    "emptyTitle": "No held money.",
+    "empty": "When PayPal holds a payment, its estimated release appears here.",
+    "noEstimateHeading": "No estimate yet",
+    "noEstimate": "PayPal gives no timeline for this reason",
+    "openHold": "Open the hold on {amount}",
+    "loading": "Loading the calendar…",
+    "engineLoading": "Loading the calendar view…",
+    "engineFailed": "The calendar view couldn't load. All dates are in the table below.",
+    "errorTitle": "Couldn't load the calendar",
+    "errorBody": "Check your connection and try again. All dates in the table below still apply.",
+    "showMore": "Show next 30 days",
+    "listWindow": "Next {days} days",
+    "listEmpty": "Nothing in the next {days} days.",
+    "dayEstimated": "{amount} estimated",
+    "dayReleased": "{amount} released",
+    "dayEvents": "{count, plural, one {# event} other {# events}}",
+    "calendarLabel": "Cash calendar, month view",
+    "selectDay": "Select a day to see its events.",
+    "dayNothing": "Nothing on this day.",
+    "today": "Today",
+    "prev": "Previous month",
+    "next": "Next month",
+    "linkHint": "See when held money is estimated to free up"
   }
 }

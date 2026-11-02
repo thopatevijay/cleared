@@ -64,7 +64,7 @@ const SourceSchema = z.object({
   title: z.string().min(1),
   quote: z.string().min(1),
   retrieved_at: day,
-  note: z.string().optional(),
+  note: z.string().exactOptional(),
 });
 
 export const CashEventSchema = z.object({

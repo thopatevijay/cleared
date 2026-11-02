@@ -193,6 +193,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@bryntum/calendar':
+        specifier: npm:@bryntum/calendar-trial@7.3.8
+        version: '@bryntum/calendar-trial@7.3.8'
+      '@bryntum/calendar-react':
+        specifier: 7.3.8
+        version: 7.3.8
       '@cleared/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
@@ -387,6 +393,17 @@ packages:
 
   '@borewit/text-codec@0.2.3':
     resolution: {integrity: sha512-49CycTz1aAZmvFcwkeFyhud1HUmRIB5Tabf7ALV+VA4Iu85MTfz2cUwzPagMFAdVBvrWdkCxG67I30tUwwpKsw==}
+
+  '@bryntum/calendar-react@7.3.8':
+    resolution: {integrity: sha512-bkDZKhSXn7R+OzTGcot8mbAeAkN2QAN14w6ip4rk48mH60NQuw+P8hoHARX6pmCHzvSNIH1nRgIi+NM4iXt8hA==}
+    engines: {node: '>=0.10.0'}
+
+  '@bryntum/calendar-trial-lib@1.0.1':
+    resolution: {integrity: sha512-OJa56mAf2r8X//toJ+u8pp8QgIfNIBb0E4jyeCoZY0inu4RJlgl3aLb9M2u7Mn79qF6wTICh/iaI9Xet4r4K7w==}
+
+  '@bryntum/calendar-trial@7.3.8':
+    resolution: {integrity: sha512-GnFoilyKS2E7zG+9Arya98OVcC/2vEZkdUlF5uzFuibNzv75ZxcBOSoimgxGMBtsobDpuOuWQYzp07g7z/DC2Q==}
+    engines: {node: '>=0.10.0'}
 
   '@cacheable/memory@2.2.0':
     resolution: {integrity: sha512-CTLKqLItRCEixEAewD3/j9DB3/o96gpTPD4eJ1v+DGOlxZRZncRQkGYqqnAGCscYd6RNeXfGeiuCphsPtqyIfQ==}
@@ -3471,6 +3488,14 @@ snapshots:
   '@bcoe/v8-coverage@1.0.2': {}
 
   '@borewit/text-codec@0.2.3': {}
+
+  '@bryntum/calendar-react@7.3.8': {}
+
+  '@bryntum/calendar-trial-lib@1.0.1': {}
+
+  '@bryntum/calendar-trial@7.3.8':
+    dependencies:
+      '@bryntum/calendar-trial-lib': 1.0.1
 
   '@cacheable/memory@2.2.0':
     dependencies:
