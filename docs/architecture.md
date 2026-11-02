@@ -93,7 +93,14 @@ stateDiagram-v2
   approved --> filed
   filed --> released
   filed --> still_held
+  open --> released: capture_released
+  explained --> released: capture_released
+  action_proposed --> released: capture_released
+  approved --> released: capture_released
+  still_held --> released: capture_released
 ```
+
+PayPal can release a hold at any time, so `capture_released` (the mirrored capture leaves `PENDING`) leads to `released` from every other state (ADR 0017, M3-01).
 
 *Dispute*: PayPal's states (mirror) and our draft states
 
