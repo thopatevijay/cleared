@@ -9,6 +9,7 @@ import {
   createDb,
   createPublisher,
   createQueue,
+  ensureKnownQueues,
   forWorkspace,
   platform,
   type Publisher,
@@ -38,6 +39,8 @@ function deps(over: Partial<SyntheticDeps>): SyntheticDeps {
 describe.skipIf(!dbAvailable)("synthetic judge path (offline)", () => {
   beforeAll(async () => {
     boss = await createQueue(db, { background: false, max: 2 });
+    // another file's harness may have deleted queues this file emits to (helpers.ts › close)
+    await ensureKnownQueues(boss);
     publisher = createPublisher(db, boss);
   });
   afterAll(async () => {
@@ -51,7 +54,7 @@ describe.skipIf(!dbAvailable)("synthetic judge path (offline)", () => {
   it("no worker: fails at `capture`, stores the timings, alerts with the step and purges the workspace", async () => {
     const since = new Date();
     const alert = vi.fn();
-    const r = await runSyntheticJudgePath(deps({ alert, budgets: { capture: 0.2 } }));
+    const r = await runSyntheticJudgePath(deps({ alert, maxSeconds: 0.2 }));
     expect(r).toMatchObject({ pass: false, failedStep: "capture", purged: true });
     // the capture job was queued for the synthetic workspace, which is gone now
     const job = await db.$client.query(
@@ -102,9 +105,7 @@ describe.skipIf(!dbAvailable)("synthetic judge path (offline)", () => {
         [id, captureId, `PP-D-SYN-${captureId}`],
       );
     });
-    const r = await runSyntheticJudgePath(
-      deps({ sleep, alert: () => undefined, budgets: { evidence_proposed: 0.2 } }),
-    );
+    const r = await runSyntheticJudgePath(deps({ sleep, alert: () => undefined, maxSeconds: 0.5 }));
     expect(seen).toEqual({ workspaceId: r.workspaceId, flagged: true });
     expect(r.steps.map((s) => [s.step, s.pass])).toEqual([
       ["capture", true],

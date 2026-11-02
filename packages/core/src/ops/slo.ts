@@ -120,19 +120,32 @@ export function reconcileFresh(lastRunMs: number | null, nowMs: number): boolean
 
 // ---- the synthetic judge path ------------------------------------------------------------------
 
-/** The steps in order, each with its budget in seconds (time since the previous step finished). */
+/**
+ * The steps in order, each with its target in seconds (time since the previous step finished). A target is
+ * **soft**: a slower step is recorded (`synthetic.<step>` pass = false, `slowSteps` on the run row) but
+ * the run waits on, since most of the time is PayPal's own sandbox clock. The only hard limit is the
+ * ticket's end to end `SYNTHETIC_MAX_SECONDS`. Every step is observed by polling (the M2-10 `scenario.poll`
+ * job re-fetches the dispute and the capture every 30 s, so a sighting lags PayPal by up to 30 s); no step
+ * waits on a webhook, which a local run never receives (BL-01 6568286398).
+ *
+ * Measured PayPal sandbox times (chargeback → …), the basis of each target:
+ * - hold `PENDING / BUYER_COMPLAINT`: 3 min 05 s (docs/evidence/m0-05-paypal-spike-b.md), 3 min 15 s
+ *   (docs/evidence/M2-GATE.md), 3 min 45 s and > 5 min (M3-09 live runs, 2026-11-02). It moves with the
+ *   time-based `WAITING_FOR_SELLER_RESPONSE` (+3 min 33–35 s, M0-05). Target 300 s, the ticket's "≤ 5 min".
+ * - `provide_evidence` offered and drafted: 44 s after the hold (M2-GATE), 5 s (M3-09) → 300 s
+ * - evidence filed after approval: 6 s (M2-GATE), 10 s (M3-09) → 300 s (the approved → 2xx SLO)
+ * - `adjudicate` offered after the evidence: 3 min 24 s (M0-05), 3 min 34 s (M2-GATE), 3 min 40 s (M3-09) → 600 s
+ * - RESOLVED and capture COMPLETED after adjudicate: 6 min 35 s (M0-05), 4 min 25 s (M2-GATE),
+ *   6 min 25 s (M3-09) → 900 s
+ * Whole path: 12.5 min (M2-GATE), ≈ 15 min with prompt actions (M0-05), 14.3 min (M3-09).
+ */
 export const SYNTHETIC_STEPS = [
   { step: "capture", targetSeconds: 120 },
   { step: "chargeback", targetSeconds: 180 },
-  /** PayPal holds the capture: PENDING / BUYER_COMPLAINT, within 5 minutes of the chargeback */
   { step: "buyer_complaint_hold", targetSeconds: 300 },
-  /** the pack is checked and M2-07 proposed `provide_evidence` (PayPal must first offer the link) */
-  { step: "evidence_proposed", targetSeconds: 1200 },
-  /** approved as the seller; PayPal answered 2xx */
+  { step: "evidence_proposed", targetSeconds: 300 },
   { step: "evidence_filed", targetSeconds: 300 },
-  /** the labelled sandbox decision (adjudicate SELLER_FAVOR) was sent */
-  { step: "sandbox_decision", targetSeconds: 900 },
-  /** dispute RESOLVED and the capture back to COMPLETED */
+  { step: "sandbox_decision", targetSeconds: 600 },
   { step: "released", targetSeconds: 900 },
 ] as const;
 
@@ -148,13 +161,20 @@ export function syntheticStepCheck(step: SyntheticStep, seconds: number): OpsChe
   return { check: `synthetic.${step}`, value: round(seconds), target, pass: seconds <= target, detail: {} };
 }
 
-/** The run's own row: passed end to end within 30 minutes, or the step that failed. */
-export function syntheticRunCheck(totalSeconds: number, failedStep: string | null): OpsCheckResult {
+/**
+ * The run's own row: passed = released end to end within 30 minutes. `failedStep` is the step that
+ * errored or was still waiting at the limit; `slowSteps` the ones over their (soft) target.
+ */
+export function syntheticRunCheck(
+  totalSeconds: number,
+  failedStep: string | null,
+  slowSteps: readonly string[] = [],
+): OpsCheckResult {
   return {
     check: CHECK_NAMES.synthetic,
     value: round(totalSeconds),
     target: SYNTHETIC_MAX_SECONDS,
     pass: failedStep === null && totalSeconds <= SYNTHETIC_MAX_SECONDS,
-    detail: { failedStep },
+    detail: { failedStep, slowSteps: slowSteps.join(",") },
   };
 }

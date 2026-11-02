@@ -38,8 +38,7 @@ export interface SyntheticDeps {
   readonly sleep?: (ms: number) => Promise<void>;
   /** how often a step re-reads the database (default 5 s) */
   readonly pollMs?: number;
-  /** per-step budgets in seconds (default core `SYNTHETIC_STEPS`); tests shrink them */
-  readonly budgets?: Partial<Record<SyntheticStep, number>>;
+  /** the hard end-to-end limit (default 30 min, core `SYNTHETIC_MAX_SECONDS`); step targets are soft */
   readonly maxSeconds?: number;
   /** the Sentry error for a failed run (the adapter by default; tests pass a spy) */
   readonly alert?: (error: Error, extra: Record<string, unknown>) => void;
@@ -93,11 +92,10 @@ async function walkSteps(deps: SyntheticDeps, state: ProbeState, start: Date): P
   const deadline = start.getTime() + (deps.maxSeconds ?? SYNTHETIC_MAX_SECONDS) * 1000;
   const probes = syntheticProbes(deps, state);
   let prev = start;
-  for (const { step, targetSeconds } of SYNTHETIC_STEPS) {
-    const budget = (deps.budgets?.[step] ?? targetSeconds) * 1000;
+  for (const { step } of SYNTHETIC_STEPS) {
     let done = false;
     try {
-      done = await waitFor(deps, Math.min(prev.getTime() + budget, deadline), probes[step]);
+      done = await waitFor(deps, deadline, probes[step]);
     } catch (error) {
       walk.error = error instanceof Error ? error.message : String(error);
     }
@@ -107,7 +105,7 @@ async function walkSteps(deps: SyntheticDeps, state: ProbeState, start: Date): P
     deps.log.info({ step, seconds, done }, "synthetic step");
     if (!done) {
       walk.failedStep = step;
-      walk.error ??= `no ${step} within its budget`;
+      walk.error ??= `no ${step} within the end-to-end limit`;
       return walk;
     }
     prev = at;
@@ -117,7 +115,8 @@ async function walkSteps(deps: SyntheticDeps, state: ProbeState, start: Date): P
 
 function rowsOf(walk: Walk, total: number, aiCostUsd: number): OpsCheckResult[] {
   const steps = walk.steps.map((s) => ({ ...syntheticStepCheck(s.step, s.seconds), pass: s.pass }));
-  const run = syntheticRunCheck(total, walk.failedStep);
+  const slow = walk.steps.filter((s) => !s.pass && s.step !== walk.failedStep).map((s) => s.step);
+  const run = syntheticRunCheck(total, walk.failedStep, slow);
   return [...steps, { ...run, detail: { ...run.detail, error: walk.error, aiCostUsd } }];
 }
 

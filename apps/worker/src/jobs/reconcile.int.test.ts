@@ -19,6 +19,7 @@ import {
   createDb,
   createPublisher,
   createQueue,
+  ensureKnownQueues,
   forWorkspace,
   getProposedAction,
   OPS_RECONCILE_QUEUE,
@@ -138,6 +139,8 @@ describe.skipIf(!dbAvailable)("reconcile poll (integration)", () => {
         captureGets.push(u.pathname.split("/").at(-1) ?? "");
     });
     boss = await createQueue(db, { background: false, max: 2 });
+    // another file's harness may have deleted queues this file emits to (helpers.ts › close)
+    await ensureKnownQueues(boss);
     publisher = createPublisher(db, boss);
   });
   afterEach(() => {

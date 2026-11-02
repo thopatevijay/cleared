@@ -112,5 +112,11 @@ describe("synthetic judge path budget", () => {
       pass: false,
       detail: { failedStep: "capture" },
     });
+    // a slow step is recorded, not a failure: the run passes when it is released within 30 min
+    expect(syntheticRunCheck(900, null, ["buyer_complaint_hold"])).toMatchObject({
+      pass: true,
+      detail: { failedStep: null, slowSteps: "buyer_complaint_hold" },
+    });
+    expect(SYNTHETIC_STEPS.find((s) => s.step === "released")?.targetSeconds).toBe(900);
   });
 });
