@@ -42,7 +42,7 @@ export async function measureSlos(deps: SloDeps, tx?: Executor): Promise<OpsChec
     p.sloSamples.holdVisibleSeconds(since, tx),
     p.sloSamples.approvedToPaypalSeconds(since, tx),
     p.sloSamples.deadlines(tx),
-    p.opsChecks.latest(CHECK_NAMES.synthetic, { pass: true }, tx),
+    p.opsChecks.latest(CHECK_NAMES.synthetic, { pass: true, before: now }, tx),
   ]);
   const samples = deadlines.map((d) => ({
     disputeId: d.disputeId,
@@ -65,8 +65,9 @@ export interface StoredCheck {
 }
 
 async function alertedRecently(deps: SloDeps, check: string, tx?: Executor): Promise<boolean> {
-  const since = new Date(deps.now().getTime() - ALERT_EVERY_MS);
-  return platform(deps.db).opsChecks.alertedSince(check, since, tx);
+  const now = deps.now();
+  const since = new Date(now.getTime() - ALERT_EVERY_MS);
+  return platform(deps.db).opsChecks.alertedBetween(check, since, now, tx);
 }
 
 /** Measures, decides which breaches alert, and stores one row per check (in `tx`). */

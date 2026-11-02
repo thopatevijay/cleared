@@ -291,11 +291,11 @@ describe.skipIf(!dbAvailable)("reconcile poll (integration)", () => {
   });
 
   it("AC 5: an overlapping tick is skipped; the schedule's queue is a singleton", async () => {
-    const lockHeld = Promise.withResolvers<void>();
-    const release = Promise.withResolvers<void>();
+    const lockHeld = Promise.withResolvers<undefined>();
+    const release = Promise.withResolvers<undefined>();
     const holder = withTransaction(db, async (tx) => {
       await tx.execute(`select pg_advisory_xact_lock(${String(RECONCILE_LOCK_ID)})`);
-      lockHeld.resolve();
+      lockHeld.resolve(undefined);
       await release.promise;
     });
     await lockHeld.promise;
@@ -309,7 +309,7 @@ describe.skipIf(!dbAvailable)("reconcile poll (integration)", () => {
       ).rows[0]?.n;
     expect(await runReconcile(deps(at))).toEqual({ ran: false });
     expect(await count()).toBe(0);
-    release.resolve();
+    release.resolve(undefined);
     await holder;
     // once the running tick is done, the next one runs
     expect((await runReconcile(deps(at))).ran).toBe(true);

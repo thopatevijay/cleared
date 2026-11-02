@@ -5,7 +5,7 @@
 //   never fetched.
 // - the SLO samples
 // - the synthetic workspace purge
-import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { Db } from "../../client.ts";
 import { opsChecks, workspaces } from "../../../schema/index.ts";
 import type { Executor, Tx } from "../../tx.ts";
@@ -43,12 +43,17 @@ export function opsChecksRepo(db: Db) {
     async insert(rows: readonly NewOpsCheck[], tx?: Executor): Promise<void> {
       if (rows.length > 0) await (tx ?? db).insert(opsChecks).values([...rows]);
     },
-    /** The newest row of `check` (optionally only passing ones), or null. */
-    async latest(check: string, opts: { pass?: boolean } = {}, tx?: Executor): Promise<OpsCheckRow | null> {
-      const where =
-        opts.pass === undefined
-          ? eq(opsChecks.check, check)
-          : and(eq(opsChecks.check, check), eq(opsChecks.pass, opts.pass));
+    /** The newest row of `check` (optionally only passing ones, or only up to `before`), or null. */
+    async latest(
+      check: string,
+      opts: { pass?: boolean; before?: Date } = {},
+      tx?: Executor,
+    ): Promise<OpsCheckRow | null> {
+      const where = and(
+        eq(opsChecks.check, check),
+        opts.pass === undefined ? undefined : eq(opsChecks.pass, opts.pass),
+        opts.before === undefined ? undefined : lte(opsChecks.runAt, opts.before),
+      );
       const rows = await (tx ?? db)
         .select()
         .from(opsChecks)
@@ -57,8 +62,8 @@ export function opsChecksRepo(db: Db) {
         .limit(1);
       return rows[0] ?? null;
     },
-    /** Whether a breach of `check` raised its alert (`detail.alerted`) since `since` (the SLO throttle). */
-    async alertedSince(check: string, since: Date, tx?: Executor): Promise<boolean> {
+    /** Whether a breach of `check` raised its alert (`detail.alerted`) in [since, until] (the SLO throttle). */
+    async alertedBetween(check: string, since: Date, until: Date, tx?: Executor): Promise<boolean> {
       const rows = await (tx ?? db)
         .select({ id: opsChecks.id })
         .from(opsChecks)
@@ -66,6 +71,7 @@ export function opsChecksRepo(db: Db) {
           and(
             eq(opsChecks.check, check),
             gte(opsChecks.runAt, since),
+            lte(opsChecks.runAt, until),
             sql`${opsChecks.detail}->>'alerted' = 'true'`,
           ),
         )
@@ -140,7 +146,7 @@ export function sloSamplesRepo(db: Db) {
           order by e.received_at desc limit 1
         ) w on true
         where h.created_at >= ${since}`);
-      return rowsOf<{ s: number }>(r).map((x) => Number(x.s));
+      return rowsOf<{ s: number | string }>(r).map((x) => Number(x.s));
     },
     /** Seller approval → the PayPal send that answered 2xx, in seconds, for approvals since `since`. */
     async approvedToPaypalSeconds(since: Date, tx?: Executor): Promise<number[]> {
@@ -150,7 +156,7 @@ export function sloSamplesRepo(db: Db) {
         join executions e on e.action_id = a.action_id and e.workspace_id = a.workspace_id
         join workspaces ws on ws.id = a.workspace_id and not ws.synthetic
         where a.approved_at >= ${since} and e.paypal_status ~ '^2[0-9][0-9]$'`);
-      return rowsOf<{ s: number }>(r).map((x) => Number(x.s));
+      return rowsOf<{ s: number | string }>(r).map((x) => Number(x.s));
     },
     /** Every non-synthetic dispute with a due date, and whether one of its actions succeeded. */
     async deadlines(tx?: Executor): Promise<DeadlineRow[]> {

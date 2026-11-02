@@ -1,7 +1,9 @@
-// Readiness (M1-08): `/readyz` is 200 only when the database answers, the pg-boss schema is reachable
-// and a worker beat within the last 2 minutes (it beats every 30 s); otherwise 503. Each check has
-// its own 2 s timeout and the three run in parallel, so the probe answers within about 2 s.
+// Readiness (M1-08): `/readyz` is 200 only when the database answers, the pg-boss schema is reachable,
+// a worker beat within the last 2 minutes (it beats every 30 s) and (M3-09) the reconcile poll ran within
+// the last 30 minutes (it runs every 15, and once at worker boot); otherwise 503. Each check has its own
+// 2 s timeout and the four run in parallel, so the probe answers within about 2 s.
 // Liveness is `/healthz` (no dependencies), which Render's health check keeps using.
+import { CHECK_NAMES, reconcileFresh } from "@cleared/core";
 import { pingDb, pingQueue, platform, type Db } from "@cleared/db";
 
 export const CHECK_TIMEOUT_MS = 2_000;
@@ -9,7 +11,12 @@ export const HEARTBEAT_MAX_AGE_MS = 2 * 60_000;
 
 export interface Readiness {
   readonly ok: boolean;
-  readonly checks: { readonly db: boolean; readonly queue: boolean; readonly worker: boolean };
+  readonly checks: {
+    readonly db: boolean;
+    readonly queue: boolean;
+    readonly worker: boolean;
+    readonly reconcile: boolean;
+  };
 }
 
 export interface ReadinessDeps {
@@ -37,7 +44,7 @@ export async function within(probe: () => Promise<unknown>, ms: number): Promise
 
 export async function checkReadiness(deps: ReadinessDeps): Promise<Readiness> {
   const ms = deps.timeoutMs ?? CHECK_TIMEOUT_MS;
-  const [db, queue, worker] = await Promise.all([
+  const [db, queue, worker, reconcile] = await Promise.all([
     within(() => pingDb(deps.db), ms),
     within(() => pingQueue(deps.db), ms),
     within(async () => {
@@ -46,8 +53,15 @@ export async function checkReadiness(deps: ReadinessDeps): Promise<Readiness> {
         throw new Error("no recent worker heartbeat");
       }
     }, ms),
+    within(async () => {
+      const now = deps.now();
+      const last = await platform(deps.db).opsChecks.latest(CHECK_NAMES.reconcile, { before: now });
+      if (!reconcileFresh(last === null ? null : last.runAt.getTime(), now.getTime())) {
+        throw new Error("no reconcile poll in the last 30 minutes");
+      }
+    }, ms),
   ]);
-  return { ok: db && queue && worker, checks: { db, queue, worker } };
+  return { ok: db && queue && worker && reconcile, checks: { db, queue, worker, reconcile } };
 }
 
 export async function readyzResponse(deps: ReadinessDeps): Promise<Response> {

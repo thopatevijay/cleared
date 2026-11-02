@@ -9,7 +9,8 @@ import { dbAvailable, url } from "../../test/helpers.ts";
 import { measureSlos, raiseAlerts, runSloChecks } from "./slo-checks.ts";
 
 const db = createDb(url);
-const T0 = Date.parse("2031-01-01T00:00:00Z");
+// a fresh day per run (the rows stay in the shared test database): 2031 + up to ~27 years
+const T0 = Date.parse("2031-01-01T00:00:00Z") + Math.floor(Math.random() * 10_000) * 86_400_000;
 const at = (minutes: number) => new Date(T0 + minutes * 60_000);
 const NOW = at(12 * 60);
 const q = (text: string, values: unknown[] = []) => db.$client.query(text, values);
