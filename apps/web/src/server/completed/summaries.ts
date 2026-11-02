@@ -9,6 +9,10 @@ import {
   type PayPalEnv,
 } from "@cleared/core";
 import { executionForAction, trackingReads, type Db, type HoldRow } from "@cleared/db";
+import { z } from "zod";
+
+/** The execution row's stored answer (worker record-service-completed.ts): the read-back status. */
+const ReadBackSchema = z.object({ trackerStatus: z.string() });
 
 export interface ServiceHoldRef {
   readonly hold: Pick<HoldRow, "id" | "type" | "completedConfirmedAt">;
@@ -39,7 +43,7 @@ export async function completedSummaries(
       const state = completedRecordState(a?.state ?? null);
       const live = a !== null && state !== "none" ? a : null;
       const exec = live === null ? null : await executionForAction(db, ws, live.id);
-      const response = (exec?.response ?? null) as { trackerStatus?: unknown } | null;
+      const readBack = ReadBackSchema.safeParse(exec?.response).data?.trackerStatus ?? null;
       const summary: CompletedSummary = {
         confirmedAt: r.hold.completedConfirmedAt?.toISOString() ?? null,
         activityUrl: paypalActivityUrl(env),
@@ -48,7 +52,7 @@ export async function completedSummaries(
           state,
           actionId: live?.id ?? null,
           debugId: exec?.paypalDebugId ?? null,
-          readBack: typeof response?.trackerStatus === "string" ? response.trackerStatus : null,
+          readBack,
           refusal: live?.refusalCode ?? null,
         },
       };

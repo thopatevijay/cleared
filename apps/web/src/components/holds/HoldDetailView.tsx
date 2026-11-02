@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { Link, useRouter } from "../../i18n/navigation.ts";
 import { ApiError, getJson } from "../../lib/api.ts";
-import { formatAmount, formatTime } from "../../lib/format.ts";
+import { formatAmount, formatDate, formatTime } from "../../lib/format.ts";
 import { useUiLocale } from "../disputes/text.ts";
 import { EmptyState } from "../EmptyState.tsx";
 import { ErrorPanel } from "../ErrorPanel.tsx";
@@ -25,6 +25,7 @@ import { OfflineBanner, useLoadedAt } from "./Offline.tsx";
 import { RuleSource } from "./RuleSource.tsx";
 import { RouteAdvice } from "../tracking/RouteAdvice.tsx";
 import { TrackingCard } from "../tracking/TrackingCard.tsx";
+import { GuidedCompleted } from "./GuidedCompleted.tsx";
 import { ruleOf, useReasonText } from "./text.ts";
 
 const fetchHold = async (path: string): Promise<HoldDetail> => HoldDetailSchema.parse(await getJson(path));
@@ -105,7 +106,8 @@ function timelineSteps(state: HoldState): HoldState[] {
   return state === "still_held" ? [...path, "still_held"] : [...path, "released"];
 }
 
-function Timeline({ state }: { state: HoldState }) {
+/** M3-04: the filed step of a service hold the seller confirmed reads as their own confirmation. */
+function Timeline({ state, completedOn }: { state: HoldState; completedOn: string | null }) {
   const t = useTranslations("holds");
   const steps = timelineSteps(state);
   const at = steps.indexOf(state);
@@ -127,7 +129,9 @@ function Timeline({ state }: { state: HoldState }) {
             >
               <Icon aria-hidden="true" size={18} strokeWidth={1.75} />
               <span className={mark === "current" ? "font-semibold" : ""} data-testid="step-label">
-                {t(`timeline.${s}`)}
+                {s === "filed" && completedOn !== null
+                  ? t("completed.timeline", { date: completedOn })
+                  : t(`timeline.${s}`)}
               </span>
               <span className="text-sm text-text-muted">({t(`step.${mark}`)})</span>
             </li>
@@ -190,6 +194,7 @@ function GoodsAction({ d, onChanged }: { d: HoldDetail; onChanged: () => void })
 
 function Detail({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) {
   const t = useTranslations("holds.detail");
+  const locale = useUiLocale();
   const h = d.hold;
   const released = h.state === "released";
   return (
@@ -203,10 +208,23 @@ function Detail({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) {
           <h2 id="action-heading" className="text-xl font-semibold">
             {t("actionTitle")}
           </h2>
-          {h.type === "goods" ? <GoodsAction d={d} onChanged={onChanged} /> : <p>{t("nothingToDo")}</p>}
+          {h.type === "goods" ? (
+            <GoodsAction d={d} onChanged={onChanged} />
+          ) : h.type === "service" && h.completed != null ? (
+            <GuidedCompleted d={d} onChanged={onChanged} />
+          ) : (
+            <p>{t("nothingToDo")}</p>
+          )}
         </section>
       )}
-      <Timeline state={h.state} />
+      <Timeline
+        state={h.state}
+        completedOn={
+          h.completed?.confirmedAt == null
+            ? null
+            : formatDate(locale, h.completed.confirmedAt, d.workspace.timezone)
+        }
+      />
     </div>
   );
 }
@@ -225,9 +243,10 @@ export function HoldDetailView({ id }: { id: string }) {
     if (error instanceof ApiError && error.status === 401) router.replace("/?ended=1");
   }, [error, router]);
   useEffect(() => {
-    // "#why" (the dashboard's "Why?") or "#tracking" (M3-03 "File tracking" → the ApprovalCard)
+    // "#why" (the dashboard's "Why?"), "#tracking" (M3-03 "File tracking" → the ApprovalCard) or
+    // "#completed" (M3-04 the guided Completed step)
     const target = window.location.hash.slice(1);
-    if (data === undefined || focused.current || (target !== "why" && target !== "tracking")) return;
+    if (data === undefined || focused.current || !["why", "tracking", "completed"].includes(target)) return;
     const el = document.getElementById(target);
     if (el === null) return;
     focused.current = true;
