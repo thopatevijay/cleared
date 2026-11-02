@@ -8,6 +8,8 @@
 //                     refs (E1 brief, E2 chat, E3 delivery PDF, E4 screenshot) are swapped for this pack's
 //                     refs of the same items, matched by sha256, the way the PayPal stub swaps recorded ids.
 //                     A recorded ref with no matching item becomes E99, which the verbatim check drops.
+//   explain_hold@v1   (small model, M3-02): the recorded live answer whose request carried the same hold and
+//                     rule blocks (the input is the cache key: same rule, reason and locale = same request).
 // Each answer waits E2E_OPENAI_DELAY_MS (default 3 s) so the "checking" state is observable.
 import { http, HttpResponse } from "msw";
 import { loadFixture, type Fixture } from "../../../../packages/adapters/src/testing/fixture.ts";
@@ -22,6 +24,9 @@ const EXTRACT = [
   "receipt-shipping",
   "chat-delivery-events",
 ].map((n) => loadFixture(`openai/extract-v1/${n}`));
+const EXPLAIN = ["payment-review-en", "payment-review-hi", "dispute-hold-en", "dispute-hold-hi"].map((n) =>
+  loadFixture(`openai/explain_hold/${n}`),
+);
 const SCOPE = {
   pass1: loadFixture("openai/scope-v1/logo-pass1"),
   pass2: loadFixture("openai/scope-v1/logo-pass2"),
@@ -95,7 +100,7 @@ function scope(req: Body): Response {
 
 function extract(req: Body): Response {
   const want = texts(req);
-  const f = EXTRACT.find((x) => texts(x.request.body as Body) === want);
+  const f = [...EXTRACT, ...EXPLAIN].find((x) => texts(x.request.body as Body) === want);
   if (f === undefined) {
     console.error(JSON.stringify({ service: "e2e-openai-stub", msg: "no extract recording" }));
     return HttpResponse.error();

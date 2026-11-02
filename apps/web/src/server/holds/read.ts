@@ -7,14 +7,16 @@ import {
   HOLD_TYPES,
   HoldDetailSchema,
   HoldsResponseSchema,
+  StoredExplanationSchema,
   type HoldDetail,
+  type HoldExplanation,
   type HoldItem,
   type HoldsResponse,
   type HoldType,
   type PaymentHold,
   type WorkspaceId,
 } from "@cleared/core";
-import { holdsRepo, platform, type HoldRow, type HoldView } from "@cleared/db";
+import { holdsRepo, platform, type ExplanationRow, type HoldRow, type HoldView } from "@cleared/db";
 import { z } from "zod";
 import type { Deps } from "../deps.ts";
 
@@ -72,14 +74,29 @@ export async function listHolds(deps: Deps, ws: WorkspaceId): Promise<HoldsRespo
   });
 }
 
+/** M3-02: a stored explanation (JSON in `explanations.text`); an unreadable row is left out, never shown raw. */
+export function holdExplanation(row: ExplanationRow): HoldExplanation | null {
+  let doc: unknown;
+  try {
+    doc = JSON.parse(row.text);
+  } catch {
+    return null;
+  }
+  const parsed = StoredExplanationSchema.safeParse(doc);
+  return parsed.success ? { ...parsed.data, id: row.id, createdAt: row.createdAt.toISOString() } : null;
+}
+
 /** null when the id is not a uuid, or the hold is absent, foreign, or on a capture this workspace doesn't own. */
 export async function holdDetail(deps: Deps, ws: WorkspaceId, rawId: string): Promise<HoldDetail | null> {
   if (!z.uuid().safeParse(rawId).success) return null;
-  const v = await holdsRepo(deps.db, ws).view(rawId);
+  const repo = holdsRepo(deps.db, ws);
+  const v = await repo.view(rawId);
   if (v === null) return null;
+  const explanations = (await repo.explanations(v.hold.id)).flatMap((r) => holdExplanation(r) ?? []);
   return HoldDetailSchema.parse({
     hold: holdItem(v),
     payment: { id: v.payment.id, status: v.payment.status, statusReason: v.payment.statusReason },
     workspace: { timezone: await timezone(deps, ws) },
+    explanations,
   });
 }

@@ -183,6 +183,15 @@
         "body": "PayPal has limited the account. Cleared can't lift a limitation or promise a release; PayPal decides. This explains what PayPal usually asks for."
       }
     },
+    "explanation": {
+      "language": "Explanation language",
+      "ai": "AI explanation",
+      "standard": "Standard explanation (no AI summary right now)",
+      "doingTitle": "What PayPal is doing",
+      "canDoTitle": "What you can do",
+      "pending": "Writing a plain-language explanation… usually under 30 seconds.",
+      "unavailable": "Couldn't ask for this explanation. PayPal's rule text is below."
+    },
     "detail": {
       "h1": "Held: {amount}",
       "opened": "Held since {time}",

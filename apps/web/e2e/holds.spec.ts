@@ -5,7 +5,7 @@
 // Empty, loading, error and not-found states; axe (WCAG 2.2 A/AA) and 360 px on every screen; HI.
 import { expect, test } from "@playwright/test";
 import { capture, demoWorkspace, local } from "./support/disputes.ts";
-import { axeClean, releaseHeld, REVIEW_HOLDS, seedHeld } from "./support/holds.ts";
+import { axeClean, releaseHeld, REVIEW_EXPLAIN, REVIEW_HOLDS, seedHeld } from "./support/holds.ts";
 
 test.describe.configure({ mode: "serial" });
 test.skip(!local, "local only");
@@ -161,4 +161,49 @@ test("inbox variants: dispute-linked, no-timeline and review holds; held total p
   await capture(page, "en-holds-variants", REVIEW_HOLDS);
   await page.goto("/hi/holds");
   await capture(page, "hi-holds-variants", REVIEW_HOLDS);
+});
+
+test("M3-02 explanation: AI in EN, the HI toggle, the standard text and the pending state", async ({ page }) => {
+  test.setTimeout(300_000);
+  const ws = await demoWorkspace(page);
+  const s = await seedHeld(ws);
+  await page.goto(`/en/holds/${s.holdId}`);
+  const detail = page.getByTestId("hold-detail");
+  // the worker explained the hold on `hold.opened` (explain_hold@v1: the recorded live answer)
+  const explanation = detail.getByTestId("explanation");
+  await expect(explanation).toHaveAttribute("data-origin", "ai", { timeout: 60_000 });
+  await expect(explanation).toContainText("AI explanation");
+  await expect(detail.getByTestId("explanation-summary")).toContainText("64.00 USD");
+  await axeClean(page, "hold-explanation-en");
+  await capture(page, "en-hold-explanation", REVIEW_EXPLAIN);
+  // the toggle asks for Hindi: POST /api/holds/:id/explanation → hold.explain_requested → the worker
+  await detail.getByTestId("explanation-locale").getByRole("button", { name: "हिन्दी" }).click();
+  await expect(detail.getByTestId("explanation-summary")).toHaveAttribute("lang", "hi", { timeout: 60_000 });
+  await expect(detail.getByTestId("explanation-summary")).toContainText("64.00 USD");
+  await axeClean(page, "hold-explanation-hi-toggle");
+  await capture(page, "en-hold-explanation-hi-toggle", REVIEW_EXPLAIN);
+  // the Hindi UI shows the Hindi explanation by default
+  await page.goto(`/hi/holds/${s.holdId}`);
+  await expect(page.getByTestId("explanation")).toContainText("AI व्याख्या");
+  await axeClean(page, "hold-explanation-hi");
+  await capture(page, "hi-hold-explanation", REVIEW_EXPLAIN);
+
+  // no recording for an eCheck hold: the model call fails, the standard text is shown and labelled
+  const echeck = await seedHeld(ws, { amount: "15.00", currency: "EUR", reason: "ECHECK" });
+  await page.goto(`/en/holds/${echeck.holdId}`);
+  await expect(page.getByTestId("explanation")).toHaveAttribute("data-origin", "standard", { timeout: 60_000 });
+  await expect(page.getByTestId("explanation")).toContainText("Standard explanation (no AI summary right now)");
+  await axeClean(page, "hold-explanation-standard");
+  await capture(page, "en-hold-explanation-standard", REVIEW_EXPLAIN);
+
+  // pending: the detail as it reads before the worker has written one (explanations held back)
+  await page.route(`**/api/holds/${s.holdId}`, async (route) => {
+    const res = await route.fetch();
+    const body = (await res.json()) as Record<string, unknown>;
+    await route.fulfill({ response: res, json: { ...body, explanations: [] } });
+  });
+  await page.goto(`/en/holds/${s.holdId}`);
+  await expect(page.getByTestId("explanation-pending")).toContainText("usually under 30 seconds");
+  await axeClean(page, "hold-explanation-pending");
+  await capture(page, "en-hold-explanation-pending", REVIEW_EXPLAIN);
 });
