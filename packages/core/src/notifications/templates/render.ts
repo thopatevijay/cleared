@@ -10,7 +10,7 @@ import {
 } from "../rules.ts";
 import type { Instant } from "../../time.ts";
 import { EN } from "./en.ts";
-import { escapeHtml, formatAmount, reasonWords, remaining, zonedDate } from "./format.ts";
+import { escapeHtml, formatAmount, reasonLabel, remaining, zonedDate } from "./format.ts";
 import { HI } from "./hi.ts";
 import type { RenderedNotification, SentenceParams } from "./types.ts";
 
@@ -35,7 +35,7 @@ export function sentenceParams(n: RenderInput, ctx: RenderContext): SentencePara
   const d = n.data;
   return {
     amount: formatAmount(d.amount, ctx.locale),
-    reason: reasonWords(d.reason),
+    reason: reasonLabel(d.reason, ctx.locale),
     reasonCode: d.reason ?? "",
     remaining: d.dueDate === null ? null : remaining(d.dueDate, ctx.now),
     due: d.dueDate === null ? null : zonedDate(d.dueDate, ctx.locale, ctx.timeZone),

@@ -20,7 +20,9 @@ function Skeleton({ label }: { label: string }) {
       data-testid="notifications-loading"
     >
       {[0, 1, 2].map((i) => (
-        <li key={i} className="h-16 animate-pulse rounded-md bg-surface-sunken motion-reduce:animate-none" />
+        <li key={i} className="h-16 animate-pulse rounded-md bg-surface-sunken motion-reduce:animate-none">
+          {i === 0 ? <span className="sr-only">{label}</span> : null}
+        </li>
       ))}
     </ul>
   );
@@ -43,7 +45,9 @@ export function NotificationList({
   }
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3">
+      <div
+        className={`flex flex-wrap items-center gap-3 ${data === undefined || data.items.length === 0 ? "hidden" : ""}`}
+      >
         <button
           type="button"
           disabled={!online || unread === 0}
@@ -60,7 +64,7 @@ export function NotificationList({
           {confirmed ? t("allMarked") : ""}
         </span>
       </div>
-      {state.error ? (
+      {state.error && online ? (
         <ErrorPanel title={t("loadError")} reference={state.reference} onRetry={state.retry} />
       ) : null}
       {state.loading ? <Skeleton label={t("loading")} /> : null}

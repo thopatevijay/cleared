@@ -87,7 +87,7 @@ export function NotificationBell() {
         <div
           role="dialog"
           aria-labelledby={headingId}
-          className="absolute top-full right-0 z-[var(--z-dialog)] mt-2 flex max-h-[70vh] w-[380px] max-w-[calc(100vw-32px)] flex-col gap-3 overflow-y-auto rounded-lg bg-surface p-4 shadow-[var(--shadow-overlay)]"
+          className="absolute top-full right-0 z-[var(--z-dialog)] mt-2 flex max-md:hidden max-h-[70vh] w-[380px] max-w-[calc(100vw-32px)] flex-col gap-3 overflow-y-auto rounded-lg bg-surface p-4 shadow-[var(--shadow-overlay)]"
         >
           <h2 id={headingId} ref={heading} tabIndex={-1} className="text-lg font-semibold">
             {t("title")}

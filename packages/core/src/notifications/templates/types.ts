@@ -5,7 +5,7 @@ import type { Remaining, ZonedDate } from "./format.ts";
 export interface SentenceParams {
   /** formatted, e.g. `$120.00 USD` */
   readonly amount: string;
-  /** the reason in words (disputes) */
+  /** the reason label (disputes): localised for the common reasons, else PayPal's code */
   readonly reason: string;
   /** the raw reason code (holds show PayPal's code, e.g. PENDING_REVIEW) */
   readonly reasonCode: string;

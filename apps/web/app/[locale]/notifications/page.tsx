@@ -30,7 +30,9 @@ export default async function Notifications({ params }: { params: Promise<{ loca
         >
           {t("back")}
         </Link>
-        <h1 className="text-2xl font-bold">{t("title")}</h1>
+        <h1 id="notifications-title" tabIndex={-1} className="text-2xl font-bold">
+          {t("title")}
+        </h1>
         <NotificationsPage />
       </main>
       <DashboardFooter />

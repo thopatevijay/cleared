@@ -57,10 +57,22 @@ export function remaining(due: Instant, now: Instant): Remaining {
   return { unit: "hours", n: Math.max(1, Math.floor(hours)) };
 }
 
-/** PayPal's reason code as words: `MERCHANDISE_OR_SERVICE_NOT_RECEIVED` → `merchandise or service not received`. */
-export function reasonWords(code: string | null): string {
+/** The same labels as the web's `disputes.reason` messages (lower-cased mid-sentence). */
+const REASON_LABELS: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {
+  en: {
+    MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED: "item not as described",
+    MERCHANDISE_OR_SERVICE_NOT_RECEIVED: "item not received",
+  },
+  hi: {
+    MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED: "सामान बताए अनुसार नहीं",
+    MERCHANDISE_OR_SERVICE_NOT_RECEIVED: "सामान नहीं मिला",
+  },
+};
+
+/** A dispute reason as words for the two common reasons; any other stays PayPal's code (Latin). */
+export function reasonLabel(code: string | null, locale: Locale): string {
   if (code === null || code === "") return "";
-  return code.toLowerCase().replace(/_/g, " ");
+  return REASON_LABELS[locale][code] ?? code;
 }
 
 const HTML_ESCAPES: Readonly<Record<string, string>> = {

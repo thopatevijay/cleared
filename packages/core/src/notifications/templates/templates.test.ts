@@ -55,7 +55,7 @@ describe("renderNotification", () => {
     });
     const en = renderNotification(opened, ctx(now));
     expect(en.sentence).toBe(
-      "A buyer opened a dispute on $120.00 USD: merchandise or service not received. A reply is being drafted.",
+      "A buyer opened a dispute on $120.00 USD: item not received. A reply is being drafted.",
     );
     expect(renderNotification(opened, ctx(now, "hi")).url).toBe(`https://cleared.example/hi/disputes/${D}`);
   });

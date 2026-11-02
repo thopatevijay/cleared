@@ -85,7 +85,7 @@ async function emailJobs(notificationId: string): Promise<number> {
 
 describe.skipIf(!dbAvailable)("notification consumers", () => {
   beforeAll(async () => {
-    server.listen({ onUnhandledRequest: "error" });
+    server.listen({ onUnhandledFrame: "error" });
     boss = await createQueue(db, { background: false, max: 2 });
   });
   afterAll(async () => {

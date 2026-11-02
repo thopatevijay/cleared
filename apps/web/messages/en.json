@@ -729,6 +729,7 @@
       "deadline_t72": "Deadline",
       "deadline_t24": "Deadline",
       "completed_reminder": "Reminder"
-    }
+    },
+    "markShort": "Mark as read"
   }
 }

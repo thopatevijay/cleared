@@ -61,6 +61,8 @@ async function notifications(ws: string): Promise<{ disputeRowId: string }> {
   return { disputeRowId: s.disputeRowId };
 }
 
+const PANEL_WIDTHS = [768, 1440] as const;
+const ERROR_BODY = { error: { code: "internal", message: "x", correlationId: "e2e-ref-1" } };
 const bell = (page: Page) => page.getByTestId("notification-bell");
 const items = (page: Page) => page.getByTestId("notification");
 
@@ -79,12 +81,10 @@ test("bell count, panel list, mark read, open an item (EN, ≥ 768 px)", async (
   await expect(panel.getByRole("heading", { name: "Notifications" })).toBeFocused();
   await expect(items(page)).toHaveCount(3);
   await expect(items(page).first()).toContainText("Reply to the $120.00 USD dispute is due in 18 hours");
-  await expect(panel).toContainText(
-    "A buyer opened a dispute on $120.00 USD: merchandise or service not as described.",
-  );
+  await expect(panel).toContainText("A buyer opened a dispute on $120.00 USD: item not as described.");
   await expect(panel).toContainText("PayPal is holding $64.00 USD (PENDING_REVIEW).");
   await expect(panel.getByText("New", { exact: true })).toHaveCount(3);
-  await capture(page, "en-panel", REVIEW);
+  await capture(page, "en-panel", REVIEW, PANEL_WIDTHS);
 
   // mark one read: the count drops, the item loses its "New"
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -102,6 +102,43 @@ test("bell count, panel list, mark read, open an item (EN, ≥ 768 px)", async (
   await page.getByRole("link", { name: /^New: A buyer opened a dispute/ }).click();
   await page.waitForURL(`**/en/disputes/${s.disputeRowId}`);
   await expect(bell(page)).toHaveAccessibleName("Notifications, 1 unread");
+
+  // HI panel with an unread item ("नई", rail, the HI mark-read button)
+  await page.goto("/hi/payments");
+  await expect(bell(page)).toHaveAccessibleName("सूचनाएँ, 1 अपठित");
+  await bell(page).click();
+  const hiPanel = page.getByRole("dialog", { name: "सूचनाएँ" });
+  await expect(hiPanel.getByText("नई", { exact: true })).toHaveCount(1);
+  await expect(hiPanel.getByRole("button", { name: /^पढ़ा हुआ मानें: / })).toHaveCount(1);
+  await capture(page, "hi-panel", REVIEW, PANEL_WIDTHS);
+
+  // the panel's error state (compact ErrorPanel with Retry and Reference)
+  await page.route("**/api/notifications*", (route) =>
+    route.fulfill({ status: 500, json: ERROR_BODY, headers: { "x-correlation-id": "e2e-ref-1" } }),
+  );
+  await page.goto("/en/payments");
+  await bell(page).click();
+  const errPanel = page.getByRole("dialog", { name: "Notifications" });
+  await expect(errPanel.getByTestId("error-panel")).toContainText("Couldn't load notifications");
+  await expect(errPanel.getByTestId("error-panel")).toContainText("e2e-ref-1");
+  await capture(page, "en-panel-error", REVIEW, PANEL_WIDTHS);
+
+  // the panel's loading state (3 skeleton items)
+  await page.unroute("**/api/notifications*");
+  await page.route("**/api/notifications*", async (route) => {
+    await new Promise((r) => setTimeout(r, 6_000));
+    await route.continue();
+  });
+  await page.goto("/en/payments");
+  await bell(page).click();
+  await expect(page.getByRole("dialog").getByTestId("notifications-loading")).toBeVisible();
+  if (shots) {
+    for (const width of PANEL_WIDTHS) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.screenshot({ path: `${REVIEW}en-panel-loading-${String(width)}-light.png` });
+    }
+  }
+  await page.unroute("**/api/notifications*");
 });
 
 test("360 px: the bell opens /notifications; mark all as read; HI copy", async ({ page }) => {
@@ -115,7 +152,38 @@ test("360 px: the bell opens /notifications; mark all as read; HI copy", async (
   await page.waitForURL("**/en/notifications");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Notifications");
   await expect(items(page)).toHaveCount(3);
+  await expect(page.getByRole("heading", { level: 1 })).toBeFocused();
   await capture(page, "en-page", REVIEW);
+
+  await page.goto("/hi/notifications");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("सूचनाएँ");
+  await expect(items(page).first()).toContainText("वाले विवाद का जवाब 18 घंटे में देना है");
+  await expect(page.getByText("नई", { exact: true })).toHaveCount(3);
+  await expect(bell(page)).toHaveAccessibleName("सूचनाएँ, 3 अपठित");
+  await capture(page, "hi-page", REVIEW);
+
+  // partial: a failed mark-read leaves the item unread with an inline message
+  await page.goto("/en/notifications");
+  await page.route("**/api/notifications", (route) =>
+    route.request().method() === "PATCH"
+      ? route.fulfill({ status: 500, json: ERROR_BODY })
+      : route.continue(),
+  );
+  await page.getByRole("button", { name: /^Mark as read: PayPal is holding/ }).click();
+  await expect(page.getByText("Couldn't mark as read.")).toBeVisible();
+  await expect(page.locator('[data-testid="notification"][data-read="false"]')).toHaveCount(3);
+  await capture(page, "en-partial", REVIEW);
+  await page.unroute("**/api/notifications");
+
+  // offline: the last list stays; mark-read is disabled with "You're offline"
+  await page.reload();
+  await expect(items(page)).toHaveCount(3);
+  await page.context().setOffline(true);
+  await expect(page.getByText("You're offline")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark all as read" })).toBeDisabled();
+  await expect(items(page)).toHaveCount(3);
+  await capture(page, "en-offline", REVIEW);
+  await page.context().setOffline(false);
 
   await page.setViewportSize({ width: 360, height: 800 });
   await page.getByRole("button", { name: "Mark all as read" }).click();
@@ -126,11 +194,6 @@ test("360 px: the bell opens /notifications; mark all as read; HI copy", async (
   await expect(page.getByTestId("notification-count")).toHaveCount(0);
   await expect(page.locator('[data-testid="notification"][data-read="false"]')).toHaveCount(0);
   await capture(page, "en-page-read", REVIEW);
-
-  await page.goto("/hi/notifications");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("सूचनाएँ");
-  await expect(items(page).first()).toContainText("वाले विवाद का जवाब 18 घंटे में देना है");
-  await capture(page, "hi-page", REVIEW);
 });
 
 test("empty, error and loading states", async ({ page }) => {
@@ -144,13 +207,11 @@ test("empty, error and loading states", async ({ page }) => {
   await capture(page, "en-empty", REVIEW);
 
   await page.route("**/api/notifications*", (route) =>
-    route.fulfill({
-      status: 500,
-      json: { error: { code: "internal", message: "x", correlationId: "e2e-ref-1" } },
-    }),
+    route.fulfill({ status: 500, json: ERROR_BODY, headers: { "x-correlation-id": "e2e-ref-1" } }),
   );
   await page.goto("/en/notifications");
   await expect(page.getByTestId("error-panel").first()).toContainText("Couldn't load notifications");
+  await expect(page.getByTestId("error-panel").first()).toContainText("e2e-ref-1");
   await capture(page, "en-error", REVIEW);
 
   await page.unroute("**/api/notifications*");

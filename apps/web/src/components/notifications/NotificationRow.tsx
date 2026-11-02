@@ -66,7 +66,7 @@ export function NotificationRow({ item, timeZone, failed, offline, onMarkRead }:
               onMarkRead(item.id);
             }}
             aria-label={t("markOne", { sentence: item.sentence })}
-            title={offline ? t("offline") : undefined}
+            title={offline ? t("offline") : t("markShort")}
             className="inline-flex size-11 items-center justify-center rounded-md border border-border-strong text-text hover:bg-surface-sunken disabled:opacity-60"
           >
             <Check aria-hidden="true" size={20} strokeWidth={1.75} />

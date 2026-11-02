@@ -124,7 +124,7 @@ async function deliver(s: EmailSender, sc: Awaited<ReturnType<typeof scene>>): P
 
 beforeAll(async () => {
   if (!dbAvailable) return;
-  server.listen({ onUnhandledRequest: "error" });
+  server.listen({ onUnhandledFrame: "error" });
   boss = await createQueue(db, { background: false, max: 2 });
 });
 afterEach(() => {
