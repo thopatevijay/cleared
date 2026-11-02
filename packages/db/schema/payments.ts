@@ -43,6 +43,8 @@ export const holds = pgTable(
     /** an estimate, always with its cited source */
     estimatedReleaseAt: tstz("estimated_release_at"),
     estimateSource: text("estimate_source"),
+    /** M3-04: when the seller says they marked the service order Completed in PayPal (the web step) */
+    completedConfirmedAt: tstz("completed_confirmed_at"),
   },
   (t) => [
     index("holds_payment_idx").on(t.paymentId),

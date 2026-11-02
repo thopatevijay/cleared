@@ -83,6 +83,13 @@ export const HoldExplainRequestedEvent = event("hold.explain_requested", {
   holdId: HoldIdSchema,
   locale: z.enum(LOCALES),
 });
+/** M3-04: the seller marked the service order Completed in PayPal (with the hold's estimate + move, one tx). */
+export const HoldCompletedConfirmedEvent = event("hold.completed_confirmed", {
+  holdId: HoldIdSchema,
+  captureId: CaptureIdSchema,
+  confirmedAt: InstantSchema,
+  estimatedReleaseAt: InstantSchema,
+});
 export const DisputeOpenedEvent = event("dispute.opened", {
   disputeId: DisputeIdSchema,
   captureId: CaptureIdSchema.nullable(),
@@ -129,6 +136,7 @@ export const DomainEventSchema = z.discriminatedUnion("type", [
   HoldReleasedEvent,
   HoldExplainedEvent,
   HoldExplainRequestedEvent,
+  HoldCompletedConfirmedEvent,
   DisputeOpenedEvent,
   DisputeStatusChangedEvent,
   ActionProposedEvent,

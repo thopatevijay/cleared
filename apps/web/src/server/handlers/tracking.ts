@@ -44,7 +44,7 @@ const R = {
 } as const satisfies Record<string, Refusal>;
 
 /** Older `proposed` tracking on the same capture → `rejected`, with its audit row (superseded). */
-async function supersede(db: Db, prev: ProposedActionRow, by: string, actor: string, tx: Tx) {
+export async function supersede(db: Db, prev: ProposedActionRow, by: string, actor: string, tx: Tx) {
   if (
     !(await setProposedActionState(db, prev.workspaceId, prev.id, { from: "proposed", to: "rejected" }, tx))
   )

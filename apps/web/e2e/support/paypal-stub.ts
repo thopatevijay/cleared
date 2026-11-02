@@ -191,10 +191,37 @@ const trackHandlers = [
   }),
 ];
 
+// M3-04: legacy trackers-batch COMPLETED for seeded service holds (capture ids `E2EH…`) and its NOTRACKER
+// read-back, from the recorded M0-04 200s (fixtures/paypal/tracking/{trackers-batch-completed,
+// get-legacy-tracker}) with this request's capture.
+const COMPLETED_CAPTURE = "7AS90958XD7569923";
+const completedHandlers = [
+  http.post(`${API}/v1/shipping/trackers-batch`, async ({ request }) => {
+    const b = (await request.json()) as { trackers: { transaction_id: string }[] };
+    const id = b.trackers[0]?.transaction_id ?? "";
+    if (!id.startsWith("E2EH")) return HttpResponse.error();
+    const f = loadFixture("paypal/tracking/trackers-batch-completed");
+    return new HttpResponse(responseText(f).replaceAll(COMPLETED_CAPTURE, id), {
+      status: f.response.status,
+      headers: f.response.headers,
+    });
+  }),
+  http.get(`${API}/v1/shipping/trackers/:id`, ({ params }) => {
+    const id = String(params["id"]).replace(/-NOTRACKER$/, "");
+    if (!id.startsWith("E2EH")) return HttpResponse.error();
+    const f = loadFixture("paypal/tracking/get-legacy-tracker");
+    return new HttpResponse(responseText(f).replaceAll(COMPLETED_CAPTURE, id), {
+      status: f.response.status,
+      headers: f.response.headers,
+    });
+  }),
+];
+
 const workerHandlers = [
   http.post(`${API}/v1/oauth2/token`, token),
   ...disputeHandlers,
   ...trackHandlers,
+  ...completedHandlers,
   http.post(`${API}/v2/checkout/orders`, async ({ request }) => {
     const body = (await request.json()) as { purchase_units: { custom_id: string }[] };
     const o = { orderId: paypalId(), captureId: paypalId(), ws: body.purchase_units[0]?.custom_id ?? "" };

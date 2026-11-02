@@ -214,6 +214,8 @@ export const ACTION_RISK_BY_KIND: Readonly<Record<ActionKind, ActionRisk>> = {
   provide_supporting_info: "medium",
   provide_evidence: "high",
   accept_claim: "high",
+  // M3-04: seller-created only (never agent-proposable); its effect on release is unconfirmed
+  record_service_completed: "low",
 };
 
 export interface CheckedProposal {

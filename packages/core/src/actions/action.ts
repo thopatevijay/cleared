@@ -12,6 +12,7 @@ export const ACTION_KINDS = [
   "provide_evidence",
   "provide_supporting_info",
   "accept_claim",
+  "record_service_completed",
 ] as const;
 export type ActionKind = (typeof ACTION_KINDS)[number];
 

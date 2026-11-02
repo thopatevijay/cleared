@@ -106,6 +106,13 @@
       "when": 1793598277076,
       "tag": "0014_scope_snapshot_input",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1793601954993,
+      "tag": "0015_service_completed",
+      "breakpoints": true
     }
   ]
 }
