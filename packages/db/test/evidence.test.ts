@@ -31,6 +31,7 @@ describe("evidence repository surface", () => {
       "get",
       "insert",
       "listForPack",
+      "snapshotForInput", // M3-07: a read (the snapshot job's idempotency lookup)
       "usageBytes",
     ]);
     expect(Object.keys(repo.items).filter((k) => MUTATORS.test(k))).toEqual([]);
