@@ -206,7 +206,7 @@ describe.skipIf(!dbAvailable)("action governance API (integration)", () => {
     });
   });
 
-  it("CSRF and validation: no Idempotency-Key → 400, foreign Origin → 403, bad body → 400, unknown kind → 422", async () => {
+  it("CSRF and validation: no Idempotency-Key → 400, foreign Origin → 403, bad body → 400, invalid payload → 422", async () => {
     const a = await demo();
     const row = await proposal(a.ws);
     const post = (init: Parameters<typeof req>[1]) =>
@@ -228,10 +228,11 @@ describe.skipIf(!dbAvailable)("action governance API (integration)", () => {
       tracking_number: "1Z",
       notify_payer: false,
     });
+    // M3-03: add_tracking is executable now; this payload has no order_id, so it is refused as invalid
     const r = await approve(a.cookie, tracking.id, { payload_sha256: tracking.payloadSha256 });
     expect(r).toMatchObject({
       status: 422,
-      body: { error: { code: "unknown_action_kind", details: { refusal: "UNKNOWN_ACTION_KIND" } } },
+      body: { error: { code: "invalid_payload", details: { refusal: "INVALID_PAYLOAD" } } },
     });
   });
 

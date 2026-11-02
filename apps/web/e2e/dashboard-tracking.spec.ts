@@ -2,7 +2,7 @@
 // names India Post (an `accepted` carrier) shows the route-advice line as icon + text: "…: PayPal accepts
 // it; it may not speed up the release. Faster: Delhivery, DTDC, Ekart, BLUEDART", both Sources and the
 // sandbox caveat, and the single row action "File tracking". A goods hold with Delhivery (`approved`)
-// shows no warning. The words "not approved" never appear. axe (WCAG 2.2 A/AA), 360–1440 px light/dark; HI.
+// shows no warning. The wireframe's "not … approved" wording never appears. axe (WCAG 2.2 A/AA), 360–1440 px light/dark; HI.
 import { expect, test } from "@playwright/test";
 import { capture, demoWorkspace, local } from "./support/disputes.ts";
 import { axeClean } from "./support/holds.ts";
@@ -62,7 +62,7 @@ test("route advice on an accepted carrier, none on an approved one; File trackin
   await expect(ok.getByTestId("route-advice")).toHaveCount(0);
   await expect(ok.getByTestId("file-tracking")).toBeVisible();
 
-  await expect(page.locator("body")).not.toContainText("not approved");
+  await expect(page.locator("body")).not.toContainText(/not\s+approved/i);
   await axeClean(page, "dashboard-tracking");
   await capture(page, "en-dashboard-tracking", REVIEW_TRACKING);
 

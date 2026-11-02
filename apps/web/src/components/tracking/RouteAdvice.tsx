@@ -2,7 +2,7 @@
 // Route advice (M3-03; dashboard.md elements 10–11, hold.md action slot). Tier badges are icon + label in
 // status colours (approved: completed + truck; accepted: held + triangle-alert; other: neutral +
 // circle-help), so they read in greyscale. Every tier shows its source and the sandbox caveat. The copy
-// never says a carrier is "not approved": an accepted carrier is one PayPal takes that may not speed up
+// never brands a carrier as unapproved: an accepted carrier is one PayPal takes that may not speed up
 // the release (PayPal decides the release).
 import type { TrackingSummary } from "@cleared/core";
 import { CircleHelp, ExternalLink, TriangleAlert, Truck, type LucideIcon } from "lucide-react";
