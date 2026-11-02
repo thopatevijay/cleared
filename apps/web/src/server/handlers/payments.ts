@@ -10,6 +10,7 @@ import {
   type PaymentItem,
   type PaymentPack,
   type PaymentsResponse,
+  type TrackingSummary,
   type WorkspaceId,
 } from "@cleared/core";
 import {
@@ -25,6 +26,7 @@ import {
 } from "@cleared/db";
 import { checkMutation } from "../csrf.ts";
 import { paymentHold } from "../holds/read.ts";
+import { trackingSummaries } from "../tracking/summaries.ts";
 import type { Deps } from "../deps.ts";
 import { withIdempotency } from "../idempotency.ts";
 import { apiError, correlationId, json } from "../respond.ts";
@@ -49,7 +51,12 @@ function toPack(st: PackStatus | undefined): PaymentPack | null {
   };
 }
 
-function toItem(p: PaymentRow, pack: PackStatus | undefined, hold: HoldRow | undefined): PaymentItem {
+function toItem(
+  p: PaymentRow,
+  pack: PackStatus | undefined,
+  hold: HoldRow | undefined,
+  tracking: TrackingSummary | null,
+): PaymentItem {
   return {
     id: p.id,
     captureId: p.captureId,
@@ -63,7 +70,7 @@ function toItem(p: PaymentRow, pack: PackStatus | undefined, hold: HoldRow | und
     source: p.source,
     updatedAt: (p.paypalUpdatedAt ?? p.createdAt).toISOString(),
     pack: toPack(pack),
-    hold: hold === undefined ? null : paymentHold(hold),
+    hold: hold === undefined ? null : paymentHold(hold, tracking),
   };
 }
 
@@ -102,8 +109,17 @@ export async function getPayments(req: Request, deps: Deps): Promise<Response> {
     packs.proofReadyCount(),
     holds.activeByPayment(rows.map((r) => r.id)),
   ]);
+  // M3-03: route advice + tracking state on goods holds (dashboard.md elements 10–12)
+  const refs = rows.flatMap((p) => {
+    const hold = holdOf.get(p.id);
+    return hold === undefined ? [] : [{ hold, payment: p }];
+  });
+  const tracking = await trackingSummaries(deps.db, session.workspaceId, refs, ws.timezone);
   const body: PaymentsResponse = {
-    items: rows.map((r) => toItem(r, packOf.get(r.id), holdOf.get(r.id))),
+    items: rows.map((r) => {
+      const hold = holdOf.get(r.id);
+      return toItem(r, packOf.get(r.id), hold, hold === undefined ? null : (tracking.get(hold.id) ?? null));
+    }),
     total,
     offset: q.data.offset,
     limit: q.data.limit,

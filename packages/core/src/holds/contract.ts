@@ -2,6 +2,7 @@
 // (capture status, reason, dispute status) stay raw strings. Release dates are estimates: the rule id
 // says where each one comes from (`rules.ts`), and the client shows that row's source with it.
 import { z } from "zod";
+import { TrackingSummarySchema } from "../carriers/summary.ts";
 import { AmountSchema } from "../contracts/payments.ts";
 import { HOLD_TYPES } from "./rules.ts";
 import { HOLD_STATES } from "./state.ts";
@@ -24,6 +25,8 @@ export const HoldItemSchema = z.object({
   /** the later bound the same rule states (payment review: 3 business days), when it does */
   estimateUpperBoundAt: when.nullable(),
   ruleId: z.string().min(1),
+  /** M3-03: goods holds only, route advice + where the tracking action stands */
+  tracking: TrackingSummarySchema.nullable().optional(),
   /** dispute-linked holds: our dispute row id, PayPal's id, status and reply deadline */
   dispute: z
     .object({

@@ -160,3 +160,4 @@ export {
   type HoldView,
   type PaymentRowForHold,
 } from "./repositories/holds.ts";
+export { trackingReads, type Shipment } from "./repositories/tracking-reads.ts";
