@@ -171,6 +171,7 @@ test("360 px: the bell opens /notifications; mark all as read; HI copy", async (
   );
   await page.getByRole("button", { name: /^Mark as read: PayPal is holding/ }).click();
   await expect(page.getByText("Couldn't mark as read.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Retry", exact: true })).toBeVisible();
   await expect(page.locator('[data-testid="notification"][data-read="false"]')).toHaveCount(3);
   await capture(page, "en-partial", REVIEW);
   await page.unroute("**/api/notifications");
@@ -201,7 +202,7 @@ test("empty, error and loading states", async ({ page }) => {
   await demoWorkspace(page);
   await page.goto("/en/notifications");
   await expect(page.getByTestId("empty-state")).toContainText(
-    "No notifications. We'll tell you here when PayPal holds money or a dispute needs a reply.",
+    "We'll tell you here when PayPal holds money or a dispute needs a reply.",
   );
   await expect(bell(page)).toHaveAccessibleName("Notifications");
   await capture(page, "en-empty", REVIEW);

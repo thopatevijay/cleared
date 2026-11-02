@@ -715,7 +715,7 @@
     "close": "Close",
     "back": "Back to payments",
     "emptyTitle": "No notifications",
-    "empty": "No notifications. We'll tell you here when PayPal holds money or a dispute needs a reply.",
+    "empty": "We'll tell you here when PayPal holds money or a dispute needs a reply.",
     "loadError": "Couldn't load notifications",
     "markFailed": "Couldn't mark as read.",
     "offline": "You're offline",
@@ -730,6 +730,7 @@
       "deadline_t24": "Deadline",
       "completed_reminder": "Reminder"
     },
-    "markShort": "Mark as read"
+    "markShort": "Mark as read",
+    "retry": "Retry"
   }
 }

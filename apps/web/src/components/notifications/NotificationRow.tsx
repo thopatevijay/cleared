@@ -2,7 +2,15 @@
 // One notification (notifications.md "Notification item"): icon + kind word, the sentence (plain text), the
 // time, the link to its hold or dispute (≥ 64 px), and a separate 44 px "Mark as read" button. Unread items
 // carry a 4 px accent rail AND the bold word "New" (never colour alone), and an "New:" accessible prefix.
-import { AlarmClock, CalendarCheck, Check, Hourglass, Scale, type LucideIcon } from "lucide-react";
+import {
+  AlarmClock,
+  CalendarCheck,
+  Check,
+  ChevronRight,
+  Hourglass,
+  Scale,
+  type LucideIcon,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { NotificationKind } from "@cleared/core";
 import { Link } from "../../i18n/navigation.ts";
@@ -36,47 +44,72 @@ export function NotificationRow({ item, timeZone, failed, offline, onMarkRead }:
     <li
       data-testid="notification"
       data-read={item.read ? "true" : "false"}
-      className={`flex items-stretch gap-2 border-b border-border last:border-b-0 ${unread ? "border-l-4 border-l-accent" : "border-l-4 border-l-transparent"}`}
+      className={`flex flex-col border-b border-border last:border-b-0 ${unread ? "border-l-4 border-l-accent" : "border-l-4 border-l-transparent"}`}
     >
-      <Link
-        href={item.href}
-        onClick={() => {
-          if (unread) onMarkRead(item.id);
-        }}
-        aria-label={unread ? `${t("newPrefix")} ${item.sentence}` : item.sentence}
-        className="flex min-h-16 min-w-0 flex-1 flex-col gap-1 px-3 py-3 text-text hover:bg-surface-sunken"
-      >
-        <span className="flex flex-wrap items-center gap-2 text-sm">
-          <span className={`inline-flex h-6 items-center gap-1 rounded-pill px-2 font-medium ${tone}`}>
-            <Icon aria-hidden="true" size={16} strokeWidth={1.75} />
-            {t(`kind.${item.kind}`)}
+      <div className="flex items-stretch gap-2">
+        <Link
+          href={item.href}
+          onClick={() => {
+            if (unread) onMarkRead(item.id);
+          }}
+          aria-label={unread ? `${t("newPrefix")} ${item.sentence}` : item.sentence}
+          className="group flex min-h-16 min-w-0 flex-1 items-center gap-2 px-3 py-3 text-text hover:bg-surface-sunken"
+        >
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="flex flex-wrap items-center gap-2 text-sm">
+              <span className={`inline-flex h-6 items-center gap-1 rounded-pill px-2 font-medium ${tone}`}>
+                <Icon aria-hidden="true" size={16} strokeWidth={1.75} />
+                {t(`kind.${item.kind}`)}
+              </span>
+              {unread ? <strong className="font-bold">{t("new")}</strong> : null}
+            </span>
+            <span className="break-words group-hover:underline group-focus-visible:underline">
+              {item.sentence}
+            </span>
+            <span className="text-sm text-text-muted">{formatTime(locale, item.createdAt, timeZone)}</span>
+            {item.emailNotSent ? <span className="text-sm text-text-muted">{t("emailNotSent")}</span> : null}
           </span>
-          {unread ? <strong className="font-bold">{t("new")}</strong> : null}
-        </span>
-        <span className="break-words">{item.sentence}</span>
-        <span className="text-sm text-text-muted">{formatTime(locale, item.createdAt, timeZone)}</span>
-        {item.emailNotSent ? <span className="text-sm text-text-muted">{t("emailNotSent")}</span> : null}
-      </Link>
-      {unread ? (
-        <div className="flex flex-col items-end justify-center gap-1 py-2 pr-2">
+          <ChevronRight
+            aria-hidden="true"
+            size={20}
+            strokeWidth={1.75}
+            className="shrink-0 text-text-muted"
+          />
+        </Link>
+        {unread ? (
+          <div className="flex items-center py-2 pr-2">
+            <button
+              type="button"
+              disabled={offline}
+              onClick={() => {
+                onMarkRead(item.id);
+              }}
+              aria-label={t("markOne", { sentence: item.sentence })}
+              title={offline ? t("offline") : t("markShort")}
+              className="inline-flex size-11 items-center justify-center rounded-md border border-border-strong text-text hover:bg-surface-sunken disabled:opacity-60"
+            >
+              <Check aria-hidden="true" size={20} strokeWidth={1.75} />
+            </button>
+          </div>
+        ) : null}
+      </div>
+      {unread && failed ? (
+        <p
+          role="status"
+          className="flex flex-wrap items-center gap-x-2 px-3 pb-2 text-sm text-status-error-fg"
+        >
+          {t("markFailed")}
           <button
             type="button"
             disabled={offline}
             onClick={() => {
               onMarkRead(item.id);
             }}
-            aria-label={t("markOne", { sentence: item.sentence })}
-            title={offline ? t("offline") : t("markShort")}
-            className="inline-flex size-11 items-center justify-center rounded-md border border-border-strong text-text hover:bg-surface-sunken disabled:opacity-60"
+            className="inline-flex min-h-11 items-center font-medium text-accent underline underline-offset-2"
           >
-            <Check aria-hidden="true" size={20} strokeWidth={1.75} />
+            {t("retry")}
           </button>
-          {failed ? (
-            <span role="status" className="max-w-32 text-right text-sm text-status-error-fg">
-              {t("markFailed")}
-            </span>
-          ) : null}
-        </div>
+        </p>
       ) : null}
     </li>
   );

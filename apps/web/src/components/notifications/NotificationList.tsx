@@ -14,6 +14,7 @@ import type { NotificationsState } from "./useNotifications.ts";
 function Skeleton({ label }: { label: string }) {
   return (
     <ul
+      role="status"
       aria-busy="true"
       aria-label={label}
       className="flex flex-col gap-2"
