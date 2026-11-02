@@ -74,9 +74,25 @@ async function timezone(deps: Deps, ws: string): Promise<string> {
   return (await platform(deps.db).workspaces.get(ws))?.timezone ?? "UTC";
 }
 
+/**
+ * M3-10: a demo workspace either got a judge-pool review hold when it was created ("assigned") or shows the
+ * badged explainer ("none"); null for a seller workspace (the pool is a demo affordance).
+ */
+async function reviewPool(deps: Deps, ws: string): Promise<"assigned" | "none" | null> {
+  const p = platform(deps.db);
+  const [w, row] = await Promise.all([p.workspaces.get(ws), p.reviewHoldPool.assignedTo(ws)]);
+  if (w?.kind !== "demo") return null;
+  return row === null ? "none" : "assigned";
+}
+
 export async function listHolds(deps: Deps, ws: WorkspaceId): Promise<HoldsResponse> {
   const repo = holdsRepo(deps.db, ws);
-  const [views, held, tz] = await Promise.all([repo.listActive(), repo.heldTotals(), timezone(deps, ws)]);
+  const [views, held, tz, pool] = await Promise.all([
+    repo.listActive(),
+    repo.heldTotals(),
+    timezone(deps, ws),
+    reviewPool(deps, ws),
+  ]);
   const [tracking, completed] = await Promise.all([
     trackingSummaries(deps.db, ws, views, tz),
     completedSummaries(deps.db, ws, views),
@@ -84,7 +100,7 @@ export async function listHolds(deps: Deps, ws: WorkspaceId): Promise<HoldsRespo
   return HoldsResponseSchema.parse({
     items: views.map((v) => holdItem(v, tracking.get(v.hold.id) ?? null, completed.get(v.hold.id) ?? null)),
     summary: { held, count: views.length },
-    workspace: { timezone: tz },
+    workspace: { timezone: tz, reviewPool: pool },
   });
 }
 

@@ -152,6 +152,7 @@ stateDiagram-v2
 | Seller connection | Hackathon: the platform's own sandbox REST app acts as the connected merchant. Production: PayPal's partner model behind the `SellerConnection` interface | [0006](adr/0006-seller-connection.md) |
 | Identity | Email magic links for sellers; anonymous, rate-limited demo workspaces for judges | [0007](adr/0007-auth-and-demo-workspaces.md) |
 | Resource ownership | Every PayPal resource is tagged (`custom_id = workspace_id`) and recorded in `paypal_resource_owner` | [0008](adr/0008-resource-ownership.md) |
+| Review-hold pool | Pre-staged buyer-approved wallet payments owned by a pool workspace, moved to one judge (or the recording workspace) in one transaction | [0019](adr/0019-review-hold-pool.md) |
 | AI | Deterministic workflows on OpenAI with structured outputs; two-pass scope check with a verbatim-quote check; the agent only proposes actions | [0009](adr/0009-ai-workflows-openai.md) |
 | Agent governance | Approval bound to the draft hash, policy in code, kill switch, caps, append-only audit log | [0010](adr/0010-agent-governance.md) |
 | Reliability | One shared HTTP client (timeouts, retries on 5xx/429/timeout, Retry-After); graceful degradation; deadline watcher | [0011](adr/0011-http-client-reliability.md) |
@@ -196,7 +197,8 @@ All tables carry `workspace_id`, except platform tables. Timestamps are UTC `tim
 |---|---|---|
 | `workspaces` | id, kind (`seller` \| `demo`), locale, tz, base_currency, created_at, expires_at | demo workspaces expire after 2026-12-16 and are purged 12-22 |
 | `users`, `sessions`, `magic_links` | email (sellers only), token hash, expires_at | demo sessions carry no email |
-| `paypal_resource_owner` | (resource_type, resource_id) PK, workspace_id | written when Cleared creates the resource |
+| `paypal_resource_owner` | (resource_type, resource_id) PK, workspace_id, transferred_from | written when Cleared creates the resource; `transferred_from` = the review-hold pool workspace a row moved from (ADR 0019) |
+| `review_hold_pool` | order_id unique, pool_workspace_id, purpose (`judge` \| `video`), state (`awaiting_buyer` \| `held` \| `not_held` \| `released`), capture_id, capture_status/reason, captured_at, assigned_workspace_id | M3-10: pre-staged buyer-approved review holds (ADR 0019) |
 | `webhook_events` | (provider, event_id) unique, type, raw jsonb, verified, received_at | raw first, dedupe by unique key |
 | `payments` | capture_id unique, order_id, amount, currency, receivable_amount, receivable_currency, status, status_reason, source, synced_at | mirror of the PayPal capture |
 | `proof_packs` | payment_id unique, state, checked_at | 1:1 with a payment |

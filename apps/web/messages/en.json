@@ -165,6 +165,10 @@
     "dontShip": "Don't ship yet: PayPal is reviewing this payment",
     "trackingHelps": "Tracking can help release this",
     "samplesLink": "Sample scenarios: limitation, reserve, new-seller hold",
+    "reviewPool": {
+      "badge": "Sandbox",
+      "body": "Review holds need a buyer approval; see README for timing"
+    },
     "samples": {
       "title": "Sample scenarios",
       "intro": "Holds the sandbox can't produce, explained from PayPal's published rules. They show no amount from your payments and have no actions.",
@@ -946,6 +950,7 @@
       "scenario_decision_refused": "Sandbox decision refused",
       "sandbox_test_payment_requested": "Requested a sandbox test payment",
       "demo_created": "Demo workspace created",
+      "pool_assigned": "Added a sandbox payment under PayPal review",
       "auth_sign_in": "Signed in",
       "ack_link_created": "Created a client acknowledgement link",
       "ack_link_revoked": "Revoked the client acknowledgement link",

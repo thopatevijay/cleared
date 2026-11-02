@@ -17,6 +17,7 @@ import { ErrorPanel } from "../ErrorPanel.tsx";
 import { MoneyCell } from "../MoneyCell.tsx";
 import { StatusBadge } from "../StatusBadge.tsx";
 import { HeldLines } from "./HeldLines.tsx";
+import { ReviewPoolNote } from "./ReviewPoolNote.tsx";
 import { SampleScenarios } from "./SampleScenarios.tsx";
 import { OfflineBanner, useLoadedAt } from "./Offline.tsx";
 import { useReasonText } from "./text.ts";
@@ -173,6 +174,7 @@ export function HoldsView() {
     <div className="flex flex-col gap-8">
       {data === undefined ? null : <OfflineBanner loadedAt={loadedAt} timeZone={data.workspace.timezone} />}
       {body}
+      {data?.workspace.reviewPool === "none" ? <ReviewPoolNote /> : null}
       <SampleScenarios />
       <p aria-live="polite" className="sr-only" data-testid="live-region">
         {announcement}
