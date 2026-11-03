@@ -399,12 +399,16 @@ async function sceneDispute(page: Page, notes: string[]): Promise<void> {
     "email alert: demo workspaces are in-app only (M3-08 handoff); email needs an allowlisted owner workspace",
   );
 
-  // the calendar while the dispute is open: its reply deadline
+  // the calendar while the dispute is open: a reply-deadline row exactly when PayPal gave a due date. The
+  // sandbox chargeback has none (`seller_response_due_date` absent: "PayPal gives no reply date"), so the
+  // calendar must not invent one.
+  const due = (await detail(page)).dispute.dueDate;
+  notes.push(`dispute due date from PayPal: ${due ?? "none"}`);
   await page.goto("/en/calendar");
   // soft: a calendar failure is scene 4's, and must not stop the dispute path
   await expect
     .soft(page.locator('[data-testid="cash-table-row"][data-kind="dispute_deadline"]'))
-    .toHaveCount(1, { timeout: MIN });
+    .toHaveCount(due === null ? 0 : 1, { timeout: MIN });
   await shot(page, "s3-calendar-deadline");
 
   await approveDraft(page);
