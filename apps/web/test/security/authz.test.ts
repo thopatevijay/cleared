@@ -193,12 +193,6 @@ async function call(
 
 const ws: { a?: string; b?: Ids; bCookie?: string } = {};
 
-async function demo(): Promise<{ cookie: string; ws: WorkspaceId }> {
-  const res = await call("POST /api/demo", { body: {} }).catch(() => null);
-  if (res === null) throw new Error("demo");
-  return { cookie: cookieFrom(res), ws: WorkspaceIdSchema.parse(await workspaceOf(cookieFrom(res))) };
-}
-
 async function workspaceOf(cookie: string): Promise<string> {
   const res = await call("GET /api/workspace", { cookie });
   return ((await res.json()) as { workspace: { id: string } }).workspace.id;
@@ -282,7 +276,7 @@ describe.skipIf(!dbAvailable)("authZ: every route, A's session on B's ids, and n
 async function leaks(res: Response): Promise<string[]> {
   const text = await res.clone().text();
   const b = ws.b as Ids;
-  return Object.values(b).filter((v) => v !== "" && text.includes(v));
+  return Object.values<string>({ ...b }).filter((v) => v !== "" && text.includes(v));
 }
 
 async function seedB(wsB: WorkspaceId, cookie: string): Promise<Ids> {

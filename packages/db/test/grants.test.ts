@@ -33,6 +33,7 @@ describe.skipIf(!dbAvailable)("audit_log grants (M2-08)", () => {
   it.each([
     ["UPDATE audit_log", "update audit_log set action = 'x'"],
     ["DELETE FROM audit_log", "delete from audit_log"],
+    ["TRUNCATE audit_log", "truncate audit_log"],
   ])("%s as the app role fails", async (_label, statement) => {
     await expect(client.query(statement)).rejects.toThrow(
       /permission denied for table audit_log|append-only/,
@@ -70,5 +71,23 @@ describe.skipIf(!dbAvailable)("audit_log grants (M2-08)", () => {
     expect(await failsWith("insert into audit_log (actor, action) values ('system', 'audit.probe')")).toBe(
       "succeeded",
     );
+  });
+});
+
+// M4-05: the other append-only records (the evidence a reply cites, the scope check a client acknowledged)
+// refuse UPDATE and DELETE too (0002 / 0009 triggers), whoever runs them.
+describe.skipIf(!dbAvailable)("append-only evidence_items and scope_checks (M4-05)", () => {
+  const client = new pg.Client({ connectionString: TEST_DATABASE_URL });
+
+  beforeAll(() => client.connect());
+  afterAll(() => client.end());
+
+  it.each([
+    "update evidence_items set text = 'x'",
+    "delete from evidence_items",
+    "update scope_checks set created_at = now()",
+    "delete from scope_checks",
+  ])("%s fails", async (statement) => {
+    await expect(client.query(statement)).rejects.toThrow(/append-only|permission denied/);
   });
 });

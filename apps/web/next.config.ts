@@ -14,14 +14,14 @@ const config: NextConfig = {
   },
   // M4-05: HSTS, nosniff, Referrer-Policy and frame denial on every response. Pages get their nonce CSP
   // from proxy.ts; the API and the probes get API_CSP here (never both: two CSPs would stack).
-  async headers() {
+  headers() {
     const csp = [{ key: "Content-Security-Policy", value: API_CSP }];
-    return [
+    return Promise.resolve([
       { source: "/:path*", headers: [...STATIC_SECURITY_HEADERS] },
       { source: "/api/:path*", headers: csp },
       { source: "/healthz", headers: csp },
       { source: "/readyz", headers: csp },
-    ];
+    ]);
   },
 };
 
