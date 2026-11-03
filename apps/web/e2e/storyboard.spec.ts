@@ -335,6 +335,12 @@ async function sceneDispute(page: Page, notes: string[]): Promise<void> {
   await expect(page.getByTestId("notification-bell")).toHaveAccessibleName(/Notifications, [1-9]\d* unread/, {
     timeout: 5 * MIN,
   });
+  // the held row (PENDING / BUYER_COMPLAINT), not the loading skeleton
+  await expect(page.locator(`[data-testid="payment-row"][data-dispute="${run.disputeId}"]`)).toHaveAttribute(
+    "data-status",
+    "PENDING",
+    { timeout: MIN },
+  );
   await shot(page, "s3-held-bell");
   await page.getByTestId("notification-bell").click();
   await shot(page, "s3-bell-panel");
@@ -345,9 +351,10 @@ async function sceneDispute(page: Page, notes: string[]): Promise<void> {
 
   // the calendar while the dispute is open: its reply deadline
   await page.goto("/en/calendar");
-  await expect(page.locator('[data-testid="cash-table-row"][data-kind="dispute_deadline"]')).toHaveCount(1, {
-    timeout: MIN,
-  });
+  // soft: a calendar failure is scene 4's, and must not stop the dispute path
+  await expect
+    .soft(page.locator('[data-testid="cash-table-row"][data-kind="dispute_deadline"]'))
+    .toHaveCount(1, { timeout: MIN });
   await shot(page, "s3-calendar-deadline");
 
   await approveDraft(page);
@@ -389,18 +396,20 @@ async function sceneDispute(page: Page, notes: string[]): Promise<void> {
 }
 
 async function sceneCalendarAudit(page: Page): Promise<void> {
-  await page.goto("/en/calendar");
-  await expect(page.locator('[data-testid="cash-table-row"][data-kind="released"]').first()).toBeAttached({
-    timeout: MIN,
-  });
-  await shot(page, "s4-calendar");
+  // the audit log first: it doesn't depend on the calendar build
   await page.goto("/en/audit");
   const row = (a: string) => page.locator(`[data-testid="audit-row"][data-action="${a}"]`);
   await expect(row("action.proposed").first()).toContainText("Agent", { timeout: MIN });
   await expect(row("action.approved").first()).toContainText("You");
   await expect(row("action.sent").first()).toContainText(run.debugId);
   await shot(page, "s4-audit");
-  mark("calendar_audit");
+  mark("audit");
+  await page.goto("/en/calendar");
+  await expect(page.locator('[data-testid="cash-table-row"][data-kind="released"]').first()).toBeAttached({
+    timeout: MIN,
+  });
+  await shot(page, "s4-calendar");
+  mark("calendar");
 }
 
 async function sceneCompleted(page: Page): Promise<void> {
