@@ -46,7 +46,7 @@ States: default, hover, focus-visible, pressed, busy (inline 16 px spinner + ver
 
 ## Money cell (`MoneyCell`)
 
-**Anatomy.** The amount (`text-lg` 600 tabular in rows; `money` step in the summary bar) followed by the ISO code (`text-xs`, `text-muted`). If the receivable currency differs, a second line reads "you receive ₹9,986.40 INR" (`text-sm`, `text-muted`).
+**Anatomy.** The amount (`text-lg` 600 tabular in rows; `money` step in the summary bar) followed by the ISO code (`text-xs`, `text-muted`). If the receivable currency differs, a second line reads "you receive ₹9,986.40 INR" (`text-sm`, `text-muted`). When PayPal reported the exchange rate, a third line reads `row.rate` "PayPal's rate: 1 USD = 83.2200 INR", with the rate's own digits (M4-03; display only, never used to convert).
 
 - **Formatting:** as in README "Numbers, currency and dates". Negative values (refunds) show "−$40.00", with "refunded" in the accessible name.
 - **Accessible name:** "120.00 US dollars; you receive 9,986.40 Indian rupees".
@@ -156,6 +156,31 @@ The only path to a PayPal write. It shows **exactly what goes to PayPal**.
 - **Keyboard.** Two Tab stops (links). Enter switches.
 - **Target.** Each option is 44 × 44 px minimum on mobile.
 - **States:** default, current, and switching (the option shows busy if the switch takes > 300 ms).
+
+## Time zone control (`TimeZoneControl`, M4-03)
+
+The workspace time zone is detected from the browser when the workspace is created, and the seller can change it here. Every date and deadline on every screen, and in emails and the scope snapshot, follows it (README "Dates"). The time zone is stored as an IANA name, and times stay UTC underneath.
+
+**Placement.** On every signed-in page, in the dashboard footer, on its own line under "you hold the keys" and the audit-log link. It is not shown on the landing page or on the public acknowledgement page.
+
+**Anatomy, closed.** One line in `text-sm` `text-muted`: `dashboard.timeZone.current` "Times shown in {zone}", where {zone} is the IANA name (for example `Asia/Kolkata`) in `tabular`, followed by a **secondary** text button, `dashboard.timeZone.change` "Change time zone" (`accent`, underlined, `min-h-11`).
+
+**Anatomy, open.** The button is `aria-expanded="true"` and controls a region below it with:
+- a label `dashboard.timeZone.label` "Time zone", over a native `<select>` of every zone in `Intl.supportedValuesOf('timeZone')` plus `UTC`, sorted by name, with the current zone selected. It is full width up to 360 px and `min-h-11`.
+- a hint `dashboard.timeZone.hint` "Dates and deadlines follow this zone. Times are kept in UTC.", linked with `aria-describedby`.
+- the buttons, **primary** `dashboard.timeZone.save` "Save" and **secondary** `dashboard.timeZone.cancel` "Cancel". Both are `min-h-11`. They sit side by side, and they stack at 320 px.
+
+**Behaviour.** Save sends `PATCH /api/workspace { timezone }` with an idempotency key. While it is busy, Save reads `dashboard.timeZone.saving` "Saving…" with `aria-busy`. On success the region closes and every on-screen list re-fetches, so dates re-render in the new zone with no reload. A polite status line reads `dashboard.timeZone.saved` "Times now shown in {zone}." The same zone saved again is a no-op success.
+
+**States:**
+- loading: while the workspace is read, the line holds its height and shows no button
+- closed, open, busy and saved, as above
+- error: an inline `role="alert"` line, `dashboard.timeZone.error` "Couldn't save the time zone. Nothing changed. Try again.", with the region kept open and the old zone still shown
+- not signed in, or the workspace failed to load: not rendered
+
+**Keyboard and focus.** Tab reaches "Change time zone". Enter opens the region and moves focus to the select. Escape inside the region, or Cancel, closes it and returns focus to the button. After a save, focus returns to the button.
+
+**Language.** HI copy comes from `hi.json`. The IANA name stays in Latin script (`lang="en"`, `translate="no"`), as PayPal codes do.
 
 ## Toast (`Toast`)
 

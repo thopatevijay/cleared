@@ -87,7 +87,7 @@ function Guide({
       <ol className="flex flex-col gap-4">
         <li className={step}>
           <span className={num} aria-hidden="true">
-            1
+            {"1"}
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-2">
             <span>{t("step1")}</span>
@@ -112,7 +112,7 @@ function Guide({
         </li>
         <li className={step}>
           <span className={num} aria-hidden="true">
-            2
+            {"2"}
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-2">
             <span>{t("step2")}</span>
@@ -121,7 +121,7 @@ function Guide({
         </li>
         <li className={step}>
           <span className={num} aria-hidden="true">
-            3
+            {"3"}
           </span>
           <span className="min-w-0 flex-1">{t("step3")}</span>
         </li>

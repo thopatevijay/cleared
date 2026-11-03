@@ -74,7 +74,9 @@ export function DisputesBand({ reference, onRetry }: { reference: string | null;
       </button>
       {reference === null ? null : (
         <span className="text-sm">
-          {tc("reference")}: <code className="font-mono text-xs break-all">{reference}</code>
+          {tc("reference")}
+          {": "}
+          <code className="font-mono text-xs break-all">{reference}</code>
         </span>
       )}
     </div>

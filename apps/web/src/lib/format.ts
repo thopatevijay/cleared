@@ -29,6 +29,9 @@ export function formatTime(locale: string, iso: string, timeZone: string): strin
   return formatDateTime(iso, timeZone, locale);
 }
 
+/** The UTC tooltip beside a deadline shown in the workspace zone (README "Dates", M4-03). */
+export { formatUtc } from "@cleared/core";
+
 export type StatusKey = "completed" | "held" | "refunded" | "failed" | "info" | "resolved" | "dispute";
 
 /**

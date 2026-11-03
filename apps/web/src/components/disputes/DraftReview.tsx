@@ -8,7 +8,7 @@ import { TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { codePointCount, NOTES_MAX, type DisputeDetail, type Draft } from "../../lib/dispute-view.ts";
-import { formatBytes, formatTime } from "../../lib/format.ts";
+import { formatBytes, formatTime, formatUtc } from "../../lib/format.ts";
 import { AcceptClaimDialog } from "./AcceptClaimDialog.tsx";
 import { ApproveDialog } from "./ApproveDialog.tsx";
 import { EvidenceItems, Fingerprint, NotesField } from "./DraftParts.tsx";
@@ -154,7 +154,8 @@ export function DraftReview({
             <dd>
               <code className="font-mono text-sm">{draft.evidenceType}</code>
               <span className="block text-sm">
-                {t("why")}:{" "}
+                {t("why")}
+                {":"}{" "}
                 {draft.reasonUnmapped || d.reason === null || !t.has(`explain.${d.reason}`)
                   ? t("explain.unmapped")
                   : t(`explain.${d.reason}`)}
@@ -203,7 +204,9 @@ export function DraftReview({
       </p>
       {action === null ? null : <Fingerprint sha={action.payload_sha256} previous={previous} />}
       {d.dueDate === null ? null : (
-        <p className="text-sm">{t("deadline", { date: formatTime(locale, d.dueDate, tz) })}</p>
+        <p className="text-sm" title={formatUtc(d.dueDate, locale)}>
+          {t("deadline", { date: formatTime(locale, d.dueDate, tz) })}
+        </p>
       )}
       <p aria-live="polite" className="text-sm text-text-muted" data-testid="revise-status">
         {busy

@@ -72,6 +72,17 @@
     "errorBody": "Check your connection and retry.",
     "footer": "The agent does the work. You hold the keys.",
     "footerAudit": "Audit log",
+    "timeZone": {
+      "current": "Times shown in <tz>{zone}</tz>",
+      "change": "Change time zone",
+      "label": "Time zone",
+      "hint": "Dates and deadlines follow this zone. Times are kept in UTC.",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "saved": "Times now shown in {zone}.",
+      "error": "Couldn't save the time zone. Nothing changed. Try again."
+    },
     "summary": {
       "proofReady": "{count, plural, one {# payment proof-ready} other {# payments proof-ready}}",
       "proofReadyName": "{count, plural, one {# payment proof-ready} other {# payments proof-ready}}: show only these"
@@ -86,6 +97,7 @@
     "viaWebhook": "via webhook",
     "viaPoll": "via sync",
     "receive": "you receive {amount}",
+    "rate": "PayPal's rate: {rate}",
     "waiting": "Waiting for PayPal…",
     "waitingHint": "Usually under 2 minutes.",
     "arrived": "Payment {amount} arrived from PayPal: {status}",
@@ -745,6 +757,7 @@
       "receives": "What PayPal receives",
       "action": "Action",
       "notesLabel": "Reply notes",
+      "notesEnglish": "Sent to PayPal in English, whatever language you use here.",
       "count": "{n} / 2000",
       "over": "Over the 2000-character limit",
       "near": "{n} of 2000 characters",

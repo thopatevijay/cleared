@@ -27,7 +27,7 @@ export function StatusBadge({ status, detail }: { status: StatusKey; detail?: st
       </span>
       {detail ? (
         <span className="font-mono text-xs break-all text-text-muted">
-          <span className="sr-only">, </span>
+          <span className="sr-only">{", "}</span>
           {detail}
         </span>
       ) : null}

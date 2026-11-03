@@ -46,12 +46,17 @@ export function NotesField({
       <label htmlFor={`${id}-notes`} className="font-medium">
         {t("notesLabel")}
       </label>
+      {/* M4-03: the reply is filed in English whatever the UI language */}
+      <p id={`${id}-lang`} className="text-sm text-text-muted" data-testid="notes-english">
+        {t("notesEnglish")}
+      </p>
       <textarea
         id={`${id}-notes`}
         value={value}
         readOnly={readOnly}
         rows={10}
-        aria-describedby={`${id}-count`}
+        lang="en"
+        aria-describedby={`${id}-lang ${id}-count`}
         aria-invalid={over || undefined}
         onChange={(e) => {
           onChange(e.target.value);

@@ -98,7 +98,9 @@ export function DemoButton() {
           </p>
           {outcome.ref ? (
             <p className="text-sm">
-              {tc("reference")}: <code className="font-mono text-xs break-all">{outcome.ref}</code>
+              {tc("reference")}
+              {": "}
+              <code className="font-mono text-xs break-all">{outcome.ref}</code>
             </p>
           ) : null}
         </div>

@@ -30,7 +30,7 @@ export function SiteHeader({
           </span>
           <div className="flex items-center gap-2">
             {signedIn ? <NotificationBell /> : null}
-            <LanguageSwitch />
+            <LanguageSwitch persist={signedIn} />
           </div>
         </div>
       </header>

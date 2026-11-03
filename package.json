@@ -13,6 +13,7 @@
     "test": "pnpm -r run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "i18n:check": "node scripts/check-i18n.ts",
     "db:migrate": "pnpm --filter @cleared/db --if-present run migrate",
     "db:seed": "pnpm --filter @cleared/db --if-present run seed",
     "db:count": "pnpm --filter @cleared/db --if-present run count",
