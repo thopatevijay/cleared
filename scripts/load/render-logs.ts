@@ -30,12 +30,29 @@ interface LogLine {
   readonly message: string;
 }
 
+const pause = (ms: number): void => {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+};
+
+/** One page of the log API; retried (it rate-limits a fast pager), the last error is rethrown. */
+function fetchPage(args: readonly string[]): string {
+  let last: unknown;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      return execFileSync("render", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 32 * 1024 * 1024 });
+    } catch (e) {
+      last = e;
+      pause(3000 * (attempt + 1));
+    }
+  }
+  throw last;
+}
+
 function page(service: string, start: string, end: string, text: string): LogLine[] {
-  const out = execFileSync(
-    "render",
-    ["logs", "-r", service, "--start", start, "--end", end, "--text", text, "--direction", "forward", "--limit", "100", "-o", "json"],
-    { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 32 * 1024 * 1024 },
-  );
+  const out = fetchPage([
+    "logs", "-r", service, "--start", start, "--end", end, "--text", text,
+    "--direction", "forward", "--limit", "100", "-o", "json",
+  ]);
   const lines: LogLine[] = [];
   let depth = 0;
   let from = 0;
@@ -83,7 +100,9 @@ export function serverTimings(start: Date, end: Date, service = RENDER_WEB_SERVI
       }
       cursor = batch.reduce((a, l) => (l.timestamp > a ? l.timestamp : a), cursor);
     }
-  } catch {
+  } catch (e) {
+    const err = e as { stderr?: string; message?: string };
+    console.error(`server timings unavailable: ${(err.stderr ?? err.message ?? String(e)).trim().split("\n")[0] ?? ""}`);
     return null;
   }
   const byRoute: ServerTimings["byRoute"] = {};
