@@ -58,9 +58,9 @@
   "dashboard": {
     "title": "आपका PayPal पैसा",
     "summaryLabel": "सारांश",
-    "held": "{amount} रोका गया",
-    "nothingHeld": "कुछ भी रोका नहीं गया",
-    "inDisputeNone": "— विवाद में",
+    "held": "{amount} रोका गया (hold)",
+    "nothingHeld": "कुछ भी रोका नहीं गया (hold)",
+    "inDisputeNone": "— विवाद (dispute) में",
     "proofReadyNone": "— सबूत के साथ तैयार",
     "pendingDispute": "विवाद सहायता के साथ आएगा",
     "pendingProof": "सबूत पैक के साथ आएगा",
@@ -179,7 +179,7 @@
     "samplesLink": "नमूना स्थितियाँ: खाते पर रोक, रिज़र्व, नए विक्रेता की रोक",
     "reviewPool": {
       "badge": "सैंडबॉक्स",
-      "body": "रिव्यू होल्ड के लिए खरीदार की मंज़ूरी चाहिए; समय के लिए README देखें"
+      "body": "समीक्षा वाली रोक के लिए खरीदार की मंज़ूरी चाहिए; समय के लिए README देखें"
     },
     "samples": {
       "title": "नमूना स्थितियाँ",
@@ -920,7 +920,7 @@
       "open": "परिदृश्य पेज खोलें"
     },
     "dashboard": {
-      "inDispute": "{amount} विवाद में",
+      "inDispute": "{amount} विवाद (dispute) में",
       "noneInDispute": "कुछ भी विवाद में नहीं",
       "inDisputeFilter": "सिर्फ़ विवाद वाले भुगतान दिखाएँ",
       "filterChip": "विवाद वाले भुगतान दिख रहे हैं",
@@ -1027,6 +1027,16 @@
       "hold_completed_confirmed": "आपने PayPal में ऑर्डर को Completed किया",
       "action_read_back": "PayPal का रिकॉर्ड वापस पढ़ा",
       "hold_declared": "आपने भुगतान को {what} बताया",
+      "agent_run_succeeded": "AI रन पूरा हुआ",
+      "agent_run_cache_hit": "AI का पिछला नतीजा दोबारा इस्तेमाल हुआ",
+      "agent_run_failed_output": "AI रन रुका: नतीजा जाँच में पास नहीं हुआ",
+      "agent_run_limit_calls": "AI रन रुका: चरणों की सीमा पूरी",
+      "agent_run_limit_time": "AI रन रुका: समय सीमा पूरी",
+      "agent_run_budget_exceeded": "AI रन रुका: खर्च की सीमा पूरी",
+      "agent_run_kill_switch": "AI रन रुका: AI बंद है",
+      "agent_run_degraded": "AI उपलब्ध नहीं; कोई नतीजा नहीं",
+      "agent_run_failed": "AI रन विफल रहा",
+      "extract_no_facts": "सबूत की एक चीज़ में कोई तथ्य नहीं मिला",
       "other": "{action}"
     },
     "what": {

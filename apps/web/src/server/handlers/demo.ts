@@ -1,7 +1,13 @@
 // POST /api/demo (M1-05, ADR 0007): an anonymous demo workspace and session, within the per-IP and
 // global caps (checked under an advisory lock in the creating transaction). M3-10: the same transaction
 // assigns the workspace one held judge-pool review hold, when one is available.
-import { compareInstants, DEMO_WORKSPACE_EXPIRES_AT, LOCALES, type Instant } from "@cleared/core";
+import {
+  canonicalTimeZone,
+  compareInstants,
+  DEMO_WORKSPACE_EXPIRES_AT,
+  LOCALES,
+  type Instant,
+} from "@cleared/core";
 import { platform, withTransaction, type Tx } from "@cleared/db";
 import { z } from "zod";
 import { checkDemoCaps } from "../caps.ts";
@@ -61,7 +67,7 @@ async function createDemo(
     {
       kind: "demo",
       locale: r.locale,
-      timezone: r.timezone,
+      timezone: canonicalTimeZone(r.timezone),
       baseCurrency: DEMO_BASE_CURRENCY,
       expiresAt,
       createdIpHash: r.ip,

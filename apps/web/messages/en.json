@@ -1027,6 +1027,16 @@
       "hold_completed_confirmed": "You marked the order Completed in PayPal",
       "action_read_back": "Read PayPal's record back",
       "hold_declared": "You marked the payment as {what}",
+      "agent_run_succeeded": "AI run finished",
+      "agent_run_cache_hit": "Reused an earlier AI result",
+      "agent_run_failed_output": "AI run stopped: output didn't pass the checks",
+      "agent_run_limit_calls": "AI run stopped: step limit reached",
+      "agent_run_limit_time": "AI run stopped: time limit reached",
+      "agent_run_budget_exceeded": "AI run stopped: spend limit reached",
+      "agent_run_kill_switch": "AI run stopped: AI is switched off",
+      "agent_run_degraded": "AI unavailable; no result",
+      "agent_run_failed": "AI run failed",
+      "extract_no_facts": "No facts found in an evidence item",
       "other": "{action}"
     },
     "what": {

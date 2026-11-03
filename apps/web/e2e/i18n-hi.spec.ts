@@ -13,7 +13,7 @@ import en from "../messages/en.json" with { type: "json" };
 import { seed as seedDispute } from "./support/disputes.ts";
 import { seedHeld } from "./support/holds.ts";
 import { demoSeller, LOGO_LINES, seedChecked } from "./support/pack-seed.ts";
-import { capture, local, reviewDir, shots } from "./support/review.ts";
+import { axe, capture, local, reviewDir, shots } from "./support/review.ts";
 
 const DIR = reviewDir("M4-03");
 
@@ -41,10 +41,9 @@ function watchConsole(page: Page): string[] {
   return missing;
 }
 
-/** lang="hi", no raw key, no side scroll and a screenshot at 320 px. */
+/** lang="hi", no raw key or event code, no side scroll, axe and a screenshot at 320 px (loaded at 320). */
 async function checkHi(page: Page, name: string): Promise<void> {
   await expect(page.locator("html")).toHaveAttribute("lang", "hi");
-  await page.setViewportSize({ width: 320, height: 800 });
   await page.evaluate(() => {
     window.scrollTo(0, 0);
   });
@@ -53,16 +52,21 @@ async function checkHi(page: Page, name: string): Promise<void> {
     KEYS.filter((k) => text.includes(k)),
     `raw message keys on ${name}`,
   ).toEqual([]);
+  // an internal event code ("agent_run.succeeded") is never shown in place of words
+  expect(text, `raw event code on ${name}`).not.toMatch(/\b[a-z]+_[a-z_]*\.[a-z_]+\b/);
   const { sw, cw } = await page.evaluate(() => ({
     sw: document.documentElement.scrollWidth,
     cw: document.documentElement.clientWidth,
   }));
   expect(sw, `horizontal scroll at 320 px on ${name}`).toBeLessThanOrEqual(cw);
   if (shots) await page.screenshot({ path: `${DIR}hi-${name}-320-light.png`, fullPage: true });
+  await axe(page, `hi-${name}-320-light`, DIR);
   await page.setViewportSize({ width: 1280, height: 900 });
 }
 
-async function ready(page: Page, path: string, testId: string): Promise<void> {
+/** Loads `path` at 320 px, so width-dependent defaults (the calendar's List view) are the phone ones. */
+async function ready(page: Page, path: string, testId: string, width = 320): Promise<void> {
+  await page.setViewportSize({ width, height: 800 });
   await page.goto(path);
   await page.getByTestId(testId).first().waitFor();
   await expect(page.getByTestId("loading")).toHaveCount(0);
@@ -74,6 +78,7 @@ test("the judge path in Hindi: lang, messages, 320 px", async ({ page }) => {
   const missing = watchConsole(page);
 
   await page.context().clearCookies();
+  await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/hi");
   await page.getByTestId("demo-cta").waitFor();
   await checkHi(page, "landing");
@@ -117,7 +122,7 @@ test("the judge path in Hindi: lang, messages, 320 px", async ({ page }) => {
     ["disputes", "/hi/disputes", "dispute-row", true],
     ["dispute-review", `/hi/disputes/${dispute.disputeRowId}`, "approval-card", true],
     ["scenario", `/hi/scenario/${scenarioId}`, "scenario-timeline", false],
-    ["calendar", "/hi/calendar", "calendar-area", false],
+    ["calendar", "/hi/calendar", "cash-list", false],
     ["audit", "/hi/audit", "audit-list", false],
     ["notifications", "/hi/notifications", "notification", false],
   ];
@@ -147,7 +152,7 @@ test("time-zone control: deadlines re-render in the new zone; UTC in the tooltip
   for (const locale of ["hi", "en"] as const) {
     const ws = await demoSeller(page, locale);
     const s = await seedDispute(ws);
-    await ready(page, `/${locale}/disputes/${s.disputeRowId}`, "approval-card");
+    await ready(page, `/${locale}/disputes/${s.disputeRowId}`, "approval-card", 1280);
     const tz = page.getByTestId("tz-control");
     const before = await tz.getByTestId("tz-current").innerText();
 
@@ -157,6 +162,10 @@ test("time-zone control: deadlines re-render in the new zone; UTC in the tooltip
     if (shots) {
       await tz.scrollIntoViewIfNeeded();
       await capture(page, `${locale}-tz-open`, DIR);
+      // 320 px: Save and Cancel stack (components.md)
+      await page.setViewportSize({ width: 320, height: 800 });
+      await tz.screenshot({ path: `${DIR}${locale}-tz-open-320-light.png` });
+      await page.setViewportSize({ width: 1280, height: 900 });
     }
     // Escape closes and returns focus
     await page.keyboard.press("Escape");

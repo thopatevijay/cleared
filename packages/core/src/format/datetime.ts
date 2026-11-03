@@ -2,6 +2,30 @@
 // the zone's short name. Latin digits always; Hindi uses the 24-hour clock (no Latin "am"/"pm" inside
 // Devanagari text: BL-01 6569282428). Intl only.
 
+/**
+ * IANA "backward" links that Chromium and ICU still report (`Intl.supportedValuesOf`, `resolvedOptions`)
+ * for zones Cleared's sellers live in, mapped to the current names (the spec and PayPal docs use these).
+ */
+const ZONE_ALIASES: Readonly<Record<string, string>> = {
+  "Asia/Calcutta": "Asia/Kolkata",
+  "Asia/Katmandu": "Asia/Kathmandu",
+  "Asia/Rangoon": "Asia/Yangon",
+  "Asia/Saigon": "Asia/Ho_Chi_Minh",
+  "Asia/Dacca": "Asia/Dhaka",
+  "Europe/Kiev": "Europe/Kyiv",
+  "Africa/Asmera": "Africa/Asmara",
+  "Atlantic/Faeroe": "Atlantic/Faroe",
+  "America/Godthab": "America/Nuuk",
+  "Pacific/Truk": "Pacific/Chuuk",
+  "Pacific/Ponape": "Pacific/Pohnpei",
+  "Etc/UTC": "UTC",
+};
+
+/** "Asia/Calcutta" → "Asia/Kolkata"; any other name unchanged. */
+export function canonicalTimeZone(tz: string): string {
+  return ZONE_ALIASES[tz] ?? tz;
+}
+
 const isHindi = (locale: string): boolean => locale.toLowerCase().startsWith("hi");
 
 /** "30 Oct 2026, 6:12 pm IST" (en-IN) / "30 अक्टू॰ 2026, 18:12 IST" (hi-IN). An unknown zone falls back to UTC. */

@@ -2,7 +2,13 @@
 // serves plus a DST change (America/Los_Angeles falls back on 2026-11-01 at 02:00 PDT), and the T-72 h /
 // T-24 h countdowns in each zone.
 import { describe, expect, it } from "vitest";
-import { formatDateTime, formatRelative, formatUtc, relativeParts } from "../../src/index.ts";
+import {
+  canonicalTimeZone,
+  formatDateTime,
+  formatRelative,
+  formatUtc,
+  relativeParts,
+} from "../../src/index.ts";
 
 /** A dispute's seller_response_due_date (UTC), as PayPal sends it. */
 const DUE = "2026-11-02T17:00:00.000Z";
@@ -97,5 +103,15 @@ describe("formatRelative", () => {
     expect(formatRelative(DUE, DUE_MS - 5 * 3_600_000, "en-IN")).toBe("in 5 hours");
     expect(formatRelative(DUE, DUE_MS + 2 * 3_600_000, "en-IN")).toBe("2 hours ago");
     expect(formatRelative(DUE, DUE_MS + 2 * 3_600_000, "hi-IN")).toBe("2 घंटे पहले");
+  });
+});
+
+describe("canonicalTimeZone", () => {
+  it("maps the legacy names browsers still report to current IANA names", () => {
+    expect(canonicalTimeZone("Asia/Calcutta")).toBe("Asia/Kolkata");
+    expect(canonicalTimeZone("Europe/Kiev")).toBe("Europe/Kyiv");
+    expect(canonicalTimeZone("Africa/Lagos")).toBe("Africa/Lagos");
+    // the mapped name formats exactly as the alias did
+    expect(formatDateTime(DUE, "Asia/Kolkata", "en-IN")).toBe(formatDateTime(DUE, "Asia/Calcutta", "en-IN"));
   });
 });

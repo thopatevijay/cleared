@@ -1,7 +1,7 @@
 // Session-scoped routes (M1-05): POST /api/auth/sign-out, GET /api/workspace and (M4-03) PATCH
 // /api/workspace. Each acts on the session's workspace only; any workspace or session id in the query or
 // body is ignored.
-import { LOCALES } from "@cleared/core";
+import { canonicalTimeZone, LOCALES } from "@cleared/core";
 import { platform, type WorkspaceRow } from "@cleared/db";
 import { z } from "zod";
 import { checkMutation, readJson } from "../csrf.ts";
@@ -59,7 +59,7 @@ export async function patchWorkspace(req: Request, deps: Deps): Promise<Response
     const { locale, timezone } = parsed.data;
     const ws = await platform(deps.db).workspaces.updateSettings(session.workspaceId, {
       ...(locale === undefined ? {} : { locale }),
-      ...(timezone === undefined ? {} : { timezone }),
+      ...(timezone === undefined ? {} : { timezone: canonicalTimeZone(timezone) }),
     });
     if (ws === null) return apiError(401, "unauthenticated", "Sign in or start a demo to continue.", cid);
     return withRenewal(json(workspaceBody(ws, session.kind)), session);

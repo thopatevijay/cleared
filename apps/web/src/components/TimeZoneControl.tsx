@@ -2,6 +2,7 @@
 // Time zone control (components.md "Time zone control", M4-03): the workspace's IANA zone in the dashboard
 // footer, editable. Save → PATCH /api/workspace { timezone }; every list re-fetches so dates re-render in
 // the new zone without a reload.
+import { canonicalTimeZone } from "@cleared/core";
 import { useTranslations } from "next-intl";
 import { useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import useSWR, { useSWRConfig } from "swr";
@@ -12,8 +13,9 @@ interface WorkspaceData {
   readonly workspace: { readonly timezone: string };
 }
 
+/** Every zone Intl knows, under its current IANA name (Chromium still lists "Asia/Calcutta"). */
 function zones(current: string): string[] {
-  const all = new Set([...Intl.supportedValuesOf("timeZone"), "UTC", current]);
+  const all = new Set([...Intl.supportedValuesOf("timeZone").map(canonicalTimeZone), "UTC", current]);
   return [...all].sort((a, b) => a.localeCompare(b));
 }
 
