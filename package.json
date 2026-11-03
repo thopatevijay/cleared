@@ -31,7 +31,8 @@
     "eval:draft": "pnpm --filter @cleared/evals --if-present run eval:draft",
     "eval:report": "pnpm --filter @cleared/evals --if-present run eval:report",
     "eval:review": "pnpm --filter @cleared/evals --if-present run eval:review",
-    "eval:label": "pnpm --filter @cleared/evals --if-present run eval:label"
+    "eval:label": "pnpm --filter @cleared/evals --if-present run eval:label",
+    "eval:adopt-dev": "pnpm --filter @cleared/evals --if-present run eval:adopt-dev"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

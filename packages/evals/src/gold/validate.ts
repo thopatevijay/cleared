@@ -1,14 +1,17 @@
 // `pnpm eval:validate [--pii]`
 // Default: checks the labelled gold sets (schema, counts, per-label minimums, injection items, EN/HI
-// pairs, verbatim spans, seeded split, owner + non-production review, disagreements, kappa) and the
-// spend ledger; prints the report and exits 1 on any error.
+// pairs, verbatim spans, seeded split, who labelled each item (owner on test; owner or model:<reviewer>
+// on dev), a non-production review, test-split disagreements and kappa) and the spend ledger; prints the
+// report and exits 1 on any error.
 // --pii: scans the drafts, the reviews and the gold sets for real-looking emails, phones and PayPal ids.
 import { existsSync, readFileSync } from "node:fs";
 import { relative } from "node:path";
+import { ownerQueue } from "./adopt.ts";
 import {
   checkCounts,
   checkCoverage,
   checkHolds,
+  checkOwnerLabels,
   checkReviews,
   checkSpans,
   checkSpend,
@@ -18,7 +21,7 @@ import {
 } from "./checks.ts";
 import { bySet, DISAGREEMENTS_FILE, draftFile, goldFile, GOLD_DIR, readJsonl, reviewFile, SPEND_FILE } from "./io.ts";
 import { scanText, stringsIn, type PiiFinding } from "./pii.ts";
-import { DisagreementSchema, DraftItemSchema, GoldItemSchema, SETS } from "./schema.ts";
+import { DisagreementSchema, DraftItemSchema, GoldItemSchema, ReviewSchema, SETS } from "./schema.ts";
 import { spendByDay } from "./spend.ts";
 
 export function validate(): Report {
@@ -34,7 +37,7 @@ export function validate(): Report {
   checkSpans(sets, r);
   checkReviews(sets, readJsonl(DISAGREEMENTS_FILE, DisagreementSchema), r);
   checkSpend(spendByDay(existsSync(SPEND_FILE) ? readFileSync(SPEND_FILE, "utf8") : ""), r);
-  if (SETS.some((s) => sets[s].length === 0)) r.errors.push("owner labels missing (P-53): run `pnpm eval:label`, then `pnpm eval:label --reconcile`");
+  checkOwnerLabels(sets, bySet((s) => ownerQueue(drafts[s], readJsonl(reviewFile(s), ReviewSchema)).map((d) => d.id)), r);
   return r;
 }
 

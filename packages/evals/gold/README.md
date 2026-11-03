@@ -57,10 +57,7 @@ Goods and services alternate. Hold scenarios: `PENDING_REVIEW` ×2 (`payment_rev
    are stored with the data in `drafts/generator.json`; prompt version `gold-draft@v1`. Each exchange is
    recorded (scrubbed) under `fixtures/openai/gold/draft/`, and the drafts are built from those
    recordings, so `pnpm eval:draft --replay` gives byte-identical output with no spend.
-3. **Owner labels** (`pnpm eval:label`, P-53). A terminal tool shows each item's documents and hypotheses
-   and records the label, the spans (typed as a quote; offsets computed, ambiguity resolved by choice)
-   and a note into `gold/<set>.jsonl`. The target label and the model's review are hidden.
-4. **Second-model review** (`pnpm eval:review`). A model that differs from the production model for
+3. **Second-model review** (`pnpm eval:review`). A model that differs from the production model for
    the task labels every item independently, with verbatim quotes turned into checked spans
    (`reviews/<set>.jsonl`; recordings under `fixtures/openai/gold/review/`; prompt `gold-review@v1`):
 
@@ -70,19 +67,37 @@ Goods and services alternate. Hold scenarios: `PENDING_REVIEW` ×2 (`payment_rev
    | scope | `gpt-6.1-terra` (LARGE, `check_scope`) | `gpt-5.4-mini-2026-03-17` |
    | holds | `gpt-6-luna` (SMALL, `explain_hold`) | `gpt-6.1-terra` (LARGE) |
 
-5. **Reconcile** (`pnpm eval:label --reconcile`). Each review is embedded in its item; for every
-   disagreement the owner sees both labels and records the final one with a reason in
-   `disagreements.jsonl`. Agreement is Cohen's kappa per set: the owner's first label against the
-   reviewer's, over all hypotheses.
-6. **Validate** (`pnpm eval:validate`): schema, counts (30/40/20), ≥ 8 scope items per label, ≥ 5
+   **Who labels what** (owner decision 2026-11-03, #45): the owner labels all 69 `test` items
+   (22 extraction, 31 scope, 16 holds), which are the only items M4-02 reports, plus `scope-028` from
+   `dev` (step 4). That's 70 items, all `labelled_by: "owner"`. The other 20 `dev` items (8 / 8 / 4)
+   are used only for prompt work and never reported. They take the second-model review's labels and
+   spans verbatim and are marked `labelled_by: "model:<reviewer model id>"`, so they're never presented
+   as owner labels.
+4. **Dev items from the review** (`pnpm eval:adopt-dev`). A deterministic step with no API call and
+   no spend. It copies each `dev` item's review into `gold/<set>.jsonl` after checking every span
+   (verbatim at its offsets, at least one for `met`/`partial`, none for `unverifiable`). A `dev` item
+   whose review fails any check is refused: nothing is written for it, no rule is relaxed, and it joins
+   the owner's queue. One item is refused: **`scope-028`**. Its reviewer labelled H2 `met`, but the
+   only quote skips a line of the handover, so it isn't verbatim and no span is left. Re-running the
+   step writes the same bytes and keeps every owner label.
+5. **Owner labels** (`pnpm eval:label`, P-53; `--split test` is the default and the only choice). A
+   terminal tool shows each queued item's documents and hypotheses (the `test` items plus `scope-028`)
+   and records the label, the spans (typed as a quote; offsets computed, ambiguity resolved by choice)
+   and a note into `gold/<set>.jsonl`. The target label and the model's review are hidden.
+6. **Reconcile** (`pnpm eval:label --reconcile`). Each review is embedded in its owner-labelled item.
+   For every disagreement on a `test` item, the owner sees both labels and records the final one with
+   a reason in `disagreements.jsonl`. Agreement is Cohen's kappa per set: the owner's first label
+   against the reviewer's, over the `test` hypotheses only.
+7. **Validate** (`pnpm eval:validate`): schema, counts (30/40/20), ≥ 8 scope items per label, ≥ 5
    injection items, 10 EN/10 HI with matching fact codes and known rule rows, every span verbatim, the
-   seeded split, owner label + non-production review on every item, one decided row per disagreement,
-   kappa, and the spend ledger (each UTC day ≤ $1). `--pii` scans drafts, reviews and gold sets for
-   real-looking emails, phone numbers and PayPal ids.
+   seeded split, `owner` on every `test` item and `owner` or `model:<its reviewer>` on every `dev` item
+   (a model-labelled item must match its review exactly), a non-production review on every item, one
+   decided row per `test` disagreement, kappa over `test`, and the spend ledger (each UTC day ≤ $1).
+   `--pii` scans drafts, reviews and gold sets for real-looking emails, phone numbers and PayPal ids.
 
 ## Results
 
-| set | kappa (owner vs reviewer) | agreement | disagreements |
+| set | kappa (owner vs reviewer, test split) | agreement | disagreements |
 |---|---|---|---|
 | extraction | after P-53 | | |
 | scope | after P-53 | | |

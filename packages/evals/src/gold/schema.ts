@@ -135,9 +135,19 @@ export const GoldHypothesisSchema = DraftHypothesisSchema.extend({
 });
 export type GoldHypothesis = z.infer<typeof GoldHypothesisSchema>;
 
+/**
+ * Who labelled an item (owner decision 2026-11-03, #45): the owner labels every `test` item; a `dev` item
+ * takes the second-model review verbatim and is marked `model:<reviewer model id>` (never reported).
+ */
+export const LabelledBySchema = z.union([z.literal("owner"), z.templateLiteral(["model:", z.string().min(1)])]);
+export type LabelledBy = z.infer<typeof LabelledBySchema>;
+
+/** The `labelled_by` mark of an item adopted from a review by `model`. */
+export const modelLabel = (model: string): LabelledBy => `model:${model}`;
+
 export const GoldItemSchema = DraftItemSchema.extend({
   hypotheses: z.array(GoldHypothesisSchema).min(1),
-  labelled_by: z.literal("owner"),
+  labelled_by: LabelledBySchema,
   /** embedded by `eval:label --reconcile`; null until then (validate fails on null) */
   review: ReviewSchema.nullable(),
 });

@@ -3,7 +3,7 @@
 import { holdRule } from "@cleared/core";
 import { cohensKappa } from "./kappa.ts";
 import { DEV_SHARE, splitFor } from "./plan.ts";
-import { LABELS, PROD_MODEL, SET_SIZE, SETS, type Disagreement, type GoldItem, type GoldSet, type Label } from "./schema.ts";
+import { LABELS, modelLabel, PROD_MODEL, SET_SIZE, SETS, type Disagreement, type GoldItem, type GoldSet, type Label, type Review } from "./schema.ts";
 import { spanProblem } from "./spans.ts";
 import { DAILY_BUDGET_USD } from "./spend.ts";
 
@@ -92,7 +92,44 @@ export function checkHolds(holds: readonly GoldItem[], r: Report): void {
   }
 }
 
-/** AC 3 + AC 4: owner-labelled, reviewed by a non-production model, every disagreement decided. */
+/**
+ * AC 3 (amended 2026-11-03): who labelled the item. A `test` item is `owner`; a `dev` item is `owner` or
+ * `model:<its reviewer>` (a non-production model), and a model-labelled one carries the review verbatim.
+ */
+function checkLabelledBy(item: GoldItem, review: Review, r: Report): void {
+  if (item.split === "test" && item.labelled_by !== "owner") r.errors.push(`${item.id}: test item labelled_by ${item.labelled_by}, must be owner`);
+  if (item.labelled_by === "owner") return;
+  if (item.labelled_by !== modelLabel(review.model)) r.errors.push(`${item.id}: labelled_by ${item.labelled_by} is not its reviewer ${modelLabel(review.model)}`);
+  for (const h of item.hypotheses) {
+    const m = review.labels.find((l) => l.h_id === h.h_id);
+    if (m !== undefined && (m.label !== h.label || JSON.stringify(m.spans) !== JSON.stringify(h.spans))) {
+      r.errors.push(`${item.id}/${h.h_id}: model-labelled, but the label or spans differ from the review`);
+    }
+  }
+}
+
+/** AC 4 (amended): every owner/reviewer disagreement on a `test` item has a decision; kappa over `test` only. */
+function testPairs(item: GoldItem, review: Review, rows: readonly Disagreement[], r: Report): (readonly [Label, Label])[] {
+  const pairs: (readonly [Label, Label])[] = [];
+  for (const h of item.hypotheses) {
+    const model = review.labels.find((l) => l.h_id === h.h_id)?.label;
+    const row = rows.find((d) => d.item_id === item.id && d.h_id === h.h_id);
+    if (model === undefined) {
+      r.errors.push(`${item.id}/${h.h_id}: not reviewed`);
+      continue;
+    }
+    if (item.split === "dev") {
+      if (row !== undefined) r.errors.push(`${item.id}/${h.h_id}: disagreements.jsonl row on a dev item (test only)`);
+      continue;
+    }
+    if (row === undefined && model !== h.label) r.errors.push(`${item.id}/${h.h_id}: disagreement without a decision`);
+    if (row !== undefined && (row.final !== h.label || row.model_label !== model)) r.errors.push(`${item.id}/${h.h_id}: disagreements.jsonl does not match the item`);
+    pairs.push([row?.owner_label ?? h.label, model]);
+  }
+  return pairs;
+}
+
+/** AC 3 + AC 4: who labelled each item, a review by a non-production model, test disagreements decided, kappa. */
 export function checkReviews(sets: GoldSets, rows: readonly Disagreement[], r: Report): void {
   for (const s of SETS) {
     const pairs: (readonly [Label, Label])[] = [];
@@ -102,21 +139,23 @@ export function checkReviews(sets: GoldSets, rows: readonly Disagreement[], r: R
         continue;
       }
       if (item.review.model === PROD_MODEL[s]) r.errors.push(`${item.id}: reviewed by the production model ${PROD_MODEL[s]}`);
-      for (const h of item.hypotheses) {
-        const model = item.review.labels.find((l) => l.h_id === h.h_id)?.label;
-        if (model === undefined) {
-          r.errors.push(`${item.id}/${h.h_id}: not reviewed`);
-          continue;
-        }
-        const row = rows.find((d) => d.item_id === item.id && d.h_id === h.h_id);
-        if (row === undefined && model !== h.label) r.errors.push(`${item.id}/${h.h_id}: disagreement without a decision`);
-        if (row !== undefined && (row.final !== h.label || row.model_label !== model)) r.errors.push(`${item.id}/${h.h_id}: disagreements.jsonl does not match the item`);
-        pairs.push([row?.owner_label ?? h.label, model]);
-      }
+      checkLabelledBy(item, item.review, r);
+      pairs.push(...testPairs(item, item.review, rows, r));
     }
     const k = cohensKappa(pairs);
-    const n = rows.filter((d) => d.set === s).length;
-    r.lines.push(`kappa ${s}: ${k.kappa.toFixed(3)} (agreement ${(k.po * 100).toFixed(1)}%, n=${String(k.n)} hypotheses, ${String(n)} disagreements)`);
+    const testIds = new Set(sets[s].filter((i) => i.split === "test").map((i) => i.id));
+    const n = rows.filter((d) => d.set === s && testIds.has(d.item_id)).length;
+    r.lines.push(`kappa ${s} (test only): ${k.kappa.toFixed(3)} (agreement ${(k.po * 100).toFixed(1)}%, n=${String(k.n)} hypotheses, ${String(n)} disagreements)`);
+  }
+}
+
+/** Owner labels still to come: queued items (test + refused dev) without `labelled_by: "owner"`. */
+export function checkOwnerLabels(sets: GoldSets, queue: Readonly<Record<GoldSet, readonly string[]>>, r: Report): void {
+  const missing = SETS.flatMap((s) => queue[s].filter((id) => sets[s].find((i) => i.id === id)?.labelled_by !== "owner"));
+  const total = SETS.reduce((n, s) => n + queue[s].length, 0);
+  r.lines.push(`owner-labelled: ${String(total - missing.length)}/${String(total)} (test split + dev items the review could not label)`);
+  if (missing.length > 0) {
+    r.errors.push(`owner labels missing (P-53): ${String(missing.length)}/${String(total)} items: run \`pnpm eval:label\`, then \`pnpm eval:label --reconcile\``);
   }
 }
 

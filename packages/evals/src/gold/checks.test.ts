@@ -3,6 +3,7 @@ import {
   checkCounts,
   checkCoverage,
   checkHolds,
+  checkOwnerLabels,
   checkReviews,
   checkSpans,
   checkSpend,
@@ -113,7 +114,69 @@ describe("eval:validate checks", () => {
     const ok = report();
     checkReviews({ ...empty, scope: [agreed, disputed] }, [row], ok);
     expect(ok.errors).toEqual([]);
-    expect(ok.lines.find((l) => l.startsWith("kappa scope"))).toMatch(/^kappa scope: .* n=3 hypotheses, 1 disagreements\)$/);
+    expect(ok.lines.find((l) => l.startsWith("kappa scope"))).toMatch(/^kappa scope \(test only\): .* n=3 hypotheses, 1 disagreements\)$/);
+  });
+
+  describe("amended AC 3 / AC 4 (owner decision 2026-11-03)", () => {
+    const testItem = (id: string, labels: readonly Label[], over: Partial<GoldItem> = {}): GoldItem => item(id, labels, { split: "test", ...over });
+    const devItem = (id: string, labels: readonly Label[], over: Partial<GoldItem> = {}): GoldItem =>
+      item(id, labels, { split: "dev", labelled_by: `model:${REVIEW_MODEL.scope}`, ...over });
+    const errorsFor = (items: GoldItem[], rows: Disagreement[] = []): string => {
+      const r = report();
+      checkReviews({ ...empty, scope: items }, rows, r);
+      return r.errors.join("\n");
+    };
+
+    it("passes owner on test and model:<reviewer> on dev", () => {
+      expect(errorsFor([testItem("scope-001", ["met"]), devItem("scope-009", ["met", "missing"])])).toBe("");
+    });
+
+    it("fails a test item labelled by a model", () => {
+      expect(errorsFor([testItem("scope-001", ["met"], { labelled_by: `model:${REVIEW_MODEL.scope}` })])).toMatch(
+        /scope-001: test item labelled_by model:gpt-5\.4-mini-2026-03-17, must be owner/,
+      );
+    });
+
+    it("accepts an owner-labelled dev item (a dev item the review could not label)", () => {
+      expect(errorsFor([devItem("scope-028", ["met"], { labelled_by: "owner" })])).toBe("");
+    });
+
+    it("fails a dev item marked with a model other than its reviewer, or with the production model's review", () => {
+      expect(errorsFor([devItem("scope-009", ["met"], { labelled_by: "model:someone-else" })])).toMatch(/scope-009: labelled_by model:someone-else is not its reviewer/);
+      const base = devItem("scope-009", ["met"], { labelled_by: `model:${PROD_MODEL.scope}` });
+      const prod: GoldItem = { ...base, review: base.review === null ? null : { ...base.review, model: PROD_MODEL.scope } };
+      expect(errorsFor([prod])).toMatch(/scope-009: reviewed by the production model/);
+    });
+
+    it("fails a model-labelled dev item whose label or spans differ from its review", () => {
+      const base = devItem("scope-009", ["met"]);
+      const h1 = base.hypotheses[0];
+      if (h1 === undefined) throw new Error("fixture");
+      expect(errorsFor([{ ...base, hypotheses: [{ ...h1, label: "partial" }] }])).toMatch(/scope-009\/H1: model-labelled, but the label or spans differ/);
+      expect(errorsFor([{ ...base, hypotheses: [{ ...h1, spans: [] }] }])).toMatch(/scope-009\/H1: model-labelled, but the label or spans differ/);
+    });
+
+    it("counts disagreements and kappa over test items only; a dev disagreement row is an error", () => {
+      const dev = devItem("scope-009", ["missing"], { labelled_by: "owner" });
+      const disputedDev: GoldItem = { ...dev, review: dev.review === null ? null : { ...dev.review, labels: [{ h_id: "H1", label: "met", spans: [], unmatched_quotes: 0 }] } };
+      const r = report();
+      checkReviews({ ...empty, scope: [testItem("scope-001", ["met", "missing"]), disputedDev] }, [], r);
+      expect(r.errors).toEqual([]);
+      expect(r.lines.find((l) => l.startsWith("kappa scope"))).toMatch(/n=2 hypotheses, 0 disagreements\)$/);
+      const row: Disagreement = { set: "scope", item_id: "scope-009", h_id: "H1", owner_label: "missing", model_label: "met", model: "x", final: "missing", reason: "dev" };
+      expect(errorsFor([disputedDev], [row])).toMatch(/scope-009\/H1: disagreements.jsonl row on a dev item/);
+    });
+
+    it("reports owner labels missing (P-53) for queued items without an owner label", () => {
+      const r = report();
+      const queue = { extraction: [], scope: ["scope-001", "scope-028"], holds: [] };
+      checkOwnerLabels({ ...empty, scope: [testItem("scope-001", ["met"]), devItem("scope-028", ["met"])] }, queue, r);
+      expect(r.lines).toContain("owner-labelled: 1/2 (test split + dev items the review could not label)");
+      expect(r.errors).toEqual(["owner labels missing (P-53): 1/2 items: run `pnpm eval:label`, then `pnpm eval:label --reconcile`"]);
+      const ok = report();
+      checkOwnerLabels({ ...empty, scope: [testItem("scope-001", ["met"]), devItem("scope-028", ["met"], { labelled_by: "owner" })] }, queue, ok);
+      expect(ok.errors).toEqual([]);
+    });
   });
 
   it("checks EN/HI hold pairs share fact codes and name a known rule", () => {
