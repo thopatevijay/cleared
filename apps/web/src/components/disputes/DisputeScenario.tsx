@@ -2,17 +2,19 @@
 // The judge scenario on the dispute page (dispute-review.md §5, M2-10's components): the timeline of real
 // sandbox steps and "Simulate PayPal's decision (sandbox only)", for the scenario run on this dispute. It
 // sits in the right column, separated from Approve by the filing status, never adjacent to it.
-import { ScenarioViewSchema, type ScenarioView } from "@cleared/core";
+import type { ScenarioView } from "@cleared/core";
 import { useTranslations } from "next-intl";
 import useSWR from "swr";
 import { Link } from "../../i18n/navigation.ts";
-import { getJson } from "../../lib/api.ts";
+import { getJson, loadSchemas } from "../../lib/api.ts";
 import { SandboxDecision } from "../scenario/SandboxDecision.tsx";
 import { ScenarioTimeline } from "../scenario/ScenarioTimeline.tsx";
 import { useUiLocale } from "./text.ts";
 
 async function fetchScenario(path: string): Promise<ScenarioView> {
-  return ScenarioViewSchema.parse(((await getJson(path)) as { scenario: unknown }).scenario);
+  return (await loadSchemas()).ScenarioViewSchema.parse(
+    ((await getJson(path)) as { scenario: unknown }).scenario,
+  );
 }
 
 export function DisputeScenario({ scenarioId, timeZone }: { scenarioId: string; timeZone: string }) {

@@ -4,20 +4,13 @@
 // by GET /api/cash-calendar. Month view shows the selected day's events beside the grid (1440) or below it.
 // States: loading, error (Retry + Reference), empty ("No held money"; deadlines still show), success. The
 // table (server-rendered by the page) is passed in as `children`; in List view it sits in "Show as table".
-import {
-  addDays,
-  CashCalendarResponseSchema,
-  localDay,
-  type CashCalendarResponse,
-  type CashEvent,
-  type CashRange,
-} from "@cleared/core";
+import { addDays, localDay, type CashCalendarResponse, type CashEvent, type CashRange } from "@cleared/core";
 import { CalendarDays, List } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, type ReactNode } from "react";
 import useSWR from "swr";
 import { useRouter } from "../../i18n/navigation.ts";
-import { ApiError, getJson } from "../../lib/api.ts";
+import { ApiError, getParsed } from "../../lib/api.ts";
 import { useUiLocale } from "../disputes/text.ts";
 import { EmptyState } from "../EmptyState.tsx";
 import { OfflineBanner, useLoadedAt } from "../holds/Offline.tsx";
@@ -27,7 +20,7 @@ import { DayGroup } from "./list.tsx";
 import { eventHref, type CashView } from "./types.ts";
 
 const fetchCalendar = async (path: string): Promise<CashCalendarResponse> =>
-  CashCalendarResponseSchema.parse(await getJson(path));
+  getParsed(path, (s) => s.CashCalendarResponseSchema);
 
 /** `?view=` wins; otherwise List below 768 px, Month from 768 px (decided after mount). */
 function useView(initial: CashView | null): [CashView | null, (v: CashView) => void] {

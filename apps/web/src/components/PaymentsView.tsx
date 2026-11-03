@@ -3,7 +3,7 @@
 // States: loading (skeletons; a line after 3 s and 10 s), empty (+ the sandbox test-payment button),
 // waiting ("Waiting for PayPal…" until the webhook lands), success, error (with the correlation id).
 // New rows flash and are announced once in one polite live region.
-import { PaymentsResponseSchema, type PaymentItem, type PaymentsResponse } from "@cleared/core";
+import type { PaymentItem, PaymentsResponse } from "@cleared/core";
 import { FileCheck, Inbox } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { Link, useRouter } from "../i18n/navigation.ts";
 import { intlLocale, isAppLocale } from "../i18n/routing.ts";
-import { ApiError, getJson } from "../lib/api.ts";
+import { ApiError, getParsed } from "../lib/api.ts";
 import { attentionRank, captureStatusKey, formatAmount } from "../lib/format.ts";
 import { EmptyState } from "./EmptyState.tsx";
 import { ErrorPanel } from "./ErrorPanel.tsx";
@@ -26,7 +26,7 @@ import { TestPaymentButton } from "./TestPaymentButton.tsx";
 export const POLL_MS = 5_000;
 
 async function fetchPayments(path: string): Promise<PaymentsResponse> {
-  return PaymentsResponseSchema.parse(await getJson(path));
+  return getParsed(path, (s) => s.PaymentsResponseSchema);
 }
 
 function useElapsed(active: boolean): number {

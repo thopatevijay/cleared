@@ -2,7 +2,8 @@
 // values fall back to PayPal's own string (never an invented label); the enum itself is shown beside.
 import { useLocale, useTranslations } from "next-intl";
 import { intlLocale, isAppLocale } from "../../i18n/routing.ts";
-import { isPaypalCoveredPayout, type Outcome } from "../../lib/dispute-view.ts";
+import { isPaypalCoveredPayout } from "../../lib/dispute-helpers.ts";
+import type { Outcome } from "../../lib/dispute-view.ts";
 
 export function useUiLocale(): string {
   const raw = useLocale();

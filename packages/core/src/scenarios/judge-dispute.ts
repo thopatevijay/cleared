@@ -4,25 +4,10 @@
 // step's state, so a re-delivered job is a no-op. PayPal states are never invented here: the poll
 // observes them and the outcome is read from the mirror (CLAUDE.md "Domain rules").
 import { z } from "zod";
+import { SCENARIO_ACTIVE_STATES, type ScenarioState } from "./states.ts";
 
-export const SCENARIO_STATES = [
-  "capturing",
-  "seeding",
-  "charging_back",
-  "polling",
-  "resolved",
-  "timed_out",
-  "failed",
-] as const;
-export type ScenarioState = (typeof SCENARIO_STATES)[number];
-
-/** At most one run per workspace is in one of these (unique partial index on `scenario_runs`). */
-export const SCENARIO_ACTIVE_STATES = [
-  "capturing",
-  "seeding",
-  "charging_back",
-  "polling",
-] as const satisfies readonly ScenarioState[];
+// The states live in states.ts (no zod) for the browser (M4-08).
+export { SCENARIO_ACTIVE_STATES, SCENARIO_STATES, type ScenarioState } from "./states.ts";
 
 export const SCENARIO_STEPS = ["capture", "seed_pack", "chargeback", "poll"] as const;
 export type ScenarioStep = (typeof SCENARIO_STEPS)[number];

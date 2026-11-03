@@ -1,7 +1,7 @@
 // Money for display (M4-03): PayPal's decimal string, formatted by Intl from the string itself, so an
 // amount never passes through a float. PayPal's minor units win over Intl's (HUF, JPY, TWD: none).
 // Indian grouping (1,00,000.00) comes from the hi-IN / en-IN locale data. Never converts currencies.
-import { CURRENCY_EXPONENTS, isCurrencyCode } from "../money.ts";
+import { CURRENCY_EXPONENTS, isCurrencyCode } from "../currency.ts";
 
 /** `narrowSymbol` → "$120.00", `name` → "120.00 US dollars" (accessible name), `code` → "USD 120.00". */
 export type MoneyDisplay = "narrowSymbol" | "name" | "code";

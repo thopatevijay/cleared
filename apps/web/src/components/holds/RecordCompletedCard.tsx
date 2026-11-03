@@ -10,8 +10,9 @@ import { ChevronDown, CircleCheck, CircleX, Loader2, TriangleAlert } from "lucid
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 import useSWR from "swr";
-import { getJson, NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
-import { ActionViewSchema, fingerprint, type ActionViewData } from "../../lib/dispute-view.ts";
+import { getJson, loadSchemas, NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
+import { fingerprint } from "../../lib/dispute-helpers.ts";
+import type { ActionViewData } from "../../lib/dispute-view.ts";
 import { useOnline } from "../../lib/use-online.ts";
 import { Fingerprint } from "../disputes/DraftParts.tsx";
 import { refusalOf } from "../disputes/text.ts";
@@ -22,7 +23,7 @@ const secondary =
   "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-border-strong px-4 font-medium disabled:opacity-70 sm:w-auto";
 
 const fetchAction = async (path: string): Promise<ActionViewData> =>
-  ActionViewSchema.parse(((await getJson(path)) as { action: unknown }).action);
+  (await loadSchemas()).ActionViewSchema.parse(((await getJson(path)) as { action: unknown }).action);
 
 /** "Effect on release unconfirmed": held colours, icon + text (never colour alone). */
 function UnconfirmedBadge() {
@@ -239,7 +240,7 @@ export function RecordCompletedCard({
     key.current = null;
     if (res.status === 201) {
       setError(null);
-      setLocal(ActionViewSchema.parse((res.body as { action: unknown }).action));
+      setLocal((await loadSchemas()).ActionViewSchema.parse((res.body as { action: unknown }).action));
       onChanged();
     } else
       setError(

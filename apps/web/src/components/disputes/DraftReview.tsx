@@ -7,7 +7,8 @@
 import { TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
-import { codePointCount, NOTES_MAX, type DisputeDetail, type Draft } from "../../lib/dispute-view.ts";
+import { codePointCount, NOTES_MAX } from "../../lib/dispute-helpers.ts";
+import type { DisputeDetail, Draft } from "../../lib/dispute-view.ts";
 import { formatBytes, formatTime, formatUtc } from "../../lib/format.ts";
 import { AcceptClaimDialog } from "./AcceptClaimDialog.tsx";
 import { ApproveDialog } from "./ApproveDialog.tsx";

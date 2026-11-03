@@ -10,8 +10,9 @@ import { CircleCheck, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 import useSWR from "swr";
-import { getJson, NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
-import { ActionViewSchema, fingerprint, type ActionViewData } from "../../lib/dispute-view.ts";
+import { getJson, loadSchemas, NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
+import { fingerprint } from "../../lib/dispute-helpers.ts";
+import type { ActionViewData } from "../../lib/dispute-view.ts";
 import { useOnline } from "../../lib/use-online.ts";
 import { refusalOf } from "../disputes/text.ts";
 import { Fingerprint } from "../disputes/DraftParts.tsx";
@@ -25,7 +26,7 @@ const primary =
   "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 font-semibold text-on-accent disabled:opacity-70 sm:w-auto";
 
 const fetchAction = async (path: string): Promise<ActionViewData> =>
-  ActionViewSchema.parse(((await getJson(path)) as { action: unknown }).action);
+  (await loadSchemas()).ActionViewSchema.parse(((await getJson(path)) as { action: unknown }).action);
 
 interface Payload {
   readonly order_id: string;
@@ -338,7 +339,7 @@ function Form({
     key.current = null;
     if (res.status === 201) {
       setError(null);
-      onProposed(ActionViewSchema.parse((res.body as { action: unknown }).action));
+      onProposed((await loadSchemas()).ActionViewSchema.parse((res.body as { action: unknown }).action));
     } else
       setError(
         res.status === NETWORK_ERROR ? "NETWORK" : (refusalOf(res.body) ?? `HTTP_${String(res.status)}`),
