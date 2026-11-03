@@ -5,12 +5,13 @@ import tseslint from "typescript-eslint";
 // ESLint 10 core rule selectors (eslint-plugin-react 7.37.5 has no ESLint 10 support: M4-03 ticket).
 const JSX_TEXT = {
   selector: "JSXText[value=/\\S/]",
-  message: "User-visible text comes from apps/web/messages (en.json, hi.json). Codes: {\"CODE\"} (M4-03).",
+  message: 'User-visible text comes from apps/web/messages (en.json, hi.json). Codes: {"CODE"} (M4-03).',
 };
 const MONEY_FORMAT = [
   {
     selector: "CallExpression[callee.property.name=/^(toFixed|toLocaleString)$/]",
-    message: "Format amounts and times with core's formatMoney / formatDateTime (Intl from the string) (M4-03).",
+    message:
+      "Format amounts and times with core's formatMoney / formatDateTime (Intl from the string) (M4-03).",
   },
 ];
 

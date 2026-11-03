@@ -14,7 +14,9 @@ interface Body {
 describe.skipIf(!dbAvailable)("workspace settings (integration)", () => {
   it("persists locale and time zone for the session's workspace only", async () => {
     const deps = testDeps();
-    const a = cookieFrom(await postDemo(req("/api/demo", { ip: freshIp(), body: { timezone: "UTC" } }), deps));
+    const a = cookieFrom(
+      await postDemo(req("/api/demo", { ip: freshIp(), body: { timezone: "UTC" } }), deps),
+    );
     const b = cookieFrom(await postDemo(req("/api/demo", { ip: freshIp() }), deps));
     const bId = (await read(deps, b)).workspace.id;
 
@@ -39,7 +41,12 @@ describe.skipIf(!dbAvailable)("workspace settings (integration)", () => {
   it("refuses an unknown zone, an unknown locale, an empty body and extra fields", async () => {
     const deps = testDeps();
     const a = cookieFrom(await postDemo(req("/api/demo", { ip: freshIp() }), deps));
-    for (const body of [{ timezone: "Mars/Olympus" }, { locale: "fr" }, {}, { locale: "hi", workspaceId: "x" }]) {
+    for (const body of [
+      { timezone: "Mars/Olympus" },
+      { locale: "fr" },
+      {},
+      { locale: "hi", workspaceId: "x" },
+    ]) {
       const res = await patchWorkspace(req("/api/workspace", { method: "PATCH", cookie: a, body }), deps);
       expect(res.status, JSON.stringify(body)).toBe(400);
     }

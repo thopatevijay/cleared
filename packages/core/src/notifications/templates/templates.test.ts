@@ -77,7 +77,14 @@ describe("renderNotification", () => {
         reason: "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
         dueDate: DUE,
       }),
-      deadline_t72: deadlineAlert({ disputeRowId: D, dueDate: DUE, open: true, now, amount: usd, reason: null }),
+      deadline_t72: deadlineAlert({
+        disputeRowId: D,
+        dueDate: DUE,
+        open: true,
+        now,
+        amount: usd,
+        reason: null,
+      }),
       deadline_t24: t24(addMinutes(DUE, -18 * 60)),
       completed_reminder: completedReminder({
         paymentId: D,

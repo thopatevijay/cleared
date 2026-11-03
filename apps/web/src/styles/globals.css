@@ -42,6 +42,11 @@
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
   }
+  /* M4-03 (BL-01 6583549804 item 9): Noto Devanagari's Latin digits are proportional, so amounts in HI
+     take Atkinson's tabular digits first; Devanagari letters still fall back to Noto per glyph. */
+  html:lang(hi) .tabular {
+    font-family: var(--font-atkinson), var(--font-devanagari);
+  }
   .flash {
     animation: flash var(--duration-settle) var(--ease-standard);
   }
