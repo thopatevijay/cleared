@@ -329,7 +329,7 @@ Not applicable: Cleared puts nothing on-chain.
   - **Webhook ack:** the production web on `starter` refuses 1,500 deliveries at 5/s with a server-side p95 of 1 ms (p99 4 ms) and no 5xx.
   - **Local 100× burst:** 2,100 unique signed capture events at 5/s, then 20/s, on a production build. The ack p95 is 15.7 ms. The queue drains 35 s after the burst, with 0 duplicates, 0 dead letters and $0 of AI.
   - **Worker throughput:** the worker at **5** concurrent jobs per queue drains a 5/s burst only with pg-boss burst mode (`burstWhenReadyExceeds`). Without it each consumer slot sleeps the 2 s poll after every job, so a queue drains at ≤ 2.5 jobs/s and the same burst had not drained after 15 min. With it, concurrency 5 has headroom at 5/s on one worker, and 20 is needed only if a job's own run time grows, not for the burst rate.
-  - **Launch load:** 20 concurrent sessions on the read routes. Production is measured after the merge; the local reference p95 is 38.9 ms.
+  - **Launch load:** 20 concurrent sessions on the read routes. Measured on production 2026-11-03 (commit `379d4e4`, 10 min, from India with a network floor p95 of 337 ms): overall p95 949.4 ms, 0 errors in 2,985 requests, and 7 of 13 routes miss the 800 ms p95 target (worst `GET /api/payments` 1,413.5 ms). The local reference p95 is 38.9 ms. See `docs/evidence/load-report.md`.
 - **Main cost driver:** the LLM. Cost per pack is therefore the tracked metric.
 - **Next bottlenecks:**
   - Blob storage in Postgres moves to S3 behind the BlobStore adapter at > 5 GB.
