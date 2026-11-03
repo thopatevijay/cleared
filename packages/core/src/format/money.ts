@@ -13,16 +13,19 @@ const isDecimal = (value: string): value is DecimalString => DECIMAL.test(value)
 
 /**
  * `formatMoney("1234567.50", "INR", "hi-IN")` → "₹12,34,567.50". A value or currency Intl can't format is
- * shown as PayPal sent it ("12.5x USD"), never guessed.
+ * shown as PayPal sent it (callers print the code beside it), never guessed.
  */
 export function formatMoney(
   value: string,
   currency: string,
   locale: string,
   display: MoneyDisplay = "narrowSymbol",
+  /** drop an all-zero fraction ("$420" for "420.00"): tight cells that link to the full amount */
+  compact = false,
 ): string {
-  if (!isDecimal(value)) return `${value} ${currency}`;
-  const digits = isCurrencyCode(currency) ? CURRENCY_EXPONENTS[currency] : undefined;
+  if (!isDecimal(value)) return value;
+  const whole = compact && /^-?\d+(?:\.0+)?$/.test(value);
+  const digits = whole ? 0 : isCurrencyCode(currency) ? CURRENCY_EXPONENTS[currency] : undefined;
   try {
     return new Intl.NumberFormat(locale, {
       style: "currency",
@@ -32,7 +35,7 @@ export function formatMoney(
       ...(digits === undefined ? {} : { minimumFractionDigits: digits, maximumFractionDigits: digits }),
     }).format(value);
   } catch {
-    return `${value} ${currency}`;
+    return value;
   }
 }
 

@@ -15,6 +15,9 @@ import {
 import { formatTime } from "../../lib/format.ts";
 import { useUiLocale } from "./text.ts";
 
+/** The notes' character count ("1,500"): Latin digits in both locales. */
+const COUNT = new Intl.NumberFormat("en-US");
+
 export function NotesField({
   value,
   readOnly,
@@ -63,7 +66,7 @@ export function NotesField({
         data-testid="notes-count"
         data-over={over}
       >
-        {t("count", { n: n.toLocaleString("en-US") })}
+        {t("count", { n: COUNT.format(n) })}
         {over ? <span className="ml-2">{t("over")}</span> : null}
       </p>
       <p aria-live="polite" className="sr-only">

@@ -1,7 +1,7 @@
 // POST /api/demo (M1-05, ADR 0007): an anonymous demo workspace and session, within the per-IP and
 // global caps (checked under an advisory lock in the creating transaction). M3-10: the same transaction
 // assigns the workspace one held judge-pool review hold, when one is available.
-import { compareInstants, DEMO_WORKSPACE_EXPIRES_AT, type Instant } from "@cleared/core";
+import { compareInstants, DEMO_WORKSPACE_EXPIRES_AT, LOCALES, type Instant } from "@cleared/core";
 import { platform, withTransaction, type Tx } from "@cleared/db";
 import { z } from "zod";
 import { checkDemoCaps } from "../caps.ts";
@@ -19,7 +19,7 @@ export const DEMO_ROUTE = "POST /api/demo";
 /** Demo amounts show in USD (the sandbox buyer pays in USD). */
 export const DEMO_BASE_CURRENCY = "USD";
 
-const Body = z.object({ timezone: z.string().max(64).optional() });
+const Body = z.object({ timezone: z.string().max(64).optional(), locale: z.enum(LOCALES).optional() });
 
 export async function postDemo(req: Request, deps: Deps): Promise<Response> {
   const check = checkMutation(req, deps.config.appOrigin);
@@ -37,7 +37,8 @@ export async function postDemo(req: Request, deps: Deps): Promise<Response> {
     if (compareInstants(deps.now().toISOString() as Instant, DEMO_WORKSPACE_EXPIRES_AT) >= 0) {
       return apiError(410, "demo_closed", "The demo has ended.", cid);
     }
-    const locale = localeFrom(req.headers.get("accept-language"));
+    // M4-03: the page the seller started from wins; Accept-Language only when it sent none
+    const locale = parsed.data?.locale ?? localeFrom(req.headers.get("accept-language"));
     const out = await withTransaction(deps.db, (tx) => createDemo(deps, tx, req, { ip, timezone, locale }));
     if (out instanceof Response) return out;
     return json({ workspace: { kind: "demo", expiresAt: DEMO_WORKSPACE_EXPIRES_AT } }, 201, {

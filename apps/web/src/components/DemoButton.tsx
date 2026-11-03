@@ -2,7 +2,7 @@
 // "Try as demo seller" (landing.md): POST /api/demo with an Idempotency-Key (a double tap makes one
 // workspace) and the browser's time zone; 201 → the dashboard. 429 → the cap copy from Retry-After.
 import { Hourglass, Loader2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "../i18n/navigation.ts";
 import { minutesFrom, NETWORK_ERROR, newKey, postJson } from "../lib/api.ts";
@@ -31,6 +31,7 @@ type Outcome =
 
 export function DemoButton() {
   const t = useTranslations("landing");
+  const locale = useLocale();
   const tc = useTranslations("common");
   const router = useRouter();
   const online = useOnline();
@@ -43,7 +44,8 @@ export function DemoButton() {
     setBusy(true);
     setOutcome(null);
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const res = await postJson("/api/demo", { timezone }, key.current);
+    // M4-03: the page language becomes the workspace locale (AI explanations, emails, PDF labels)
+    const res = await postJson("/api/demo", { timezone, locale }, key.current);
     if (res.status === 201) {
       router.push("/payments");
       return;

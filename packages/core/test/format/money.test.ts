@@ -79,9 +79,9 @@ describe("formatMoney", () => {
   });
 
   it("shows anything that is not a decimal as PayPal sent it, never guessed", () => {
-    expect(formatMoney("12.5x", "USD", "en-US")).toBe("12.5x USD");
-    expect(formatMoney("1e3", "USD", "en-US")).toBe("1e3 USD");
-    expect(formatMoney("10.00", "ZZZ1", "en-US")).toBe("10.00 ZZZ1");
+    expect(formatMoney("12.5x", "USD", "en-US")).toBe("12.5x");
+    expect(formatMoney("1e3", "USD", "en-US")).toBe("1e3");
+    expect(formatMoney("10.00", "ZZZ1", "en-US")).toBe("10.00");
   });
 });
 
