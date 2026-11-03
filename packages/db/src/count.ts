@@ -14,11 +14,17 @@ export const RENDER_WORKER_SERVICE_ID = "srv-dbhehn0473hc739paf3g";
 export function onProduction(script: string, args: readonly string[]): string {
   const cmd = ["node", `packages/db/src/${script}`, ...args].join(" ");
   if (!/^[\w ./-]+$/.test(cmd)) throw new Error("refusing a remote command with shell characters");
-  return execFileSync("render", ["ssh", RENDER_WORKER_SERVICE_ID, "--confirm", "-o", "text", "--", cmd], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
-    maxBuffer: 16 * 1024 * 1024,
-  });
+  // the remote stderr is merged into stdout: `render ssh -o text` doesn't carry it, so a remote failure
+  // (M4-06 purge, 2026-11-03) was otherwise silent. The caller's error then holds it in `stdout`.
+  return execFileSync(
+    "render",
+    ["ssh", RENDER_WORKER_SERVICE_ID, "--confirm", "-o", "text", "--", `${cmd} 2>&1`],
+    {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
+      maxBuffer: 16 * 1024 * 1024,
+    },
+  );
 }
 
 /** The last line of `out` that parses as a JSON object (render ssh may print banners around it). */
