@@ -8,7 +8,11 @@ import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { loadFixture, responseText } from "@cleared/adapters/testing/fixture";
 
-const REC = { order: "662632381Y533430H", capture: "2FB27654CR016344S", ws: "41b50aa1-c3ef-42c0-9fa4-61e9a550f78d" };
+const REC = {
+  order: "662632381Y533430H",
+  capture: "2FB27654CR016344S",
+  ws: "41b50aa1-c3ef-42c0-9fa4-61e9a550f78d",
+};
 const BURST_CAPTURE = /^LB([0-9A-F]{15})$/;
 const isWorker = /apps\/worker\/src\/index\.ts$/.test(process.argv[1] ?? "");
 const workspace = process.env["LOAD_REPLAY_WORKSPACE"] ?? "";

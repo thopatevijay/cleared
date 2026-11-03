@@ -8,7 +8,18 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { lastJsonLine, onProduction } from "../../packages/db/src/count.ts";
 import type { LoadtestWorkspace } from "../../packages/db/src/loadtest.ts";
-import { commitSha, flag, NOT_OK, numFlag, overallOf, parseArgs, Recorder, sleep, timedFetch, writeResult } from "./run.ts";
+import {
+  commitSha,
+  flag,
+  NOT_OK,
+  numFlag,
+  overallOf,
+  parseArgs,
+  Recorder,
+  sleep,
+  timedFetch,
+  writeResult,
+} from "./run.ts";
 import { networkFloor, serverTimingsFor } from "./render-logs.ts";
 
 const COOKIE = "__Host-cleared_session";
@@ -42,15 +53,25 @@ const isLocal = (target: string): boolean => ["localhost", "127.0.0.1"].includes
 /** Runs a db CLI (`seed.ts …`) where the target's database is, and returns its last JSON line. */
 function dbCli(target: string, script: string, args: readonly string[]): Record<string, unknown> {
   if (!isLocal(target)) return lastJsonLine(onProduction(script, args));
-  const out = execFileSync("node", [fileURLToPath(new URL(`../../packages/db/src/${script}`, import.meta.url)), ...args], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
-    maxBuffer: 16 * 1024 * 1024,
-  });
+  const out = execFileSync(
+    "node",
+    [fileURLToPath(new URL(`../../packages/db/src/${script}`, import.meta.url)), ...args],
+    {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
+      maxBuffer: 16 * 1024 * 1024,
+    },
+  );
   return lastJsonLine(out);
 }
 
-async function session(target: string, w: LoadtestWorkspace, endAt: number, rec: Recorder, seed: number): Promise<void> {
+async function session(
+  target: string,
+  w: LoadtestWorkspace,
+  endAt: number,
+  rec: Recorder,
+  seed: number,
+): Promise<void> {
   let i = seed;
   await sleep(Math.random() * 3000);
   while (performance.now() < endAt) {
@@ -74,10 +95,15 @@ async function main(argv: readonly string[]): Promise<void> {
   const minutes = numFlag(flags, "minutes", 10);
   const out = flag(flags, "out");
   const notes: string[] = [];
-  const created = dbCli(target, "seed.ts", ["--loadtest", String(sessions)]) as { workspaces?: LoadtestWorkspace[] };
+  const created = dbCli(target, "seed.ts", ["--loadtest", String(sessions)]) as {
+    workspaces?: LoadtestWorkspace[];
+  };
   const ws = created.workspaces ?? [];
-  if (ws.length !== sessions) throw new Error(`seed returned ${String(ws.length)} workspaces, expected ${String(sessions)}`);
-  console.log(`load:launch: ${String(ws.length)} loadtest workspaces seeded; ${String(minutes)} min against ${target}`);
+  if (ws.length !== sessions)
+    throw new Error(`seed returned ${String(ws.length)} workspaces, expected ${String(sessions)}`);
+  console.log(
+    `load:launch: ${String(ws.length)} loadtest workspaces seeded; ${String(minutes)} min against ${target}`,
+  );
   const rec = new Recorder(NOT_OK);
   const startedAt = new Date();
   try {

@@ -32,7 +32,11 @@ function signed(webhookId: string) {
   const rawBody = JSON.stringify({ id: "WH-M4-06-1", event_type: "PAYMENT.CAPTURE.COMPLETED", resource: {} });
   const transmissionId = "11111111-2222-4333-8444-555555555555";
   const transmissionTime = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
-  const sig = sign("sha256", Buffer.from(signedString({ transmissionId, transmissionTime, webhookId, rawBody })), keys.privateKey);
+  const sig = sign(
+    "sha256",
+    Buffer.from(signedString({ transmissionId, transmissionTime, webhookId, rawBody })),
+    keys.privateKey,
+  );
   return {
     rawBody,
     webhookId,
@@ -53,7 +57,9 @@ describe("webhook test signing harness (M4-06)", () => {
 
   it("verifies a harness-signed delivery under NODE_ENV=test, with no network", async () => {
     const verifier = offlineVerifier();
-    expect(installTestSigningKey({ NODE_ENV: "test", [TEST_SIGNING_KEY_ENV]: keyFile }, verifier.cache)).toBe(true);
+    expect(installTestSigningKey({ NODE_ENV: "test", [TEST_SIGNING_KEY_ENV]: keyFile }, verifier.cache)).toBe(
+      true,
+    );
     const r = await verifier.verifyWebhook(signed("WH-LOADTEST-LOCAL"));
     expect(r.ok).toBe(true);
   });

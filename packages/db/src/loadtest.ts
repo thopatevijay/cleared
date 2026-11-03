@@ -40,7 +40,11 @@ const EVIDENCE = [
   { kind: "delivery", text: "Load-test delivery note: logo files uploaded to the shared folder." },
 ] as const;
 
-export async function createLoadtestWorkspaces(db: Db, n: number, now = new Date()): Promise<LoadtestWorkspace[]> {
+export async function createLoadtestWorkspaces(
+  db: Db,
+  n: number,
+  now = new Date(),
+): Promise<LoadtestWorkspace[]> {
   const out: LoadtestWorkspace[] = [];
   for (let i = 0; i < n; i += 1) out.push(await withTransaction(db, (tx) => createOne(db, tx, now)));
   return out;
@@ -71,21 +75,35 @@ async function createOne(db: Db, tx: Tx, now: Date): Promise<LoadtestWorkspace> 
   const seenAt = new Date(now.getTime() - 3_600_000);
   const pay = (status: string, statusReason: string | null, amount: string) =>
     r.payments.insert(
-      { captureId: captureId(), amount, currency: "USD", status, statusReason, source: "webhook", paypalUpdatedAt: seenAt },
+      {
+        captureId: captureId(),
+        amount,
+        currency: "USD",
+        status,
+        statusReason,
+        source: "webhook",
+        paypalUpdatedAt: seenAt,
+      },
       tx,
     );
   const completed = await pay("COMPLETED", null, "120.00");
   const held = await pay("PENDING", "PENDING_REVIEW", "64.00");
   const disputed = await pay("PENDING", "BUYER_COMPLAINT", "120.00");
   for (const payment of [completed, held, disputed]) {
-    await p.resourceOwners.claim({ resourceType: "capture", resourceId: payment.captureId, workspaceId: ws.id }, tx);
+    await p.resourceOwners.claim(
+      { resourceType: "capture", resourceId: payment.captureId, workspaceId: ws.id },
+      tx,
+    );
   }
   const packIds: string[] = [];
   for (const payment of [completed, held, disputed]) {
     packIds.push((await r.proofPacks.insert({ paymentId: payment.id }, tx)).id);
   }
   for (const e of EVIDENCE) {
-    await r.evidenceItems.insert({ packId: packIds[2] ?? "", kind: e.kind, text: e.text, sha256: sha256(e.text) }, tx);
+    await r.evidenceItems.insert(
+      { packId: packIds[2] ?? "", kind: e.kind, text: e.text, sha256: sha256(e.text) },
+      tx,
+    );
   }
   const dispute = await r.disputes.insert(
     {
@@ -102,7 +120,10 @@ async function createOne(db: Db, tx: Tx, now: Date): Promise<LoadtestWorkspace> 
     },
     tx,
   );
-  await p.resourceOwners.claim({ resourceType: "dispute", resourceId: dispute.disputeId, workspaceId: ws.id }, tx);
+  await p.resourceOwners.claim(
+    { resourceType: "dispute", resourceId: dispute.disputeId, workspaceId: ws.id },
+    tx,
+  );
   const holdIds: string[] = [];
   for (const [payment, linked] of [
     [held, null],
@@ -145,7 +166,10 @@ async function createOne(db: Db, tx: Tx, now: Date): Promise<LoadtestWorkspace> 
 const tagged = and(eq(workspaces.createdIpHash, LOADTEST_TAG), eq(workspaces.synthetic, true));
 
 export async function countLoadtestWorkspaces(db: Db): Promise<number> {
-  const rows = await db.select({ n: sql<number>`count(*)::int` }).from(workspaces).where(tagged);
+  const rows = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(workspaces)
+    .where(tagged);
   return rows[0]?.n ?? 0;
 }
 

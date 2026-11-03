@@ -102,7 +102,13 @@ export class Recorder {
     return [...this.hist.keys()].sort().map((label) => {
       const statuses = Object.fromEntries(this.statuses.get(label) ?? []);
       const lat = (this.hist.get(label) ?? new Histogram()).summary();
-      return { label, ...lat, statuses, errors: countErrors(statuses, this.isError), fiveXx: count5xx(statuses) };
+      return {
+        label,
+        ...lat,
+        statuses,
+        errors: countErrors(statuses, this.isError),
+        fiveXx: count5xx(statuses),
+      };
     });
   }
 
@@ -229,7 +235,11 @@ export interface LoadResult {
   readonly endedAt: string;
   readonly commit: string;
   readonly params: Record<string, unknown>;
-  readonly overall: LatencySummary & { readonly requests: number; readonly errorRate: number; readonly fiveXx: number };
+  readonly overall: LatencySummary & {
+    readonly requests: number;
+    readonly errorRate: number;
+    readonly fiveXx: number;
+  };
   readonly routes: readonly RouteResult[];
   /** burst only: queue and table probes (local runs with DATABASE_URL) */
   readonly queue?: QueueResult;
@@ -345,14 +355,20 @@ export function assertResult(r: LoadResult, flags: Map<string, string>): string[
   }
   const err = flags.get("err");
   if (err !== undefined) {
-    check(r.overall.errorRate < Number(err), `error rate ${(r.overall.errorRate * 100).toFixed(3)}% < ${String(Number(err) * 100)}%`);
+    check(
+      r.overall.errorRate < Number(err),
+      `error rate ${(r.overall.errorRate * 100).toFixed(3)}% < ${String(Number(err) * 100)}%`,
+    );
   }
   const ackP95 = flags.get("ack-p95");
   if (ackP95 !== undefined) {
     for (const route of r.routes.filter((x) => !x.label.startsWith("forged") && !isProbe(x.label))) {
       check(route.p95 < Number(ackP95), `${route.label} ack p95 ${String(route.p95)} ms < ${ackP95} ms`);
       // a refused connection is fast too: an ack only counts when the server answered
-      check(route.errors === 0, `${route.label}: every request answered, no 5xx (${JSON.stringify(route.statuses)})`);
+      check(
+        route.errors === 0,
+        `${route.label}: every request answered, no 5xx (${JSON.stringify(route.statuses)})`,
+      );
     }
   }
   const forgedP95 = flags.get("forged-p95") ?? (ackP95 !== undefined ? "200" : undefined);
@@ -367,13 +383,20 @@ export function assertResult(r: LoadResult, flags: Map<string, string>): string[
         `${route.label}: server-side refusal p95 ${String(serverWebhook.p95)} ms < ${forgedP95} ms (client-side ${String(route.p95)} ms incl. network; ${r.server?.source ?? ""})`,
       );
     } else if (forgedP95 !== undefined) {
-      check(route.p95 < Number(forgedP95), `${route.label} p95 ${String(route.p95)} ms < ${forgedP95} ms (client-side)`);
+      check(
+        route.p95 < Number(forgedP95),
+        `${route.label} p95 ${String(route.p95)} ms < ${forgedP95} ms (client-side)`,
+      );
     }
     const accepted = Object.entries(route.statuses).filter(([k]) => !/^4\d\d$/.test(k));
-    check(accepted.length === 0, `${route.label}: every forged delivery refused with a 4xx (${JSON.stringify(route.statuses)})`);
+    check(
+      accepted.length === 0,
+      `${route.label}: every forged delivery refused with a 4xx (${JSON.stringify(route.statuses)})`,
+    );
   }
   const fiveXx = flags.get("5xx");
-  if (fiveXx !== undefined) check(r.overall.fiveXx <= Number(fiveXx), `5xx ${String(r.overall.fiveXx)} ≤ ${fiveXx}`);
+  if (fiveXx !== undefined)
+    check(r.overall.fiveXx <= Number(fiveXx), `5xx ${String(r.overall.fiveXx)} ≤ ${fiveXx}`);
   const q = r.queue;
   const need = (name: string): boolean => flags.has(name);
   if ((need("dup") || need("dlq") || need("drain")) && q === undefined) {
@@ -381,15 +404,29 @@ export function assertResult(r: LoadResult, flags: Map<string, string>): string[
     return fails;
   }
   if (q !== undefined) {
-    if (need("dup")) check(q.duplicates <= Number(flags.get("dup")), `duplicates ${String(q.duplicates)} ≤ ${String(flags.get("dup"))}`);
-    if (need("dlq")) check(q.dlq <= Number(flags.get("dlq")), `DLQ ${String(q.dlq)} ≤ ${String(flags.get("dlq"))}`);
+    if (need("dup"))
+      check(
+        q.duplicates <= Number(flags.get("dup")),
+        `duplicates ${String(q.duplicates)} ≤ ${String(flags.get("dup"))}`,
+      );
+    if (need("dlq"))
+      check(q.dlq <= Number(flags.get("dlq")), `DLQ ${String(q.dlq)} ≤ ${String(flags.get("dlq"))}`);
     if (need("drain")) {
-      check(q.drainSec !== null && q.drainSec <= Number(flags.get("drain")), `drain ${String(q.drainSec)} s ≤ ${String(flags.get("drain"))} s`);
+      check(
+        q.drainSec !== null && q.drainSec <= Number(flags.get("drain")),
+        `drain ${String(q.drainSec)} s ≤ ${String(flags.get("drain"))} s`,
+      );
     }
     if (need("dup")) {
       const sent = r.routes.find((x) => x.label === "signed")?.n ?? 0;
-      check(q.events > 0 && q.events === sent, `every signed event acked 200 (${String(q.events)}/${String(sent)})`);
-      check(q.eventsWithOneRow === q.events, `every event has exactly one webhook_events row (${String(q.eventsWithOneRow)}/${String(q.events)})`);
+      check(
+        q.events > 0 && q.events === sent,
+        `every signed event acked 200 (${String(q.events)}/${String(sent)})`,
+      );
+      check(
+        q.eventsWithOneRow === q.events,
+        `every event has exactly one webhook_events row (${String(q.eventsWithOneRow)}/${String(q.events)})`,
+      );
     }
     check(q.openAiUsd === 0, `OpenAI spend during the run $${q.openAiUsd.toFixed(4)} = $0`);
   }

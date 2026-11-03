@@ -55,7 +55,9 @@ async function main(argv: readonly string[]): Promise<void> {
     if (n !== undefined) {
       const count = Number(n);
       if (!Number.isInteger(count) || count < 1 || count > 200) throw new Error("--loadtest takes 1..200");
-      console.log(JSON.stringify({ tag: LOADTEST_TAG, workspaces: await createLoadtestWorkspaces(db, count) }));
+      console.log(
+        JSON.stringify({ tag: LOADTEST_TAG, workspaces: await createLoadtestWorkspaces(db, count) }),
+      );
     } else if (purge !== undefined) {
       if (purge !== LOADTEST_TAG) throw new Error(`--purge only takes "${LOADTEST_TAG}"`);
       const purged = await purgeLoadtestWorkspaces(db);

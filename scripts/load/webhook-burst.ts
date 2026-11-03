@@ -32,7 +32,10 @@ import { networkFloor, serverTimingsFor } from "./render-logs.ts";
 
 /** apps/web/src/server/test-signing.ts TEST_CERT_URL (duplicated: scripts don't import the web app) */
 const TEST_CERT_URL = "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-M4-06-TEST-HARNESS";
-const DELIVERY = new URL("../../fixtures/paypal/webhooks/deliveries/payment-capture-completed.json", import.meta.url);
+const DELIVERY = new URL(
+  "../../fixtures/paypal/webhooks/deliveries/payment-capture-completed.json",
+  import.meta.url,
+);
 
 interface Delivery {
   readonly headers: Record<string, string>;
@@ -176,7 +179,12 @@ async function pendingJobs(db: Db, since: Date): Promise<number> {
   return r?.n ?? 0;
 }
 
-async function probeQueue(db: Db, since: Date, eventIds: readonly string[], windowS: number): Promise<QueueResult> {
+async function probeQueue(
+  db: Db,
+  since: Date,
+  eventIds: readonly string[],
+  windowS: number,
+): Promise<QueueResult> {
   const samples: { tSec: number; pending: number }[] = [];
   const t0 = performance.now();
   const ids = JSON.stringify(eventIds);
@@ -263,7 +271,9 @@ async function main(argv: readonly string[]): Promise<void> {
   if (replayDir !== undefined) {
     const deliveries = loadDeliveries(replayDir);
     if (deliveries.length === 0) throw new Error(`no deliveries under ${replayDir}`);
-    notes.push(`${String(deliveries.length)} recorded deliveries replayed with their original headers; every 5th request forged`);
+    notes.push(
+      `${String(deliveries.length)} recorded deliveries replayed with their original headers; every 5th request forged`,
+    );
     sched = await runSchedule(phases, async (i, at) => {
       const d = deliveries[i % deliveries.length] as Delivery;
       if (i % 5 === 4) {
@@ -281,14 +291,17 @@ async function main(argv: readonly string[]): Promise<void> {
     const total = phases.reduce((n, p) => n + Math.round((p.rate * p.durationMs) / 1000), 0);
     const tails = Array.from({ length: total }, hex15);
     await claimOrders(signer.workspace, tails);
-    notes.push(`${String(total)} orders claimed for ${signer.workspace} first, as Cleared's own order creation does`);
+    notes.push(
+      `${String(total)} orders claimed for ${signer.workspace} first, as Cleared's own order creation does`,
+    );
     sched = await runSchedule(phases, async (i, at) => {
       const e = signedEvent(signer, base, tails[i] ?? hex15());
       const r = await post("signed", e.body, e.headers, at);
       if (r.status === 200) sentIds.push(e.eventId);
       if (i % 20 === 7) {
         const again = await post("redelivery", e.body, e.headers, performance.now());
-        if (again.status === 200 && !again.body.includes('"duplicate"')) notes.push(`redelivery of ${e.eventId} not deduped`);
+        if (again.status === 200 && !again.body.includes('"duplicate"'))
+          notes.push(`redelivery of ${e.eventId} not deduped`);
       }
     });
   }

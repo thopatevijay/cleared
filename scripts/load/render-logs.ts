@@ -15,7 +15,11 @@ export async function networkFloor(target: string, rec: Recorder, n = 20): Promi
 }
 
 /** Render's request log for remote targets only (its ingestion lags a few seconds). */
-export async function serverTimingsFor(target: string, start: Date, end: Date): Promise<ServerTimings | null> {
+export async function serverTimingsFor(
+  target: string,
+  start: Date,
+  end: Date,
+): Promise<ServerTimings | null> {
   if (["localhost", "127.0.0.1"].includes(new URL(target).hostname)) return null;
   await sleep(15_000);
   return serverTimings(start, end);
@@ -39,7 +43,11 @@ function fetchPage(args: readonly string[]): string {
   let last: unknown;
   for (let attempt = 0; attempt < 5; attempt += 1) {
     try {
-      return execFileSync("render", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 32 * 1024 * 1024 });
+      return execFileSync("render", args, {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        maxBuffer: 32 * 1024 * 1024,
+      });
     } catch (e) {
       last = e;
       pause(3000 * (attempt + 1));
@@ -50,8 +58,21 @@ function fetchPage(args: readonly string[]): string {
 
 function page(service: string, start: string, end: string, text: string): LogLine[] {
   const out = fetchPage([
-    "logs", "-r", service, "--start", start, "--end", end, "--text", text,
-    "--direction", "forward", "--limit", "100", "-o", "json",
+    "logs",
+    "-r",
+    service,
+    "--start",
+    start,
+    "--end",
+    end,
+    "--text",
+    text,
+    "--direction",
+    "forward",
+    "--limit",
+    "100",
+    "-o",
+    "json",
   ]);
   const lines: LogLine[] = [];
   let depth = 0;
@@ -102,7 +123,9 @@ export function serverTimings(start: Date, end: Date, service = RENDER_WEB_SERVI
     }
   } catch (e) {
     const err = e as { stderr?: string; message?: string };
-    console.error(`server timings unavailable: ${(err.stderr ?? err.message ?? String(e)).trim().split("\n")[0] ?? ""}`);
+    console.error(
+      `server timings unavailable: ${(err.stderr ?? err.message ?? String(e)).trim().split("\n")[0] ?? ""}`,
+    );
     return null;
   }
   const byRoute: ServerTimings["byRoute"] = {};

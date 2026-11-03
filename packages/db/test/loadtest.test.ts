@@ -6,7 +6,11 @@ import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { closeDb, createDb } from "../src/client.ts";
-import { countLoadtestWorkspaces, createLoadtestWorkspaces, purgeLoadtestWorkspaces } from "../src/loadtest.ts";
+import {
+  countLoadtestWorkspaces,
+  createLoadtestWorkspaces,
+  purgeLoadtestWorkspaces,
+} from "../src/loadtest.ts";
 import { platform } from "../src/repos/platform/index.ts";
 import { dbAvailable, TEST_DATABASE_URL } from "./db-available.ts";
 
@@ -30,7 +34,9 @@ describe.skipIf(!dbAvailable)("loadtest workspaces (M4-06)", () => {
     const w = ws[0];
     if (w === undefined) throw new Error("no workspace");
     expect(w.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    const session = await platform(db).identity.sessionByTokenHash(createHash("sha256").update(w.token).digest("hex"));
+    const session = await platform(db).identity.sessionByTokenHash(
+      createHash("sha256").update(w.token).digest("hex"),
+    );
     expect(session?.workspaceId).toBe(w.workspaceId);
     expect(w.paymentIds).toHaveLength(3);
     expect(w.packIds).toHaveLength(3);
@@ -48,17 +54,25 @@ describe.skipIf(!dbAvailable)("loadtest workspaces (M4-06)", () => {
   });
 
   it("purges every loadtest row and workspace, and nothing else", async () => {
-    const other = await n(db, sql`select count(*) as n from workspaces where created_ip_hash is distinct from 'loadtest'`);
+    const other = await n(
+      db,
+      sql`select count(*) as n from workspaces where created_ip_hash is distinct from 'loadtest'`,
+    );
     const ws = await createLoadtestWorkspaces(db, 1);
     const id = ws[0]?.workspaceId ?? "";
     const r = await purgeLoadtestWorkspaces(db);
     expect(r.workspaces).toBeGreaterThanOrEqual(1);
     expect(await countLoadtestWorkspaces(db)).toBe(0);
     for (const table of ["payments", "holds", "disputes", "proof_packs", "evidence_items", "sessions"]) {
-      expect(await n(db, sql`select count(*) as n from ${sql.identifier(table)} where workspace_id = ${id}`)).toBe(0);
+      expect(
+        await n(db, sql`select count(*) as n from ${sql.identifier(table)} where workspace_id = ${id}`),
+      ).toBe(0);
     }
-    expect(await n(db, sql`select count(*) as n from workspaces where created_ip_hash is distinct from 'loadtest'`)).toBe(
-      other,
-    );
+    expect(
+      await n(
+        db,
+        sql`select count(*) as n from workspaces where created_ip_hash is distinct from 'loadtest'`,
+      ),
+    ).toBe(other);
   });
 });
