@@ -334,6 +334,113 @@ async function cellsIn(browser: Browser, cookie: Cookie, timezoneId: string) {
   return Object.fromEntries(placed) as Record<string, string>;
 }
 
+/** The focused element: a day number's date, or an event link's href inside the day list. */
+async function focused(p: Page): Promise<{ day: string | null; href: string | null }> {
+  return p.evaluate(() => {
+    const a = document.activeElement as HTMLElement | null;
+    const day =
+      a?.closest<HTMLElement>(".cash-bryntum .b-day-num[data-header-date]")?.dataset["headerDate"] ?? null;
+    const row = a?.closest('[data-testid="day-panel"] [data-testid="cash-row-link"]');
+    return { day, href: row === null || row === undefined ? null : (row.getAttribute("href") ?? null) };
+  });
+}
+
+test("375 month: day names carry count and totals; keyboard alone reaches every event; the date survives 768 px", async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 375, height: 800 });
+  const { cal } = await seeded(page);
+  const days = [...new Set(cal.events.map((e) => e.date))];
+
+  // (a) spec rule 3: each drawn day's accessible name holds its visible count and its totals, spoken
+  for (const [locale, oneEvent, estimated, dollars] of [
+    ["en", "1 event", "estimated", "US dollars"],
+    ["hi", "1 घटना", "अनुमानित", "डॉलर"],
+  ] as const) {
+    await page.goto(`/${locale}/calendar?view=month`);
+    await engineReady(page);
+    const service = cal.events.find((e) => e.kind === "service_completed_due");
+    const num = page.locator(`.cash-bryntum .b-day-num[data-header-date="${service?.date ?? ""}"]`);
+    await expect(num).toHaveAttribute(
+      "aria-label",
+      new RegExp(`${oneEvent}, 80\\.00 [^,]*${dollars}[^,]* ${estimated}$`),
+    );
+    await expect(
+      page.locator(`.cash-bryntum .b-calendar-cell[data-date="${service?.date ?? ""}"]`),
+    ).toHaveAttribute("aria-label", new RegExp(`${oneEvent}, 80\\.00 [^,]*${dollars}[^,]* ${estimated}$`));
+    for (const d of days) {
+      const label =
+        (await page
+          .locator(`.cash-bryntum .b-day-num[data-header-date="${d}"]`)
+          .getAttribute("aria-label")) ?? "";
+      const visible = await page
+        .locator(`.cash-bryntum .b-calendar-cell[data-date="${d}"] .cash-day-n b`)
+        .innerText();
+      expect(label, d).toContain(visible); // the visible count
+      expect(label, d).toContain(d.slice(8).replace(/^0/, "")); // the visible day number
+    }
+  }
+  await expect(
+    page.locator(
+      `.cash-bryntum .b-day-num[data-header-date="${cal.events.find((e) => e.amount.value === "64.00")?.date ?? ""}"]`,
+    ),
+  ).toHaveAttribute("aria-label", /2 घटनाएँ, 15\.50 .* अनुमानित, 64\.00 .* अनुमानित$/);
+
+  // (b) keyboard alone at 375, as a user would: Tab to a day with events, Enter (or Space) opens its list
+  // (announced: the day panel is aria-live), keep tabbing past the grid into that list and through it, then
+  // on (Tab wraps to the top) to the next day; every event in the range is reached
+  await page.goto("/en/calendar?view=month");
+  await engineReady(page);
+  const want = new Set(
+    cal.events.map((e) => `/en/${e.ref.type === "hold" ? "holds" : "disputes"}/${e.ref.id}`),
+  );
+  const reached = new Set<string>();
+  const opened = new Set<string>();
+  let open: "none" | "opened" | "inList" = "none";
+  await page.getByTestId("view-switch").getByRole("button", { name: "Month" }).focus();
+  for (let i = 0; i < 1500 && reached.size < want.size; i++) {
+    await page.keyboard.press("Tab");
+    const f = await focused(page);
+    if (f.href !== null) {
+      reached.add(f.href);
+      open = "inList";
+    } else if (open === "inList") open = "none"; // left the day's list
+    if (open === "none" && f.day !== null && days.includes(f.day) && !opened.has(f.day)) {
+      open = "opened";
+      opened.add(f.day);
+      await page.keyboard.press(opened.size % 2 === 0 ? " " : "Enter");
+      await expect(page.getByTestId("day-panel").locator("time")).toHaveAttribute("datetime", f.day);
+      await expect(page.getByTestId("day-panel")).toHaveAttribute("aria-live", "polite");
+    }
+  }
+  expect([...reached].sort()).toEqual([...want].sort());
+
+  // (c) the selected date and the shown month survive crossing 768 px (1440 → 375 → 1440)
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/en/calendar?view=month");
+  await engineReady(page);
+  await page.getByRole("button", { name: "Next month" }).click();
+  const title = await page.getByTestId("month-title").innerText();
+  const pick = page.locator(".cash-bryntum .b-calendar-cell:not(.b-other-month)[data-date$='-15']");
+  const date = (await pick.getAttribute("data-date")) ?? "";
+  await pick.locator(".b-day-num").click();
+  const kept = async () => {
+    await expect(page.getByTestId("month-title")).toHaveText(title);
+    await expect(page.locator(`.cash-bryntum .b-calendar-cell[data-date="${date}"]`)).toHaveClass(
+      /cash-selected/,
+    );
+    await expect(page.getByTestId("day-panel")).toBeVisible();
+  };
+  await kept();
+  await page.setViewportSize({ width: 375, height: 800 });
+  await expect(page.locator(".cash-bryntum.cash-compact")).toBeVisible();
+  await kept();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.locator(".cash-bryntum.cash-compact")).toHaveCount(0);
+  await kept();
+});
+
 test("all-day days hold in browser zones behind and ahead of the workspace zone", async ({
   page,
   browser,

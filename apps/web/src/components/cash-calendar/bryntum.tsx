@@ -20,6 +20,7 @@ import "@bryntum/calendar/fontawesome/css/solid.css";
 import "./bryntum-theme.css";
 import { CASH_CALENDAR_ENGINE } from "../../../config/cash-calendar.ts";
 import { addDays } from "@cleared/core";
+import { formatAmount } from "../../lib/format.ts";
 import { useCashText } from "./text.ts";
 import type { CashCalendarProps } from "./types.ts";
 
@@ -46,8 +47,9 @@ function useBryntumLocale(locale: string): boolean {
   return ready;
 }
 
-/** A DomConfig's class names, given as a string or as a `{ name: true }` object. */
-function classOf(c: DomConfig): string {
+/** A DomConfig's class names, given as a string or as a `{ name: true }` object (Bryntum's child lists hold nulls). */
+function classOf(c: DomConfig | null | undefined): string {
+  if (c === null || c === undefined || typeof c !== "object") return "";
   const cls = (c as { className?: unknown }).className;
   if (typeof cls === "string") return cls;
   if (cls !== null && typeof cls === "object")
@@ -201,6 +203,33 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
   }, [p.events]);
 
   // 375 px cells: "2 · €15.50 · $64.00" (count, then each currency's total, never summed across currencies)
+  // spec rule 3: a day's accessible name holds what the cell shows (count and totals), spoken
+  const nameByDay = useMemo(() => {
+    const by = new Map<string, string>();
+    for (const [date, n] of countByDay) {
+      const totals = p.totals
+        .filter((x) => x.date === date)
+        .flatMap((x) => [
+          ...(x.estimated === "0"
+            ? []
+            : [
+                t("dayEstimated", {
+                  amount: formatAmount(p.locale, { value: x.estimated, currency: x.currency }).spoken,
+                }),
+              ]),
+          ...(x.released === "0"
+            ? []
+            : [
+                t("dayReleased", {
+                  amount: formatAmount(p.locale, { value: x.released, currency: x.currency }).spoken,
+                }),
+              ]),
+        ]);
+      by.set(date, [text.dayLong(date), t("dayEvents", { count: n }), ...totals].join(", "));
+    }
+    return by;
+  }, [countByDay, p.totals, p.locale]);
+
   const shortByDay = useMemo(() => {
     const by = new Map<string, string[]>();
     for (const x of p.totals) {
@@ -250,6 +279,15 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
             ...short.map((line) => ({ tag: "span", text: line })),
           ],
         });
+      const spoken = nameByDay.get(cell.key);
+      const dayNum = (Array.isArray(into) ? (into as DomConfig[]) : []).find(
+        (c) => classOf(c).includes("b-day-name"), // the day-number link (Bryntum adds `b-day-num` after the renderer)
+      );
+      if (spoken !== undefined) {
+        // the focusable day number (Bryntum's link) and the grid cell both carry it
+        if (dayNum !== undefined) (dayNum as Record<string, unknown>)["aria-label"] = spoken;
+        (dom as Record<string, unknown>)["aria-label"] = spoken;
+      }
       if (p.selectedDay === cell.key)
         (dom as { className?: Record<string, boolean> }).className = {
           ...((dom as { className?: Record<string, boolean> }).className ?? {}),
@@ -268,7 +306,7 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
       eventRenderer,
       dayCellRenderer,
     };
-  }, [byId, totalsByDay, countByDay, kindsByDay, shortByDay, p.selectedDay, reduced, compact]);
+  }, [byId, totalsByDay, countByDay, kindsByDay, shortByDay, nameByDay, p.selectedDay, reduced, compact]);
 
   useEffect(() => {
     if (ready) p.onEngineReady?.();
@@ -276,6 +314,13 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
 
   const onKeyDownCapture = (ev: KeyboardEvent<HTMLDivElement>) => {
     if (ev.key !== "Enter" && ev.key !== " ") return;
+    const day = (ev.target as HTMLElement).closest<HTMLElement>(".b-day-num[data-header-date]");
+    if (day !== null) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      p.onDaySelect?.(day.dataset["headerDate"] ?? "");
+      return;
+    }
     const el = (ev.target as HTMLElement).closest<HTMLElement>("[data-event-id]");
     const e = el === null ? undefined : byId.get(el.dataset["eventId"] ?? "");
     if (e === undefined) return;

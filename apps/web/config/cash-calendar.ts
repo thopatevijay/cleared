@@ -39,7 +39,7 @@ export const CASH_CALENDAR_ENGINE = {
    * Bryntum's written permission to show the trial on the public demo until 2026-12-15 (P-38).
    * The trial licence (v39 §4.2) covers internal evaluation only, so this must be set before the PR merges.
    */
-  permission: null as EnginePermission | null, // P-38: owner to link the written answer
+  permission: null as EnginePermission | null, // P-38 deferred to M5-SUBMIT by owner decision 2026-11-03
   /** the trial build shows a watermark; the licence requires it to stay */
   watermark: true,
 } as const;
