@@ -41,3 +41,6 @@ Sentry.init({
     return scrub(rest) as typeof event;
   },
 });
+
+// M4-04: instrumentation-client.ts and app/web-vitals.tsx reach Sentry through this lazily loaded module.
+export { Sentry };

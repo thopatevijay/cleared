@@ -38,6 +38,11 @@
   summary {
     scroll-margin-top: 64px;
   }
+  /* M4-04 (CLS): the footer starts below the fold, so the data replacing a short skeleton never pushes it
+     down inside the viewport (measured 0.17 on the dashboard, pack, hold and dispute pages). */
+  main#main {
+    min-height: calc(100svh - 3.5rem);
+  }
   /* M4-04: below xl the dispute review's due band sticks under the header too (56 px + one or two lines). */
   @media (width < 80rem) {
     :root:has([data-sticky-band]) :is(a, button, input, select, textarea, summary) {
