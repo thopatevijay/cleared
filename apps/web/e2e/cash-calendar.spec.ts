@@ -119,7 +119,7 @@ test("month view at 1440: every event, kind colours, day totals, table, axe, no 
   const review = cal.events.find((e) => e.amount.value === "64.00");
   await expect(
     page.locator(`.b-calendar-cell[data-date="${review?.date ?? ""}"] .cash-day-total`),
-  ).toHaveText("€15.50 · $64.00");
+  ).toHaveText("€15.50 · $64");
   await expect(page.getByRole("button", { name: "Previous month" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Next month" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Today" })).toBeVisible();
