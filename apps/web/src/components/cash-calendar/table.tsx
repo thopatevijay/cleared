@@ -21,7 +21,7 @@ function Row({ e, locale }: { e: CashEvent; locale: string }) {
       data-testid="cash-table-row"
       data-kind={e.kind}
     >
-      <td className="px-2 py-2 sm:px-3">
+      <td className="px-2 py-2 whitespace-nowrap sm:px-3">
         <time dateTime={e.date}>{text.day(e.date)}</time>
       </td>
       <td className="px-2 py-2 sm:px-3">
@@ -35,7 +35,7 @@ function Row({ e, locale }: { e: CashEvent; locale: string }) {
         </Link>
       </td>
       <td className="tabular px-2 py-2 text-right sm:px-3">{text.money(e.amount)}</td>
-      <td className="px-2 py-2 sm:px-3">
+      <td className="py-2 pr-4 pl-2 sm:px-3">
         {e.source === null ? (
           <span className="text-text-muted">{t("fromPayPal")}</span>
         ) : (

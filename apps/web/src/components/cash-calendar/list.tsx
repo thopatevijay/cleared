@@ -119,7 +119,7 @@ export function CashList(p: CashCalendarProps & { rangeEnd: string }) {
   const shown = p.events.filter((e) => e.date >= p.initialDate && e.date <= end);
   const groups = groupByDay(shown);
   return (
-    <div className="flex flex-col gap-4" data-testid="cash-list">
+    <div className="flex max-w-[760px] flex-col gap-4" data-testid="cash-list">
       <p className="text-sm text-text-muted">{t("listWindow", { days })}</p>
       {groups.length === 0 ? <p data-testid="cash-list-empty">{t("listEmpty", { days })}</p> : null}
       {groups.map(([date, evs]) => (
