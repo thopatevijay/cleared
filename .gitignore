@@ -27,6 +27,8 @@ dist/
 build/
 out/
 coverage/
+# Bryntum's prebuilt engine, copied from node_modules at dev/build time (apps/web/scripts/vendor-bryntum.ts)
+apps/web/public/vendor/
 .turbo/
 *.tsbuildinfo
 playwright-report/

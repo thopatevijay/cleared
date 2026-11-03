@@ -5,6 +5,7 @@
 import { Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
+import { loadEngine } from "./engine.ts";
 import { CashList } from "./list.tsx";
 import type { CashCalendarProps } from "./types.ts";
 
@@ -38,8 +39,12 @@ function EngineFailed() {
   );
 }
 
+// The engine file first (from our origin, not bundled: BL-01 6595246110), then the wrapper that uses it.
 const BryntumCashCalendar = dynamic<CashCalendarProps>(
-  () => import("./bryntum.tsx").catch(() => ({ default: EngineFailed })),
+  () =>
+    loadEngine()
+      .then(() => import("./bryntum.tsx"))
+      .catch(() => ({ default: EngineFailed })),
   { ssr: false, loading: EngineLoading },
 );
 
