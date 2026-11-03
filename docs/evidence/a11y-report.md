@@ -44,7 +44,7 @@ the number of serious + critical violations.
 | Dispute review | 0 | n/a | 0 | 0 | 0 | n/a | 0 | 0 |
 | Scenario | 0 | n/a | 0 | 0 | 0 | n/a | 0 | 0 |
 | Cash calendar | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| Audit log | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Audit log | 0 | 0 (new seller: its one "Demo workspace created" row) | 0 | 0 | 0 | 0 | 0 | 0 |
 | Notifications | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | Settings (footer time-zone control) | 0 (open) | n/a | 0 (saving) | 0 (save failed) | 0 | n/a | 0 | 0 |
 | Client acknowledgement (no session) | 0 | n/a | 0 (confirm pending) | 0 (unusable link) | 0 | n/a | 0 | 0 |
@@ -54,6 +54,7 @@ States a screen does not have are not invented (`NOT_APPLICABLE` in the spec):
 - hold detail, dispute review, scenario, empty: the page always has its record; an unknown id is the
   error state
 - settings, empty: the control always shows the workspace's zone
+- audit log, empty: creating a workspace writes its first row, so a log with zero rows is never shown; the "empty" cell is a new seller's one-row log
 - landing, empty: a static page
 - sign-in link expired: it is itself an error page with no request after it loads
 - client acknowledgement, empty: a link always carries its scope; an unusable link is the error state
