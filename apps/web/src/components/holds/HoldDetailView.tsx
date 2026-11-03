@@ -26,7 +26,7 @@ import { RuleSource } from "./RuleSource.tsx";
 import { RouteAdvice } from "../tracking/RouteAdvice.tsx";
 import { TrackingCard } from "../tracking/TrackingCard.tsx";
 import { GuidedCompleted } from "./GuidedCompleted.tsx";
-import { DeclarationControl } from "./DeclarationControl.tsx";
+import { DeclarationControl, ShipFirst } from "./DeclarationControl.tsx";
 import { ruleOf, useReasonText } from "./text.ts";
 
 const fetchHold = async (path: string): Promise<HoldDetail> => HoldDetailSchema.parse(await getJson(path));
@@ -197,6 +197,9 @@ function GoodsAction({ d, onChanged }: { d: HoldDetail; onChanged: () => void })
   return (
     <>
       {tracking.state === "filed" || !claims ? null : <TrackingHint />}
+      {claims || tracking.state === "filed" || ruleOf(d.hold.ruleId)?.advice?.kind !== "dont_ship" ? null : (
+        <ShipFirst />
+      )}
       <RouteAdvice s={tracking} releaseClaims={claims} />
       <TrackingCard hold={d.hold} onChanged={onChanged} />
     </>
@@ -217,7 +220,7 @@ function ActionSlot({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) 
         <GuidedCompleted d={d} onChanged={onChanged} />
       ) : (
         // answering is optional: until the seller does, nothing is needed from them
-        <p>{t("nothingToDo")}</p>
+        <p className={h.declaration?.declarable === true ? "mt-2" : undefined}>{t("nothingToDo")}</p>
       )}
     </>
   );

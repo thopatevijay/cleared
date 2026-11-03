@@ -164,3 +164,112 @@ test("service: declare → guided Completed without the 7-day claim; confirming 
   await expect(page.getByTestId("declared-line")).toHaveText("आपने इसे सामान बताया है");
   await capture(page, "hi-declared-goods", REVIEW, [360, 1440]);
 });
+
+test("declaration states: checked, nothing chosen, saving, save failed, refused, offline, change/cancel, dashboard, focus", async ({
+  page,
+  context,
+}) => {
+  test.setTimeout(900_000);
+  const W = [375, 768, 1440] as const;
+  const ws = await demoWorkspace(page);
+  const s = await reviewHold(ws);
+  await page.goto(`/en/holds/${s.holdId}`);
+  const decl = page.getByTestId("declaration");
+  await expect(decl).toHaveAttribute("data-kind", "none");
+
+  // nothing chosen
+  await decl.getByTestId("declare-save").click();
+  await expect(decl.getByTestId("declare-error")).toHaveText("Choose goods or a service.");
+  await capture(page, "en-declare-nothing-chosen", REVIEW, W);
+
+  // checked card + keyboard focus on the radio
+  await decl.getByTestId("declare-goods").focus();
+  await page.keyboard.press("Space");
+  await expect(decl.getByTestId("declare-goods")).toBeChecked();
+  await page.screenshot({ path: `${REVIEW}en-declare-focus-radio-1280-light.png` });
+  await capture(page, "en-declare-checked", REVIEW, W);
+
+  // saving (held response), then save failed (no answer), then refused (409)
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((r) => {
+    release = r;
+  });
+  await page.route("**/api/holds/*/declaration", async (route) => {
+    await held;
+    await route.abort("failed");
+  });
+  await decl.getByTestId("declare-save").click();
+  await expect(decl.getByTestId("declare-save")).toHaveText("Saving…");
+  await expect(decl.getByTestId("declare-goods")).toBeDisabled();
+  await capture(page, "en-declare-saving", REVIEW, W);
+  release();
+  await expect(decl.getByTestId("declare-error")).toContainText(
+    "Couldn't save your answer. Nothing changed.",
+  );
+  await expect(decl.getByTestId("declare-error")).toContainText("Reference");
+  await axeClean(page, "declare-save-failed");
+  await capture(page, "en-declare-save-failed", REVIEW, W);
+  await page.unroute("**/api/holds/*/declaration");
+  await page.route("**/api/holds/*/declaration", (route) =>
+    route.fulfill({
+      status: 409,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: {
+          code: "declaration_locked",
+          message: "locked",
+          details: { refusal: "DECLARATION_LOCKED" },
+          correlationId: "e2e-ref",
+        },
+      }),
+    }),
+  );
+  await decl.getByTestId("declare-save").click();
+  await expect(decl.getByTestId("declare-error")).toContainText("Not saved: DECLARATION_LOCKED");
+  await capture(page, "en-declare-refused", REVIEW, W);
+  await page.unroute("**/api/holds/*/declaration");
+
+  // offline
+  await context.setOffline(true);
+  await expect(decl.getByTestId("declare-save")).toBeDisabled();
+  await expect(decl).toContainText("You're offline. Reconnect to save this.");
+  await capture(page, "en-declare-offline", REVIEW, W);
+  await context.setOffline(false);
+  await expect(decl.getByTestId("declare-save")).toBeEnabled();
+
+  // saved, then Change reopens with Cancel; focus visible on Change
+  await decl.getByTestId("declare-save").click();
+  await expect(decl).toHaveAttribute("data-kind", "goods");
+  await expect(page.getByTestId("ship-first")).toContainText("PayPal asks you not to ship");
+  await decl.getByTestId("declaration-change").focus();
+  await page.screenshot({ path: `${REVIEW}en-declare-focus-change-1280-light.png` });
+  await decl.getByTestId("declaration-change").click();
+  await expect(decl.getByTestId("declaration-form")).toBeVisible();
+  await expect(decl.getByRole("button", { name: "Cancel" })).toBeVisible();
+  await axeClean(page, "declare-change");
+  await capture(page, "en-declare-change", REVIEW, W);
+  await decl.getByRole("button", { name: "Cancel" }).click();
+  await expect(decl.getByTestId("declaration-form")).toHaveCount(0);
+
+  // the dashboard row
+  await page.goto("/en/payments");
+  const row = page.locator(`[data-testid="payment-row"][data-hold="${s.holdId}"]`);
+  await expect(row.getByTestId("declared-line")).toHaveText("You marked this as goods");
+  await axeClean(page, "dashboard-declared");
+  await capture(page, "en-dashboard-declared", REVIEW, W);
+
+  // HI: the declared-service guide and the locked line after Completed (after the toast is gone)
+  const t = await reviewHold(ws);
+  await page.goto(`/hi/holds/${t.holdId}`);
+  await page.getByTestId("declare-service").check();
+  await page.getByTestId("declare-save").click();
+  await expect(page.getByTestId("declaration")).toHaveAttribute("data-kind", "service");
+  await capture(page, "hi-declared-service", REVIEW, [360, 1440]);
+  await page.getByTestId("completed-submit").click();
+  await expect(page.getByTestId("declaration-locked")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("completed-toast")).toHaveCount(0, { timeout: 15_000 });
+  await capture(page, "hi-declared-service-done", REVIEW, [360, 1440]);
+  await page.goto(`/en/holds/${t.holdId}`);
+  await expect(page.getByTestId("declaration-locked")).toHaveText("Locked: you marked it Completed.");
+  await capture(page, "en-declared-service-done-notoast", REVIEW, W);
+});

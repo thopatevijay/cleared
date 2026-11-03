@@ -5,7 +5,7 @@
 // the guided action below it. On a hold PayPal didn't type goods/service, the estimate stays PayPal's: the
 // note says so. Changeable until an action is approved; then locked (server-checked).
 import { DECLARED_KINDS, type DeclaredKind, type HoldDetail } from "@cleared/core";
-import { CircleX, Loader2, Lock, UserRound } from "lucide-react";
+import { CircleX, Info, Loader2, Lock, UserRound } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useRef, useState } from "react";
 import { NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
@@ -157,6 +157,21 @@ function Form({
   );
 }
 
+/**
+ * On a declared-goods hold whose PayPal rule says "don't ship yet" (a payment review): when tracking fits in.
+ */
+export function ShipFirst() {
+  const t = useTranslations("holds.declaration");
+  return (
+    <p className="flex items-start gap-2 text-sm" data-testid="ship-first">
+      <span className="flex h-[1lh] shrink-0 items-center">
+        <Info aria-hidden="true" size={16} strokeWidth={1.75} className="text-text-muted" />
+      </span>
+      <span>{t("shipFirst")}</span>
+    </p>
+  );
+}
+
 /** The seller's declaration in the hold detail's action slot (only where PayPal didn't type the hold). */
 export function DeclarationControl({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) {
   const t = useTranslations("holds.declaration");
@@ -192,7 +207,7 @@ export function DeclarationControl({ d, onChanged }: { d: HoldDetail; onChanged:
               <span className="flex h-[1lh] shrink-0 items-center">
                 <Lock aria-hidden="true" size={14} strokeWidth={1.75} />
               </span>
-              <span>{t("locked")}</span>
+              <span>{d.hold.completed?.confirmedAt == null ? t("locked") : t("lockedCompleted")}</span>
             </p>
           ) : showForm ? null : (
             <button

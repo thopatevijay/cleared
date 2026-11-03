@@ -396,6 +396,8 @@
         "service": "Saved: you marked this as a service."
       },
       "locked": "Locked: you approved an action on this payment.",
+      "lockedCompleted": "Locked: you marked it Completed.",
+      "shipFirst": "PayPal asks you not to ship until it clears this review. Once PayPal clears it and you ship, file the tracking here.",
       "offline": "You're offline. Reconnect to save this.",
       "reference": "Reference",
       "error": {
