@@ -3,6 +3,7 @@
 // list mirrors PayPal and never rejects a value PayPal adds later.
 import { z } from "zod";
 import { TrackingSummarySchema } from "../carriers/summary.ts";
+import { DeclarationSchema, GUIDED_ACTIONS } from "../holds/declaration.ts";
 import { SYNC_SOURCES } from "../payments/payment.ts";
 import { VERDICTS } from "../proof/pack.ts";
 import { PACK_VIEW_STATES } from "../proof/pack-view.ts";
@@ -63,6 +64,10 @@ export const PaymentHoldSchema = z.object({
   estimateUpperBoundAt: z.iso.datetime({ offset: true }).nullable(),
   /** M3-03: goods holds only, route advice + where the tracking action stands */
   tracking: TrackingSummarySchema.nullable().optional(),
+  /** BL-01 6570499264: the seller's goods/service declaration (theirs, never PayPal's) */
+  declaration: DeclarationSchema.optional(),
+  /** the guided action: PayPal's type picks it, else the declaration; null = nothing to do */
+  guidedAction: z.enum(GUIDED_ACTIONS).nullable().optional(),
 });
 export type PaymentHold = z.infer<typeof PaymentHoldSchema>;
 

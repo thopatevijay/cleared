@@ -131,7 +131,20 @@ function serveReadBack(s: Scene): void {
 }
 
 /** A workspace owning a capture with a service hold (synthetic: the sandbox can't derive one), and an approved record. */
-async function scene(owned = true): Promise<Scene & { payload: JsonValue }> {
+/** BL-01 6570499264: a PENDING_REVIEW hold the seller declared a service (PayPal's review rule). */
+const DECLARED_REVIEW = {
+  type: "review",
+  reason: "PENDING_REVIEW",
+  estimateSource: "payment_review",
+  sellerDeclaredKind: "service",
+  sellerDeclaredBy: "synthetic-seller",
+  sellerDeclaredAt: new Date("2026-10-29T05:00:00.000Z"),
+} as const;
+
+async function scene(
+  owned = true,
+  holdOver: Partial<typeof DECLARED_REVIEW> = {},
+): Promise<Scene & { payload: JsonValue }> {
   const w = await platform(db).workspaces.create({
     kind: "demo",
     locale: "en",
@@ -153,7 +166,7 @@ async function scene(owned = true): Promise<Scene & { payload: JsonValue }> {
     amount: "120.00",
     currency: "USD",
     status: "PENDING",
-    statusReason: "OTHER",
+    statusReason: holdOver.reason ?? "OTHER",
     source: "webhook",
   });
   const hold = await repos.holds.insert({
@@ -163,6 +176,7 @@ async function scene(owned = true): Promise<Scene & { payload: JsonValue }> {
     openedAt: new Date("2026-10-29T04:57:00.000Z"),
     estimateSource: "reason_OTHER",
     estimatedReleaseAt: ESTIMATE,
+    ...holdOver,
   });
   const payload: JsonValue = { capture_id: captureId, status: "COMPLETED" };
   const actionId = await approvedAction(
@@ -248,6 +262,23 @@ describe.skipIf(!dbAvailable)("record_service_completed (M3-04)", () => {
       "action.succeeded",
     ]);
     await expectHoldUntouched(s);
+  });
+
+  it("on a PENDING_REVIEW hold the seller declared a service: the recorded 200 lands and PayPal's review estimate stays", async () => {
+    const s = await scene(true, DECLARED_REVIEW);
+    serveBatch(s);
+    serveReadBack(s);
+    expect(await execute(deps(), s)).toBe("succeeded");
+    expect(writes(calls).map((c) => `${c.method} ${c.path}`)).toEqual(["POST /v1/shipping/trackers-batch"]);
+    expect((await executionForAction(db, s.ws, s.actionId))?.paypalDebugId).toBe("f529566754294");
+    expect(await forWorkspace(db, WorkspaceIdSchema.parse(s.ws)).holds.get(s.holdId)).toMatchObject({
+      state: "open",
+      type: "review",
+      estimateSource: "payment_review",
+      estimatedReleaseAt: ESTIMATE,
+      completedConfirmedAt: null,
+      sellerDeclaredKind: "service",
+    });
   });
 
   it("a payload changed after approval is refused PAYLOAD_CHANGED with no write", async () => {

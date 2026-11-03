@@ -1,8 +1,12 @@
 // M3-04: the guided Completed step's summary on each service hold: the seller's confirmation, the PayPal
 // Activity link on the host for PAYPAL_ENV, and where the secondary `record_service_completed` action
-// stands (the newest one on the capture). Only service holds get one.
+// stands (the newest one on the capture). Only holds whose guided action is Completed get one: a hold PayPal
+// typed service, or one the seller declared a service (BL-01 6570499264).
 import {
   completedRecordState,
+  declaredKindOf,
+  guidedAction,
+  holdTypeOf,
   PAYPAL_ENVS,
   paypalActivityUrl,
   type CompletedSummary,
@@ -15,7 +19,7 @@ import { z } from "zod";
 const ReadBackSchema = z.object({ trackerStatus: z.string() });
 
 export interface ServiceHoldRef {
-  readonly hold: Pick<HoldRow, "id" | "type" | "completedConfirmedAt">;
+  readonly hold: Pick<HoldRow, "id" | "type" | "completedConfirmedAt" | "sellerDeclaredKind">;
   readonly payment: { readonly captureId: string };
 }
 
@@ -30,7 +34,9 @@ export async function completedSummaries(
   ws: string,
   refs: readonly ServiceHoldRef[],
 ): Promise<Map<string, CompletedSummary>> {
-  const service = refs.filter((r) => r.hold.type === "service");
+  const service = refs.filter(
+    (r) => guidedAction(holdTypeOf(r.hold.type), declaredKindOf(r.hold.sellerDeclaredKind)) === "completed",
+  );
   if (service.length === 0) return new Map();
   const env = currentPayPalEnv();
   const actions = await trackingReads(db, ws).latestActionsByCapture(

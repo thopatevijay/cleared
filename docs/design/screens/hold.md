@@ -15,6 +15,7 @@ Explain, in the seller's language, why PayPal is holding a payment, what PayPal 
 4. **Action slot** (one primary action at most):
    - goods (M3-03): **Route advice**: the chosen carrier and its tier badge (`approved`: `completed` colours, `truck` icon, "Faster release expected"; `accepted`: `held` colours, `triangle-alert`, "PayPal accepts it; it may not speed up the release"; `other`: neutral, `circle-help`, "Unconfirmed carrier"), the approved alternatives for the country, and the caveat "Sandbox US account list; live and other-country accounts may differ" + Source. Then **"File tracking"** → `ApprovalCard` (`add_tracking`: carrier code, tracking number, `notify_payer: false`).
    - service (M3-04): the **guided Completed step** (primary) and, below it, the subordinate "Also record it with PayPal's API" card. Shown on `service` holds that are not released. See [M3-04 guided Completed step](#m3-04-guided-completed-step).
+   - declaration (BL-01 6570499264): on holds PayPal didn't type goods/service, the "What did you sell?" block comes first; the seller's answer then picks the goods or service content above. See [Seller's declaration](#sellers-declaration-what-did-you-sell-bl-01-6570499264-adr-0017-addendum-3).
    - none: "Nothing to do. PayPal will update this payment; we'll tell you when it changes."
 5. **Timeline:** opened → explained → action proposed → approved → filed → released (or still held), mirroring the hold state machine. "Released" appears only when the capture reads `COMPLETED`.
 
@@ -59,6 +60,39 @@ Under the list: a **quote block** (Citation style: `surface-sunken`, 3 px `borde
 - **360–375 px:** single column. Step text wraps freely, and the HI layout never relies on single-line text. The "Open PayPal Activity" link, the date input, the confirm button, the API disclosure button, Review and Approve are all full width and at least 44 px high (primary 48 px). The ID box wraps inside itself, and the Copy button sits below it. There is no horizontal page scroll in EN or HI. The quote blocks wrap, and long URLs in Source panels break with `overflow-wrap: anywhere`.
 - **768 px:** within the 720 px column. The ID box and Copy button share one row. The date input (auto width, min 200 px) and the confirm button share one row if they fit, and otherwise stack. The card buttons size to their content.
 - **1440 px:** the same 720 px column in the detail pane. Nothing new beside it.
+
+### Seller's declaration: "What did you sell?" (BL-01 6570499264, ADR 0017 addendum 3)
+PayPal never says whether a held payment was goods or a service. The seller says it, and the answer only picks the action-slot content (goods → route advice + "File tracking"; service → the guided Completed step). It is **the seller's answer, never PayPal's classification**, and it never changes the hold's reason, badge or estimate.
+
+**Where.** First block of the action slot (4), on unreleased holds PayPal didn't type `goods`/`service` (payment review, dispute, other). Not on samples or released holds. When PayPal already typed the hold, the block is absent.
+
+**Anatomy** (card: `surface`, 1 px `border`, `radius-lg`, 16 px padding, 12 px gaps):
+- h3 "What did you sell?" (`text-lg`, semibold; `tabindex="-1"`, focus target after saving).
+- **Undeclared:** a `<fieldset>` with `<legend>` "This payment was for" and two radio cards side by side from 768 px, stacked below: each a `<label>` ≥ 48 px high, 1 px `border-strong`, `radius-md`; the checked card gets a 2 px `accent` border. Title (`font-medium`) "Goods" / "A service", hint (`text-sm`, `text-muted`) "Items you ship" / "Work you deliver, no parcel". Under it the hint (`text-sm`, `text-muted`, linked to the fieldset by `aria-describedby`): "PayPal doesn't say. Your answer only picks what you can do below. It doesn't change why PayPal is holding this payment or its estimate." Then the **primary** "Save" (48 px; full width ≤ 375 px). Answering is optional: below the card the "none" line ("Nothing to do. PayPal will update this payment…") still shows until the seller answers.
+- **Declared:** the line "You marked this as goods" / "You marked this as a service" (`user-round` icon, `font-medium`), then the note (`text-sm`, `text-muted`): "This is your answer, not PayPal's. The estimate above is still PayPal's for this hold; filing tracking doesn't change it." (service: "…; marking it Completed doesn't change it."). Then a text button "Change" (44 px, `accent`, underlined; accessible name "Change what you sold") that reopens the radios with "Cancel".
+- **Locked** (an action was approved, or Completed confirmed): no Change; a `lock` icon + "Locked: you approved an action on this payment." (`text-sm`, `text-muted`). After the Completed confirmation it reads "Locked: you marked it Completed."
+- **Ship first** (declared goods on a hold whose rule carries PayPal's "Don't ship until we tell you it's ok", i.e. a payment review): above route advice, an `info` icon + `text-sm` line "PayPal asks you not to ship until it clears this review. Once PayPal clears it and you ship, file the tracking here." It reconciles PayPal's don't-ship advice with the tracking form; hidden once tracking is filed.
+- **Dashboard row** (`HeldLines`): the same "You marked this as goods" line in `text-sm`, under the estimate and advice.
+
+**Copy rules on a declared hold PayPal didn't type** (the #35 research: a review hold releases at ~24 h with or without tracking):
+- Never shown: "Tracking can help release this", "Faster release expected: about 24 h after delivery is confirmed", "Approved carriers for a faster release", "Faster: …", "Source: carriers for faster release", "Shipping goods? Faster release …", and help129's "PayPal says it releases a service hold 7 days after you mark the order Completed".
+- Route advice uses `holds.tracking.neutral.*`: tier text "PayPal lists it as an approved carrier" / "PayPal accepts it" / "Unconfirmed carrier: PayPal accepts it", "Approved carriers", "Approved: {carriers}", "Source: approved carriers". Tier badges, alternatives, sources and the caveat are unchanged.
+- The Completed guide's intro is "PayPal's 7-day rule is for holds PayPal places on service payments. This hold is PayPal's own (see why it's held), so marking it Completed won't change its estimate." Saving shows the toast "Saved. Your estimate hasn't changed." Block C shows PayPal's own estimate.
+- "Estimated release" (3) always shows PayPal's rule for the reason (e.g. `payment_review`: "Within 24 hours; up to 3 business days · estimated").
+
+**States.** Saving: "Saving…" busy button, radios disabled. Save failed: inline `status-error-fg` "Couldn't save your answer. Nothing changed. Try again." + Reference; a refusal shows "Not saved: {code}" (`NOT_DECLARABLE`), and `DECLARATION_LOCKED` reads "You already acted on this payment, so your answer is locked (DECLARATION_LOCKED)." Choosing a radio clears any error; offline hides it. Nothing chosen: "Choose goods or a service." Offline: Save disabled with "You're offline. Reconnect to save this." (`aria-describedby`). After saving: focus to the h3, live region "Saved: you marked this as goods."
+
+**Accessibility.** Native radios in a fieldset/legend (arrow keys move between them); every control ≥ 44 px; the declared line is text + icon, never colour alone. HI keys under `holds.declaration`.
+
+| Key | EN | HI |
+|---|---|---|
+| holds.declaration.title | What did you sell? | आपने क्या बेचा? |
+| holds.declaration.legend | This payment was for | यह भुगतान किसके लिए था |
+| holds.declaration.kind.goods / .service | Goods / A service | सामान / सेवा |
+| holds.declaration.marked.goods | You marked this as goods | आपने इसे सामान बताया है |
+| holds.declaration.marked.service | You marked this as a service | आपने इसे सेवा बताया है |
+| holds.declaration.locked | Locked: you approved an action on this payment. | बदला नहीं जा सकता: आपने इस भुगतान पर एक कार्रवाई मंज़ूर की है। |
+| auditLog.action.hold_declared | You marked the payment as {what} | आपने भुगतान को {what} बताया |
 
 ## Components
 `MoneyCell`, `StatusBadge` (held, completed, dispute, sandbox), `EstimatedDate`, `Citation`, `ApprovalCard`, `SandboxBadge`, `EmptyState`, `LoadingState`, `ErrorPanel`, `Toast` ("Tracking filed"; M3-04: "Copied", "Saved. Estimate: about {date}.", "Recorded with PayPal"). M3-04 adds a native date input and a quote block (Citation styling); no new shared component.

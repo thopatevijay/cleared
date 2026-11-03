@@ -121,7 +121,20 @@ function serveTrack(s: Scene, opts: { status?: number; body?: string; waitMs?: n
 }
 
 /** A workspace owning a capture with a goods hold, and an approved IND_DELHIVERY tracking action on it. */
-async function scene(owned = true): Promise<Scene & { actionId: string }> {
+/** BL-01 6570499264: a PENDING_REVIEW hold the seller declared goods (PayPal's review rule + 24 h estimate). */
+const DECLARED_REVIEW = {
+  type: "review",
+  reason: "PENDING_REVIEW",
+  estimateSource: "payment_review",
+  estimatedReleaseAt: new Date("2026-10-30T04:57:00.000Z"),
+  sellerDeclaredKind: "goods",
+  sellerDeclaredBy: "synthetic-seller",
+  sellerDeclaredAt: new Date("2026-10-29T05:00:00.000Z"),
+} as const;
+
+type HoldOverrides = Partial<typeof DECLARED_REVIEW>;
+
+async function scene(owned = true, holdOver: HoldOverrides = {}): Promise<Scene & { actionId: string }> {
   const w = await platform(db).workspaces.create({
     kind: "demo",
     locale: "en",
@@ -145,7 +158,7 @@ async function scene(owned = true): Promise<Scene & { actionId: string }> {
     amount: "42.00",
     currency: "USD",
     status: "PENDING",
-    statusReason: "OTHER",
+    statusReason: holdOver.reason ?? "OTHER",
     source: "webhook",
   });
   const hold = await repos.holds.insert({
@@ -154,6 +167,7 @@ async function scene(owned = true): Promise<Scene & { actionId: string }> {
     reason: "OTHER",
     openedAt: new Date("2026-10-29T04:57:00.000Z"),
     estimateSource: "reason_OTHER",
+    ...holdOver,
   });
   const payload: JsonValue = {
     order_id: orderId,
@@ -239,6 +253,24 @@ describe.skipIf(!dbAvailable)("add_tracking (M3-03)", () => {
       state: "filed",
       estimateSource: "goods_delivered",
       estimatedReleaseAt: null,
+    });
+  });
+
+  it("on a PENDING_REVIEW hold the seller declared goods: the recorded 201 files the hold and PayPal's review estimate stays (ADR 0017 addendum 3)", async () => {
+    const s = await scene(true, DECLARED_REVIEW);
+    serveTrack(s);
+    expect(await execute(deps(), s)).toBe("succeeded");
+    expect(writes(calls)).toEqual([
+      { method: "POST", path: `/v2/checkout/orders/${s.orderId}/track`, requestId: s.actionId },
+    ]);
+    expect((await executionForAction(db, s.ws, s.actionId))?.paypalDebugId).toBe("f345140fb0d0d");
+    expect(await holdOf(s)).toMatchObject({
+      state: "filed",
+      type: "review",
+      reason: "PENDING_REVIEW",
+      estimateSource: "payment_review",
+      estimatedReleaseAt: DECLARED_REVIEW.estimatedReleaseAt,
+      sellerDeclaredKind: "goods",
     });
   });
 

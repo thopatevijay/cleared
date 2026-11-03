@@ -1,13 +1,21 @@
 // M3-03: the tracking summary of each goods hold (route advice + where the `add_tracking` action stands),
 // from the workspace's own rows: the newest tracking action on the capture and the newest shipment fact in
-// the payment's proof pack. Only goods holds get one: the "faster release" copy belongs to holds awaiting
-// delivery confirmation, never to payment-review holds (research note on #35).
-import { ACTION_STATES, trackingSummary, type TrackingSummary } from "@cleared/core";
+// the payment's proof pack. Only holds whose guided action is tracking get one: a hold PayPal typed goods, or one
+// the seller declared goods (BL-01 6570499264). The "faster release" copy belongs to holds PayPal typed goods
+// only, never to payment-review holds (research note on #35); the client picks the copy from `hold.type`.
+import {
+  ACTION_STATES,
+  declaredKindOf,
+  guidedAction,
+  holdTypeOf,
+  trackingSummary,
+  type TrackingSummary,
+} from "@cleared/core";
 import { z } from "zod";
 import { trackingReads, type Db, type HoldRow } from "@cleared/db";
 
 export interface GoodsHoldRef {
-  readonly hold: Pick<HoldRow, "id" | "type" | "state">;
+  readonly hold: Pick<HoldRow, "id" | "type" | "state" | "sellerDeclaredKind">;
   readonly payment: { readonly id: string; readonly captureId: string };
 }
 
@@ -17,7 +25,9 @@ export async function trackingSummaries(
   refs: readonly GoodsHoldRef[],
   timeZone: string,
 ): Promise<Map<string, TrackingSummary>> {
-  const goods = refs.filter((r) => r.hold.type === "goods");
+  const goods = refs.filter(
+    (r) => guidedAction(holdTypeOf(r.hold.type), declaredKindOf(r.hold.sellerDeclaredKind)) === "tracking",
+  );
   if (goods.length === 0) return new Map();
   const reads = trackingReads(db, ws);
   const [actions, shipments] = await Promise.all([
