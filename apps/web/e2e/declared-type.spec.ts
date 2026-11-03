@@ -186,6 +186,7 @@ test("declaration states: checked, nothing chosen, saving, save failed, refused,
   await decl.getByTestId("declare-goods").focus();
   await page.keyboard.press("Space");
   await expect(decl.getByTestId("declare-goods")).toBeChecked();
+  await expect(decl.getByTestId("declare-error")).toHaveCount(0);
   await page.screenshot({ path: `${REVIEW}en-declare-focus-radio-1280-light.png` });
   await capture(page, "en-declare-checked", REVIEW, W);
 
@@ -225,7 +226,9 @@ test("declaration states: checked, nothing chosen, saving, save failed, refused,
     }),
   );
   await decl.getByTestId("declare-save").click();
-  await expect(decl.getByTestId("declare-error")).toContainText("Not saved: DECLARATION_LOCKED");
+  await expect(decl.getByTestId("declare-error")).toContainText(
+    "so your answer is locked (DECLARATION_LOCKED)",
+  );
   await capture(page, "en-declare-refused", REVIEW, W);
   await page.unroute("**/api/holds/*/declaration");
 
@@ -233,6 +236,7 @@ test("declaration states: checked, nothing chosen, saving, save failed, refused,
   await context.setOffline(true);
   await expect(decl.getByTestId("declare-save")).toBeDisabled();
   await expect(decl).toContainText("You're offline. Reconnect to save this.");
+  await expect(decl.getByTestId("declare-error")).toHaveCount(0);
   await capture(page, "en-declare-offline", REVIEW, W);
   await context.setOffline(false);
   await expect(decl.getByTestId("declare-save")).toBeEnabled();
@@ -241,7 +245,10 @@ test("declaration states: checked, nothing chosen, saving, save failed, refused,
   await decl.getByTestId("declare-save").click();
   await expect(decl).toHaveAttribute("data-kind", "goods");
   await expect(page.getByTestId("ship-first")).toContainText("PayPal asks you not to ship");
-  await decl.getByTestId("declaration-change").focus();
+  // focus moved to the heading; Tab reaches Change by keyboard (focus-visible)
+  await expect(page.locator("#declaration-heading")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(decl.getByTestId("declaration-change")).toBeFocused();
   await page.screenshot({ path: `${REVIEW}en-declare-focus-change-1280-light.png` });
   await decl.getByTestId("declaration-change").click();
   await expect(decl.getByTestId("declaration-form")).toBeVisible();

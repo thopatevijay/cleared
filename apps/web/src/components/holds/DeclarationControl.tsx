@@ -13,7 +13,7 @@ import { useOnline } from "../../lib/use-online.ts";
 import { refusalOf } from "../disputes/text.ts";
 
 const primary =
-  "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 font-semibold text-on-accent disabled:opacity-70 sm:w-auto";
+  "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-md bg-accent px-4 font-semibold text-on-accent disabled:opacity-70 md:w-auto";
 const textButton =
   "inline-flex min-h-11 items-center self-start text-accent underline underline-offset-2 disabled:opacity-70";
 
@@ -70,7 +70,12 @@ function Form({
     }
     const code = res.status === NETWORK_ERROR ? null : refusalOf(res.body);
     setError({
-      text: code === null ? t("error.save") : t("error.refused", { code }),
+      text:
+        code === null
+          ? t("error.save")
+          : code === "DECLARATION_LOCKED"
+            ? t("error.locked", { code })
+            : t("error.refused", { code }),
       ref: res.correlationId ?? sentKey,
     });
   }
@@ -100,6 +105,7 @@ function Form({
                 className="size-5 accent-accent"
                 onChange={() => {
                   setKind(k);
+                  setError(null);
                 }}
                 data-testid={`declare-${k}`}
               />
@@ -114,7 +120,7 @@ function Form({
       <p id={`${id}-hint`} className="text-sm text-text-muted">
         {t("hint")}
       </p>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <button
           type="submit"
           className={primary}
@@ -137,7 +143,7 @@ function Form({
           {t("offline")}
         </p>
       )}
-      {error === null ? null : (
+      {error === null || !online ? null : (
         <div role="alert" className="flex flex-col gap-1 text-status-error-fg" data-testid="declare-error">
           <p className="flex items-start gap-2">
             <CircleX aria-hidden="true" size={16} strokeWidth={1.75} className="mt-1 shrink-0" />

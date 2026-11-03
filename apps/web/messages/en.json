@@ -403,7 +403,8 @@
       "error": {
         "pick": "Choose goods or a service.",
         "save": "Couldn't save your answer. Nothing changed. Try again.",
-        "refused": "Not saved: {code}"
+        "refused": "Not saved: {code}",
+        "locked": "You already acted on this payment, so your answer is locked ({code})."
       }
     }
   },
