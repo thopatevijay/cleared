@@ -11,6 +11,7 @@ import { forWorkspace } from "../src/repos/workspace/index.ts";
 import { withTransaction } from "../src/tx.ts";
 import { dbAvailable, TEST_DATABASE_URL } from "./db-available.ts";
 import { seedGraph } from "./graph.ts";
+import { asRenderAppRole } from "./render-shape.ts";
 
 const SCOPED = [
   "agent_runs",
@@ -94,6 +95,22 @@ describe.skipIf(!dbAvailable)("ops (M3-09)", () => {
     await expect(db.$client.query("delete from audit_log where false")).rejects.toThrow(/append-only/);
     await expect(db.$client.query("delete from evidence_items where false")).rejects.toThrow(/append-only/);
     await expect(db.$client.query("delete from scope_checks where false")).rejects.toThrow(/append-only/);
+  });
+
+  it("M4-06: as Render's app role, after migration 0019, the synthetic purge still empties every table", async () => {
+    const ws = await create(true);
+    await seedGraph(forWorkspace(db, WorkspaceIdSchema.parse(ws.id)));
+    await platform(db).auth.auditSystem({ workspaceId: ws.id, action: "test.row", detail: {} });
+    const left = await asRenderAppRole(db, async (tx) => {
+      await purgeSyntheticWorkspace(ws.id, tx);
+      const r = await tx.execute(sql`select
+        (select count(*) from audit_log where workspace_id = ${ws.id})::int as audit,
+        (select count(*) from evidence_items where workspace_id = ${ws.id})::int as evidence,
+        (select count(*) from scope_checks where workspace_id = ${ws.id})::int as checks,
+        (select count(*) from payments where workspace_id = ${ws.id})::int as payments`);
+      return r.rows[0];
+    });
+    expect(left).toEqual({ audit: 0, evidence: 0, checks: 0, payments: 0 });
   });
 
   it("refuses a workspace that is not synthetic and changes nothing", async () => {

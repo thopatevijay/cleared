@@ -10,9 +10,9 @@
 // so a load run makes no PayPal call. Personal data: none (synthetic evidence text only).
 import { createHash, randomBytes } from "node:crypto";
 import { deriveHold, fromEpochMs, WorkspaceIdSchema } from "@cleared/core";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Db } from "./client.ts";
-import { LOADTEST_TAG, purgeSyntheticWorkspace } from "./repos/platform/ops.ts";
+import { LOADTEST_TAG } from "./repos/platform/ops.ts";
 import { platform } from "./repos/platform/index.ts";
 import { forWorkspace } from "./repos/workspace/index.ts";
 import { withTransaction, type Tx } from "./tx.ts";
@@ -164,29 +164,32 @@ async function createOne(db: Db, tx: Tx, now: Date): Promise<LoadtestWorkspace> 
 }
 
 const tagged = and(eq(workspaces.createdIpHash, LOADTEST_TAG), eq(workspaces.synthetic, true));
+/** Tagged and not yet emptied: what a run left behind (a purged workspace keeps only its row). */
+const live = and(tagged, isNull(workspaces.purgedAt));
 
+/** Load-test workspaces still holding rows (0 after a successful purge). */
 export async function countLoadtestWorkspaces(db: Db): Promise<number> {
   const rows = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(workspaces)
-    .where(tagged);
+    .where(live);
   return rows[0]?.n ?? 0;
 }
 
 /**
- * Purges every load-test workspace: its rows (the M3-09 synthetic purge, guards lifted for that transaction
- * only), then the workspace row itself, which the synthetic purge keeps for its agent runs (a load-test
- * workspace has none: no AI budget). Returns the workspaces removed.
+ * Purges every load-test workspace through M4-07's `purge_workspace(uuid)` (migration 0019, ADR 0020). It's a
+ * SECURITY DEFINER function owned by `cleared_purger`, the only role the append-only trigger lets DELETE.
+ * Render's app role can't delete a workspace row: the foreign-key check on `audit_log` takes a row lock the
+ * role no longer holds ("permission denied for table audit_log", production 2026-11-03). Like a retention
+ * purge, the workspace row stays with no content and `purged_at` set. Returns the workspaces purged and the
+ * rows removed.
  */
 export async function purgeLoadtestWorkspaces(db: Db): Promise<{ workspaces: number; rows: number }> {
-  const ids = await db.select({ id: workspaces.id }).from(workspaces).where(tagged);
+  const ids = await db.select({ id: workspaces.id }).from(workspaces).where(live);
   let rows = 0;
   for (const { id } of ids) {
-    rows += await withTransaction(db, async (tx) => {
-      const n = await purgeSyntheticWorkspace(id, tx);
-      await tx.delete(workspaces).where(and(eq(workspaces.id, id), tagged));
-      return n + 1;
-    });
+    const counts = await withTransaction(db, (tx) => platform(db).retention.purge(id, tx));
+    for (const v of Object.values(counts)) rows += typeof v === "number" ? v : 0;
   }
   return { workspaces: ids.length, rows };
 }
