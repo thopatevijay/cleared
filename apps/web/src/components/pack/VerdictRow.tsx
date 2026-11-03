@@ -13,6 +13,21 @@ const NOTE_KEY: Readonly<Record<LineNote, "noCitation" | "imageOnly" | "noScopeQ
   model_unverifiable: "model",
 };
 
+/** A placeholder no message contains: the translated "Why: …" is split around it. */
+const SLOT = "\u0000";
+
+/** "Why: {rationale}" with the rationale (model text, plain) in its own `lang="en"` span. */
+function whyParts(message: string, rationale: string) {
+  const [before = "", after = ""] = message.split(SLOT);
+  return (
+    <>
+      {before}
+      <span lang="en">{rationale}</span>
+      {after}
+    </>
+  );
+}
+
 export function VerdictRow({
   v,
   kindOf,
@@ -52,7 +67,9 @@ export function VerdictRow({
         ) : null}
         {v.rationale !== "" ? (
           <p className="text-sm break-words whitespace-pre-wrap" data-testid="rationale">
-            {t("why", { rationale: v.rationale })}
+            {/* BL-01 6601579774 item 2: the model writes its rationale in English; a Hindi page marks it so
+                a screen reader switches voice (as hold.md does for PayPal's quotes). Still plain text. */}
+            {whyParts(t("why", { rationale: SLOT }), v.rationale)}
           </p>
         ) : null}
         {v.citations.length > 0 ? (

@@ -83,6 +83,11 @@ describe("Citation and VerdictRow", () => {
     expect(text(html(<VerdictRow v={v} kindOf={kindOf} previous={false} />, "hi"))).toContain(hiReason);
   });
 
+  it("the model's English rationale is marked lang=en inside the Hindi label (BL-01 6601579774)", () => {
+    const out = html(<VerdictRow v={verdict({})} kindOf={kindOf} previous={false} />, "hi");
+    expect(out).toContain(`क्यों: <span lang="en">The chat agrees the concepts`);
+  });
+
   it("model text renders as plain text: no element is created from it", () => {
     const evil = `<img src=x onerror=alert(1)> <script>alert(2)</script>`;
     const out = html(
