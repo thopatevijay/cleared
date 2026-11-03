@@ -8,8 +8,10 @@
 // - Enter / Space on a focused event select it (Bryntum's own Enter opens the editor); arrows stay Bryntum's.
 // - Day cells show the day's totals per currency; selecting a day reports it (`onDaySelect`).
 import type { CashEvent } from "@cleared/core";
-import type { DomConfig, EventModel, MonthViewConfig } from "@bryntum/calendar";
-import { BryntumCalendar } from "@bryntum/calendar-react";
+import { LocaleManager, type DomConfig, type EventModel, type MonthViewConfig } from "@bryntum/calendar";
+// the one wrapper we use, not the index (which pulls in all 90 wrappers): `@bryntum/calendar` itself is
+// the engine loaded at runtime from our origin (engine.ts, bryntum-runtime.ts; BL-01 6595246110)
+import { BryntumCalendar } from "@bryntum/calendar-react/lib/BryntumCalendar.js";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
@@ -35,7 +37,6 @@ function useBryntumLocale(locale: string): boolean {
   useEffect(() => {
     const live = { current: true };
     void (async () => {
-      const { LocaleManager } = await import("@bryntum/calendar");
       if (hindi) await import("@bryntum/calendar/locales/calendar.locale.Hi.js");
       await LocaleManager.applyLocale(hindi ? "Hi" : "En");
       if (live.current) setReady(true);
