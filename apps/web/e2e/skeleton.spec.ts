@@ -163,6 +163,9 @@ const HELD_ROW = {
   statusReason: "PENDING_REVIEW",
   source: "webhook",
   updatedAt: "2026-10-30T08:32:00.000Z",
+  // BL-01 6604186121: PaymentItemSchema requires both since M2-05 / M3-01
+  pack: null,
+  hold: null,
 };
 
 type Fulfil = Parameters<Parameters<Page["route"]>[1]>[0];
