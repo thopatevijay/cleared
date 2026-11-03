@@ -1095,7 +1095,7 @@
       "nameTooLong": "Use 120 characters or fewer.",
       "agreeRequired": "Tick the box to confirm you agree."
     },
-    "success": "Thanks, {name}. Your confirmation is recorded.",
+    "success": "Thanks, {name}{stop, select, yes {} other {.}} Your confirmation is recorded.",
     "recordedAt": "Recorded {time}",
     "successClose": "You can close this page. This link won't open again.",
     "rateLimited": "Too many attempts. Try again in a few minutes.",
