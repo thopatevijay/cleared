@@ -1,0 +1,273 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:16:06.381Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"set\": \"scope\",\n  \"persona\": {\n    \"country\": \"KE\",\n    \"trade\": \"single-origin coffee beans\",\n    \"offering\": \"goods\",\n    \"currency\": \"EUR\"\n  },\n  \"hinglish\": false,\n  \"injection_in_buyer_chat\": false,\n  \"documents\": [\n    {\n      \"kind\": \"scope\",\n      \"write\": \"the agreed scope: brief, order form or quote, one requirement per line\"\n    },\n    {\n      \"kind\": \"delivery\",\n      \"write\": \"the seller's delivery evidence: handover note, file list, delivery message\"\n    },\n    {\n      \"kind\": \"communication\",\n      \"write\": \"buyer-seller chat after delivery\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"target_label\": \"met\"\n    },\n    {\n      \"target_label\": \"met\"\n    },\n    {\n      \"target_label\": \"partial\"\n    },\n    {\n      \"target_label\": \"missing\"\n    }\n  ]\n}\nEach hypothesis is one scope line the seller agreed to deliver, as written in the scope document; value is null."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_0b07f059100df02f016ae9b45e527487d2a4aaf3296514d037",
+      "object": "response",
+      "created_at": 1793700958,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793700966,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_0b07f059100df02f016ae9b45f5ef487d280316bb6b24de2cf",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\n  \"documents\": [\n    {\n      \"title\": \"Agreed order form\",\n      \"text\": \"Seller: Mavuno Crest Coffee, Kenya\\nBuyer: Liora Venn, France\\nOrder: single-origin coffee beans\\n\\nRequirements:\\n- Supply 10 kg of whole-bean coffee from Nyeri, Kenya.\\n- Pack the coffee in ten sealed 1 kg bags.\\n- Include a roast-date label on every bag.\\n- Include a printed brewing guide in the parcel.\\n\\nAgreed price: EUR 240, including shipping.\\nPayment method: PayPal.\\nThe buyer confirmed the requirements before payment. The coffee is intended for retail sampling, so the bags should remain sealed during transport. The seller will dispatch the parcel to the delivery details supplied privately by the buyer.\"\n    },\n    {\n      \"title\": \"Parcel handover note\",\n      \"text\": \"Mavuno Crest Coffee dispatch note\\n\\nCarrier: DHL Express\\nTracking: JD7K4M2P9Q6R\\nContents checked before sealing: 10 kg of whole-bean coffee from Nyeri, Kenya, packed in ten sealed 1 kg bags. Six bags have roast-date labels; four do not. The printed brewing guide was not included in the parcel.\\n\\nThe parcel was handed to the carrier in Nairobi. The seller sent the buyer the tracking details and a copy of this contents check. The bags were sealed and placed together in one outer carton, with packing material around them. No other item was listed inside the carton.\"\n    },\n    {\n      \"title\": \"Buyer-seller chat after delivery\",\n      \"text\": \"10:14 Liora: The parcel arrived today. I checked the bags against your note.\\n10:18 Sela, Mavuno Crest Coffee: Thanks for checking. Were they intact?\\n10:21 Liora: Yes, all ten bags were sealed. The coffee and origin match the order.\\n10:23 Liora: I can also confirm six roast-date labels and four bags without them. There was no printed brewing guide in the box.\\n10:27 Sela: Sorry about those omissions. I can send the missing date information and arrange a guide separately.\\n10:31 Liora: Please send the dates first. I will let you know whether a separate guide is useful.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"text\": \"Supply 10 kg of whole-bean coffee from Nyeri, Kenya.\",\n      \"value\": null\n    },\n    {\n      \"text\": \"Pack the coffee in ten sealed 1 kg bags.\",\n      \"value\": null\n    },\n    {\n      \"text\": \"Include a roast-date label on every bag.\",\n      \"value\": null\n    },\n    {\n      \"text\": \"Include a printed brewing guide in the parcel.\",\n      \"value\": null\n    }\n  ]\n}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 748,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 609,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 1357
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}

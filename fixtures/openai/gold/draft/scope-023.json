@@ -1,0 +1,273 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:16:26.109Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"set\": \"scope\",\n  \"persona\": {\n    \"country\": \"IN\",\n    \"trade\": \"small-business website build\",\n    \"offering\": \"services\",\n    \"currency\": \"USD\"\n  },\n  \"hinglish\": true,\n  \"injection_in_buyer_chat\": false,\n  \"documents\": [\n    {\n      \"kind\": \"scope\",\n      \"write\": \"the agreed scope: brief, order form or quote, one requirement per line\"\n    },\n    {\n      \"kind\": \"delivery\",\n      \"write\": \"the seller's delivery evidence: handover note, file list, delivery message\"\n    },\n    {\n      \"kind\": \"communication\",\n      \"write\": \"buyer-seller chat after delivery\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"target_label\": \"met\"\n    },\n    {\n      \"target_label\": \"missing\"\n    },\n    {\n      \"target_label\": \"unverifiable\"\n    },\n    {\n      \"target_label\": \"partial\"\n    }\n  ]\n}\nEach hypothesis is one scope line the seller agreed to deliver, as written in the scope document; value is null."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_0adff5a33914c864016ae9b470350487d29e668cdbf1467578",
+      "object": "response",
+      "created_at": 1793700976,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793700986,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_0adff5a33914c864016ae9b4714d7887d2b5611abfb7d21d09",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\n  \"documents\": [\n    {\n      \"title\": \"Agreed website scope\",\n      \"text\": \"Website build quote, accepted by buyer\\nSeller: Kavya, independent web designer in India\\nBuyer: Neel, owner of fictional shop Mithi Nest\\nProject price: USD 480\\n\\nAgreed requirements:\\nBuild a five-page website: Home, About, Products, FAQ and Contact.\\nAdd a WhatsApp inquiry button on every page.\\nProvide a mobile performance report for the finished website.\\nEnter all 20 buyer-supplied product descriptions on the Products page.\\n\\nBuyer will supply the text and product descriptions. Seller will hand over the finished site files and a short note. Any work outside these four requirements needs a separate agreement. Neel accepted this scope and the price before work began; payment is for the service, not for physical goods.\"\n    },\n    {\n      \"title\": \"Website handover note\",\n      \"text\": \"Handover from Kavya to Neel\\n\\nHi Neel, website files ready hain. The handover folder contains the site files, product images and setup notes. The navigation includes Home, About, Products, FAQ and Contact; all five pages are included in the handover.\\n\\nThe Products page has 12 of the 20 supplied descriptions. The other eight are still to be entered. There is no WhatsApp inquiry button in the delivered files; I did not add one.\\n\\nI have attached the mobile performance report to the handover email. Please review the folder and let me know if anything needs attention. The folder also includes a short guide for updating the page text.\"\n    },\n    {\n      \"title\": \"Post-delivery chat\",\n      \"text\": \"Neel, 10:05: Files mil gaye, thanks. I opened the site and can see all five pages in the menu.\\n\\nKavya, 10:09: Great. Setup notes bhi folder mein hain, so you can update the text later.\\n\\nNeel, 10:14: Products page par sirf 12 descriptions dikh rahe hain. I had sent 20.\\n\\nKavya, 10:18: Haan, eight entries remain. I will arrange a time to finish them.\\n\\nNeel, 10:22: Also, I cannot see the WhatsApp inquiry button on any page.\\n\\nKavya, 10:25: Correct, I did not include it in this delivery. Let's discuss when I can add it.\\n\\nNeel, 10:30: The handover email mentions a performance report; I will check it separately.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"text\": \"Build a five-page website: Home, About, Products, FAQ and Contact.\",\n      \"value\": null\n    },\n    {\n      \"text\": \"Add a WhatsApp inquiry button on every page.\",\n      \"value\": null\n    },\n    {\n      \"text\": \"Provide a mobile performance report for the finished website.\",\n      \"value\": null\n    },\n    {\n      \"text\": \"Enter all 20 buyer-supplied product descriptions on the Products page.\",\n      \"value\": null\n    }\n  ]\n}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 750,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 685,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 1435
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}

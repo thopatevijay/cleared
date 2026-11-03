@@ -1,0 +1,273 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:16:06.450Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"set\": \"scope\",\n  \"persona\": {\n    \"country\": \"NG\",\n    \"trade\": \"YouTube video editing\",\n    \"offering\": \"services\",\n    \"currency\": \"INR\"\n  },\n  \"hinglish\": false,\n  \"injection_in_buyer_chat\": false,\n  \"documents\": [\n    {\n      \"kind\": \"scope\",\n      \"write\": \"the agreed scope: brief, order form or quote, one requirement per line\"\n    },\n    {\n      \"kind\": \"delivery\",\n      \"write\": \"the seller's delivery evidence: handover note, file list, delivery message\"\n    },\n    {\n      \"kind\": \"communication\",\n      \"write\": \"buyer-seller chat after delivery\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"target_label\": \"met\"\n    },\n    {\n      \"target_label\": \"partial\"\n    },\n    {\n      \"target_label\": \"unverifiable\"\n    },\n    {\n      \"target_label\": \"met\"\n    }\n  ]\n}\nEach hypothesis is one scope line the seller agreed to deliver, as written in the scope document; value is null."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_0ee4dcfb5692a6d6016ae9b45e79c087d29922e0ac9cff2f73",
+      "object": "response",
+      "created_at": 1793700958,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793700966,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_0ee4dcfb5692a6d6016ae9b45f7fa487d295de3b0027a5fa75",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"documents\":[{\"title\":\"Agreed editing quote\",\"text\":\"Agreed quote for YouTube editing\\nSeller: Tola Bemi, Nigeria\\nBuyer: Mira Sen\\nProject: One travel-story episode\\nFee: INR 12,000\\n\\nScope:\\n1. Deliver one edited video with a runtime between 8 and 10 minutes.\\n2. Add English captions throughout the video and provide an SRT caption file.\\n3. Use only music cleared for commercial use in the video.\\n4. Deliver a separate thumbnail image in 1920 x 1080 pixels.\\n\\nThe buyer will provide the footage and narration. One round of corrections is included for errors against this scope. The finished video and thumbnail will be handed over as downloadable files.\"},{\"title\":\"Delivery handover note\",\"text\":\"From: Tola Bemi\\nTo: Mira Sen\\nSubject: Travel-story episode handover\\n\\nThe edited episode is ready. The handover package contains:\\n\\n- travel-episode.mp4 — runtime 9 minutes 12 seconds\\n- travel-episode-captioned.mp4 — captioned viewing copy\\n- travel-thumbnail.png — 1920 x 1080 pixels\\n- music-license-record.pdf — music licensing information\\n\\nI checked the captioned copy from beginning to end; English captions are visible throughout. The package does not contain an SRT caption file. I have included the music license record with the package for your records.\\n\\nPlease review the episode and thumbnail, and send any corrections against the agreed scope in one message.\"},{\"title\":\"Chat after delivery\",\"text\":\"Mira, 14:10: I received the video package and opened the files. The episode runs 9:12, and the thumbnail is 1920 x 1080.\\n\\nTola, 14:14: Thanks for checking. The captioned viewing copy has English captions throughout.\\n\\nMira, 14:20: Yes, I watched that copy. The captions are there, but I could not find the separate SRT file.\\n\\nTola, 14:23: You are right; I did not include an SRT file in this handover. I will prepare it as a correction.\\n\\nMira, 14:29: I see the music license record listed. I have not opened it yet, so I cannot confirm what it covers.\"}],\"hypotheses\":[{\"text\":\"Deliver one edited video with a runtime between 8 and 10 minutes.\",\"value\":null},{\"text\":\"Add English captions throughout the video and provide an SRT caption file.\",\"value\":null},{\"text\":\"Use only music cleared for commercial use in the video.\",\"value\":null},{\"text\":\"Deliver a separate thumbnail image in 1920 x 1080 pixels.\",\"value\":null}]}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 751,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 585,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 1336
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}

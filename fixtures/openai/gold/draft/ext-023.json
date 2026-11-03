@@ -1,0 +1,273 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:15:41.953Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"set\": \"extraction\",\n  \"persona\": {\n    \"country\": \"NG\",\n    \"trade\": \"woven sisal baskets\",\n    \"offering\": \"goods\",\n    \"currency\": \"JPY\"\n  },\n  \"hinglish\": false,\n  \"injection_in_buyer_chat\": false,\n  \"documents\": [\n    {\n      \"kind\": \"communication\",\n      \"write\": \"buyer-seller chat agreeing the order\"\n    },\n    {\n      \"kind\": \"invoice\",\n      \"write\": \"the seller's invoice\"\n    },\n    {\n      \"kind\": \"shipment\",\n      \"write\": \"the shipping receipt or courier booking\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"target_label\": \"met\",\n      \"field\": \"amount\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"deliverable\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"date\"\n    },\n    {\n      \"target_label\": \"partial\",\n      \"field\": \"party\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"tracking_number\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"carrier\"\n    }\n  ]\n}\nEach hypothesis is one fact of the given field, written as 'Field: value' in text, with the bare value in value. For a missing or unverifiable target, text names the fact a reader would look for (for example 'Date: dispatch date of the parcel') and value is null."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_03c318fc00f1a487016ae9b4449fd887d2a9d6a306fb914c1a",
+      "object": "response",
+      "created_at": 1793700932,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793700941,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_03c318fc00f1a487016ae9b445cc4487d290e9a73678d960f7",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"documents\":[{\"title\":\"Buyer–seller chat\",\"text\":\"12 March 2025, 09:10\\nTeni: Hello, I make woven sisal baskets in Nigeria. Are you still interested in the natural and indigo set?\\n\\n09:13\\nBuyer: Yes. Please reserve four medium baskets, two natural and two indigo. I would like them shipped together.\\n\\n09:16\\nTeni: I can do that. The total is JPY 18,400, including packing and shipping. I can send an invoice for payment through PayPal.\\n\\n09:19\\nBuyer: Agreed, four medium woven sisal baskets for JPY 18,400. Please send the invoice here and use the delivery details I provided privately.\\n\\n09:21\\nTeni: Thank you. I will pack each basket with paper padding and share the tracking details after dispatch.\"},{\"title\":\"Seller's invoice\",\"text\":\"INVOICE\\nDate: 12 March 2025\\nSeller: Teni, Nigeria\\nBuyer: Name not supplied\\n\\nFour medium woven sisal baskets:\\n2 natural baskets at JPY 3,700 each    JPY 7,400\\n2 indigo baskets at JPY 3,700 each     JPY 7,400\\nPacking and international shipping     JPY 3,600\\n\\nTotal due: JPY 18,400\\nPayment method: PayPal\\n\\nThe baskets will be packed together in one parcel with paper padding. The buyer has requested shipment using delivery details shared separately. Tracking will be supplied after the parcel is handed to the carrier. The total above includes the goods, packing and shipping; no additional charge is listed on this invoice.\"},{\"title\":\"Courier booking receipt\",\"text\":\"COURIER BOOKING RECEIPT\\nBooking date: 14 March 2025\\nCarrier: DHL Express\\nTracking number: JD8K4M2P7Q6R3S9T\\nSender: Teni, Nigeria\\nRecipient: Name not supplied\\n\\nContents: four medium woven sisal baskets, two natural and two indigo, packed in one carton.\\nDeclared goods value: JPY 14,800\\nPacking and shipping charge: JPY 3,600\\nTotal invoice amount: JPY 18,400\\n\\nThe parcel was accepted at the carrier counter on the booking date. The sender requested international delivery using the recipient details supplied separately. The tracking number above can be used to check the parcel's progress. This receipt records acceptance of the parcel, not delivery to the recipient.\"}],\"hypotheses\":[{\"text\":\"Amount: JPY 18,400\",\"value\":\"JPY 18,400\"},{\"text\":\"Deliverable: four medium woven sisal baskets, two natural and two indigo\",\"value\":\"four medium woven sisal baskets, two natural and two indigo\"},{\"text\":\"Date: 12 March 2025\",\"value\":\"12 March 2025\"},{\"text\":\"Party: Teni, the seller, and the buyer\",\"value\":\"Teni, the seller, and the buyer\"},{\"text\":\"Tracking_number: JD8K4M2P7Q6R3S9T\",\"value\":\"JD8K4M2P7Q6R3S9T\"},{\"text\":\"Carrier: DHL Express\",\"value\":\"DHL Express\"}]}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 836,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 699,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 1535
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}

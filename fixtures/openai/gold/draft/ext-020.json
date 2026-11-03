@@ -1,0 +1,273 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:15:40.691Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"set\": \"extraction\",\n  \"persona\": {\n    \"country\": \"PH\",\n    \"trade\": \"mobile app UI design\",\n    \"offering\": \"services\",\n    \"currency\": \"EUR\"\n  },\n  \"hinglish\": false,\n  \"injection_in_buyer_chat\": false,\n  \"documents\": [\n    {\n      \"kind\": \"scope\",\n      \"write\": \"the buyer's brief or order form\"\n    },\n    {\n      \"kind\": \"communication\",\n      \"write\": \"buyer-seller chat\"\n    },\n    {\n      \"kind\": \"invoice\",\n      \"write\": \"the seller's invoice or payment receipt\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"target_label\": \"met\",\n      \"field\": \"amount\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"deliverable\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"date\"\n    },\n    {\n      \"target_label\": \"partial\",\n      \"field\": \"party\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"party\"\n    }\n  ]\n}\nEach hypothesis is one fact of the given field, written as 'Field: value' in text, with the bare value in value. For a missing or unverifiable target, text names the fact a reader would look for (for example 'Date: dispatch date of the parcel') and value is null."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_03e9e8cb80f12cdb016ae9b444292087d2b7cfffe94ea39247",
+      "object": "response",
+      "created_at": 1793700932,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793700940,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_03e9e8cb80f12cdb016ae9b444f3a887d29e888bce2e130f6c",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\n  \"documents\": [\n    {\n      \"title\": \"Buyer brief\",\n      \"text\": \"Buyer brief for a mobile app design project\\n\\nI am commissioning a refreshed interface for a small habit-tracking app. Please design the home screen, daily check-in screen, and progress screen for a standard mobile viewport. The deliverable is three mobile app UI screens in an editable design file, with a PDF preview for review. This is a design-only engagement; development and app-store submission are outside the scope.\\n\\nPlease use a calm color palette and leave enough room for short labels. One round of revisions is included after the first preview. The agreed project fee is EUR 480, payable through PayPal. Please send the final files by 18 June 2026.\\n\\nBuyer: Mara\"\n    },\n    {\n      \"title\": \"Buyer-seller chat\",\n      \"text\": \"09:12 Mara: Thanks for reviewing the brief. Can you keep the progress screen simple, with a weekly view?\\n09:18 Lira Velan: Yes. I will prepare the three screens and send a PDF preview before the final editable file.\\n09:21 Mara: Great. One round of revisions is enough for us.\\n09:25 Lira Velan: The total is EUR 480 as agreed. I will invoice you for the design work and aim to send the final files by 18 June 2026.\\n09:28 Mara: Confirmed. The project is design only; our developer will handle the implementation.\\n09:31 Lira Velan: Understood. I will start with the home and check-in screens and then complete the weekly progress view.\"\n    },\n    {\n      \"title\": \"Seller invoice\",\n      \"text\": \"INVOICE\\n\\nFrom: Lira Velan\\nLocation: Philippines\\nTo: Mara\\nIssued: 3 June 2026\\n\\nMobile app UI design\\nThree mobile app UI screens in an editable design file: EUR 480\\nPDF preview: included\\nOne revision round: included\\n\\nTotal due: EUR 480\\nPayment method: PayPal\\nPayment due: 10 June 2026\\nFinal files due: 18 June 2026\\n\\nScope covers the home screen, daily check-in screen, and progress screen described in the buyer brief. Development, coding, and app-store submission are not included. The buyer may send consolidated feedback on the preview for the included revision round. This invoice is for the agreed design fee and does not record payment.\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"text\": \"Amount: EUR 480\",\n      \"value\": \"EUR 480\"\n    },\n    {\n      \"text\": \"Deliverable: three mobile app UI screens in an editable design file\",\n      \"value\": \"three mobile app UI screens in an editable design file\"\n    },\n    {\n      \"text\": \"Date: 18 June 2026\",\n      \"value\": \"18 June 2026\"\n    },\n    {\n      \"text\": \"Party: Mara\",\n      \"value\": \"Mara\"\n    },\n    {\n      \"text\": \"Party: Lira Velan\",\n      \"value\": \"Lira Velan\"\n    }\n  ]\n}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 817,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 680,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 1497
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}

@@ -1,0 +1,273 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:15:47.871Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"set\": \"extraction\",\n  \"persona\": {\n    \"country\": \"PH\",\n    \"trade\": \"handloom cotton scarves\",\n    \"offering\": \"goods\",\n    \"currency\": \"USD\"\n  },\n  \"hinglish\": false,\n  \"injection_in_buyer_chat\": false,\n  \"documents\": [\n    {\n      \"kind\": \"communication\",\n      \"write\": \"buyer-seller chat agreeing the order\"\n    },\n    {\n      \"kind\": \"invoice\",\n      \"write\": \"the seller's invoice\"\n    },\n    {\n      \"kind\": \"shipment\",\n      \"write\": \"the shipping receipt or courier booking\"\n    }\n  ],\n  \"hypotheses\": [\n    {\n      \"target_label\": \"met\",\n      \"field\": \"amount\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"deliverable\"\n    },\n    {\n      \"target_label\": \"missing\",\n      \"field\": \"date\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"party\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"tracking_number\"\n    },\n    {\n      \"target_label\": \"met\",\n      \"field\": \"carrier\"\n    }\n  ]\n}\nEach hypothesis is one fact of the given field, written as 'Field: value' in text, with the bare value in value. For a missing or unverifiable target, text names the fact a reader would look for (for example 'Date: dispatch date of the parcel') and value is null."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_0e08fe8ea9044c3d016ae9b44c760887d29d474824aa8474af",
+      "object": "response",
+      "created_at": 1793700940,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793700947,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that helps small cross-border sellers who get paid through PayPal.\nEverything is fictional. Invent every person and business. Never use a real person, company, email address, phone number, street address, card number or PayPal id.\nEmails always end in @example.test. Phone numbers always look like +91-00000-12345: the country code, then 00000, then five digits. Never write a PayPal transaction, order or account id.\nCarriers are real courier companies (for example India Post, DHL Express, FedEx, UPS, Aramex, J&T Express, LBC Express, GIG Logistics, Pos Indonesia); tracking numbers are invented and always mix letters and digits, for example EE123456789IN (postal) or 1Z9X8Y7W6V5U4T3S2R (courier); never a long run of digits only.\nWrite each document the way real people write it: chats are short messages with names and times, invoices and receipts are plain text with line items. Each document is 50 to 170 words.\nLabels, used for the hypotheses: met = the documents show it in full; partial = they show only part of it; missing = they show it is absent or was not delivered; unverifiable = they do not let a careful reader decide (for example it is only in an attachment that is not included, or only one party asserts it).\nEach hypothesis comes with a target label. Write the documents so that a careful reader would give exactly that label, and make the evidence for it a short verbatim phrase in one document.\nNever mention labels, hypotheses, tests or AI in the documents unless the case spec asks for an instruction aimed at an AI reviewer.\nA dispute outcome is never described as a seller winning; say the seller keeps the money.\nFollow the case spec exactly: the documents in the order and kinds it lists, and one hypothesis per target, in order.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_0e08fe8ea9044c3d016ae9b44d78c887d2a52a812ed96da23a",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"documents\":[{\"title\":\"Order chat\",\"text\":\"Mira, 9:12 AM: Hello, I saw your handloom cotton scarves. Could I order two in indigo?\\nLina, 9:14 AM: Yes, I have two ready. They are woven in cotton and finished with short fringes.\\nMira, 9:16 AM: Great. What would the total be in US dollars, including shipping?\\nLina, 9:18 AM: The scarves are USD 32 each, and shipping is USD 16. The total is USD 80.\\nMira, 9:20 AM: I agree to the total of USD 80 for two indigo handloom cotton scarves. Please send your invoice.\\nLina, 9:22 AM: Thank you, Mira. I'll prepare the invoice and book the parcel after payment.\"},{\"title\":\"Seller's invoice\",\"text\":\"INVOICE\\nSeller: Lina Dalisay\\nBuyer: Mira Velas\\nSeller location: Philippines\\n\\nTwo indigo handloom cotton scarves\\nQuantity: 2\\nUnit price: USD 32\\nLine total: USD 64\\n\\nShipping: USD 16\\nTotal payable: USD 80\\nPayment method: PayPal\\n\\nThe scarves are handloom-woven cotton with short fringes. Shipping is included in the total above. Please check the color and quantity before paying. The seller will book the parcel after payment. This invoice does not specify a dispatch date.\"},{\"title\":\"Courier booking receipt\",\"text\":\"COURIER BOOKING RECEIPT\\nCarrier: LBC Express\\nSender: Lina Dalisay\\nRecipient: Mira Velas\\nOrigin: Philippines\\n\\nContents: Two indigo handloom cotton scarves\\nService: International parcel\\nTracking number: LB7Q4M9P2X5R\\nShipping charge: USD 16\\n\\nThe parcel has been booked for collection. The tracking number above can be used to check the shipment's progress with the carrier. No dispatch date is shown on this receipt; the collection time has not yet been confirmed. The booking covers one parcel containing both scarves.\"}],\"hypotheses\":[{\"text\":\"Amount: USD 80\",\"value\":\"USD 80\"},{\"text\":\"Deliverable: two indigo handloom cotton scarves\",\"value\":\"two indigo handloom cotton scarves\"},{\"text\":\"Date: dispatch date of the parcel\",\"value\":null},{\"text\":\"Party: Mira Velas\",\"value\":\"Mira Velas\"},{\"text\":\"Tracking number: LB7Q4M9P2X5R\",\"value\":\"LB7Q4M9P2X5R\"},{\"text\":\"Carrier: LBC Express\",\"value\":\"LBC Express\"}]}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_case",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "documents": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2500
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "text"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "hypotheses": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "text",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "documents",
+              "hypotheses"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 836,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 568,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 1404
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}
