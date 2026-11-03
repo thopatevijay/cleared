@@ -14,6 +14,7 @@ A dispute arrives, and its reply is already drafted from the proof pack. The sel
    - the notes as plain text, editable in a textarea, with a live count "1,412 / 2000" (it turns to `danger` with "Over the 2000-character limit" above 2000, and Approve is disabled)
    - the evidence type + the reason-map explanation ("PayPal asks for proof the item matched its description; this reply sends the agreed scope and the delivered files.")
    - the selected evidence items (checkboxes, each with a `Citation` link to the pack), and the compiled PDF ("Reply evidence.pdf, 2.4 MB" + Download)
+   - **auto-added items** (BL-01 6595501766, owner decision 2026-11-03): code always adds the pack's newest client sign-off and scope snapshot to the agent's selection, inside the compiled PDF the fingerprint covers. When the draft has one, a `text-sm` `text-muted` line `autoHint` sits under `itemsHint`; the item's label gets a second line `autoAdded` (`file-plus` 14 px) while it stays ticked. An item left out to stay within PayPal's limits stays unticked with `autoLeftOut.<code>` (`info` 14 px) on that second line: never a silent drop. Both lines are inside the checkbox label, so they are part of its accessible name
    - the draft fingerprint `9f3c1a7e` and the Approve flow
    - "Other options" disclosure: **Accept claim** (Destructive), behind the typed confirmation "Type 120.00 USD to confirm"
 3. **Filing status:** a vertical stepper (a real sequence): proposed → approved → sending → (checking with PayPal) → filed, or failed with the localised refusal and `debug_id`.
@@ -71,6 +72,12 @@ A dispute arrives, and its reply is already drafted from the proof pack. The sel
 | checking | Checking with PayPal: the reply may have been received. We'll confirm within 10 minutes. | PayPal से पुष्टि हो रही है: जवाब शायद पहुँच गया है। 10 मिनट में पुष्टि करेंगे। |
 | due | Reply due {date}, {time} {tz} | जवाब की आख़िरी तारीख़ {date}, {time} {tz} |
 | draftUnavailable | Draft unavailable. You can still reply in PayPal yourself. | मसौदा उपलब्ध नहीं है। आप PayPal में ख़ुद जवाब दे सकते हैं। |
+| autoHint | Cleared always adds your client's sign-off and the scope snapshot when your pack has them, within PayPal's limits. | आपके सबूत पैक में क्लाइंट की पुष्टि और दायरे का स्नैपशॉट हो, तो Cleared उन्हें PayPal की सीमाओं के भीतर हमेशा जोड़ता है। |
+| autoAdded | Added by Cleared | Cleared ने जोड़ा |
+| autoLeftOut.unsupported_type | Not added: PayPal accepts only JPG, GIF, PNG or PDF files. | नहीं जोड़ा: PayPal सिर्फ़ JPG, GIF, PNG या PDF फ़ाइलें लेता है। |
+| autoLeftOut.file_too_large | Not added: this file is {size}, and PayPal takes files under 10 MB. | नहीं जोड़ा: यह फ़ाइल {size} की है, और PayPal 10 MB से छोटी फ़ाइलें ही लेता है। |
+| autoLeftOut.pdf_too_large | Not added: with this item ({size}) the PDF would reach PayPal's 10 MB limit. | नहीं जोड़ा: इसे ({size}) जोड़ने पर PDF, PayPal की 10 MB की सीमा तक पहुँच जाएगी। |
+| autoLeftOut.unreadable | Not added: Cleared couldn't read this file. | नहीं जोड़ा: Cleared यह फ़ाइल पढ़ नहीं सका। |
 
 `outcome.payout` is used only for `RESOLVED_WITH_PAYOUT` with `REPRESENTED_BY_PAYPAL`. Other outcomes are worded from PayPal's meaning, never as a victory or a loss of ours.
 

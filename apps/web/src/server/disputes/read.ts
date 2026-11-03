@@ -6,6 +6,7 @@ import { AgentEnvSchema, type Amount, type WorkspaceId } from "@cleared/core";
 import {
   auditPage,
   blobMeta,
+  disputeDraftsRepo,
   disputeList,
   draftsWithActions,
   evidenceRepo,
@@ -15,11 +16,19 @@ import {
   latestDraftOutcome,
   platform,
   scenarioForDispute,
+  type AutoEvidence,
   type DisputeListRow,
   type DraftWithAction,
 } from "@cleared/db";
 import { z } from "zod";
-import type { DisputeDetail, DisputeList, DisputeSummary, Draft, DraftItem } from "../../lib/dispute-view.ts";
+import type {
+  DisputeDetail,
+  DisputeList,
+  DisputeSummary,
+  Draft,
+  DraftItem,
+  DraftItemAuto,
+} from "../../lib/dispute-view.ts";
 import { auditEntry } from "../audit-entry.ts";
 import type { Deps } from "../deps.ts";
 import { view } from "../handlers/actions.ts";
@@ -117,12 +126,21 @@ export async function listDisputes(deps: Deps, ws: string): Promise<DisputeList>
 
 type ItemSource = Pick<DraftWithAction["draft"], "packId" | "evidenceItemIds">;
 
+/** BL-01 6595501766: an item code added (still selected) or left out (still unselected) of the agent's draft. */
+function autoOf(id: string, selected: boolean, auto: AutoEvidence | null): DraftItemAuto | null {
+  if (auto === null) return null;
+  if (selected && auto.added.some((a) => a.id === id)) return { state: "added", code: null, bytes: null };
+  const out = auto.leftOut.find((l) => l.id === id);
+  return !selected && out ? { state: "left_out", code: out.code, bytes: out.bytes } : null;
+}
+
 /** The pack's items (oldest first, E1…), ticked when selected, each linked to its file and its pack entry. */
 async function draftItems(
   deps: Deps,
   ws: string,
   d: ItemSource,
   paymentId: string | null,
+  auto: AutoEvidence | null = null,
 ): Promise<DraftItem[]> {
   const ev = evidenceRepo(deps.db, ws as WorkspaceId);
   const items =
@@ -142,6 +160,7 @@ async function draftItems(
     selected: selected.has(i.id),
     fileUrl: i.blobId === null ? null : `/api/evidence/${i.id}/file`,
     packUrl: paymentId === null ? null : `/payments/${paymentId}/pack#evidence-${i.id}`,
+    auto: autoOf(i.id, selected.has(i.id), auto),
   }));
 }
 
@@ -157,8 +176,9 @@ async function draftView(
   const kind = d.actionKind;
   // a pre-M2-07 row has no filing action to approve
   if (kind !== "provide_evidence" && kind !== "provide_supporting_info") return null;
+  const auto = await disputeDraftsRepo(deps.db, ws as WorkspaceId).autoEvidence(d.id);
   const [items, pdf, action] = await Promise.all([
-    draftItems(deps, ws, d, paymentId),
+    draftItems(deps, ws, d, paymentId, auto),
     d.compiledBlobId === null ? null : blobMeta(deps.db, ws, d.compiledBlobId),
     d.proposedActionId === null ? null : getProposedAction(deps.db, ws, d.proposedActionId),
   ]);
