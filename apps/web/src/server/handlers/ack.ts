@@ -44,6 +44,13 @@ export const ACK_NEUTRAL_BODY = {
 } as const;
 const neutral = (): Response => json(ACK_NEUTRAL_BODY, ACK_NEUTRAL_STATUS);
 
+/**
+ * BL-01 6569232529 (owner decision 2026-11-03, option b): a demo workspace has no `users` row, so the page
+ * names the synthetic seller of the demo scenario (`fixtures/scenario/scope-chat.txt`). A seller workspace
+ * without a display name still gets the page's fallback ("The seller").
+ */
+export const DEMO_SELLER_NAME = "Meera Studio";
+
 export interface PublicAck {
   readonly sellerName: string | null;
   readonly amount: string;
@@ -58,7 +65,7 @@ export async function loadPublicAck(deps: Deps, token: string): Promise<PublicAc
   if (found === null || found.scopeText === null) return null;
   if (ackLinkStatus(found.ack, found.currentScopeSha256, deps.now()) !== "pending") return null;
   return {
-    sellerName: found.sellerName,
+    sellerName: found.sellerName ?? (found.workspaceKind === "demo" ? DEMO_SELLER_NAME : null),
     amount: found.amount,
     currency: found.currency,
     scopeText: found.scopeText,
