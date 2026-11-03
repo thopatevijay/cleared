@@ -21,7 +21,11 @@
 //   4 (1:50–2:15) the audit log (proposal by the agent, approval by the seller) and the cash calendar
 //     (M3-05) rendered by Bryntum in the browser, with no GTM / bryntum.com request
 //   5 the guided Completed step (M3-04): the seller declares the $120 logo payment's (still open) hold a
-//     service and confirms Completed. It runs between 3a and 3b, while the hold is still declarable
+//     service, records it through the secondary trackers-batch path ("Effect on release unconfirmed",
+//     approved, 2xx debug_id: M3-GATE check 4) and confirms Completed. It runs between 3a and 3b, while the
+//     hold is still declarable
+// M3-GATE check 9: the run starts in a fresh, incognito-like context with no stored state and no keys
+// (`expectPrivateWindow`), so it is also the judge path from "Try as demo seller".
 // Soft assertions on scene 2 keep a missing hold from stopping the dispute path.
 //
 // Not automated (ticket scope): the owner's approval of the review-hold order as the sandbox buyer (P-52)
@@ -34,13 +38,15 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  HoldDetailSchema,
   PaymentsResponseSchema,
   ScenarioViewSchema,
+  type HoldDetail,
   type PaymentItem,
   type ScenarioView,
 } from "@cleared/core";
-import { expect, test, type Browser, type Locator, type Page } from "@playwright/test";
-import { DisputeDetailSchema, type DisputeDetail } from "../src/lib/dispute-view.ts";
+import { expect, test, type Browser, type BrowserContext, type Locator, type Page } from "@playwright/test";
+import { ActionViewSchema, DisputeDetailSchema, type DisputeDetail } from "../src/lib/dispute-view.ts";
 import en from "../messages/en.json" with { type: "json" };
 
 const deployed = (process.env["E2E_BASE_URL"] ?? "") !== "";
@@ -488,7 +494,64 @@ async function sceneCalendarAudit(page: Page, notes: string[]): Promise<void> {
   mark("calendar");
 }
 
-/** Scene 5: the $120 logo redesign is a service; the seller declares its (dispute) hold so, and confirms Completed. */
+async function holdDetail(page: Page, holdId: string): Promise<HoldDetail> {
+  const res = await page.request.get(`/api/holds/${holdId}`);
+  expect(res.status()).toBe(200);
+  return HoldDetailSchema.parse(await res.json());
+}
+
+/**
+ * Scene 5 secondary (M3-GATE check 4, M3-04's flow): the trackers-batch record, always labelled "Effect on
+ * release unconfirmed". Open → review the exact payload → approve → send; the worker's PayPal write answers
+ * 2xx with a debug_id, and the label stays.
+ */
+async function recordCompleted(page: Page, holdId: string, notes: string[]): Promise<void> {
+  const badge = en.holds.completed.api.badge;
+  const record = page.getByTestId("guided-completed").getByTestId("record-completed");
+  await expect(record.getByTestId("unconfirmed-badge")).toHaveText(badge);
+  await record.getByTestId("record-toggle").click();
+  await record.getByTestId("record-review-button").click();
+  const payload = record.getByTestId("record-payload");
+  await expect(payload).toContainText("record_service_completed");
+  await expect(payload).toContainText(run.captureId);
+  await expect(payload).toContainText("COMPLETED");
+  await shot(page, "s5-record-review");
+  await record.getByTestId("record-review").getByTestId("record-approve").click();
+  await expect(page.getByTestId("record-confirm")).toBeVisible();
+  await page.getByTestId("record-send").click();
+  mark("record_approved");
+  // settle: recorded (2xx), or failed / unknown, which fail below with PayPal's refusal
+  await expect
+    .poll(async () => (await holdDetail(page, holdId)).hold.completed?.record.state, {
+      timeout: 3 * MIN,
+      intervals: [3_000],
+    })
+    .not.toMatch(/^(none|proposed|recording)$/);
+  const rec = (await holdDetail(page, holdId)).hold.completed?.record;
+  expect(rec?.state, `record refused: ${rec?.refusal ?? "none"}`).toBe("recorded");
+  const res = await page.request.get(`/api/actions/${rec?.actionId ?? ""}`);
+  expect(res.status()).toBe(200);
+  const action = ActionViewSchema.parse(((await res.json()) as { action: unknown }).action);
+  expect(action).toMatchObject({ kind: "record_service_completed", state: "succeeded", createdBy: "seller" });
+  const status = Number(action.execution?.paypalStatus ?? "0");
+  expect(status).toBeGreaterThanOrEqual(200);
+  expect(status).toBeLessThan(300);
+  const debugId = action.execution?.paypalDebugId ?? "";
+  expect(debugId).not.toBe("");
+  expect(rec?.debugId).toBe(debugId);
+  await expect(record.getByTestId("record-recorded")).toContainText(`debug_id ${debugId}`, { timeout: MIN });
+  await expect(record.getByTestId("unconfirmed-badge")).toHaveText(badge);
+  run.ids["record_completed_debug_id"] = debugId;
+  run.ids["record_completed_status"] = String(status);
+  notes.push(`trackers-batch record (effect on release unconfirmed): ${String(status)}, debug_id ${debugId}`);
+  await shot(page, "s5-record-recorded");
+  mark("record_recorded");
+}
+
+/**
+ * Scene 5: the $120 logo redesign is a service; the seller declares its (dispute) hold so, records it with
+ * PayPal's API (the secondary, unconfirmed path), and confirms Completed (the guided step).
+ */
 async function sceneCompleted(page: Page, notes: string[]): Promise<void> {
   const held = (await payments(page)).find((p) => p.captureId === run.captureId);
   const holdId = held?.hold?.id ?? "";
@@ -501,6 +564,7 @@ async function sceneCompleted(page: Page, notes: string[]): Promise<void> {
   const slot = page.getByTestId("guided-completed");
   await expect(slot).toBeVisible();
   await shot(page, "s5-completed-step");
+  await recordCompleted(page, holdId, notes);
   await slot.getByTestId("completed-submit").click();
   await expect(slot.getByTestId("completed-done")).toBeVisible({ timeout: MIN });
   await expect(page.getByTestId("completed-toast")).toHaveText("Saved. Your estimate hasn't changed.");
@@ -509,10 +573,30 @@ async function sceneCompleted(page: Page, notes: string[]): Promise<void> {
   mark("completed");
 }
 
-test("storyboard dry run: scenes 1–5 on the deployed app", async ({ page, browser }) => {
+/**
+ * M3-GATE check 9: the judge path starts in a private window with no keys. The run's own browser context is
+ * Playwright's fresh, incognito-like one; this proves it carries nothing in: no stored state, cookies or
+ * storage, no credentials or extra headers from the config, and no session before "Try as demo seller".
+ * The same run then is the judge path (demo seller → dispute scenario → RESOLVED_WITH_PAYOUT → capture
+ * COMPLETED, scenes 1, 3a, 3b), so the gate spends one demo workspace (quota: 3 per IP per day), not two.
+ */
+async function expectPrivateWindow(context: BrowserContext, page: Page): Promise<void> {
+  const use = test.info().project.use;
+  expect(use.storageState, "no stored state in the config").toBeUndefined();
+  expect(use.httpCredentials, "no credentials in the config").toBeUndefined();
+  expect(use.extraHTTPHeaders, "no extra headers (no keys) in the config").toBeUndefined();
+  expect(await context.storageState()).toEqual({ cookies: [], origins: [] });
+  // no session yet: the workspace API refuses until "Try as demo seller"
+  const before = await page.request.get("/api/workspace");
+  expect(before.status()).toBe(401);
+  mark("private_window");
+}
+
+test("storyboard dry run: scenes 1–5 on the deployed app", async ({ page, browser, context }) => {
   test.skip(!deployed, "deployed only: set E2E_BASE_URL (M3-11 runs against production)");
   test.setTimeout(120 * MIN);
   mark("start");
+  await expectPrivateWindow(context, page);
   await scene("1 proof pack", (n) => sceneProof(page, browser, n));
   await scene("2 held-money inbox", (n) => sceneHolds(page, n));
   await scene("3a dispute lands, reply filed", (n) => sceneDispute(page, n));

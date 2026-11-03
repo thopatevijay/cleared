@@ -173,9 +173,17 @@ export function reconcileTargetsRepo(db: Db) {
 export function sloSamplesRepo(db: Db) {
   return {
     /**
-     * Webhook received → hold visible, in seconds, for holds created since `since`: the latest webhook
-     * about the hold's capture received at or before the `holds` row. Holds no webhook announced (poll,
-     * scenario) have no sample. Synthetic workspaces are excluded.
+     * Webhook received → hold visible, in seconds, for holds created since `since`: the latest webhook at
+     * or before the `holds` row that **announced** that hold (M3-GATE prep). Recorded shapes
+     * (fixtures/paypal/webhooks/deliveries):
+     * - a capture hold: a `PAYMENT.CAPTURE.*` delivery about the capture (`resource.id`) whose resource is
+     *   `PENDING` with the hold's `status_details.reason`. A `COMPLETED` capture delivery never counts:
+     *   pairing a dispute hold with it measured PayPal's chargeback clock (~200 s), not Cleared's.
+     * - a dispute hold (`type = 'dispute'`): a `CUSTOMER.DISPUTE.*` delivery (`resource.dispute_id`) whose
+     *   `disputed_transactions` lists the capture as `seller_transaction_id`; the capture re-sync that
+     *   delivery triggers is what shows the hold.
+     * Holds no webhook announced (poll, scenario, a webhook that arrived after the hold) have no sample.
+     * Synthetic workspaces are excluded.
      */
     async holdVisibleSeconds(since: Date, until: Date, tx?: Executor): Promise<number[]> {
       const r = await (tx ?? db).execute(sql`
@@ -185,7 +193,16 @@ export function sloSamplesRepo(db: Db) {
         join workspaces ws on ws.id = h.workspace_id and not ws.synthetic
         join lateral (
           select e.received_at from webhook_events e
-          where e.raw->'resource'->>'id' = p.capture_id and e.received_at <= h.created_at
+          where e.provider = 'paypal' and e.received_at <= h.created_at
+            and (
+              (e.raw->'resource'->>'id' = p.capture_id
+                and e.raw->'resource'->>'status' = 'PENDING'
+                and e.raw->'resource'->'status_details'->>'reason' = h.reason)
+              or (h.type = 'dispute'
+                and e.raw->'resource'->>'dispute_id' is not null
+                and e.raw->'resource'->'disputed_transactions'
+                  @> jsonb_build_array(jsonb_build_object('seller_transaction_id', p.capture_id)))
+            )
           order by e.received_at desc limit 1
         ) w on true
         where h.created_at >= ${since} and h.created_at <= ${until}`);

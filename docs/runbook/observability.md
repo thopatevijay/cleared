@@ -73,7 +73,7 @@ Every tick writes rows to `ops_checks (run_at, check, value, target, pass, detai
 | `check` | Value (unit) | Target | Notes |
 |---|---|---|---|
 | `reconcile` | sub-jobs enqueued (count) | none | `detail`: `captures`, `disputes`, `actions`, `skippedActions` |
-| `slo.hold_visible_p99` | p99 seconds, last 24 h | < 120 | webhook `received_at` → `holds.created_at`; null = no samples (pass) |
+| `slo.hold_visible_p99` | p99 seconds, last 24 h | < 120 | `received_at` of the webhook that announced the hold (a PENDING capture delivery with its reason, or for a dispute hold the dispute delivery listing the capture) → `holds.created_at`; holds no webhook announced give no sample; null = no samples (pass) |
 | `slo.approved_to_paypal_p99` | p99 seconds, last 24 h | < 300 | `approvals.approved_at` → `executions.created_at` of 2xx sends |
 | `slo.missed_deadlines` | count | 0 | open disputes past `seller_response_due_date` with no succeeded action |
 | `slo.synthetic_fresh` | seconds since the last passing synthetic run | < 93 600 (26 h) | breaches until the first daily run passes |
