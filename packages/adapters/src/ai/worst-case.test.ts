@@ -38,7 +38,7 @@ describe("worst-case reservation (M4-05)", () => {
   });
 
   it("the provider reserves output at max_output_tokens × the output price, plus the input bound", () => {
-    const p = createOpenAiCompletionProvider({ apiKey: "x", http: createHttpClient({ vendor: "openai" }) });
+    const p = createOpenAiCompletionProvider({ apiKey: "x", http: createHttpClient({ vendor: "openai", timeoutMs: 5_000 }) });
     const req = { ...base, dataBlocks: [text("hello")] };
     expect(p.worstCaseUsd?.(req)).toBe(worstCaseCostUsd("gpt-6-luna", inputTokensBound(req), 1_500));
     expect(worstCaseCostUsd("gpt-6-luna", 0, 1_500)).toBeCloseTo((1_500 * 0.5) / 1_000_000, 12);
