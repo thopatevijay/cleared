@@ -84,7 +84,7 @@ Scope evidence sha256 · दायरे के सबूत का sha256: 5a3d
 Delivery evidence (metadata only) · डिलीवरी के सबूत (सिर्फ़ विवरण)
 delivery · added · जोड़ा गया 2026-10-19T16:05:00.000Z · sha256 eaa4193b7543700c162410002c5695bb99723580497a18d75cc20562c394cefa
 shipment · added · जोड़ा गया 2026-10-20T08:40:00.000Z · sha256 92453a3fca1cc0f380196a899e145b17d5f3d20d3f872a48691f21be2ed46058
-Client acknowledgement · ग्राहक की पुष्टि
+Client acknowledgement · क्लाइंट की पुष्टि
 Typed name · टाइप किया गया नाम: आशा राव
 Accepted at · पुष्टि का समय: 2026-10-05T09:30:12.000Z (UTC)
 Seller's local time · विक्रेता का स्थानीय समय: 2026-10-05 15:00:12 (Asia/Kolkata)
