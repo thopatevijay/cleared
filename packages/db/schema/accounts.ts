@@ -21,6 +21,8 @@ export const workspaces = pgTable(
     llmBudgetUsd: numeric("llm_budget_usd"),
     /** M3-09: the daily synthetic judge-path run's workspace; excluded from the demo caps, purged after */
     synthetic: boolean("synthetic").notNull().default(false),
+    /** M4-07 (ADR 0020): set by `purge_workspace` once the retention purge emptied a demo workspace */
+    purgedAt: tstz("purged_at"),
   },
   (t) => [
     index("workspaces_created_at_idx").on(t.createdAt),
