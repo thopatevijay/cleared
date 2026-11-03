@@ -57,6 +57,7 @@
   },
   "dashboard": {
     "title": "Your PayPal money",
+    "demoRetention": "Uses sample data. Demo workspaces are deleted on 22 Dec 2026.",
     "summaryLabel": "Summary",
     "held": "{amount} held",
     "nothingHeld": "Nothing held",
