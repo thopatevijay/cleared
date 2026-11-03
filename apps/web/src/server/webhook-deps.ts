@@ -15,6 +15,7 @@ import { z } from "zod";
 import { getDb } from "./deps.ts";
 import { getPublisher } from "./queue.ts";
 import { webLogger } from "./request-context.ts";
+import { installTestSigningKey } from "./test-signing.ts";
 import type { PayPalWebhookDeps } from "./handlers/paypal-webhook.ts";
 
 const Env = z.object({
@@ -47,6 +48,9 @@ async function build(): Promise<PayPalWebhookDeps> {
           http,
           tokens: createTokenProvider({ http, baseUrl: PAYPAL_SANDBOX_BASE_URL, credentials: creds }),
         });
+  const verifier = createWebhookVerifier({ http, certTimeoutMs: CERT_TIMEOUT_MS });
+  // M4-06: NODE_ENV=test only; throws (no verifier, every delivery 500s) if configured anywhere else
+  installTestSigningKey(process.env, verifier.cache);
   return {
     db,
     publisher,
@@ -54,7 +58,7 @@ async function build(): Promise<PayPalWebhookDeps> {
       webhookId === ""
         ? null
         : createWebhookAuthenticator({
-            verifier: createWebhookVerifier({ http, certTimeoutMs: CERT_TIMEOUT_MS }),
+            verifier,
             verifyViaApi: (i) =>
               wh === null ? Promise.reject(new Error("no PayPal credentials")) : wh.verifyViaApi(i),
             webhookId,
