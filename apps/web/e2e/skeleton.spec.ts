@@ -9,6 +9,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import en from "../messages/en.json" with { type: "json" };
 import hi from "../messages/hi.json" with { type: "json" };
+import { firstViewOff } from "./support/journey.ts";
 
 const deployed = process.env["E2E_BASE_URL"] !== undefined;
 const REVIEW = fileURLToPath(new URL("../../../.review/M1-07/", import.meta.url));
@@ -272,6 +273,7 @@ test("screens and states for ui-reviewer (local)", async ({ browser }) => {
     await expect(page.getByTestId("empty-state")).toBeVisible();
     await capture(page, `dashboard-empty-${locale}`);
 
+    await firstViewOff(page); // M4-08: the first view is server-rendered; render without it here
     await page.route("**/api/payments", () => new Promise<void>(() => undefined));
     await page.reload();
     await expect(page.getByTestId("loading")).toBeVisible();
@@ -294,6 +296,7 @@ test("screens and states for ui-reviewer (local)", async ({ browser }) => {
     await expect(page.getByTestId("correlation-id")).toHaveText("9b2d4f6a-1c3e-4a5b-8d7f-0e1a2b3c4d5f");
     await capture(page, `dashboard-error-${locale}`);
     await page.unroute("**/api/payments");
+    await page.setExtraHTTPHeaders({});
 
     await page.route("**/api/payments", async (r) => {
       const res = await r.fetch();

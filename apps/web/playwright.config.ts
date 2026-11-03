@@ -60,6 +60,9 @@ export default defineConfig({
             LLM_WORKSPACE_CAP_USD: "0.10",
             DEMO_WORKSPACES_PER_IP_PER_DAY: "10000",
             DEMO_WORKSPACES_GLOBAL_MAX: "100000",
+            // M4-08: holdRequests/failRequests turn the server-rendered first view off for one page load,
+            // so the loading and error states stay reachable (src/server/first-view.ts)
+            E2E_FIRST_VIEW_SWITCH: live ? "" : "1",
           },
         },
         {
