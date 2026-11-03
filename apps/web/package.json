@@ -9,7 +9,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
-    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest"
+    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest",
+    "test:security": "vitest run test/security/ test/auth/ test/webhooks/paypal-webhook.int.test.ts test/evidence.int.test.ts test/ack.int.test.ts app/api/scenarios/scenarios.int.test.ts app/api/holds/holds.int.test.ts"
   },
   "dependencies": {
     "@bryntum/calendar": "npm:@bryntum/calendar-trial@7.3.8",

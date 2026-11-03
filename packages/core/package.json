@@ -10,7 +10,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
-    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest"
+    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest",
+    "test:security": "vitest run test/accounts.test.ts test/agent/units.test.ts test/agent/harness.test.ts src/actions/checks.test.ts src/proof/evidence.test.ts"
   },
   "dependencies": {
     "zod": "4.6.7"
