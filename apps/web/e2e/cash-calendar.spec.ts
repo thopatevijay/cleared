@@ -279,6 +279,9 @@ test("empty, loading and error states", async ({ page }) => {
     await expect(p.getByRole("heading", { name: "No held money." })).toBeVisible();
   };
   await shoot(page, "/en/calendar", "en-calendar-empty", [360, 375, 768, 1440], emptyReady);
+  await shoot(page, "/hi/calendar", "hi-calendar-empty", [360, 1440], async (p) => {
+    await expect(p.getByTestId("empty-state")).toBeVisible();
+  });
 
   // loading and error over a workspace with data: the server-rendered total and table stay true
   await seeded(page);
@@ -292,6 +295,7 @@ test("empty, loading and error states", async ({ page }) => {
     await expect(p.getByTestId("loading")).toBeVisible();
   };
   await shoot(page, "/en/calendar?view=month", "en-calendar-loading", [375, 1440], loadingReady);
+  await shoot(page, "/hi/calendar?view=month", "hi-calendar-loading", [375], loadingReady);
   await page.unrouteAll({ behavior: "ignoreErrors" });
 
   await page.route("**/api/cash-calendar**", (route) =>
@@ -313,6 +317,9 @@ test("empty, loading and error states", async ({ page }) => {
     await expect(p.getByText("Couldn't load the calendar")).toBeVisible();
   };
   await shoot(page, "/en/calendar?view=month", "en-calendar-error", [375, 1440], errorReady);
+  await shoot(page, "/hi/calendar?view=month", "hi-calendar-error", [375, 1440], async (p) => {
+    await expect(p.getByTestId("error-panel")).toBeVisible();
+  });
   await page.unrouteAll({ behavior: "ignoreErrors" });
 
   // the engine's own states: its chunk hangs (loading) or fails (the table still has every date). The
