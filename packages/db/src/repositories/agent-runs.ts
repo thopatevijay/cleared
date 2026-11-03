@@ -3,7 +3,9 @@
 // so the budget check before every call sees the current run's spend too.
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import type {
+  BudgetDecision,
   JsonValue,
+  ReserveRequest,
   RunFinish,
   RunStart,
   RunStore,
@@ -14,7 +16,7 @@ import type {
 } from "@cleared/core";
 import type { Db } from "../client.ts";
 import { platformFlagsRepo } from "../repos/platform/flags.ts";
-import { withTransaction } from "../tx.ts";
+import { withTransaction, type Executor } from "../tx.ts";
 import { agentRuns, agentSteps, auditLog, workspaces } from "../../schema/index.ts";
 import { insertProposedActions } from "./proposed-actions.ts";
 
@@ -43,12 +45,30 @@ export function createRunStore(db: Db, now: () => Date = () => new Date()): RunS
       if (!id) throw new Error("agent_runs insert returned no row");
       return id;
     },
+    reserve: (r) => reserve(db, r),
     recordStep: (step) => recordStep(db, step),
     finishRun: (finish) => finishRun(db, finish, now()),
   };
 }
 
-async function readSpend(db: Db, workspaceId: WorkspaceId, dayStart: Date): Promise<SpendSnapshot> {
+/**
+ * M4-05: one lock for every LLM budget check (a single key: the daily cap is global), so two runs can't
+ * both see room for their worst case. The reservation is added to the run's cost and settled by recordStep.
+ */
+async function reserve(db: Db, r: ReserveRequest): Promise<BudgetDecision> {
+  return withTransaction(db, async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended('cleared:llm-budget', 0))`);
+    const decision = r.decide(await readSpend(tx, r.workspaceId, r.dayStart));
+    if (decision.ok && r.usd > 0)
+      await tx
+        .update(agentRuns)
+        .set({ costUsd: sql`${agentRuns.costUsd} + ${usd(r.usd)}::numeric` })
+        .where(and(eq(agentRuns.id, r.runId), eq(agentRuns.workspaceId, r.workspaceId)));
+    return decision;
+  });
+}
+
+async function readSpend(db: Executor, workspaceId: WorkspaceId, dayStart: Date): Promise<SpendSnapshot> {
   const ws = await db
     .select({ kind: workspaces.kind, cap: workspaces.llmBudgetUsd })
     .from(workspaces)
@@ -113,13 +133,14 @@ async function recordStep(db: Db, s: StepRecord): Promise<void> {
       detail: s.detail,
       correlationId: s.correlationId,
     });
-    if (s.tokensIn === 0 && s.tokensOut === 0 && s.costUsd === 0) return;
+    const settle = s.costUsd - (s.reservedUsd ?? 0);
+    if (s.tokensIn === 0 && s.tokensOut === 0 && settle === 0) return;
     await tx
       .update(agentRuns)
       .set({
         tokensIn: sql`${agentRuns.tokensIn} + ${s.tokensIn}`,
         tokensOut: sql`${agentRuns.tokensOut} + ${s.tokensOut}`,
-        costUsd: sql`${agentRuns.costUsd} + ${usd(s.costUsd)}::numeric`,
+        costUsd: sql`${agentRuns.costUsd} + ${usd(settle)}::numeric`,
       })
       .where(and(eq(agentRuns.id, s.runId), eq(agentRuns.workspaceId, s.workspaceId)));
   });

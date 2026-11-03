@@ -8,6 +8,7 @@
 import {
   decisionAvailability,
   isStaleRun,
+  atOrOverCap,
   parseAgentConfig,
   scenarioOutcomeKey,
   ScenarioStepsSchema,
@@ -54,7 +55,7 @@ async function eligible(deps: Deps, s: Session): Promise<boolean> {
 async function llmCapReached(deps: Deps, ws: WorkspaceId): Promise<boolean> {
   const config = parseAgentConfig(process.env);
   const spend = await createRunStore(deps.db).spend(ws, utcDayStart(deps.now().getTime()));
-  return spend.globalTodayUsd >= config.dailyCapUsd;
+  return atOrOverCap(spend.globalTodayUsd, config.dailyCapUsd); // exact micro-dollar compare (#107)
 }
 
 async function unavailable(deps: Deps, s: Session): Promise<ScenarioUnavailableReason | null> {

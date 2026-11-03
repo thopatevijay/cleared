@@ -82,4 +82,10 @@ export type CompletionResult<T> =
 
 export interface AiProvider {
   complete<S extends z.ZodType>(req: CompletionRequest<S>): Promise<CompletionResult<z.infer<S>>>;
+  /**
+   * M4-05: the most this request can bill (`maxOutputTokens` × the output price, plus an input upper
+   * bound), reserved against the caps before the call and settled after. Absent = nothing reserved
+   * (test fakes); the OpenAI adapter always implements it.
+   */
+  worstCaseUsd?(req: CompletionRequest<z.ZodType>): number;
 }

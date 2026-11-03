@@ -16,6 +16,36 @@ import {
   type EvidencePart,
   type OpenAiProviderOptions,
 } from "./openai.ts";
+import { worstCaseCostUsd } from "./pricing.ts";
+
+/** Our instructions, the JSON schema and the evidence tags (generous). */
+const OVERHEAD_TOKENS = 2_000;
+/** One image at `detail: auto` (OpenAI caps the patches one image becomes). */
+const IMAGE_TOKENS = 1_600;
+/** A PDF goes as one image plus its text per page; the page count isn't known here: one per 50 KB. */
+const PDF_PAGE_TOKENS = IMAGE_TOKENS + 1_500;
+const PDF_BYTES_PER_PAGE = 50_000;
+const PDF_MAX_PAGES = 30;
+
+const utf8 = (t: string): number => Buffer.byteLength(t, "utf8");
+
+/**
+ * M4-05: the request's input tokens, for the worst-case reservation. Text is a true upper bound (a token
+ * is at least one UTF-8 byte); images and PDFs are estimates (the threat model lists this residual).
+ */
+export function inputTokensBound(req: CompletionRequest<z.ZodType>): number {
+  let n = OVERHEAD_TOKENS + utf8(req.system) + utf8(req.task);
+  for (const b of req.dataBlocks) {
+    n += utf8(b.label) + 64;
+    if (b.kind === "text") n += utf8(b.text);
+    else if (b.kind === "image") n += IMAGE_TOKENS;
+    else {
+      const bytes = Math.floor((b.base64.length * 3) / 4);
+      n += Math.min(PDF_MAX_PAGES, Math.max(1, Math.ceil(bytes / PDF_BYTES_PER_PAGE))) * PDF_PAGE_TOKENS;
+    }
+  }
+  return n;
+}
 
 export function toEvidencePart(b: DataBlock): EvidencePart {
   const tags = { evidenceId: b.id, label: b.label, sha256: b.sha256, flagged: b.flagged };
@@ -69,5 +99,6 @@ export function createOpenAiCompletionProvider(opts: OpenAiProviderOptions): AiP
       });
       return toCompletion<z.infer<S>>(res);
     },
+    worstCaseUsd: (req) => worstCaseCostUsd(req.model, inputTokensBound(req), req.maxOutputTokens),
   };
 }
