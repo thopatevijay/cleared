@@ -127,10 +127,18 @@ function MonthBar({
 }
 
 /** Below 768 px the month grid shows counts only (cash-calendar.md "375 px"). */
+const COMPACT_QUERY = "(max-width: 767px)";
+
+/**
+ * Read synchronously on the first render (this module is client-only, `ssr: false`): Bryntum reads its row
+ * sizing (`autoRowHeight`, `minRowHeight`) when the view is created and does not re-apply it from later
+ * prop changes, so the first render must already know the width class. Crossing the breakpoint re-creates
+ * the calendar (`key`).
+ */
 function useCompact(): boolean {
-  const [compact, setCompact] = useState(false);
+  const [compact, setCompact] = useState(() => window.matchMedia(COMPACT_QUERY).matches);
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
+    const mq = window.matchMedia(COMPACT_QUERY);
     const on = () => {
       setCompact(mq.matches);
     };
@@ -296,6 +304,7 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
         onKeyDownCapture={onKeyDownCapture}
       >
         <BryntumCalendar
+          key={compact ? "compact" : "wide"}
           ariaLabel={t("calendarLabel")}
           date={shown}
           mode="month"
@@ -303,7 +312,10 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
           sidebar={false}
           readOnly
           // No `timeZone`: days are already in the workspace zone (M0-09 measured a +1 day shift with it).
-          events={events}
+          // Below 768 px no bars are drawn (the cells show counts and totals from our own renderer), so the
+          // engine gets no events to lay out: a row with events would otherwise grow by its hidden bars and
+          // squeeze the other rows of the fixed-height grid.
+          events={compact ? [] : events}
           tbar={null}
           eventTooltipFeature={false}
           eventMenuFeature={false}

@@ -11,6 +11,7 @@ import { CashCalendarResponseSchema, type CashCalendarResponse } from "@cleared/
 import { closeDb, createDb, databaseUrl } from "@cleared/db";
 import { expect, test, type Browser, type Cookie, type Page } from "@playwright/test";
 import { seedCash } from "../test/support/cash-seed.ts";
+import { seedHeldPayment } from "../test/support/hold-seed.ts";
 import { axe, demoWorkspace, fits, local, shots, sql } from "./support/disputes.ts";
 import { axeClean } from "./support/holds.ts";
 
@@ -42,8 +43,14 @@ function external(page: Page): string[] {
 }
 
 type Ready = (page: Page) => Promise<void>;
+/** The grid is drawn; from 768 px also its event bars (below 768 px cells show counts, no bars). */
 const engineReady: Ready = async (p) => {
-  await expect(p.locator(".cash-bryntum [data-event-id]").first()).toBeAttached({ timeout: 60_000 });
+  await expect(p.locator(".cash-bryntum .b-calendar-cell[data-date]").first()).toBeAttached({
+    timeout: 60_000,
+  });
+  if ((p.viewportSize()?.width ?? 1440) >= 768)
+    await expect(p.locator(".cash-bryntum [data-event-id]").first()).toBeAttached({ timeout: 60_000 });
+  else await expect(p.locator(".cash-bryntum .cash-day-count").first()).toBeAttached({ timeout: 60_000 });
 };
 const listReady: Ready = async (p) => {
   await expect(p.getByTestId("calendar-area")).toHaveAttribute("data-view", "list");
@@ -208,7 +215,7 @@ test("list view at 360: the default below 768 px, no horizontal scroll, every ev
   test.setTimeout(300_000);
   const calls = external(page);
   await page.setViewportSize({ width: 360, height: 800 });
-  const { cal } = await seeded(page);
+  const { ws, cal } = await seeded(page);
   await page.goto("/en/calendar");
   await expect(page.getByTestId("calendar-area")).toHaveAttribute("data-view", "list");
   const rows = page.getByTestId("cash-list").getByTestId("cash-row");
@@ -232,11 +239,20 @@ test("list view at 360: the default below 768 px, no horizontal scroll, every ev
   await shoot(page, "/hi/calendar?view=list", "hi-calendar-list", [360, 1440], listReady);
   await shoot(page, "/hi/calendar?view=month", "hi-calendar-month", [375, 1440], engineReady);
 
-  // a six-week month (May 2027: six rows with a Sunday start and with a Monday start) at 375: every week
-  // row fits the grid and the last day is visible and selectable, in EN (Sunday) and HI (Monday)
-  for (const [locale, title, nothing] of [
-    ["en", "May 2027", "Nothing on this day."],
-    ["hi", "मई 2027", "इस दिन कुछ नहीं।"],
+  // a six-week month with events (May 2027: six rows with a Sunday start and with a Monday start) at 375:
+  // estimated releases on Mon 3 May (an early row) and on Mon 31 May (the last in-month day, in the last
+  // row). Every row keeps the compact cell height, the last row is not squeezed, and 31 May's count and
+  // total lines sit fully inside their cell and the calendar; the day stays selectable. EN (Sunday), HI (Monday).
+  const db = createDb(databaseUrl());
+  try {
+    await seedHeldPayment(db, ws, { amount: "25.00", seenAt: new Date("2027-05-02T12:00:00Z") });
+    await seedHeldPayment(db, ws, { amount: "420.00", seenAt: new Date("2027-05-30T12:00:00Z") });
+  } finally {
+    await closeDb(db);
+  }
+  for (const [locale, title] of [
+    ["en", "May 2027"],
+    ["hi", "मई 2027"],
   ] as const) {
     const toMay: Ready = async (p) => {
       for (let i = 0; i < 36; i++) {
@@ -244,30 +260,56 @@ test("list view at 360: the default below 768 px, no horizontal scroll, every ev
         await p.getByTestId("month-bar").getByRole("button").nth(2).click();
       }
       await expect(p.getByTestId("month-title")).toHaveText(title);
-      const box = await p.locator(".cash-bryntum").boundingBox();
-      const cells = p.locator(".cash-bryntum .b-calendar-cell[data-date]");
-      const last = cells.last();
-      await expect(last).toBeVisible();
-      const lb = await last.boundingBox();
-      expect((lb?.y ?? 0) + (lb?.height ?? 0)).toBeLessThanOrEqual((box?.y ?? 0) + (box?.height ?? 0) + 2); // sub-pixel borders; a clipped row is ~92 px
       const may31 = p.locator('.b-calendar-cell[data-date="2027-05-31"]');
+      await expect(may31.locator(".cash-day-count > span")).toHaveText(["1", "$420"]);
+      await expect(p.locator('.b-calendar-cell[data-date="2027-05-03"] .cash-day-count > span')).toHaveText([
+        "1",
+        "$25",
+      ]);
+      const m = await p.evaluate(() => {
+        const box = document.querySelector(".cash-bryntum")?.getBoundingClientRect();
+        const cells = [
+          ...document.querySelectorAll<HTMLElement>(".cash-bryntum .b-calendar-cell[data-date]"),
+        ];
+        const rows = new Map<number, number>();
+        for (const c of cells) {
+          const r = c.getBoundingClientRect();
+          rows.set(Math.round(r.top), Math.round(r.height));
+        }
+        const cell = document
+          .querySelector('.b-calendar-cell[data-date="2027-05-31"]')
+          ?.getBoundingClientRect();
+        const lines = [
+          ...document.querySelectorAll('.b-calendar-cell[data-date="2027-05-31"] .cash-day-count > span'),
+        ].map((l) => l.getBoundingClientRect().bottom);
+        return {
+          heights: [...rows.entries()].sort((x, y) => x[0] - y[0]).map(([, h]) => h),
+          boxBottom: box?.bottom ?? 0,
+          cellBottom: cell?.bottom ?? 0,
+          linesBottom: Math.max(...lines),
+        };
+      });
+      // six rows of equal height, none below the compact cell height (count + totals)
+      expect(m.heights).toHaveLength(6);
+      expect(Math.min(...m.heights), `row heights ${m.heights.join(",")}`).toBeGreaterThanOrEqual(72);
+      expect(
+        Math.max(...m.heights) - Math.min(...m.heights),
+        `row heights ${m.heights.join(",")}`,
+      ).toBeLessThanOrEqual(1);
+      expect(m.linesBottom).toBeLessThanOrEqual(m.cellBottom);
+      expect(m.cellBottom).toBeLessThanOrEqual(m.boxBottom);
       await may31.scrollIntoViewIfNeeded();
-      await expect(may31).toBeVisible();
       await may31.locator(".b-day-num").click();
-      await expect(p.getByTestId("day-panel")).toHaveText(nothing);
+      await expect(p.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(1);
       // back to the top, so the full-page capture is not taken mid-scroll under the sticky header
       await p.evaluate(() => {
         window.scrollTo(0, 0);
       });
     };
-    await page.setViewportSize({ width: 375, height: 800 });
-    await page.goto(`/${locale}/calendar?view=month`);
-    await engineReady(page);
-    await toMay(page);
     await shoot(
       page,
       `/${locale}/calendar?view=month`,
-      `${locale}-calendar-month-6wk`,
+      `${locale}-calendar-month-6wk-events`,
       [375],
       engineReady,
       toMay,
