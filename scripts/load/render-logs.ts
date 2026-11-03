@@ -62,7 +62,7 @@ export function serverTimings(start: Date, end: Date, service = RENDER_WEB_SERVI
   let cursor = start.toISOString();
   try {
     for (;;) {
-      const batch = page(service, cursor, end.toISOString(), '"msg":"request"');
+      const batch = page(service, cursor, end.toISOString(), "durationMs");
       const fresh = batch.filter((l) => !seen.has(l.id));
       if (fresh.length === 0) break;
       for (const l of fresh) {

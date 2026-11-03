@@ -351,6 +351,8 @@ export function assertResult(r: LoadResult, flags: Map<string, string>): string[
   if (ackP95 !== undefined) {
     for (const route of r.routes.filter((x) => !x.label.startsWith("forged") && !isProbe(x.label))) {
       check(route.p95 < Number(ackP95), `${route.label} ack p95 ${String(route.p95)} ms < ${ackP95} ms`);
+      // a refused connection is fast too: an ack only counts when the server answered
+      check(route.errors === 0, `${route.label}: every request answered, no 5xx (${JSON.stringify(route.statuses)})`);
     }
   }
   const forgedP95 = flags.get("forged-p95") ?? (ackP95 !== undefined ? "200" : undefined);
@@ -384,7 +386,11 @@ export function assertResult(r: LoadResult, flags: Map<string, string>): string[
     if (need("drain")) {
       check(q.drainSec !== null && q.drainSec <= Number(flags.get("drain")), `drain ${String(q.drainSec)} s ≤ ${String(flags.get("drain"))} s`);
     }
-    if (need("dup")) check(q.eventsWithOneRow === q.events, `every event has exactly one webhook_events row (${String(q.eventsWithOneRow)}/${String(q.events)})`);
+    if (need("dup")) {
+      const sent = r.routes.find((x) => x.label === "signed")?.n ?? 0;
+      check(q.events > 0 && q.events === sent, `every signed event acked 200 (${String(q.events)}/${String(sent)})`);
+      check(q.eventsWithOneRow === q.events, `every event has exactly one webhook_events row (${String(q.eventsWithOneRow)}/${String(q.events)})`);
+    }
     check(q.openAiUsd === 0, `OpenAI spend during the run $${q.openAiUsd.toFixed(4)} = $0`);
   }
   return fails;
