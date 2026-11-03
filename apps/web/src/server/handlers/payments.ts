@@ -25,6 +25,7 @@ import {
   type Publisher,
 } from "@cleared/db";
 import { checkMutation } from "../csrf.ts";
+import { holdGuidance, type HoldGuidance } from "../holds/declaration.ts";
 import { paymentHold } from "../holds/read.ts";
 import { trackingSummaries } from "../tracking/summaries.ts";
 import type { Deps } from "../deps.ts";
@@ -56,6 +57,7 @@ function toItem(
   pack: PackStatus | undefined,
   hold: HoldRow | undefined,
   tracking: TrackingSummary | null,
+  guidance: HoldGuidance | null = null,
 ): PaymentItem {
   return {
     id: p.id,
@@ -70,7 +72,7 @@ function toItem(
     source: p.source,
     updatedAt: (p.paypalUpdatedAt ?? p.createdAt).toISOString(),
     pack: toPack(pack),
-    hold: hold === undefined ? null : paymentHold(hold, tracking),
+    hold: hold === undefined ? null : paymentHold(hold, tracking, guidance),
   };
 }
 
@@ -109,16 +111,21 @@ export async function getPayments(req: Request, deps: Deps): Promise<Response> {
     packs.proofReadyCount(),
     holds.activeByPayment(rows.map((r) => r.id)),
   ]);
-  // M3-03: route advice + tracking state on goods holds (dashboard.md elements 10–12)
+  // M3-03: route advice + tracking state on goods holds (dashboard.md elements 10–12); BL-01 6570499264:
+  // the seller's declaration and the guided action it selects
   const refs = rows.flatMap((p) => {
     const hold = holdOf.get(p.id);
     return hold === undefined ? [] : [{ hold, payment: p }];
   });
-  const tracking = await trackingSummaries(deps.db, session.workspaceId, refs, ws.timezone);
+  const [tracking, guidance] = await Promise.all([
+    trackingSummaries(deps.db, session.workspaceId, refs, ws.timezone),
+    holdGuidance(deps.db, session.workspaceId, refs),
+  ]);
   const body: PaymentsResponse = {
     items: rows.map((r) => {
       const hold = holdOf.get(r.id);
-      return toItem(r, packOf.get(r.id), hold, hold === undefined ? null : (tracking.get(hold.id) ?? null));
+      if (hold === undefined) return toItem(r, packOf.get(r.id), undefined, null);
+      return toItem(r, packOf.get(r.id), hold, tracking.get(hold.id) ?? null, guidance.get(hold.id) ?? null);
     }),
     total,
     offset: q.data.offset,

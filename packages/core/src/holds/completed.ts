@@ -10,6 +10,7 @@ import { err, ok, type Result } from "../result.ts";
 import { compareInstants, fromEpochMs, toEpochMs, type Instant } from "../time.ts";
 import { SERVICE_COMPLETED_RULE, type HoldEstimate, type HoldType } from "./rules.ts";
 import { transitionHold, type HoldEvent, type HoldState } from "./state.ts";
+import { guidedAction, releaseRuleAfterAction, type DeclaredKind } from "./declaration.ts";
 
 /** What PayPal support wrote to the owner (reply pasted 2026-10-26; docs/research RESEARCH.md log). */
 export interface SupportQuote {
@@ -140,8 +141,46 @@ export interface ConfirmInput {
  * `service_completed`: the confirmation + 7 days, labelled estimated, with help129 as its source.
  */
 export function confirmServiceCompleted(i: ConfirmInput): Result<CompletedConfirmation, CompletedRefusal> {
+  if (i.hold.type !== "service") return err("NOT_SERVICE_HOLD");
+  const r = checkConfirmation(i);
+  if (!r.ok) return r;
+  const estimate = SERVICE_COMPLETED_RULE.estimate(r.value.confirmedAt);
+  if (estimate === null) throw new Error("service_completed rule lost its estimate");
+  return ok({ ...r.value, estimate, ruleId: SERVICE_COMPLETED_RULE.id });
+}
+
+export interface GuidedConfirmInput extends ConfirmInput {
+  /** the seller's declaration (BL-01 6570499264); it never changes the estimate */
+  readonly declared: DeclaredKind | null;
+}
+
+export interface GuidedConfirmation {
+  readonly confirmedAt: Instant;
+  readonly state: HoldState;
+  /** null: the hold keeps PayPal's rule and estimate for its reason (ADR 0017 addendum 3) */
+  readonly estimate: HoldEstimate | null;
+  readonly ruleId: string | null;
+}
+
+/**
+ * The guided Completed step on any hold whose action is `completed` (PayPal typed it service, or the seller
+ * declared a service). The 7-day estimate applies only when PayPal typed the hold service; on any other hold
+ * (e.g. PENDING_REVIEW) the confirmation is recorded and the hold filed, and the estimate stays PayPal's.
+ */
+export function confirmCompleted(i: GuidedConfirmInput): Result<GuidedConfirmation, CompletedRefusal> {
+  if (i.hold.type === "service") return confirmServiceCompleted(i);
+  if (guidedAction(i.hold.type, i.declared) !== "completed") return err("NOT_SERVICE_HOLD");
+  const r = checkConfirmation(i);
+  if (!r.ok) return r;
+  const rule = releaseRuleAfterAction(i.hold.type, "completed");
+  return ok({ ...r.value, estimate: rule?.estimate(r.value.confirmedAt) ?? null, ruleId: rule?.id ?? null });
+}
+
+/** The date and state rules both confirmations share (the hold's type is checked by the caller). */
+function checkConfirmation(
+  i: ConfirmInput,
+): Result<{ readonly confirmedAt: Instant; readonly state: HoldState }, CompletedRefusal> {
   const { hold } = i;
-  if (hold.type !== "service") return err("NOT_SERVICE_HOLD");
   if (hold.completedConfirmedAt !== null) return err("ALREADY_CONFIRMED");
   if (!COMPLETED_CONFIRMABLE_STATES.includes(hold.state)) return err("NOT_CONFIRMABLE");
   if (!CalendarDateSchema.safeParse(i.confirmedOn).success) return err("INVALID_DATE");
@@ -152,9 +191,7 @@ export function confirmServiceCompleted(i: ConfirmInput): Result<CompletedConfir
   // today → now; an earlier day → noon that day, but never before the hold opened
   const confirmedAt =
     i.confirmedOn === today ? i.now : compareInstants(noon, hold.openedAt) < 0 ? hold.openedAt : noon;
-  const estimate = SERVICE_COMPLETED_RULE.estimate(confirmedAt);
-  if (estimate === null) throw new Error("service_completed rule lost its estimate");
-  return ok({ confirmedAt, state: walkToFiled(hold.state), estimate, ruleId: SERVICE_COMPLETED_RULE.id });
+  return ok({ confirmedAt, state: walkToFiled(hold.state) });
 }
 
 /**

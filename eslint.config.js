@@ -10,6 +10,7 @@ export default tseslint.config(
       "**/dist/**",
       "**/coverage/**",
       "**/next-env.d.ts",
+      "apps/web/public/vendor/**", // Bryntum's prebuilt engine, copied at build (BL-01 6595246110)
       "spikes/**",
     ],
   },

@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/vendor-bryntum.ts && next dev",
+    "build": "node scripts/vendor-bryntum.ts && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",

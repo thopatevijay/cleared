@@ -1,4 +1,6 @@
-// M3-04 guided Completed step (hold.md "M3-04 guided Completed step"), on service holds only:
+// M3-04 guided Completed step (hold.md "M3-04 guided Completed step"), on holds whose guided action is Completed
+// (PayPal typed it service, or the seller declared a service: BL-01 6570499264, ADR 0017 addendum 3). On a
+// declared-only hold the confirmation files the hold and keeps PayPal's estimate (no 7-day estimate, no event):
 //   POST /api/holds/:id/completed          {confirmed_on: "YYYY-MM-DD"}
 //     The seller says they marked the order Completed in PayPal (the web step). In ONE transaction, under the
 //     payment's row lock: the hold walks to `filed` (M3-01 machine), `estimate_source = service_completed`,
@@ -13,9 +15,12 @@
 //     RECORD_NOT_NEEDED / RECORD_IN_PROGRESS; 404 NOT_FOUND.
 import {
   CaptureIdSchema,
-  confirmServiceCompleted,
+  confirmCompleted,
+  declaredKindOf,
   fromEpochMs,
+  guidedAction,
   HoldIdSchema,
+  holdTypeOf,
   recordServiceCompletedPayload,
   WorkspaceIdSchema,
   type CompletedRefusal,
@@ -32,6 +37,7 @@ import {
 } from "@cleared/db";
 import { z } from "zod";
 import type { Deps } from "../deps.ts";
+import { guidedUnderLock } from "../holds/declaration.ts";
 import { withIdempotency } from "../idempotency.ts";
 import { json } from "../respond.ts";
 import { withRenewal } from "../session.ts";
@@ -70,7 +76,10 @@ class Refused extends Error {
 
 interface Confirmed {
   readonly confirmedAt: Instant;
-  readonly estimatedReleaseAt: Instant;
+  /** the hold's estimate after the confirmation (unchanged, possibly null, when the 7-day rule doesn't apply) */
+  readonly estimatedReleaseAt: Instant | null;
+  /** false: the hold keeps PayPal's estimate (a hold the seller declared a service, ADR 0017 addendum 3) */
+  readonly estimateChanged: boolean;
   readonly state: string;
 }
 
@@ -125,26 +134,32 @@ async function confirmIn(tx: Tx, c: ConfirmCtx, confirmedOn: string, actor: stri
   if (payment === null || hold === null) throw new Refused(NOT_FOUND);
   const tz = (await platform(deps.db).workspaces.get(ws))?.timezone ?? "UTC";
   const now = fromEpochMs(deps.now().getTime());
-  const r = confirmServiceCompleted({
+  const r = confirmCompleted({
     hold: {
-      type: hold.type === "service" ? "service" : "other",
+      type: holdTypeOf(hold.type),
       state: hold.state,
       openedAt: fromEpochMs(hold.openedAt.getTime()),
       completedConfirmedAt:
         hold.completedConfirmedAt === null ? null : fromEpochMs(hold.completedConfirmedAt.getTime()),
     },
+    declared: declaredKindOf(hold.sellerDeclaredKind),
     confirmedOn,
     now,
     timeZone: tz,
   });
   if (!r.ok) throw new Refused(CONFIRM_REFUSAL[r.error]);
   const { confirmedAt, estimate, state } = r.value;
+  // ADR 0017 addendum 3: only a hold PayPal typed service takes the 7-day estimate; any other hold (the
+  // seller declared a service) keeps PayPal's rule and estimate for its reason
+  const kept = hold.estimatedReleaseAt === null ? null : fromEpochMs(hold.estimatedReleaseAt.getTime());
+  const estimatedReleaseAt = estimate?.at ?? kept;
   await repos.holds.update(
     hold.id,
     {
       state,
-      estimateSource: r.value.ruleId,
-      estimatedReleaseAt: new Date(estimate.at),
+      ...(estimate === null || r.value.ruleId === null
+        ? {}
+        : { estimateSource: r.value.ruleId, estimatedReleaseAt: new Date(estimate.at) }),
       completedConfirmedAt: new Date(confirmedAt),
     },
     tx,
@@ -158,12 +173,15 @@ async function confirmIn(tx: Tx, c: ConfirmCtx, confirmedOn: string, actor: stri
         from: hold.state,
         to: state,
         confirmedAt,
-        estimatedReleaseAt: estimate.at,
+        estimatedReleaseAt,
+        estimateChanged: estimate !== null,
         by: actor,
       },
     },
     tx,
   );
+  // the event carries the 7-day estimate (M3-08 keys a reminder on it): only when that rule applies
+  if (estimate === null) return { confirmedAt, estimatedReleaseAt, estimateChanged: false, state };
   await c.pub.emit(tx, {
     type: "hold.completed_confirmed",
     version: 1,
@@ -176,7 +194,7 @@ async function confirmIn(tx: Tx, c: ConfirmCtx, confirmedOn: string, actor: stri
       estimatedReleaseAt: estimate.at,
     },
   });
-  return { confirmedAt, estimatedReleaseAt: estimate.at, state };
+  return { confirmedAt, estimatedReleaseAt: estimate.at, estimateChanged: true, state };
 }
 
 const IN_FLIGHT = new Set(["approved", "executing", "unknown"]);
@@ -188,7 +206,9 @@ export async function postCompletedRecord(req: Request, deps: Deps, rawId: strin
   const ws = m.session.workspaceId;
   const v = z.uuid().safeParse(rawId).success ? await holdsRepo(deps.db, ws).view(rawId) : null;
   if (v === null) return no(NOT_FOUND);
-  if (v.hold.type !== "service") return no(RECORD_REFUSAL.notService);
+  // a hold PayPal typed service, or one the seller declared a service (BL-01 6570499264)
+  if (guidedAction(holdTypeOf(v.hold.type), declaredKindOf(v.hold.sellerDeclaredKind)) !== "completed")
+    return no(RECORD_REFUSAL.notService);
   if (v.hold.state === "released") return no(RECORD_REFUSAL.done);
   const payload = recordServiceCompletedPayload(v.payment.captureId);
   const scope = {
@@ -206,6 +226,8 @@ export async function postCompletedRecord(req: Request, deps: Deps, rawId: strin
     if (prev !== undefined && IN_FLIGHT.has(prev.state)) return no(RECORD_REFUSAL.busy);
     const actor = actorOf(m.session);
     const row = await withTransaction(deps.db, async (tx) => {
+      const ids = { paymentId: v.payment.id, holdId: v.hold.id };
+      if ((await guidedUnderLock(deps.db, ws, ids, tx)) !== "completed") return null;
       const created = await insertSellerProposal(
         deps.db,
         {
@@ -220,6 +242,7 @@ export async function postCompletedRecord(req: Request, deps: Deps, rawId: strin
       if (prev?.state === "proposed") await supersede(deps.db, prev, created.id, actor, tx);
       return created;
     });
+    if (row === null) return no(RECORD_REFUSAL.notService);
     return withRenewal(json({ action: await view(deps, row) }, 201), m.session);
   });
 }

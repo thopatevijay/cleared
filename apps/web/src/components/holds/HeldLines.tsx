@@ -4,8 +4,10 @@
 // (with that source), "Tracking can help release this" on goods holds, and the single row action "Why?"
 // → the hold detail's explanation section. M3-03 (elements 11–12): on a goods hold not yet filed, the
 // route-advice line and "File tracking" (→ the hold detail's `add_tracking` ApprovalCard) replace "Why?";
-// once tracking is filed both are gone.
-import type { PaymentHold } from "@cleared/core";
+// once tracking is filed both are gone. BL-01 6570499264: a hold the seller declared goods shows "You marked
+// this as goods" and gets the same action, with neutral route copy (no release-speed claim).
+import { guidedAction, holdTypeOf, type PaymentHold } from "@cleared/core";
+import { DeclaredLine } from "./DeclarationControl.tsx";
 import { Truck, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "../../i18n/navigation.ts";
@@ -61,14 +63,19 @@ export function HeldLines({
   action: boolean;
 }) {
   const t = useTranslations("holds");
-  const tracking = hold.type === "goods" ? (hold.tracking ?? null) : null;
+  // BL-01 6570499264: a hold the seller declared goods gets tracking too, but no release-speed copy
+  const typed = holdTypeOf(hold.type);
+  const guided = hold.guidedAction ?? guidedAction(typed, null);
+  const tracking = guided === "tracking" ? (hold.tracking ?? null) : null;
   const toFile = tracking !== null && tracking.state !== "filed";
+  const declared = hold.declaration?.kind ?? null;
   return (
     <div className="flex flex-col items-start gap-2" data-testid="held-lines" data-hold={hold.id}>
       <EstimatedDate e={{ ...hold, disputeDueAt }} timeZone={timeZone} />
       <AdviceLine ruleId={hold.ruleId} />
-      {hold.type === "goods" && tracking?.state !== "filed" ? <TrackingHint /> : null}
-      {tracking === null ? null : <RouteAdviceLine s={tracking} />}
+      {declared === null ? null : <DeclaredLine kind={declared} compact />}
+      {typed === "goods" && tracking?.state !== "filed" ? <TrackingHint /> : null}
+      {tracking === null ? null : <RouteAdviceLine s={tracking} releaseClaims={typed === "goods"} />}
       {action && toFile ? (
         <Link
           href={`/holds/${hold.id}#tracking`}

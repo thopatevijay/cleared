@@ -6,6 +6,8 @@
 //    workspace zone) → POST /api/holds/:id/completed. The server sets the estimate (confirmed + 7 days,
 //    help129, estimated) and files the hold.
 // C. Confirmed: "You marked it Completed on {date}" + the estimate; the guide stays readable on demand.
+// BL-01 6570499264: on a hold the seller declared a service (PayPal didn't type it service, e.g. a payment
+// review) the intro says the 7-day rule doesn't apply here, and the confirmation keeps PayPal's estimate.
 // D. Below it, always: the secondary API record, labelled "Effect on release unconfirmed" (RecordCompletedCard).
 import {
   fromEpochMs,
@@ -79,7 +81,7 @@ function Guide({
   return (
     <div className="flex flex-col gap-3" data-testid="completed-guide">
       <p className="flex flex-wrap items-center gap-x-2">
-        <span>{t("intro")}</span>
+        <span data-testid="completed-intro">{hold.type === "service" ? t("intro") : t("introDeclared")}</span>
         {rule === null ? null : <RuleSource source={rule.sources[0]} />}
       </p>
       <ol className="flex flex-col gap-4">
@@ -138,7 +140,7 @@ function Confirm({
 }: {
   hold: HoldDetail["hold"];
   timeZone: string;
-  onSaved: (estimate: string) => void;
+  onSaved: (estimate: string | null, changed: boolean) => void;
 }) {
   const t = useTranslations("holds.completed");
   const locale = useUiLocale();
@@ -165,7 +167,8 @@ function Confirm({
     key.current = null;
     if (res.status === 200) {
       setSaveError(null);
-      onSaved((res.body as { estimatedReleaseAt: string }).estimatedReleaseAt);
+      const body = res.body as { estimatedReleaseAt: string | null; estimateChanged?: boolean };
+      onSaved(body.estimatedReleaseAt, body.estimateChanged !== false);
       return;
     }
     const code = res.status === NETWORK_ERROR ? null : refusalOf(res.body);
@@ -353,11 +356,17 @@ export function GuidedCompleted({ d, onChanged }: { d: HoldDetail; onChanged: ()
           <Confirm
             hold={d.hold}
             timeZone={tz}
-            onSaved={(estimate) => {
-              const date = formatDate(locale, estimate, tz);
+            onSaved={(estimate, changed) => {
               justSaved.current = true;
-              flash(t("toast", { date }));
-              setAnnounce(t("announce", { date }));
+              // a hold the seller declared a service keeps PayPal's estimate (ADR 0017 addendum 3)
+              if (!changed || estimate === null) {
+                flash(t("toastDeclared"));
+                setAnnounce(t("toastDeclared"));
+              } else {
+                const date = formatDate(locale, estimate, tz);
+                flash(t("toast", { date }));
+                setAnnounce(t("announce", { date }));
+              }
               onChanged();
             }}
           />
