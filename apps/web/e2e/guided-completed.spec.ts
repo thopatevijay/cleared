@@ -10,7 +10,7 @@ import { expect, test } from "@playwright/test";
 import { capture, demoWorkspace, local } from "./support/disputes.ts";
 import { axeClean } from "./support/holds.ts";
 import { REVIEW_COMPLETED, seedRecord, seedService } from "./support/completed.ts";
-import { firstViewOff } from "./support/journey.ts";
+import { firstViewOff, firstViewOn } from "./support/journey.ts";
 
 test.describe.configure({ mode: "serial" });
 test.skip(!local, "local only");
@@ -166,7 +166,7 @@ test("states: loading, error, not found, saving, save failed, offline, before-op
   await expect(page.getByRole("button", { name: /retry/i })).toBeVisible({ timeout: 15_000 });
   await capture(page, "en-completed-error", REVIEW_COMPLETED, W);
   await page.unroute(api);
-  await page.setExtraHTTPHeaders({});
+  await firstViewOn(page);
   // not found (no such hold in this workspace)
   await page.goto("/en/holds/00000000-0000-4000-8000-000000000000");
   await expect(page.getByText("Hold not found")).toBeVisible({ timeout: 15_000 });

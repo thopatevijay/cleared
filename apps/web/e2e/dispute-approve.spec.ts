@@ -6,7 +6,7 @@
 // case)". Also: axe, 360 px, HI, the list, and the ui-reviewer captures of each state.
 import { expect, test } from "@playwright/test";
 import { e2eDisputeIds, recordedNotes } from "../test/support/dispute-seed.ts";
-import { firstViewOff } from "./support/journey.ts";
+import { firstViewOff, firstViewOn } from "./support/journey.ts";
 import {
   approveByKeyboard,
   capture,
@@ -153,7 +153,7 @@ test("dispute screens in HI, the 'drafting' state and a failed filing (ui-review
   await page.waitForTimeout(3_500);
   await capture(page, "en-detail-loading");
   await page.unroute("**/api/disputes/**");
-  await page.setExtraHTTPHeaders({});
+  await firstViewOn(page);
 
   // empty list
   await demoWorkspace(page);

@@ -225,7 +225,7 @@ export async function holdRequests(page: Page, glob: string, method = "GET"): Pr
   return async () => {
     release();
     await page.unroute(glob);
-    await page.setExtraHTTPHeaders({});
+    await firstViewOn(page);
   };
 }
 
@@ -235,8 +235,17 @@ export async function holdRequests(page: Page, glob: string, method = "GET"): Pr
  * to render without the first view (as when its read fails); the browser's own request then decides the state.
  */
 export async function firstViewOff(page: Page): Promise<void> {
-  await page.setExtraHTTPHeaders({ "x-e2e-first-view": "off" });
+  await page
+    .context()
+    .addCookies([{ name: FIRST_VIEW_COOKIE, value: "off", domain: "localhost", path: "/" }]);
 }
+
+/** Ends `firstViewOff`: page loads render their first view on the server again. */
+export async function firstViewOn(page: Page): Promise<void> {
+  await page.context().clearCookies({ name: FIRST_VIEW_COOKIE });
+}
+
+const FIRST_VIEW_COOKIE = "e2e-first-view"; // src/server/first-view.ts FIRST_VIEW_OFF_COOKIE
 
 /** Fails every request matching `glob` with a 500 and a correlation id, as the API's error shape. */
 export async function failRequests(page: Page, glob: string, method = "GET"): Promise<() => Promise<void>> {
@@ -253,6 +262,6 @@ export async function failRequests(page: Page, glob: string, method = "GET"): Pr
   await firstViewOff(page);
   return async () => {
     await page.unroute(glob);
-    await page.setExtraHTTPHeaders({});
+    await firstViewOn(page);
   };
 }

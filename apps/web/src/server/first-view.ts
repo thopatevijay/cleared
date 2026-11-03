@@ -13,16 +13,23 @@ export type FirstViewHandler = (req: Request, deps: Deps) => Promise<Response>;
 /**
  * The local e2e run's way to reach the loading and error states, which a server-rendered first view no
  * longer shows on its own: with `E2E_FIRST_VIEW_SWITCH=1` (playwright.config.ts only, never deployed) a
- * page request carrying `x-e2e-first-view: off` renders without a first view, as when its read fails.
+ * page request carrying the cookie `e2e-first-view=off` renders without a first view, as when its read
+ * fails. (A cookie, not a header: under the e2e PayPal stub's msw preload a custom request header doesn't
+ * reach the page.)
  */
-export const FIRST_VIEW_OFF_HEADER = "x-e2e-first-view";
+export const FIRST_VIEW_OFF_COOKIE = "e2e-first-view";
+
+function firstViewOff(h: Headers): boolean {
+  if (process.env["E2E_FIRST_VIEW_SWITCH"] !== "1") return false;
+  return (h.get("cookie") ?? "").split(";").some((c) => c.trim() === `${FIRST_VIEW_OFF_COOKIE}=off`);
+}
 
 /** `[apiPath, handler]` pairs → `{ [apiPath]: body }` for the 200s. The paths are the client's SWR keys. */
 export async function firstView(
   entries: ReadonlyArray<readonly [string, FirstViewHandler]>,
 ): Promise<Record<string, unknown>> {
   const h = await headers();
-  if (process.env["E2E_FIRST_VIEW_SWITCH"] === "1" && h.get(FIRST_VIEW_OFF_HEADER) === "off") return {};
+  if (firstViewOff(h)) return {};
   const deps = getDeps();
   const bodies = await Promise.all(
     entries.map(async ([path, handler]) => {
