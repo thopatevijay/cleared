@@ -10,6 +10,7 @@ import {
   type AiProvider,
   type CompletionRequest,
   type CompletionResult,
+  type ReserveRequest,
   type RunFinish,
   type RunStart,
   type RunStore,
@@ -106,10 +107,16 @@ export function fakeStore(): FakeStore {
       store.runs.push({ ...run, id, costUsd: 0 });
       return Promise.resolve(id);
     },
+    reserve: async (r: ReserveRequest) => {
+      const decision = r.decide(await store.spend(r.workspaceId, r.dayStart));
+      const run = store.runs.find((x) => x.id === r.runId);
+      if (decision.ok && run) run.costUsd += r.usd;
+      return decision;
+    },
     recordStep: (step: StepRecord) => {
       store.steps.push(step);
       const run = store.runs.find((r) => r.id === step.runId);
-      if (run) run.costUsd += step.costUsd;
+      if (run) run.costUsd += step.costUsd - (step.reservedUsd ?? 0);
       return Promise.resolve();
     },
     finishRun: (finish: RunFinish) => {

@@ -137,6 +137,17 @@ describe("limits", () => {
     expect(atOrOverCap(0.1 + 0.2, 0.3)).toBe(true);
     expect(toMicroUsd(0.28036300000000003)).toBe(280_363);
   });
+
+  it("M4-05: a reservation that would end above a cap is refused; one that lands exactly on it is not", () => {
+    const c = { ...parseAgentConfig({}), workspaceCapUsd: 0.1, dailyCapUsd: 1 };
+    const demo = { workspaceKind: "demo" as const, workspaceCapUsd: null, globalTodayUsd: 0 };
+    expect(checkBudget({ ...demo, workspaceUsd: 0.099 }, c, 0.002)).toMatchObject({ ok: false, cap: "workspace" });
+    expect(checkBudget({ ...demo, workspaceUsd: 0.099 }, c, 0.001)).toEqual({ ok: true });
+    expect(checkBudget({ ...demo, workspaceUsd: 0.099 }, c)).toEqual({ ok: true });
+    const seller = { workspaceKind: "seller" as const, workspaceCapUsd: null, workspaceUsd: 5 };
+    expect(checkBudget({ ...seller, globalTodayUsd: 0.9995 }, c, 0.0006)).toMatchObject({ ok: false, cap: "daily" });
+    expect(checkBudget({ ...seller, globalTodayUsd: 0.9995 }, c, 0.0005)).toEqual({ ok: true });
+  });
 });
 
 describe("action guardrail", () => {

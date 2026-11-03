@@ -80,6 +80,11 @@ if [ -f docs/design/tokens.json ]; then
   node scripts/design-tokens.mjs --check >/dev/null || { node scripts/design-tokens.mjs --check | grep -E "FAIL|design-tokens"; exit 1; }
 fi
 
+# M4-05: every STRIDE row of the threat model names a test file that exists.
+if [ -f docs/security/threat-model.md ]; then
+  node scripts/check-security-doc.ts
+fi
+
 # Fixtures never carry credentials (recorded in M0 spikes). Guarded: fixtures/ is created in M0-04.
 if [ -d fixtures ]; then
   if grep -rniE "(access_token\"?\s*:\s*\"A21|client_secret|Bearer [A-Za-z0-9._-]{20,}|sk-[A-Za-z0-9]{20,})" fixtures; then
