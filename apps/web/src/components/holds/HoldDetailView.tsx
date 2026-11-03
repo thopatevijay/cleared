@@ -215,7 +215,8 @@ function ActionSlot({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) 
         <GoodsAction d={d} onChanged={onChanged} />
       ) : action === "completed" && h.completed != null ? (
         <GuidedCompleted d={d} onChanged={onChanged} />
-      ) : h.declaration?.declarable === true && h.declaration.kind === null ? null : (
+      ) : (
+        // answering is optional: until the seller does, nothing is needed from them
         <p>{t("nothingToDo")}</p>
       )}
     </>
