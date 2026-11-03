@@ -9,6 +9,7 @@ import { Link } from "../../i18n/navigation.ts";
 import type { DisputeSummary } from "../../lib/dispute-view.ts";
 import { formatDay } from "../../lib/format.ts";
 import { useDisputeText, useUiLocale } from "../disputes/text.ts";
+import { codeBreaks } from "../CodeText.tsx";
 import { StatusBadge } from "../StatusBadge.tsx";
 
 export function DisputeLines({ d, timeZone }: { d: DisputeSummary; timeZone: string }) {
@@ -29,7 +30,9 @@ export function DisputeLines({ d, timeZone }: { d: DisputeSummary; timeZone: str
         )}
       </span>
       {d.reason === null ? null : (
-        <code className="font-mono text-xs break-all text-text-muted">{d.reason}</code>
+        <code className="font-mono text-xs [overflow-wrap:anywhere] text-text-muted">
+          {codeBreaks(d.reason)}
+        </code>
       )}
       {d.draftReady ? (
         <span className="flex flex-wrap items-center gap-x-3 gap-y-1">

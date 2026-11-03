@@ -7,6 +7,7 @@ import { useState, type ReactNode } from "react";
 import type { DisputeDetail } from "../../lib/dispute-view.ts";
 import { formatTime, formatUtc } from "../../lib/format.ts";
 import { MoneyCell } from "../MoneyCell.tsx";
+import { codeBreaks } from "../CodeText.tsx";
 import { StatusBadge } from "../StatusBadge.tsx";
 import { useDisputeText, useUiLocale } from "./text.ts";
 
@@ -68,7 +69,9 @@ export function PaypalFacts({ d, timeZone }: { d: DisputeDetail["dispute"]; time
         <Pair label={t("reason")}>
           {text.reason(d.reason)}
           {d.reason === null ? null : (
-            <code className="block font-mono text-xs break-all text-text-muted">{d.reason}</code>
+            <code className="block font-mono text-xs [overflow-wrap:anywhere] text-text-muted">
+              {codeBreaks(d.reason)}
+            </code>
           )}
         </Pair>
         <Pair label={t("id")}>
