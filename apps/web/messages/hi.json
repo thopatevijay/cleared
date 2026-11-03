@@ -75,7 +75,7 @@
     "timeZone": {
       "current": "समय <tz>{zone}</tz> के हिसाब से दिखाया गया है",
       "change": "समय क्षेत्र (time zone) बदलें",
-      "label": "समय क्षेत्र (time zone)",
+      "label": "समय क्षेत्र",
       "hint": "तारीख़ें और समय-सीमाएँ इसी क्षेत्र के हिसाब से दिखती हैं। समय UTC में सहेजे जाते हैं।",
       "save": "सेव करें",
       "saving": "सेव हो रहा है…",
@@ -102,7 +102,7 @@
     "waitingHint": "आम तौर पर 2 मिनट से कम।",
     "arrived": "भुगतान {amount} PayPal से आया: {status}",
     "unknownAmount": "PayPal ने अभी तक नहीं बताया",
-    "pack": "सबूत पैक: काम का दायरा <scope>{s}</scope> · डिलीवरी <delivery>{d}</delivery> · क्लाइंट की मंज़ूरी <signoff>{c}</signoff> · {n} स्रोत",
+    "pack": "सबूत पैक: काम का दायरा <scope>{s}</scope> · डिलीवरी <delivery>{d}</delivery> · क्लाइंट की पुष्टि <signoff>{c}</signoff> · {n} स्रोत",
     "addProof": "सबूत जोड़ें",
     "addProofName": "{amount} के भुगतान के लिए सबूत जोड़ें",
     "newPayment": "{buyer} से नया भुगतान। सबूत जोड़ें, ताकि PayPal पूछे तो तैयार रहे।",
@@ -1139,7 +1139,7 @@
   "calendar": {
     "title": "नकदी कैलेंडर",
     "intro": "रोका गया पैसा अनुमानित रूप से कब छूटेगा, PayPal ने क्या रिलीज़ किया, और विवादों के जवाब कब तक देने हैं।",
-    "heldNow": "अभी {amount} रोका गया",
+    "heldNow": "अभी {amount} रोका गया (hold)",
     "heldNone": "अभी कुछ नहीं रोका गया",
     "viewLabel": "दृश्य",
     "view": {
