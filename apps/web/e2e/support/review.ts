@@ -13,7 +13,16 @@ export const REVIEW = fileURLToPath(new URL("../../../../.review/M2-05/", import
 export const reviewDir = (ticket: string): string =>
   fileURLToPath(new URL(`../../../../.review/${ticket}/`, import.meta.url));
 
-export async function axe(page: Page, name: string, dir: string = REVIEW): Promise<void> {
+/**
+ * `soft` (M4-04's matrix): record the failure and carry on, so one run lists every finding. Returns the
+ * number of violations per impact band.
+ */
+export async function axe(
+  page: Page,
+  name: string,
+  dir: string = REVIEW,
+  soft = false,
+): Promise<{ serious: number; moderate: number; minor: number }> {
   const result = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
     .analyze();
@@ -22,7 +31,9 @@ export async function axe(page: Page, name: string, dir: string = REVIEW): Promi
   const blocking = result.violations
     .filter((v) => v.impact === "serious" || v.impact === "critical")
     .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
-  expect(blocking, `axe serious/critical on ${name}`).toEqual([]);
+  (soft ? expect.soft : expect)(blocking, `axe serious/critical on ${name}`).toEqual([]);
+  const count = (impact: string) => result.violations.filter((v) => v.impact === impact).length;
+  return { serious: blocking.length, moderate: count("moderate"), minor: count("minor") };
 }
 
 async function noSideScroll(page: Page, name: string): Promise<void> {

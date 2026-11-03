@@ -582,3 +582,75 @@ test("empty, loading and error states", async ({ page }) => {
   );
   await reset(page);
 });
+
+// M4-04 AC 4 (WCAG 2.5.7 dragging movements): the calendar is read-only (`readOnly`, `dragFeature={false}`:
+// PayPal's dates are never ours to move), so a drag of an event bar changes nothing. Each gesture a
+// calendar usually takes by dragging is completed here through its non-drag alternative: moving between
+// months (swipe/drag) by the Previous / Next / Today buttons, picking a day (drag-select) by its day number
+// with Enter, a longer range of days by the List view's "Show next 30 days", and opening an event by Enter.
+test("2.5.7: every drag gesture has a single-pointer or keyboard alternative", async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { cal } = await seeded(page);
+  await page.goto("/en/calendar?view=month");
+  await expect(events(page)).toHaveCount(cal.events.length, { timeout: 60_000 });
+
+  // a drag of an event bar to another day: nothing moves (the engine is read-only)
+  const bar = events(page).first();
+  const id = (await bar.getAttribute("data-event-id")) ?? "";
+  const dayOf = () =>
+    page
+      .locator(`.cash-bryntum [data-event-id="${id}"]`)
+      .first()
+      .evaluate((el) => el.closest("[data-date]")?.getAttribute("data-date") ?? null);
+  const before = await dayOf();
+  const box = await bar.boundingBox();
+  if (box === null) throw new Error("no event bar box");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 200, box.y + box.height / 2 + 120, { steps: 12 });
+  await page.mouse.up();
+  if (!page.url().includes("/calendar")) await page.goBack();
+  await expect(events(page)).toHaveCount(cal.events.length, { timeout: 60_000 });
+  expect(await dayOf(), "a dragged event stays on its PayPal date").toBe(before);
+  const after = CashCalendarResponseSchema.parse(await (await page.request.get("/api/cash-calendar")).json());
+  expect(after.events, "the data is unchanged").toEqual(cal.events);
+
+  // months: the buttons, by keyboard
+  const title = page.getByTestId("month-title");
+  const month = await title.innerText();
+  await page.getByRole("button", { name: "Next month" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(title).not.toHaveText(month);
+  await page.getByRole("button", { name: "Previous month" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(title).toHaveText(month);
+  await page.getByRole("button", { name: "Next month" }).focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Today" }).focus();
+  await page.keyboard.press(" ");
+  await expect(title).toHaveText(month);
+
+  // a day: its day number, with Enter, fills the day panel
+  const withEvent = cal.events[0]?.date ?? "";
+  await page.locator(`.cash-bryntum .b-day-num[data-header-date="${withEvent}"]`).first().focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("day-panel").getByTestId("cash-row").first()).toBeVisible();
+
+  // a longer range of days: the List view grows by 30 days per press, no drag
+  await page.getByTestId("view-switch").getByRole("button", { name: "List" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByTestId("calendar-area")).toHaveAttribute("data-view", "list");
+  const more = page.getByTestId("cash-list-more");
+  if ((await more.count()) > 0) {
+    const days = await page.getByTestId("cash-day").count();
+    await more.focus();
+    await page.keyboard.press("Enter");
+    await expect.poll(() => page.getByTestId("cash-day").count()).toBeGreaterThanOrEqual(days);
+  }
+
+  // an event: Enter on its row link opens it (in Month, Space on a bar does: the keyboard test above)
+  await page.getByTestId("cash-row-link").first().focus();
+  await page.keyboard.press("Enter");
+  await page.waitForURL(/\/en\/(holds|disputes)\//);
+});
