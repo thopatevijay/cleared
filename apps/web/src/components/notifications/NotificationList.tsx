@@ -13,19 +13,19 @@ import type { NotificationsState } from "./useNotifications.ts";
 
 function Skeleton({ label }: { label: string }) {
   return (
-    <ul
-      role="status"
-      aria-busy="true"
-      aria-label={label}
-      className="flex flex-col gap-2"
-      data-testid="notifications-loading"
-    >
-      {[0, 1, 2].map((i) => (
-        <li key={i} className="h-16 animate-pulse rounded-md bg-surface-sunken motion-reduce:animate-none">
-          {i === 0 ? <span className="sr-only">{label}</span> : null}
-        </li>
-      ))}
-    </ul>
+    // M4-04: the live region is a div; the skeleton list is decorative (a `role` on the <ul> itself
+    // orphaned its <li>s: axe `listitem`, serious)
+    <div role="status" aria-busy="true" data-testid="notifications-loading">
+      <span className="sr-only">{label}</span>
+      <ul aria-hidden="true" className="flex flex-col gap-2">
+        {[0, 1, 2].map((i) => (
+          <li
+            key={i}
+            className="h-16 animate-pulse rounded-md bg-surface-sunken motion-reduce:animate-none"
+          />
+        ))}
+      </ul>
+    </div>
   );
 }
 

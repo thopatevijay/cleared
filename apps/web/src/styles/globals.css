@@ -32,8 +32,17 @@
   /* The sticky header (56 px) never covers a focused element (WCAG 2.4.11). */
   a,
   button,
-  input {
+  input,
+  select,
+  textarea,
+  summary {
     scroll-margin-top: 64px;
+  }
+  /* M4-04: below xl the dispute review's due band sticks under the header too (56 px + one or two lines). */
+  @media (width < 80rem) {
+    :root:has([data-sticky-band]) :is(a, button, input, select, textarea, summary) {
+      scroll-margin-top: 128px;
+    }
   }
 }
 

@@ -35,6 +35,37 @@ export function ScenarioTimeline({
   timeZone: string;
 }) {
   const t = useTranslations("scenario");
+  // M4-04 (WCAG 4.1.3): the step in progress and its wait ("Waiting for PayPal…") are announced when they
+  // change; the list itself is not a live region (its timestamps would be read out on every poll).
+  const active = steps.find((s) => s.status === "active");
+  const announce =
+    active === undefined
+      ? ""
+      : `${t(`step.${active.key}`)}, ${t("stepStatus.active")}.${
+          WAITS.has(active.key) && active.observed !== "adjudicate"
+            ? ` ${t(`wait.${active.key as "evidence_step"}`)}`
+            : ""
+        }`;
+  return (
+    <>
+      <p aria-live="polite" className="sr-only" data-testid="scenario-live">
+        {announce}
+      </p>
+      <ScenarioSteps steps={steps} locale={locale} timeZone={timeZone} />
+    </>
+  );
+}
+
+function ScenarioSteps({
+  steps,
+  locale,
+  timeZone,
+}: {
+  steps: readonly Step[];
+  locale: string;
+  timeZone: string;
+}) {
+  const t = useTranslations("scenario");
   return (
     <ol className="flex flex-col" data-testid="scenario-timeline">
       {steps.map((s, i) => {

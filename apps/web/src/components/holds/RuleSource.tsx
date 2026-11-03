@@ -23,7 +23,7 @@ export function RuleSource({ source, label }: { source: Source; label?: string }
       <button
         ref={button}
         type="button"
-        className="inline-flex min-h-11 items-center self-start text-accent underline underline-offset-2"
+        className="inline-flex min-h-11 min-w-11 items-center self-start text-accent underline underline-offset-2"
         aria-expanded={open}
         aria-controls={id}
         data-testid="source-toggle"
