@@ -13,6 +13,8 @@ import {
   definePrompt,
   parseAgentConfig,
   runWorkflow,
+  checkBudget,
+  Sha256Schema,
   WorkspaceIdSchema,
   type AiProvider,
   type WorkflowDef,
@@ -159,6 +161,60 @@ describe.skipIf(!dbAvailable)("agent harness end to end (msw replay + compose Po
     expect(out.status).toBe("budget_exceeded");
     expect(r.unused()).toEqual(["openai/extract/r1-E1"]);
     expect(r.unmatched()).toEqual([]);
+  });
+
+  it("M4-05: spend under the cap but with less room than the call's worst case → budget_exceeded, zero requests", async () => {
+    const tight = await newWorkspace();
+    const worst = provider().worstCaseUsd?.({
+      model: "gpt-6-luna",
+      system: "",
+      task: "",
+      dataBlocks: [],
+      schemaName: "x",
+      schema: z.object({}),
+      maxOutputTokens: 1_500,
+    });
+    expect(worst).toBeGreaterThan(0.0005);
+    // $0.0995 spent of the $0.10 demo cap: not at the cap, yet one call could end above it
+    await forWorkspace(db, tight).agentRuns.insert({
+      task: "seed",
+      inputHash: "0".repeat(64),
+      model: "gpt-6-luna",
+      status: "succeeded",
+      costUsd: "0.0995",
+    });
+    const r = serve("openai/extract/r1-E1");
+    const out = await runWorkflow(extractPack, input(1), deps(provider(), tight));
+    expect(out).toMatchObject({ status: "budget_exceeded", reason: expect.stringContaining("workspace cap") as string });
+    expect(r.unused()).toEqual(["openai/extract/r1-E1"]);
+    expect(r.unmatched()).toEqual([]);
+    expect((await store.spend(tight, new Date(0))).workspaceUsd).toBeCloseTo(0.0995, 8);
+  });
+
+  it("M4-05: concurrent reservations near the cap: exactly one fits, the other is refused", async () => {
+    const shared = await newWorkspace("0.01");
+    const runId = await store.startRun({
+      workspaceId: shared,
+      task: "seed",
+      promptVersion: "seed@v1",
+      model: "gpt-6-luna",
+      inputHash: Sha256Schema.parse("0".repeat(64)),
+      correlationId: randomUUID(),
+      status: "running",
+    });
+    const config = { ...parseAgentConfig({}), dailyCapUsd: 1_000_000 };
+
+    const reserve = () =>
+      store.reserve({
+        workspaceId: shared,
+        runId,
+        dayStart: new Date(0),
+        usd: 0.006,
+        decide: (s) => checkBudget(s, config, 0.006),
+      });
+    const out = await Promise.all([reserve(), reserve(), reserve()]);
+    expect(out.filter((d) => d.ok)).toHaveLength(1);
+    expect((await store.spend(shared, new Date(0))).workspaceUsd).toBeCloseTo(0.006, 8);
   });
 
   it("with global spend at the daily cap: budget_exceeded and msw receives zero requests", async () => {

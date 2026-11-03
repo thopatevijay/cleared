@@ -54,3 +54,16 @@ export function costUsd(model: string, usage: TokenUsage): number {
     1_000_000
   );
 }
+
+/**
+ * M4-05 (owner decision on #49): the most one request can bill. `max_output_tokens` bounds output,
+ * reasoning included; input is priced uncached at the caller's upper bound.
+ */
+export function worstCaseCostUsd(model: string, inputTokensBound: number, maxOutputTokens: number): number {
+  return costUsd(model, {
+    inputTokens: inputTokensBound,
+    cachedInputTokens: 0,
+    outputTokens: maxOutputTokens,
+    reasoningTokens: 0,
+  });
+}
