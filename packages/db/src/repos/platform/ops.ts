@@ -320,6 +320,10 @@ export async function purgeSyntheticWorkspace(workspaceId: string, tx: Tx): Prom
       granted.push(table);
     }
   }
+  // expired now, so a capture or dispute sync racing this purge writes nothing afterwards (BL-01 6594517545)
+  await tx.execute(
+    sql`update workspaces set expires_at = least(coalesce(expires_at, now()), now()) where id = ${workspaceId}`,
+  );
   let deleted = 0;
   for (const table of PURGE_ORDER) {
     const r = await tx.execute(sql`delete from ${sql.identifier(table)} where workspace_id = ${workspaceId}`);

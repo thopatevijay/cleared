@@ -103,6 +103,19 @@ export async function syncCapture(
     }
     return quarantine(run, "unowned", null);
   }
+  if (!(await platform(deps.db).workspaces.acceptsMirror(owner.workspaceId, deps.now(), ctx.tx))) {
+    // a late webhook for a purged synthetic workspace (BL-01 6594517545): expected, so no audit or Sentry
+    await markEvent(run, {
+      status: "quarantined",
+      processedAt: deps.now(),
+      quarantineReason: "workspace_purged",
+    });
+    ctx.log.info(
+      { captureId: mirror.captureId, workspaceId: owner.workspaceId },
+      "capture dropped: workspace purged",
+    );
+    return "quarantined";
+  }
   await owners.claim(
     {
       resourceType: "capture",
