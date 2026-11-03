@@ -324,6 +324,13 @@ Not applicable: Cleared puts nothing on-chain.
 | LLM | ≤ $1/day cap | 50k packs × $0.0073 (median) to $0.0106 (worst) per pack, measured in M0-07 = **$365–$530/month** before caching |
 | Email | free tier | ~$20 |
 
-- **Arithmetic:** 50k payments/month ≈ 1.2 AI runs/min on average. Webhook peaks of 5/s are far below one web instance's capacity. pg-boss at 20 concurrent jobs handles bursts with headroom.
+- **Arithmetic:** 50k payments/month ≈ 1.2 AI runs/min on average. Webhook peaks of 5/s are far below one web instance's capacity.
+- **Measured (M4-06, [`docs/evidence/load-report.md`](evidence/load-report.md)), 2026-11-03:**
+  - **Webhook ack:** the production web on `starter` refuses 1,500 deliveries at 5/s with a server-side p95 of 1 ms (p99 4 ms) and no 5xx.
+  - **Local 100× burst:** 2,100 unique signed capture events at 5/s, then 20/s, on a production build. The ack p95 is 15.7 ms. The queue drains 35 s after the burst, with 0 duplicates, 0 dead letters and $0 of AI.
+  - **Worker throughput:** the worker at **5** concurrent jobs per queue drains a 5/s burst only with pg-boss burst mode (`burstWhenReadyExceeds`). Without it each consumer slot sleeps the 2 s poll after every job, so a queue drains at ≤ 2.5 jobs/s and the same burst had not drained after 15 min. With it, concurrency 5 has headroom at 5/s on one worker, and 20 is needed only if a job's own run time grows, not for the burst rate.
+  - **Launch load:** 20 concurrent sessions on the read routes. Production is measured after the merge; the local reference p95 is 38.9 ms.
 - **Main cost driver:** the LLM. Cost per pack is therefore the tracked metric.
-- **Next bottleneck:** blob storage in Postgres, which moves to S3 behind the BlobStore adapter at > 5 GB.
+- **Next bottlenecks:**
+  - Blob storage in Postgres moves to S3 behind the BlobStore adapter at > 5 GB.
+  - The reconcile poll re-fetches every owned capture changed in the last 72 h every 15 min, up to 2,000 per tick (one tick re-queued ~1,850 after the measured burst). At 100× that's thousands of PayPal GETs per tick, so it should poll only non-terminal captures (BL-01 6603617791).

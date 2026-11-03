@@ -57,6 +57,7 @@
   },
   "dashboard": {
     "title": "आपका PayPal पैसा",
+    "demoRetention": "इसमें नमूना डेटा है। डेमो वर्कस्पेस 22 दिसंबर 2026 को हटा दिए जाएँगे।",
     "summaryLabel": "सारांश",
     "held": "{amount} रोका गया (hold)",
     "nothingHeld": "कुछ भी रोका नहीं गया (hold)",
