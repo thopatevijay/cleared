@@ -28,6 +28,7 @@ import {
   type Phase,
   type QueueResult,
 } from "./run.ts";
+import { networkFloor, serverTimingsFor } from "./render-logs.ts";
 
 /** apps/web/src/server/test-signing.ts TEST_CERT_URL (duplicated: scripts don't import the web app) */
 const TEST_CERT_URL = "https://api.sandbox.paypal.com/v1/notifications/certs/CERT-M4-06-TEST-HARNESS";
@@ -292,6 +293,10 @@ async function main(argv: readonly string[]): Promise<void> {
     });
   }
   console.log(`load:burst: ${String(sched.sent)} scheduled requests sent to ${url}`);
+  const endedAt = new Date();
+  const floor = new Recorder();
+  await networkFloor(target, floor);
+  const server = await serverTimingsFor(target, startedAt, endedAt);
   let queue: QueueResult | undefined;
   const dbUrl = process.env["DATABASE_URL"];
   if (replayDir === undefined && dbUrl !== undefined && dbUrl !== "") {
@@ -306,12 +311,13 @@ async function main(argv: readonly string[]): Promise<void> {
     kind: "burst",
     target,
     startedAt: startedAt.toISOString(),
-    endedAt: new Date().toISOString(),
+    endedAt: endedAt.toISOString(),
     commit: commitSha(),
     params: Object.fromEntries([...flags].filter(([k]) => k !== "key")),
     overall: overallOf(rec),
-    routes: rec.routes(),
+    routes: [...rec.routes(), ...floor.routes()],
     ...(queue === undefined ? {} : { queue }),
+    ...(server === null ? {} : { server }),
     notes,
   });
 }

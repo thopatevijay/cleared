@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { lastJsonLine, onProduction } from "../../packages/db/src/count.ts";
 import type { LoadtestWorkspace } from "../../packages/db/src/loadtest.ts";
 import { commitSha, flag, NOT_OK, numFlag, overallOf, parseArgs, Recorder, sleep, timedFetch, writeResult } from "./run.ts";
+import { networkFloor, serverTimingsFor } from "./render-logs.ts";
 
 const COOKIE = "__Host-cleared_session";
 
@@ -87,15 +88,20 @@ async function main(argv: readonly string[]): Promise<void> {
     notes.push(`purge: ${JSON.stringify(purged)}`);
     console.log(`load:launch: purged ${JSON.stringify(purged)}`);
   }
+  const endedAt = new Date();
+  const floor = new Recorder();
+  await networkFloor(target, floor);
+  const server = await serverTimingsFor(target, startedAt, endedAt);
   writeResult(out, {
     kind: "launch",
     target,
     startedAt: startedAt.toISOString(),
-    endedAt: new Date().toISOString(),
+    endedAt: endedAt.toISOString(),
     commit: commitSha(),
     params: { sessions, minutes, thinkTimeS: "2-5", journey: JOURNEY.length },
     overall: overallOf(rec),
-    routes: rec.routes(),
+    routes: [...rec.routes(), ...floor.routes()],
+    ...(server === null ? {} : { server }),
     notes,
   });
 }

@@ -233,8 +233,18 @@ export interface LoadResult {
   readonly routes: readonly RouteResult[];
   /** burst only: queue and table probes (local runs with DATABASE_URL) */
   readonly queue?: QueueResult;
+  /** remote runs: the server's own timings per route, from Render's request log (render-logs.ts) */
+  readonly server?: ServerTimings;
   readonly notes: readonly string[];
 }
+
+export interface ServerTimings {
+  readonly source: string;
+  readonly byRoute: Record<string, LatencySummary & { readonly statuses: Record<string, number> }>;
+}
+
+/** Rows that measure the network, not a route: never held to a route threshold. */
+const isProbe = (label: string): boolean => label.startsWith("healthz");
 
 export interface QueueResult {
   readonly samples: readonly { readonly tSec: number; readonly pending: number }[];
@@ -297,6 +307,23 @@ export function markdown(r: LoadResult): string {
       `Queue: peak ${String(q.peakPending)} pending · drain ${q.drainSec === null ? "NOT drained" : `${String(q.drainSec)} s`} after the last send · events ${String(q.events)} (${String(q.eventsWithOneRow)} with exactly one row) · duplicates ${String(q.duplicates)} · DLQ ${String(q.dlq)} · failed jobs ${String(q.failedJobs)} · OpenAI $${q.openAiUsd.toFixed(4)}`,
     );
   }
+  if (r.server !== undefined) {
+    lines.push(
+      "",
+      `Server-side (${r.server.source}, \`durationMs\` per request line):`,
+      "",
+      "| Route | n | p50 ms | p95 ms | p99 ms | max ms | statuses |",
+      "|---|---:|---:|---:|---:|---:|---|",
+      ...Object.entries(r.server.byRoute).map(
+        ([route, x]) =>
+          `| ${route} | ${String(x.n)} | ${String(x.p50)} | ${String(x.p95)} | ${String(x.p99)} | ${String(x.max)} | ${Object.entries(
+            x.statuses,
+          )
+            .map(([k, v]) => `${k}×${String(v)}`)
+            .join(" ")} |`,
+      ),
+    );
+  }
   for (const n of r.notes) lines.push("", `- ${n}`);
   return `${lines.join("\n")}\n`;
 }
@@ -312,7 +339,7 @@ export function assertResult(r: LoadResult, flags: Map<string, string>): string[
   };
   const p95 = flags.get("p95");
   if (p95 !== undefined) {
-    for (const route of r.routes.filter((x) => !x.label.startsWith("forged"))) {
+    for (const route of r.routes.filter((x) => !x.label.startsWith("forged") && !isProbe(x.label))) {
       check(route.p95 < Number(p95), `${route.label} p95 ${String(route.p95)} ms < ${p95} ms`);
     }
   }
@@ -322,14 +349,23 @@ export function assertResult(r: LoadResult, flags: Map<string, string>): string[
   }
   const ackP95 = flags.get("ack-p95");
   if (ackP95 !== undefined) {
-    for (const route of r.routes.filter((x) => !x.label.startsWith("forged"))) {
+    for (const route of r.routes.filter((x) => !x.label.startsWith("forged") && !isProbe(x.label))) {
       check(route.p95 < Number(ackP95), `${route.label} ack p95 ${String(route.p95)} ms < ${ackP95} ms`);
     }
   }
   const forgedP95 = flags.get("forged-p95") ?? (ackP95 !== undefined ? "200" : undefined);
+  // The refusal time is the server's (`webhook_ack_ms`, what PayPal waits on). From a client far from
+  // Oregon, the round trip alone exceeds 200 ms (the `healthz (network floor)` row), so when the run captured
+  // Render's request log the server-side p95 of the webhook route is checked, and the client figure is shown.
+  const serverWebhook = r.server?.byRoute["/api/webhooks/paypal"];
   for (const route of r.routes.filter((x) => x.label.startsWith("forged"))) {
-    if (forgedP95 !== undefined) {
-      check(route.p95 < Number(forgedP95), `${route.label} p95 ${String(route.p95)} ms < ${forgedP95} ms`);
+    if (forgedP95 !== undefined && serverWebhook !== undefined) {
+      check(
+        serverWebhook.p95 < Number(forgedP95),
+        `${route.label}: server-side refusal p95 ${String(serverWebhook.p95)} ms < ${forgedP95} ms (client-side ${String(route.p95)} ms incl. network; ${r.server?.source ?? ""})`,
+      );
+    } else if (forgedP95 !== undefined) {
+      check(route.p95 < Number(forgedP95), `${route.label} p95 ${String(route.p95)} ms < ${forgedP95} ms (client-side)`);
     }
     const accepted = Object.entries(route.statuses).filter(([k]) => !/^4\d\d$/.test(k));
     check(accepted.length === 0, `${route.label}: every forged delivery refused with a 4xx (${JSON.stringify(route.statuses)})`);
