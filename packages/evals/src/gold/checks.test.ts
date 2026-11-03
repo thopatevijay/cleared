@@ -97,9 +97,13 @@ describe("eval:validate checks", () => {
 
   it("requires a review by a non-production model and a decision per disagreement (AC 3, AC 4)", () => {
     const agreed = item("scope-001", ["met", "missing"]);
-    const prod = { ...item("scope-002", ["met"]), review: { ...agreed.review!, item_id: "scope-002", model: PROD_MODEL.scope } };
+    const reviewOf = (g: GoldItem): NonNullable<GoldItem["review"]> => {
+      if (g.review === null) throw new Error("fixture");
+      return g.review;
+    };
+    const prod = { ...item("scope-002", ["met"]), review: { ...reviewOf(agreed), item_id: "scope-002", model: PROD_MODEL.scope } };
     const base = item("scope-003", ["missing"]);
-    const disputed: GoldItem = { ...base, review: { ...base.review!, labels: [{ h_id: "H1", label: "met", spans: [], unmatched_quotes: 0 }] } };
+    const disputed: GoldItem = { ...base, review: { ...reviewOf(base), labels: [{ h_id: "H1", label: "met", spans: [], unmatched_quotes: 0 }] } };
     const r = report();
     checkReviews({ ...empty, scope: [agreed, prod, disputed, { ...item("scope-004", ["met"]), review: null }] }, [], r);
     expect(r.errors.join("\n")).toMatch(/scope-002: reviewed by the production model/);
