@@ -109,6 +109,19 @@ async function ownerOf(run: Run): Promise<WorkspaceId | null> {
     }
     return quarantine(run, "unowned", null);
   }
+  if (!(await platform(deps.db).workspaces.acceptsMirror(owner.workspaceId, deps.now(), tx))) {
+    // a late webhook for a purged synthetic workspace (BL-01 6594517545): expected, so no audit or Sentry
+    await markEvent(run, {
+      status: "quarantined",
+      processedAt: deps.now(),
+      quarantineReason: "workspace_purged",
+    });
+    run.ctx.log.info(
+      { disputeId: mirror.disputeId, workspaceId: owner.workspaceId },
+      "dispute dropped: workspace purged",
+    );
+    return null;
+  }
   await owners.claim(
     {
       resourceType: "dispute",
