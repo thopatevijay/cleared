@@ -9,6 +9,7 @@ import {
   createPublisher,
   createQueue,
   disputeDraftsRepo,
+  DRAFT_EVIDENCE_ADDED_AUDIT,
   forWorkspace,
   getProposedAction,
   setProposedActionState,
@@ -130,6 +131,50 @@ describe.skipIf(!dbAvailable)("dispute API (integration)", () => {
       s.disputeRowId,
     );
     expect(foreign.status).toBe(404);
+  });
+
+  it("BL-01 6595501766: the card marks what code added and what it left out (and why); the audit trail lists it", async () => {
+    const a = await demo();
+    const s = await seedDispute(testDb(), a.ws);
+    const wsId = WorkspaceIdSchema.parse(a.ws);
+    const draft = (await disputeDraftsRepo(testDb(), wsId).listForDispute(s.disputeRowId))[0];
+    const added = s.itemIds[2] ?? "";
+    const left = await forWorkspace(testDb(), wsId).evidenceItems.insert({
+      packId: draft?.packId ?? "",
+      kind: "scope_snapshot",
+      text: "snapshot stand-in",
+      sha256: "a".repeat(64),
+    });
+    await forWorkspace(testDb(), wsId).auditLog.insert({
+      actor: "system",
+      action: DRAFT_EVIDENCE_ADDED_AUDIT,
+      detail: {
+        disputeId: s.disputeRowId,
+        paypalDisputeId: s.paypalDisputeId,
+        draftId: s.draftId,
+        payloadSha256: s.payloadSha256,
+        added: [{ id: added, kind: "client_ack" }],
+        leftOut: [{ id: left.id, kind: "scope_snapshot", code: "pdf_too_large", bytes: 9_990_000 }],
+      },
+    });
+    const d = await detail(a.cookie, s.disputeRowId);
+    const auto = (id: string) => d.body.draft?.items.find((i) => i.id === id)?.auto;
+    expect(auto(added)).toEqual({ state: "added", code: null, bytes: null });
+    expect(auto(left.id)).toEqual({ state: "left_out", code: "pdf_too_large", bytes: 9_990_000 });
+    expect(auto(s.itemIds[0] ?? "")).toBeNull();
+    expect(d.body.audit.map((e) => e.action)).toContain(DRAFT_EVIDENCE_ADDED_AUDIT);
+    // the seller unticks the added item: it no longer reads "Added by Cleared"
+    const r = await revise(a.cookie, s.disputeRowId, {
+      draft_id: s.draftId,
+      notes: recordedNotes(),
+      evidence_item_ids: s.itemIds.slice(0, 2),
+    });
+    expect(r.status).toBe(200);
+    expect(
+      (await detail(a.cookie, s.disputeRowId)).body.draft?.items.every(
+        (i) => i.id === left.id || i.auto === null,
+      ),
+    ).toBe(true);
   });
 
   it("deselecting an item makes a new proposal and hash; the old one is superseded; approving the old hash is refused", async () => {

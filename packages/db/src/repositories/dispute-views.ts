@@ -5,6 +5,7 @@ import { and, asc, desc, eq, ilike, inArray, isNull, or, sql, type SQL } from "d
 import type { Db } from "../client.ts";
 import type { Executor } from "../tx.ts";
 import * as s from "../../schema/index.ts";
+import { DRAFT_AUDIT_ACTIONS } from "./dispute-drafts.ts";
 
 /** The audit action dispute sync writes when PayPal's status changes (detail: paypalDisputeId, from, to, outcome). */
 export const DISPUTE_STATUS_AUDIT = "dispute.status_changed";
@@ -216,7 +217,8 @@ export async function latestDraftOutcome(db: Db, workspaceId: string, disputeRow
     .where(
       and(
         eq(s.auditLog.workspaceId, workspaceId),
-        ilike(s.auditLog.action, "dispute_draft.%"),
+        // not `dispute_draft.evidence_added`: that one comes with a draft (BL-01 6595501766)
+        inArray(s.auditLog.action, [DRAFT_AUDIT_ACTIONS.unavailable, DRAFT_AUDIT_ACTIONS.tooLate]),
         sql`${field("disputeId")} = ${disputeRowId}`,
       ),
     )

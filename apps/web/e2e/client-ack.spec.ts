@@ -238,7 +238,8 @@ test("seller states: loading, no scope, pending after reload, revoke, expired, c
   await c.page.unrouteAll({ behavior: "wait" });
   await c.page.goto(new URL(url).pathname.replace("/ack/", "/hi/ack/"));
   await expect(c.page.getByRole("heading", { level: 1 })).toHaveText("तय काम की पुष्टि करें");
-  await expect(c.page.getByText("विक्रेता आपसे")).toBeVisible();
+  // BL-01 6569232529: a demo workspace names the scenario's synthetic seller, not the fallback
+  await expect(c.page.getByText("Meera Studio आपसे")).toBeVisible();
   await capture(c.page, "public-form-hi", DIR);
 
   await panel(page).getByRole("button", { name: "Revoke link" }).click();

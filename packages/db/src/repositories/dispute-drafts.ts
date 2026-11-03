@@ -4,6 +4,7 @@
 // `audit_log` entries (no draft row), read back by `outcomeRecorded` so a re-delivery records nothing twice.
 import type { ActionKind, WorkspaceId } from "@cleared/core";
 import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { z } from "zod";
 import type { Db } from "../client.ts";
 import type { Executor, Tx } from "../tx.ts";
 import { auditLog, disputeDrafts, disputes } from "../../schema/index.ts";
@@ -53,6 +54,36 @@ export const DRAFT_AUDIT_ACTIONS = {
   tooLate: "dispute_draft.too_late",
   unavailable: "dispute_draft.unavailable",
 } as const;
+
+/**
+ * BL-01 6595501766: the items code added to the agent's draft (the client's sign-off and the scope snapshot),
+ * and those it left out to stay within PayPal's limits. One audit row per draft, written with the draft in
+ * the drafting transaction; the approval card reads it back by `draftId`.
+ */
+export const DRAFT_EVIDENCE_ADDED_AUDIT = "dispute_draft.evidence_added";
+export const AUTO_EVIDENCE_KINDS = ["client_ack", "scope_snapshot"] as const;
+export const AUTO_LEFT_OUT_CODES = [
+  "unsupported_type",
+  "file_too_large",
+  "pdf_too_large",
+  "unreadable",
+] as const;
+const AutoKind = z.enum(AUTO_EVIDENCE_KINDS);
+export const AutoEvidenceSchema = z.object({
+  added: z.array(z.object({ id: z.uuid(), kind: AutoKind })),
+  leftOut: z.array(
+    z.object({
+      id: z.uuid(),
+      kind: AutoKind,
+      code: z.enum(AUTO_LEFT_OUT_CODES),
+      /** the item's own size (the file, or the UTF-8 text) */
+      bytes: z.number().int().nonnegative(),
+    }),
+  ),
+});
+export type AutoEvidence = z.infer<typeof AutoEvidenceSchema>;
+export type AutoEvidenceKind = (typeof AUTO_EVIDENCE_KINDS)[number];
+export type AutoLeftOutCode = (typeof AUTO_LEFT_OUT_CODES)[number];
 
 export function disputeDraftsRepo(db: Db, workspaceId: WorkspaceId) {
   const ws = workspaceId;
@@ -156,6 +187,24 @@ export function disputeDraftsRepo(db: Db, workspaceId: WorkspaceId) {
             ne(disputes.status, "RESOLVED"),
           ),
         );
+    },
+
+    /** What code added to (or left out of) the draft's selection; null when it added nothing. */
+    async autoEvidence(draftId: string, tx?: Executor): Promise<AutoEvidence | null> {
+      const rows = await (tx ?? db)
+        .select({ detail: auditLog.detail })
+        .from(auditLog)
+        .where(
+          and(
+            eq(auditLog.workspaceId, ws),
+            eq(auditLog.action, DRAFT_EVIDENCE_ADDED_AUDIT),
+            sql`${auditLog.detail}->>'draftId' = ${draftId}`,
+          ),
+        )
+        .orderBy(desc(auditLog.at))
+        .limit(1);
+      const parsed = AutoEvidenceSchema.safeParse(rows[0]?.detail);
+      return parsed.success ? parsed.data : null;
     },
 
     /** An outcome already recorded for this (dispute, check version, action) key. */

@@ -4,7 +4,7 @@
 // The proposal then goes through M2-08's approval (`approveProposedAction`): no INVALID_PAYLOAD (BL-01 6537330886).
 import { createHash, randomUUID } from "node:crypto";
 import { createHttpClient, createOpenAiCompletionProvider } from "@cleared/adapters";
-import { extractPdfText } from "@cleared/adapters/files";
+import { createPostgresBlobStore, evidenceSha256, extractPdfText } from "@cleared/adapters/files";
 import { startReplay, type Replay } from "@cleared/adapters/testing/replay";
 import { canonicalHash, codePoints, parseAgentConfig, type WorkspaceId } from "@cleared/core";
 import {
@@ -14,11 +14,16 @@ import {
   createPublisher,
   createQueue,
   disputeDraftsRepo,
+  DRAFT_EVIDENCE_ADDED_AUDIT,
+  evidenceRepo,
   forWorkspace,
   getProposedAction,
   withTransaction,
   type Queue,
 } from "@cleared/db";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { FIXTURES_DIR } from "@cleared/adapters/testing/fixture";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { deleteTestJobs, silentLog } from "../../test/extract-support.ts";
 import { dbAvailable, url } from "../../test/helpers.ts";
@@ -85,6 +90,43 @@ async function audit(ws: WorkspaceId, action: string) {
     [ws, action],
   );
   return r.rows.map((x) => x.detail);
+}
+
+/** A pack item added after the scope check, as M3-06 (client sign-off) and M3-07 (scope snapshot) add them. */
+async function addPackItem(
+  pack: SamplePack,
+  kind: "client_ack" | "scope_snapshot",
+  content: { text: string } | { bytes: Uint8Array; mime: "application/pdf" | "image/jpeg" },
+): Promise<{ id: string; sha256: string }> {
+  return withTransaction(db, async (tx) => {
+    const repo = evidenceRepo(db, pack.ws);
+    if ("text" in content) {
+      const sha256 = evidenceSha256({ kind: "text", text: content.text });
+      const item = await repo.items.insert({ packId: pack.packId, kind, sha256, text: content.text }, tx);
+      return { id: item.id, sha256 };
+    }
+    const blob = await createPostgresBlobStore(db).put(
+      { workspaceId: pack.ws, bytes: content.bytes, mime: content.mime },
+      tx,
+    );
+    const sha256 = createHash("sha256").update(content.bytes).digest("hex");
+    const item = await repo.items.insert(
+      { packId: pack.packId, kind, blobId: blob.id, sha256, text: null },
+      tx,
+    );
+    return { id: item.id, sha256 };
+  });
+}
+
+const ACK_TEXT = "Client sign-off\nConfirmed by: Northwind Tea Co.\nScope sha256: 0f0f";
+
+const fixture = (path: string): Uint8Array => new Uint8Array(readFileSync(join(FIXTURES_DIR, path)));
+
+/** A valid JPEG padded after its end marker to `size` bytes: the PDF embeds JPEG bytes unchanged. */
+function paddedJpeg(size: number): Uint8Array {
+  const out = new Uint8Array(size);
+  out.set(fixture("files/photo-exif.jpg"));
+  return out;
 }
 
 describe.skipIf(!dbAvailable)("dispute draft workflow (msw replay + compose Postgres)", () => {
@@ -169,6 +211,87 @@ describe.skipIf(!dbAvailable)("dispute draft workflow (msw replay + compose Post
       payloadSha256: out.payloadSha256,
     });
     expect(approved).toMatchObject({ ok: true, action: { state: "approved" } });
+  });
+
+  it("BL-01 6595501766 · the client sign-off and the scope snapshot are always added, inside the PDF the approved hash covers", async () => {
+    const pack = await checkedSamplePack(db, boss);
+    const { ids, rowId } = await sampleDispute(db, pack, "waiting");
+    const snapshotPdf = fixture("scenario/delivery.pdf");
+    const ack = await addPackItem(pack, "client_ack", { text: ACK_TEXT });
+    const snap = await addPackItem(pack, "scope_snapshot", { bytes: snapshotPdf, mime: "application/pdf" });
+    serve("logo");
+    const [out] = await draft(pack, ids, "waiting");
+    if (out?.status !== "written") throw new Error(JSON.stringify(out));
+
+    const ws = forWorkspace(db, pack.ws);
+    const row = await ws.disputeDrafts.get(out.draftId);
+    // the recorded answer selects only the logo pack's items (E1..E4): code added E5 and E6 after them
+    expect(row?.evidenceItemIds.slice(-2)).toEqual([ack.id, snap.id]);
+    const blob = row?.compiledBlobId ? await ws.blobs.get(row.compiledBlobId) : null;
+    const bytes = new Uint8Array(blob?.bytes ?? []);
+    expect(createHash("sha256").update(bytes).digest("hex")).toBe(out.compiledSha256);
+    const text = (await extractPdfText(bytes)) ?? "";
+    expect(text).toContain(ack.sha256);
+    expect(text).toContain(snap.sha256);
+    expect(text).toContain("Confirmed by: Northwind Tea Co.");
+
+    const action = await getProposedAction(db, pack.ws, out.actionId);
+    expect((action?.payload as Record<string, unknown>)["compiled_blob_sha256"]).toBe(out.compiledSha256);
+    expect(action?.payloadSha256).toBe(canonicalHash(action?.payload as never));
+
+    expect(await audit(pack.ws, DRAFT_EVIDENCE_ADDED_AUDIT)).toEqual([
+      {
+        disputeId: rowId,
+        paypalDisputeId: ids.disputeId,
+        checkVersion: 1,
+        actionKind: "provide_evidence",
+        draftId: out.draftId,
+        payloadSha256: out.payloadSha256,
+        added: [
+          { id: ack.id, kind: "client_ack" },
+          { id: snap.id, kind: "scope_snapshot" },
+        ],
+        leftOut: [],
+      },
+    ]);
+    expect(await disputeDraftsRepo(db, pack.ws).autoEvidence(out.draftId)).toEqual({
+      added: [
+        { id: ack.id, kind: "client_ack" },
+        { id: snap.id, kind: "scope_snapshot" },
+      ],
+      leftOut: [],
+    });
+    // the seller approves exactly that hash (M2-08)
+    const approved = await approveProposedAction(db, createPublisher(db, boss), {
+      workspaceId: pack.ws,
+      actionId: out.actionId,
+      actor: "seller-test",
+      now: DRAFT_NOW,
+      payloadSha256: out.payloadSha256,
+    });
+    expect(approved).toMatchObject({ ok: true, action: { state: "approved" } });
+  });
+
+  it("BL-01 6595501766 · an item that would take the PDF to 10 MB is left out and recorded; the rest is still added", async () => {
+    const pack = await checkedSamplePack(db, boss);
+    const { ids } = await sampleDispute(db, pack, "waiting");
+    const ack = await addPackItem(pack, "client_ack", { text: ACK_TEXT });
+    // under PayPal's per-file limit on its own, over it once compiled with the selection
+    const big = paddedJpeg(9_990_000);
+    const snap = await addPackItem(pack, "scope_snapshot", { bytes: big, mime: "image/jpeg" });
+    serve("logo");
+    const [out] = await draft(pack, ids, "waiting");
+    if (out?.status !== "written") throw new Error(JSON.stringify(out));
+
+    const row = await forWorkspace(db, pack.ws).disputeDrafts.get(out.draftId);
+    expect(row?.evidenceItemIds).toContain(ack.id);
+    expect(row?.evidenceItemIds).not.toContain(snap.id);
+    const blob = row?.compiledBlobId ? await forWorkspace(db, pack.ws).blobs.get(row.compiledBlobId) : null;
+    expect(blob?.bytes.byteLength).toBeLessThan(10_000_000);
+    expect(await disputeDraftsRepo(db, pack.ws).autoEvidence(out.draftId)).toEqual({
+      added: [{ id: ack.id, kind: "client_ack" }],
+      leftOut: [{ id: snap.id, kind: "scope_snapshot", code: "pdf_too_large", bytes: 9_990_000 }],
+    });
   });
 
   it("AC 6 · with only provide_supporting_info in the links the proposal kind is provide_supporting_info", async () => {

@@ -2,7 +2,7 @@
 // accept route finds a link by its token hash only (`clientAckByToken`), before any workspace is known.
 // `rateLimit` counts anonymous attempts per bucket in a rolling window.
 import { and, asc, count, desc, eq, gte, isNull, lt } from "drizzle-orm";
-import { WorkspaceIdSchema, type WorkspaceId } from "@cleared/core";
+import { WorkspaceIdSchema, type WorkspaceId, type WorkspaceKind } from "@cleared/core";
 import type { Db } from "../client.ts";
 import type { Executor, Tx } from "../tx.ts";
 import * as s from "../../schema/index.ts";
@@ -110,6 +110,8 @@ export type ClientAcksRepo = ReturnType<typeof clientAcksRepo>;
 export interface ClientAckByToken {
   readonly ack: ClientAckRow;
   readonly workspaceExpiresAt: Date | null;
+  /** BL-01 6569232529: a demo workspace (no `users` row) shows a synthetic seller name */
+  readonly workspaceKind: WorkspaceKind;
   readonly amount: string;
   readonly currency: string;
   readonly sellerName: string | null;
@@ -131,6 +133,7 @@ export async function clientAckByToken(db: Db, tokenHash: string, tx?: Tx): Prom
   const [row] = await ex
     .select({
       expiresAt: s.workspaces.expiresAt,
+      kind: s.workspaces.kind,
       amount: s.payments.amount,
       currency: s.payments.currency,
       scopeText: s.evidenceItems.text,
@@ -155,6 +158,7 @@ export async function clientAckByToken(db: Db, tokenHash: string, tx?: Tx): Prom
   return {
     ack,
     workspaceExpiresAt: row.expiresAt,
+    workspaceKind: row.kind,
     amount: row.amount,
     currency: row.currency,
     sellerName: user?.name ?? null,

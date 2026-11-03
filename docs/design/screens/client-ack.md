@@ -15,7 +15,7 @@ PayPal asks service sellers for "an invoice or a contract signed by both parties
 - **Revoke confirm** (inline, replaces the action row; no modal): `pack.ack.revokeConfirm` text + "Revoke" (Destructive) and "Keep link" (Secondary). Never adjacent to "Copy link" at 375: the confirm row sits below the expiry line.
 
 **Public page.** No session, no site navigation. Minimal `header`: wordmark "Cleared" (text), `SandboxBadge` ("Sandbox"), `LanguageSwitch` (EN | हिं). `main`, max width 640 px, in order:
-1. h1 `ack.title`; line `ack.from` with the seller's display name (plain text; `ack.sellerFallback` when there is none).
+1. h1 `ack.title`; line `ack.from` with the seller's display name (plain text; in a demo workspace the synthetic "Meera Studio"; `ack.sellerFallback` when there is none).
 2. `MoneyCell` (amount + ISO code; no receivable line, no PayPal IDs, no buyer details).
 3. h2 `ack.scopeHeading`, then the **scope block**: plain text only (`white-space: pre-wrap; overflow-wrap: anywhere`), body font (not mono), `surface-sunken`, 1 px `border`, `radius-md`, `p-4`, `dir="auto"`. `max-height: 50vh` (min 240 px) with `overflow-y: auto`; when it scrolls it is a focusable region (`tabindex="0"`, `role="region"`, `aria-label` = `ack.scopeHeading`) with the standard inset focus ring.
 4. Form: "Your name" text input (`autocomplete="name"`, `maxlength="120"`, hint `ack.nameHint`), checkbox "I agree to this scope" (24 px box; the whole label row is the 44 px hit area), the recorded-data note `ack.recorded` (`text-sm`, `text-muted`, `info` icon), then **Confirm** (Primary, full width at 375, 48 px high).
@@ -56,7 +56,7 @@ The `client_ack` item in the Evidence list renders as a plain-language record, n
 | Submitting | Confirm busy: "Confirming…" (`aria-busy`), inputs read only |
 | Success | Form replaced by a panel: `circle-check` (completed colours) + h2 `ack.success` + `ack.recordedAt` "Recorded {time}", where {time} is one formatted string that already includes the zone abbreviation (visitor's browser time zone, absolute) + `ack.successClose`. Focus moves to the h2. The typed name renders as plain text |
 | Scope changed | No distinct state (ticket AC 3): a scope-changed token gets the neutral page, on load and on submit (a submit that returns it replaces the form with the neutral page) |
-| No seller display name | `users.display_name` is unset (always in demo workspaces): `ack.from` and `ack.recorded` use `ack.sellerFallback` "The seller" for {seller} |
+| No seller display name | Demo workspaces (no `users` row) show the demo scenario's synthetic seller "Meera Studio" (BL-01 6569232529, owner decision 2026-11-03). A seller workspace whose `users.display_name` is unset: `ack.from` and `ack.recorded` use `ack.sellerFallback` "The seller" for {seller} |
 | Rate limited (429) | Inline band above Confirm (`role="alert"`): `ack.rateLimited`. Values kept; Confirm re-enabled |
 | Neutral (invalid, unknown, expired, revoked, scope changed, already accepted) | One identical page and HTTP status for every case: `lock` icon (32 px), h1 `ack.neutralTitle`, `ack.neutralBody`. No seller name, amount or scope; no hint of which case it is |
 | Error (5xx / network) | `ErrorPanel` "Couldn't record your confirmation." + "Your answer wasn't saved. Try again." + Retry (resubmits the kept values) + Reference |
