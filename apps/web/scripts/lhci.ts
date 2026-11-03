@@ -68,6 +68,8 @@ function start(
     cwd: web,
     env: { ...process.env, ...env },
     stdio: ["ignore", "pipe", "pipe"],
+    // its own process group: `next start` forks `next-server`, and stopping the group stops both
+    detached: true,
   });
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -192,7 +194,7 @@ async function autorun(args: readonly string[]): Promise<void> {
       ...a.all,
     ]);
   } finally {
-    for (const p of procs) p.kill("SIGTERM");
+    for (const p of procs) if (p.pid !== undefined) process.kill(-p.pid, "SIGTERM");
   }
   const rc = `--config=${join(root, "lighthouserc.json")}`;
   // upload first: the reports are kept even when an assertion fails
