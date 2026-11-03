@@ -27,6 +27,22 @@ export function workspacesRepo(db: Db) {
       const rows = await (tx ?? db).select().from(workspaces).where(eq(workspaces.id, id)).limit(1);
       return rows[0] ?? null;
     },
+    /**
+     * Whether a PayPal mirror (capture or dispute sync) may still write into the workspace, with its row
+     * locked `for share` until `tx` ends. A synthetic workspace past `expires_at` takes no more rows: its
+     * purge sets `expires_at` and holds the row `for update`, so a sync that read the owner row before the
+     * purge committed waits here and then sees the purge (BL-01 6594517545).
+     */
+    async acceptsMirror(id: string, now: Date, tx: Executor): Promise<boolean> {
+      const rows = await tx
+        .select({ synthetic: workspaces.synthetic, expiresAt: workspaces.expiresAt })
+        .from(workspaces)
+        .where(eq(workspaces.id, id))
+        .for("share");
+      const ws = rows[0];
+      if (ws === undefined) return false;
+      return !(ws.synthetic && ws.expiresAt !== null && ws.expiresAt.getTime() <= now.getTime());
+    },
     /** Demo caps (ADR 0007): workspaces created since `since`, optionally from one IP hash. */
     async countCreatedSince(since: Date, ipHash?: string, tx?: Executor): Promise<number> {
       const recent = gte(workspaces.createdAt, since);

@@ -272,6 +272,38 @@ describe.skipIf(!dbAvailable)("paypal.dispute.sync (dispute-sync)", () => {
     expect(await topics(ids.disputeId)).toEqual([]);
   });
 
+  it("BL-01 6594517545: a dispute for a purged (expired) synthetic workspace writes nothing, no audit", async () => {
+    const ws = await platform(db).workspaces.create({
+      kind: "demo",
+      locale: "en",
+      timezone: "UTC",
+      baseCurrency: "USD",
+      synthetic: true,
+      expiresAt: T0,
+    });
+    created.push(ws.id);
+    const ids = freshIds();
+    await ownCapture(ws.id, ids); // the owner row a sync read just before the purge deleted it
+    const eventId = await webhookEvent("CUSTOMER.DISPUTE.CREATED", T0);
+    serveDispute(server, STATE.open, ids, ws.id);
+
+    expect(await run(webhook(ids.disputeId, eventId), new Date(T0.getTime() + 60_000))).toBe("quarantined");
+
+    expect(await platform(db).webhookEvents.get(eventId)).toMatchObject({
+      status: "quarantined",
+      quarantineReason: "workspace_purged",
+    });
+    expect(
+      (await db.$client.query("select 1 from disputes where dispute_id = $1", [ids.disputeId])).rowCount,
+    ).toBe(0);
+    expect(await platform(db).resourceOwners.get("dispute", ids.disputeId)).toBeNull();
+    const audit = await db.$client.query("select 1 from audit_log where detail->>'disputeId' = $1", [
+      ids.disputeId,
+    ]);
+    expect(audit.rowCount).toBe(0);
+    expect(await topics(ids.disputeId)).toEqual([]);
+  });
+
   it("BL-01 6568286398: an unowned dispute made by another environment is quarantined without a Sentry warning", async () => {
     const messages: string[] = [];
     setAlertSink({

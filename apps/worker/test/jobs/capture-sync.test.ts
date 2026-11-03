@@ -14,6 +14,7 @@ import {
   createQueue,
   forWorkspace,
   platform,
+  purgeSyntheticWorkspace,
   withTransaction,
   type JobWithMetadata,
   type Queue,
@@ -300,4 +301,65 @@ describe.skipIf(!dbAvailable)("paypal.capture.sync (capture-sync)", () => {
       await forWorkspace(db, WorkspaceIdSchema.parse(owner)).payments.getByCaptureId(body.id),
     ).toBeNull();
   });
+
+  it("a capture sync racing the synthetic purge writes nothing once the purge commits (BL-01 6594517545)", async () => {
+    const ws = await platform(db).workspaces.create({
+      kind: "demo",
+      locale: "en",
+      timezone: "UTC",
+      baseCurrency: "USD",
+      synthetic: true,
+      expiresAt: new Date(Date.now() + 3_600_000),
+    });
+    created.push(ws.id);
+    const body = loadFixture("paypal/disputes/full/capture-1-completed").response.body as { id: string };
+    await forget(body.id, null);
+    await platform(db).resourceOwners.claim({
+      resourceType: "capture",
+      resourceId: body.id,
+      workspaceId: ws.id,
+    });
+    const eventId = await webhookEvent(new Date());
+    serveCapture("paypal/disputes/full/capture-1-completed", ws.id);
+
+    // The purge holds the workspace row and has deleted the owner row, uncommitted, when the sync starts:
+    // the sync still reads the owner row (MVCC), then waits on the workspace lock until the purge commits.
+    let release = (): void => undefined;
+    const held = new Promise<void>((r) => (release = r));
+    let markLocked = (): void => undefined;
+    const locked = new Promise<void>((r) => (markLocked = r));
+    const purge = withTransaction(db, async (tx) => {
+      await purgeSyntheticWorkspace(ws.id, tx);
+      markLocked();
+      await held;
+    });
+    await locked;
+    // processed a minute after the purge (this also absorbs host/DB clock skew)
+    const sync = run({ captureId: body.id, eventId, source: "webhook" }, new Date(Date.now() + 60_000));
+    await waitForLockWait();
+    release();
+    await purge;
+
+    expect(await sync).toBe("quarantined");
+    expect(await platform(db).webhookEvents.get(eventId)).toMatchObject({
+      status: "quarantined",
+      quarantineReason: "workspace_purged",
+    });
+    expect(await db.$client.query("select 1 from payments where capture_id = $1", [body.id])).toMatchObject({
+      rowCount: 0,
+    });
+    expect(await platform(db).resourceOwners.get("capture", body.id)).toBeNull();
+  });
 });
+
+/** Waits until a session is blocked on a lock held by the purge (the sync, on the workspace row). */
+async function waitForLockWait(): Promise<void> {
+  for (let i = 0; i < 100; i++) {
+    const r = await db.$client.query(
+      "select 1 from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()",
+    );
+    if ((r.rowCount ?? 0) > 0) return;
+    await new Promise((res) => setTimeout(res, 50));
+  }
+  throw new Error("the sync never waited on the workspace lock");
+}
