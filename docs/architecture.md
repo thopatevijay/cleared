@@ -207,7 +207,7 @@ All tables carry `workspace_id`, except platform tables. Timestamps are UTC `tim
 | `extracted_facts` | evidence_item_id, facts jsonb, model, run_id | structured extraction output |
 | `scope_checks` | pack_id, check_version, evidence_set_hash, prompt_version, run_id, line_id, line, verdict (`met` \| `partial` \| `missing` \| `unverifiable`), model_verdict, note, rationale, line_citation, citations jsonb (evidence_item_id, quote, offsets, sha256) | quotes verified verbatim; append-only versions (M2-04) |
 | `client_acks` | pack_id, token_hash, accepted_at, ip, user_agent | buyer-side acknowledgement |
-| `holds` | payment_id, type, reason, opened_at, released_at, estimated_release_at, estimate_source | derived from the payment status |
+| `holds` | payment_id, type, reason, opened_at, released_at, estimated_release_at, estimate_source, completed_confirmed_at, seller_declared_kind/by/at | derived from the payment status; `seller_declared_*` is the seller's goods/service answer, never a PayPal state (ADR 0017 addendum 3) |
 | `explanations` | hold_id, locale, text, source_ref | grounded in the rule table |
 | `disputes` | dispute_id unique, payment_id, reason, stage, status, seller_response_due_date, outcome jsonb, allowed_actions jsonb | mirror of PayPal plus its HATEOAS links |
 | `dispute_drafts` | dispute_id, notes (≤ 2000 chars), evidence_item_ids, compiled_blob_id, sha256 | |
