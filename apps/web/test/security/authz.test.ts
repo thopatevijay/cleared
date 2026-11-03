@@ -129,6 +129,7 @@ export const CASES: Record<string, Case> = {
 
   "POST /api/auth/sign-out": { access: "self", body: {} },
   "PATCH /api/notifications": { access: "self", body: { all: true } },
+  "PATCH /api/workspace": { access: "self", body: { locale: "en" } },
   "POST /api/sandbox/test-payments": { access: "self", body: {} },
   "POST /api/scenarios": { access: "self", body: {} },
 };
