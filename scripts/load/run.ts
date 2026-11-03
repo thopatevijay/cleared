@@ -229,7 +229,7 @@ export function numFlag(flags: Map<string, string>, name: string, fallback?: num
 // ---------- results ----------
 
 export interface LoadResult {
-  readonly kind: "launch" | "burst";
+  readonly kind: "launch" | "burst" | "server-timing";
   readonly target: string;
   readonly startedAt: string;
   readonly endedAt: string;

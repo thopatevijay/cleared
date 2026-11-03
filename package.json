@@ -22,6 +22,7 @@
     "load:launch": "node scripts/load/launch.ts",
     "load:burst": "node scripts/load/webhook-burst.ts",
     "load:assert": "node scripts/load/run.ts",
+    "load:server-timing": "node scripts/load/server-timing.ts",
     "start:all": "pnpm --parallel --filter @cleared/web --filter @cleared/worker --if-present run start",
     "test:security": "pnpm -r --if-present run test:security",
     "security:check-doc": "node scripts/check-security-doc.ts",
