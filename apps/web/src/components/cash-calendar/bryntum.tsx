@@ -58,6 +58,11 @@ function classOf(c: DomConfig): string {
   return "";
 }
 
+/** Below 768 px: Bryntum always draws six week rows; each gets this height, plus the day-name header. */
+const COMPACT_ROW_PX = 92;
+// day-name header, plus 1 px per row border so six rows never overflow the container
+const COMPACT_HEADER_PX = 48 + 8;
+
 const firstOfMonth = (date: string): string => `${date.slice(0, 7)}-01`;
 
 /** `YYYY-MM-01` moved by `n` months. */
@@ -246,13 +251,20 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
     };
     return {
       animateTimeShift: !reduced,
-      autoRowHeight: true,
+      // below 768 px the bars are hidden: six equal rows that always fit the container (no inner scroll
+      // hides the last week); wider, rows grow with their bars
+      autoRowHeight: !compact,
+      ...(compact ? { minRowHeight: COMPACT_ROW_PX } : {}),
       showWeekColumn: false,
       eventHeight: 60,
       eventRenderer,
       dayCellRenderer,
     };
-  }, [byId, totalsByDay, countByDay, kindsByDay, shortByDay, p.selectedDay, reduced]);
+  }, [byId, totalsByDay, countByDay, kindsByDay, shortByDay, p.selectedDay, reduced, compact]);
+
+  useEffect(() => {
+    if (ready) p.onEngineReady?.();
+  }, [ready, p]);
 
   const onKeyDownCapture = (ev: KeyboardEvent<HTMLDivElement>) => {
     if (ev.key !== "Enter" && ev.key !== " ") return;
@@ -277,7 +289,8 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
         }}
       />
       <div
-        className={`cash-bryntum h-[560px] md:h-[640px] xl:h-[720px]${compact ? " cash-compact" : ""}`}
+        className={`cash-bryntum${compact ? " cash-compact" : " md:h-[640px] xl:h-[720px]"}`}
+        style={compact ? { height: `${String(COMPACT_HEADER_PX + 6 * COMPACT_ROW_PX)}px` } : undefined}
         data-testid="bryntum-calendar"
         data-engine={CASH_CALENDAR_ENGINE.name}
         onKeyDownCapture={onKeyDownCapture}

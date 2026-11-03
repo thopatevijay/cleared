@@ -142,6 +142,7 @@ export function CashCalendarView({
   const [view, setView] = useView(initialView);
   const [loaded, setLoaded] = useState<CashRange>(range);
   const [day, setDay] = useState<string | null>(null);
+  const [engineReady, setEngineReady] = useState(false);
   const key = `/api/cash-calendar?from=${loaded.from}&to=${loaded.to}`;
   const { data, error, isValidating, mutate } = useSWR<CashCalendarResponse, unknown>(key, fetchCalendar, {
     keepPreviousData: true,
@@ -189,6 +190,9 @@ export function CashCalendarView({
         onSelect={onSelect}
         onRangeChange={onRangeChange}
         onDaySelect={setDay}
+        onEngineReady={() => {
+          setEngineReady(true);
+        }}
         selectedDay={day}
       />
     );
@@ -198,7 +202,7 @@ export function CashCalendarView({
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1100px)_340px]">
           <div className="min-w-0">{calendar}</div>
-          <SelectedDay data={data} date={day} locale={locale} onSelect={onSelect} />
+          {engineReady ? <SelectedDay data={data} date={day} locale={locale} onSelect={onSelect} /> : null}
         </div>
       );
   }

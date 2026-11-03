@@ -231,6 +231,48 @@ test("list view at 360: the default below 768 px, no horizontal scroll, every ev
   await shoot(page, "/en/calendar?view=list", "en-calendar-list", [360, 375, 768, 1440], listReady);
   await shoot(page, "/hi/calendar?view=list", "hi-calendar-list", [360, 1440], listReady);
   await shoot(page, "/hi/calendar?view=month", "hi-calendar-month", [375, 1440], engineReady);
+
+  // a six-week month (May 2027: six rows with a Sunday start and with a Monday start) at 375: every week
+  // row fits the grid and the last day is visible and selectable, in EN (Sunday) and HI (Monday)
+  for (const [locale, title, nothing] of [
+    ["en", "May 2027", "Nothing on this day."],
+    ["hi", "मई 2027", "इस दिन कुछ नहीं।"],
+  ] as const) {
+    const toMay: Ready = async (p) => {
+      for (let i = 0; i < 36; i++) {
+        if ((await p.getByTestId("month-title").innerText()) === title) break;
+        await p.getByTestId("month-bar").getByRole("button").nth(2).click();
+      }
+      await expect(p.getByTestId("month-title")).toHaveText(title);
+      const box = await p.locator(".cash-bryntum").boundingBox();
+      const cells = p.locator(".cash-bryntum .b-calendar-cell[data-date]");
+      const last = cells.last();
+      await expect(last).toBeVisible();
+      const lb = await last.boundingBox();
+      expect((lb?.y ?? 0) + (lb?.height ?? 0)).toBeLessThanOrEqual((box?.y ?? 0) + (box?.height ?? 0) + 2); // sub-pixel borders; a clipped row is ~92 px
+      const may31 = p.locator('.b-calendar-cell[data-date="2027-05-31"]');
+      await may31.scrollIntoViewIfNeeded();
+      await expect(may31).toBeVisible();
+      await may31.locator(".b-day-num").click();
+      await expect(p.getByTestId("day-panel")).toHaveText(nothing);
+      // back to the top, so the full-page capture is not taken mid-scroll under the sticky header
+      await p.evaluate(() => {
+        window.scrollTo(0, 0);
+      });
+    };
+    await page.setViewportSize({ width: 375, height: 800 });
+    await page.goto(`/${locale}/calendar?view=month`);
+    await engineReady(page);
+    await toMay(page);
+    await shoot(
+      page,
+      `/${locale}/calendar?view=month`,
+      `${locale}-calendar-month-6wk`,
+      [375],
+      engineReady,
+      toMay,
+    );
+  }
   expect(calls, "requests that left localhost").toEqual([]);
 });
 

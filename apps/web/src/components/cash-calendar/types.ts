@@ -23,6 +23,8 @@ export interface CashCalendarProps {
   readonly onDaySelect?: (date: string) => void;
   /** month view: the selected day (`YYYY-MM-DD`), marked in the grid */
   readonly selectedDay?: string | null;
+  /** month view: the engine has rendered (the day prompt only makes sense then) */
+  readonly onEngineReady?: () => void;
 }
 
 /** Where selecting an event goes: the hold detail or the dispute detail. */
