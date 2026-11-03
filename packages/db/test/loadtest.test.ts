@@ -1,6 +1,7 @@
 // M4-06: the `loadtest` workspaces the seed CLI creates for the launch-load run, their count and their purge.
-// They sit outside the demo caps, carry no owner claims (the reconcile poll never fetches them) and the
-// purge removes every row, the workspace included, and only theirs.
+// They sit outside the demo caps, their resources are claimed (the reads join on the claim) but the reconcile
+// poll never lists them (their ids aren't PayPal's), and the purge removes every row, the workspace included,
+// and only theirs.
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
@@ -37,7 +38,13 @@ describe.skipIf(!dbAvailable)("loadtest workspaces (M4-06)", () => {
     expect(w.disputeIds).toHaveLength(1);
     expect(
       await n(db, sql`select count(*) as n from paypal_resource_owner where workspace_id = ${w.workspaceId}`),
-    ).toBe(0);
+    ).toBe(4);
+    const targets = platform(db).reconcileTargets;
+    const polled = [
+      ...(await targets.captures(new Date(0))).map((c) => c.workspaceId),
+      ...(await targets.disputes()).map((d) => d.workspaceId),
+    ];
+    expect(polled.filter((id) => ws.some((x) => x.workspaceId === id))).toEqual([]);
   });
 
   it("purges every loadtest row and workspace, and nothing else", async () => {

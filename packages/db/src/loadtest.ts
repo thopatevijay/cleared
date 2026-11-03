@@ -5,19 +5,20 @@
 // Its rows are what the product's syncs leave for three captures, shaped from the recorded sandbox ones:
 // a COMPLETED payment, a PENDING / PENDING_REVIEW review hold (fixtures/paypal/captures/pending-review.json)
 // and a PENDING / BUYER_COMPLAINT payment with its WAITING_FOR_SELLER_RESPONSE dispute
-// (fixtures/paypal/disputes/full). None of them gets a `paypal_resource_owner` claim, so the reconcile poll
-// never fetches them: a load run makes no PayPal call. Personal data: none (synthetic evidence text only).
+// (fixtures/paypal/disputes/full). Each is claimed in `paypal_resource_owner` as the syncs do (the hold and
+// dispute reads join on it), and the reconcile poll skips load-test workspaces (ops.ts `reconcileTargets`),
+// so a load run makes no PayPal call. Personal data: none (synthetic evidence text only).
 import { createHash, randomBytes } from "node:crypto";
 import { deriveHold, fromEpochMs, WorkspaceIdSchema } from "@cleared/core";
 import { and, eq, sql } from "drizzle-orm";
 import type { Db } from "./client.ts";
-import { purgeSyntheticWorkspace } from "./repos/platform/ops.ts";
+import { LOADTEST_TAG, purgeSyntheticWorkspace } from "./repos/platform/ops.ts";
 import { platform } from "./repos/platform/index.ts";
 import { forWorkspace } from "./repos/workspace/index.ts";
 import { withTransaction, type Tx } from "./tx.ts";
 import { workspaces } from "../schema/index.ts";
 
-export const LOADTEST_TAG = "loadtest";
+export { LOADTEST_TAG };
 /** A load-test workspace lives at most this long if its purge never runs. */
 export const LOADTEST_TTL_MS = 2 * 60 * 60_000;
 
@@ -76,6 +77,9 @@ async function createOne(db: Db, tx: Tx, now: Date): Promise<LoadtestWorkspace> 
   const completed = await pay("COMPLETED", null, "120.00");
   const held = await pay("PENDING", "PENDING_REVIEW", "64.00");
   const disputed = await pay("PENDING", "BUYER_COMPLAINT", "120.00");
+  for (const payment of [completed, held, disputed]) {
+    await p.resourceOwners.claim({ resourceType: "capture", resourceId: payment.captureId, workspaceId: ws.id }, tx);
+  }
   const packIds: string[] = [];
   for (const payment of [completed, held, disputed]) {
     packIds.push((await r.proofPacks.insert({ paymentId: payment.id }, tx)).id);
@@ -98,6 +102,7 @@ async function createOne(db: Db, tx: Tx, now: Date): Promise<LoadtestWorkspace> 
     },
     tx,
   );
+  await p.resourceOwners.claim({ resourceType: "dispute", resourceId: dispute.disputeId, workspaceId: ws.id }, tx);
   const holdIds: string[] = [];
   for (const [payment, linked] of [
     [held, null],
