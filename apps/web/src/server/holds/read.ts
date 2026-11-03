@@ -4,7 +4,7 @@
 import {
   fromEpochMs,
   holdRule,
-  HOLD_TYPES,
+  holdTypeOf,
   HoldDetailSchema,
   HoldsResponseSchema,
   StoredExplanationSchema,
@@ -12,7 +12,6 @@ import {
   type HoldExplanation,
   type HoldItem,
   type HoldsResponse,
-  type HoldType,
   type CompletedSummary,
   type PaymentHold,
   type TrackingSummary,
@@ -23,10 +22,9 @@ import { z } from "zod";
 import type { Deps } from "../deps.ts";
 import { trackingSummaries } from "../tracking/summaries.ts";
 import { completedSummaries } from "../completed/summaries.ts";
+import { holdGuidance, type HoldGuidance } from "./declaration.ts";
 
 const iso = (d: Date | null): string | null => (d === null ? null : d.toISOString());
-const holdType = (t: string): HoldType =>
-  (HOLD_TYPES as readonly string[]).includes(t) ? (t as HoldType) : "other";
 
 /** The rule's later bound (payment review: 3 business days), from the hold's opening. */
 function upperBound(h: Pick<HoldRow, "estimateSource" | "openedAt">): string | null {
@@ -34,12 +32,17 @@ function upperBound(h: Pick<HoldRow, "estimateSource" | "openedAt">): string | n
   return rule?.estimate(fromEpochMs(h.openedAt.getTime()))?.upperBound ?? null;
 }
 
-/** The dashboard row's hold (dashboard.md elements 7–12; M3-03 adds `tracking` on goods holds). */
-export function paymentHold(h: HoldRow, tracking: TrackingSummary | null = null): PaymentHold {
+/** The dashboard row's hold (dashboard.md elements 7–12; M3-03 adds `tracking`; BL-01 6570499264 the declaration). */
+export function paymentHold(
+  h: HoldRow,
+  tracking: TrackingSummary | null = null,
+  guidance: HoldGuidance | null = null,
+): PaymentHold {
   return {
     tracking,
+    ...(guidance ?? {}),
     id: h.id,
-    type: holdType(h.type),
+    type: holdTypeOf(h.type),
     reason: h.reason,
     ruleId: h.estimateSource ?? "reason_OTHER",
     estimatedReleaseAt: iso(h.estimatedReleaseAt),
@@ -51,16 +54,17 @@ export function holdItem(
   v: HoldView,
   tracking: TrackingSummary | null = null,
   completed: CompletedSummary | null = null,
+  guidance: HoldGuidance | null = null,
 ): HoldItem {
   const { hold: h, payment: p, dispute: d } = v;
   return {
-    ...paymentHold(h, tracking),
+    ...paymentHold(h, tracking, guidance),
     completed,
     paymentId: p.id,
     captureId: p.captureId,
     amount: { value: p.amount, currency: p.currency },
     state: h.state,
-    type: holdType(h.type),
+    type: holdTypeOf(h.type),
     openedAt: h.openedAt.toISOString(),
     releasedAt: iso(h.releasedAt),
     dispute:
@@ -93,12 +97,20 @@ export async function listHolds(deps: Deps, ws: WorkspaceId): Promise<HoldsRespo
     timezone(deps, ws),
     reviewPool(deps, ws),
   ]);
-  const [tracking, completed] = await Promise.all([
+  const [tracking, completed, guidance] = await Promise.all([
     trackingSummaries(deps.db, ws, views, tz),
     completedSummaries(deps.db, ws, views),
+    holdGuidance(deps.db, ws, views),
   ]);
   return HoldsResponseSchema.parse({
-    items: views.map((v) => holdItem(v, tracking.get(v.hold.id) ?? null, completed.get(v.hold.id) ?? null)),
+    items: views.map((v) =>
+      holdItem(
+        v,
+        tracking.get(v.hold.id) ?? null,
+        completed.get(v.hold.id) ?? null,
+        guidance.get(v.hold.id) ?? null,
+      ),
+    ),
     summary: { held, count: views.length },
     workspace: { timezone: tz, reviewPool: pool },
   });
@@ -123,13 +135,19 @@ export async function holdDetail(deps: Deps, ws: WorkspaceId, rawId: string): Pr
   const v = await repo.view(rawId);
   if (v === null) return null;
   const tz = await timezone(deps, ws);
-  const [tracking, completed] = await Promise.all([
+  const [tracking, completed, guidance] = await Promise.all([
     trackingSummaries(deps.db, ws, [v], tz),
     completedSummaries(deps.db, ws, [v]),
+    holdGuidance(deps.db, ws, [v]),
   ]);
   const explanations = (await repo.explanations(v.hold.id)).flatMap((r) => holdExplanation(r) ?? []);
   return HoldDetailSchema.parse({
-    hold: holdItem(v, tracking.get(v.hold.id) ?? null, completed.get(v.hold.id) ?? null),
+    hold: holdItem(
+      v,
+      tracking.get(v.hold.id) ?? null,
+      completed.get(v.hold.id) ?? null,
+      guidance.get(v.hold.id) ?? null,
+    ),
     payment: { id: v.payment.id, status: v.payment.status, statusReason: v.payment.statusReason },
     workspace: { timezone: tz },
     explanations,

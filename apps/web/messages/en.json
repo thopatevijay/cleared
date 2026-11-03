@@ -288,7 +288,19 @@
       "refused": "That didn't work ({code}). Check the details and try again.",
       "offline": "You're offline. Filing tracking needs a connection.",
       "action": "Action",
-      "filedAfterApproval": "Filed after your approval · PayPal"
+      "filedAfterApproval": "Filed after your approval · PayPal",
+      "neutral": {
+        "tier": {
+          "approved": "PayPal lists it as an approved carrier",
+          "accepted": "PayPal accepts it",
+          "other": "Unconfirmed carrier: PayPal accepts it"
+        },
+        "advice": "{carrier}: PayPal accepts it.",
+        "adviceOther": "{carrier} (unconfirmed): PayPal accepts it.",
+        "faster": "Approved: {carriers}",
+        "nudge": "Approved carriers: {carriers}",
+        "alternatives": "Approved carriers"
+      }
     },
     "completed": {
       "title": "Mark the order Completed in PayPal",
@@ -349,6 +361,46 @@
         "failed": "PayPal didn't record it: <code>{reason}</code>",
         "unknown": "PayPal didn't answer; we'll check its record and never resend.",
         "refused": "Not done: {code}"
+      },
+      "introDeclared": "PayPal's 7-day rule is for holds PayPal places on service payments. This hold is PayPal's own (see why it's held), so marking it Completed won't change its estimate.",
+      "toastDeclared": "Saved. Your estimate hasn't changed."
+    },
+    "declaration": {
+      "title": "What did you sell?",
+      "legend": "This payment was for",
+      "kind": {
+        "goods": "Goods",
+        "service": "A service"
+      },
+      "kindHint": {
+        "goods": "Items you ship",
+        "service": "Work you deliver, no parcel"
+      },
+      "hint": "PayPal doesn't say. Your answer only picks what you can do below. It doesn't change why PayPal is holding this payment or its estimate.",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "change": "Change",
+      "changeName": "Change what you sold",
+      "marked": {
+        "goods": "You marked this as goods",
+        "service": "You marked this as a service"
+      },
+      "notPayPal": {
+        "goods": "This is your answer, not PayPal's. The estimate above is still PayPal's for this hold; filing tracking doesn't change it.",
+        "service": "This is your answer, not PayPal's. The estimate above is still PayPal's for this hold; marking it Completed doesn't change it."
+      },
+      "saved": {
+        "goods": "Saved: you marked this as goods.",
+        "service": "Saved: you marked this as a service."
+      },
+      "locked": "Locked: you approved an action on this payment.",
+      "offline": "You're offline. Reconnect to save this.",
+      "reference": "Reference",
+      "error": {
+        "pick": "Choose goods or a service.",
+        "save": "Couldn't save your answer. Nothing changed. Try again.",
+        "refused": "Not saved: {code}"
       }
     }
   },
@@ -957,6 +1009,7 @@
       "ack_accepted": "Client confirmed the scope",
       "hold_completed_confirmed": "You marked the order Completed in PayPal",
       "action_read_back": "Read PayPal's record back",
+      "hold_declared": "You marked the payment as {what}",
       "other": "{action}"
     },
     "what": {
@@ -965,6 +1018,8 @@
       "accept_claim": "claim acceptance",
       "add_tracking": "tracking",
       "record_service_completed": "the Completed record",
+      "goods": "goods",
+      "service": "a service",
       "other": "action"
     },
     "check": {

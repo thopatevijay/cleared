@@ -3,7 +3,9 @@
 // status colours (approved: completed + truck; accepted: held + triangle-alert; other: neutral +
 // circle-help), so they read in greyscale. Every tier shows its source and the sandbox caveat. The copy
 // never brands a carrier as unapproved: an accepted carrier is one PayPal takes that may not speed up
-// the release (PayPal decides the release).
+// the release (PayPal decides the release). `releaseClaims={false}` (a hold the seller declared goods, which
+// PayPal didn't type goods, e.g. a payment review) swaps every release-speed phrase for neutral copy
+// (`holds.tracking.neutral.*`): the delivery-based release rule doesn't apply there (ADR 0017 addendum 3).
 import type { TrackingSummary } from "@cleared/core";
 import { CircleHelp, ExternalLink, TriangleAlert, Truck, type LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -119,8 +121,15 @@ const names = (s: TrackingSummary, max: number) =>
  * not speed up the release. Faster: …" + Sources + caveat. No carrier yet: the prevention nudge. An
  * approved carrier: nothing (no warning).
  */
-export function RouteAdviceLine({ s }: { s: TrackingSummary }) {
+export function RouteAdviceLine({
+  s,
+  releaseClaims = true,
+}: {
+  s: TrackingSummary;
+  releaseClaims?: boolean;
+}) {
   const t = useTranslations("holds.tracking");
+  const n = releaseClaims ? "" : "neutral.";
   if (s.state === "filed" || (s.chosen !== null && !s.flagged)) return null;
   if (s.chosen === null && s.alternatives.length === 0) return null;
   const flagged = s.chosen !== null;
@@ -142,13 +151,13 @@ export function RouteAdviceLine({ s }: { s: TrackingSummary }) {
         </span>
         <span>
           {s.chosen === null ? (
-            t("nudge", { carriers: names(s, 4) })
+            t(`${n}nudge`, { carriers: names(s, 4) })
           ) : (
             <>
               <span className="font-medium">
-                {t(s.chosen.tier === "other" ? "adviceOther" : "advice", { carrier: s.chosen.name })}
+                {t(`${n}${s.chosen.tier === "other" ? "adviceOther" : "advice"}`, { carrier: s.chosen.name })}
               </span>
-              {s.alternatives.length > 0 ? <> {t("faster", { carriers: names(s, 4) })}</> : null}
+              {s.alternatives.length > 0 ? <> {t(`${n}faster`, { carriers: names(s, 4) })}</> : null}
             </>
           )}
         </span>
@@ -160,8 +169,9 @@ export function RouteAdviceLine({ s }: { s: TrackingSummary }) {
 }
 
 /** The detail page's route advice (hold.md action slot): the chosen carrier's tier and the alternatives. */
-export function RouteAdvice({ s }: { s: TrackingSummary }) {
+export function RouteAdvice({ s, releaseClaims = true }: { s: TrackingSummary; releaseClaims?: boolean }) {
   const t = useTranslations("holds.tracking");
+  const n = releaseClaims ? "" : "neutral.";
   const headingId = useId();
   if (s.state === "filed") return null;
   return (
@@ -179,12 +189,12 @@ export function RouteAdvice({ s }: { s: TrackingSummary }) {
             </code>
             <TierBadge tier={s.chosen.tier} />
           </p>
-          <p className="text-sm">{t(`tier.${s.chosen.tier}`)}</p>
+          <p className="text-sm">{t(`${n}tier.${s.chosen.tier}`)}</p>
         </div>
       )}
       {s.alternatives.length === 0 || (s.chosen !== null && !s.flagged) ? null : (
         <>
-          <p className="font-medium">{t("alternatives")}</p>
+          <p className="font-medium">{t(`${n}alternatives`)}</p>
           <ul className="grid grid-cols-1 gap-1 md:grid-cols-2" data-testid="alternatives">
             {s.alternatives.slice(0, 8).map((a) => (
               <li

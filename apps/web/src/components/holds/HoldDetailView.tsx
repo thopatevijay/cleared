@@ -5,7 +5,7 @@
 // mirroring the hold machine. "#why" (the dashboard's "Why?") moves focus to the explanation section.
 // "Released" shows only when the hold is released, i.e. the mirrored capture left PENDING: the badge
 // then mirrors the capture (COMPLETED), the old reason stays as history, and the release leads.
-import { HoldDetailSchema, HOLD_STATES, type HoldDetail, type HoldState } from "@cleared/core";
+import { guidedAction, HoldDetailSchema, HOLD_STATES, type HoldDetail, type HoldState } from "@cleared/core";
 import { Circle, CircleCheck, CircleDot, SearchX } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
@@ -26,6 +26,7 @@ import { RuleSource } from "./RuleSource.tsx";
 import { RouteAdvice } from "../tracking/RouteAdvice.tsx";
 import { TrackingCard } from "../tracking/TrackingCard.tsx";
 import { GuidedCompleted } from "./GuidedCompleted.tsx";
+import { DeclarationControl } from "./DeclarationControl.tsx";
 import { ruleOf, useReasonText } from "./text.ts";
 
 const fetchHold = async (path: string): Promise<HoldDetail> => HoldDetailSchema.parse(await getJson(path));
@@ -184,15 +185,39 @@ function Header({ d }: { d: HoldDetail }) {
   );
 }
 
-/** M3-03: a goods hold's action slot: route advice, then the `add_tracking` ApprovalCard. */
+/**
+ * M3-03: the tracking action slot: route advice, then the `add_tracking` ApprovalCard. The release-speed copy
+ * ("Tracking can help release this", "Faster release expected") shows only on a hold PayPal typed goods,
+ * never on a hold the seller declared goods (e.g. a payment review: ADR 0017 addendum 3).
+ */
 function GoodsAction({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) {
   const tracking = d.hold.tracking ?? null;
-  if (tracking === null) return <TrackingHint />;
+  const claims = d.hold.type === "goods";
+  if (tracking === null) return claims ? <TrackingHint /> : null;
   return (
     <>
-      {tracking.state === "filed" ? null : <TrackingHint />}
-      <RouteAdvice s={tracking} />
+      {tracking.state === "filed" || !claims ? null : <TrackingHint />}
+      <RouteAdvice s={tracking} releaseClaims={claims} />
       <TrackingCard hold={d.hold} onChanged={onChanged} />
+    </>
+  );
+}
+
+/** The action slot's content: PayPal's type picks the action, else the seller's declaration. */
+function ActionSlot({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) {
+  const t = useTranslations("holds.detail");
+  const h = d.hold;
+  const action = h.guidedAction ?? guidedAction(h.type, null);
+  return (
+    <>
+      <DeclarationControl d={d} onChanged={onChanged} />
+      {action === "tracking" ? (
+        <GoodsAction d={d} onChanged={onChanged} />
+      ) : action === "completed" && h.completed != null ? (
+        <GuidedCompleted d={d} onChanged={onChanged} />
+      ) : h.declaration?.declarable === true && h.declaration.kind === null ? null : (
+        <p>{t("nothingToDo")}</p>
+      )}
     </>
   );
 }
@@ -213,13 +238,7 @@ function Detail({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) {
           <h2 id="action-heading" className="text-xl font-semibold">
             {t("actionTitle")}
           </h2>
-          {h.type === "goods" ? (
-            <GoodsAction d={d} onChanged={onChanged} />
-          ) : h.type === "service" && h.completed != null ? (
-            <GuidedCompleted d={d} onChanged={onChanged} />
-          ) : (
-            <p>{t("nothingToDo")}</p>
-          )}
+          <ActionSlot d={d} onChanged={onChanged} />
         </section>
       )}
       <Timeline

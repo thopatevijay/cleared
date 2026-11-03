@@ -3,10 +3,13 @@
 // and hands it here. Checks, each with an audit row: kill switch, payload hash (the approval's sha256),
 // ownership of the capture. Then `POST /v2/checkout/orders/{id}/track` through our typed PayPal client
 // with PayPal-Request-Id = the action id. 2xx → `succeeded` + the execution row (status, paypal-debug-id) +
-// the hold walked to `filed` with the goods_delivered estimate and no date; 4xx → `failed`; no answer /
+// the hold walked to `filed` (a hold PayPal typed goods gets the goods_delivered estimate with no date; any
+// other hold, e.g. a review hold the seller declared goods, keeps PayPal's estimate: ADR 0017 addendum 3); 4xx → `failed`; no answer /
 // 5xx → `unknown`, settled by `reconcileTracking` from the order's trackers (never by resending).
 import {
+  holdTypeOf,
   parseExecutablePayload,
+  releaseRuleAfterAction,
   transitionHold,
   WorkspaceIdSchema,
   type AddTrackingPayload,
@@ -116,8 +119,10 @@ const TO_FILED: readonly HoldEvent[] = ["action_proposed", "action_approved", "a
 
 /**
  * The capture's active hold → `filed` (ADR 0017 addendum): each of proposed → approved → filed the current
- * state takes, through `transitionHold`. A goods hold's estimate becomes `goods_delivered` with no date
- * (PayPal's 24 h counts from the courier's delivery confirmation, which Cleared does not know yet).
+ * state takes, through `transitionHold`. Only a hold PayPal itself typed goods switches its estimate to
+ * `goods_delivered` with no date (PayPal's 24 h counts from the courier's delivery confirmation, which
+ * Cleared does not know yet). Any other hold keeps PayPal's rule and estimate, whatever the seller declared
+ * (ADR 0017 addendum 3: a PENDING_REVIEW hold stays `payment_review`).
  */
 export async function fileHold(db: Db, ws: string, captureId: string, tx: Tx): Promise<HoldState | null> {
   const repos = forWorkspace(db, WorkspaceIdSchema.parse(ws));
@@ -133,8 +138,8 @@ export async function fileHold(db: Db, ws: string, captureId: string, tx: Tx): P
     if (next.ok) state = next.value;
   }
   if (state === hold.state) return state;
-  const estimate =
-    hold.type === "goods" ? { estimateSource: "goods_delivered", estimatedReleaseAt: null } : {};
+  const rule = releaseRuleAfterAction(holdTypeOf(hold.type), "tracking");
+  const estimate = rule === null ? {} : { estimateSource: rule.id, estimatedReleaseAt: null };
   await repos.holds.update(hold.id, { state, ...estimate }, tx);
   return state;
 }
