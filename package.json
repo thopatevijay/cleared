@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "i18n:check": "node scripts/check-i18n.ts",
+    "lhci": "node apps/web/scripts/lhci.ts",
     "db:migrate": "pnpm --filter @cleared/db --if-present run migrate",
     "db:seed": "pnpm --filter @cleared/db --if-present run seed",
     "db:count": "pnpm --filter @cleared/db --if-present run count",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@lhci/cli": "0.15.1",
     "@types/node": "24.19.2",
     "eslint": "10.13.0",
     "prettier": "3.9.10",

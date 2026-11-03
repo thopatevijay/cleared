@@ -7,6 +7,7 @@
     "dev": "node scripts/vendor-bryntum.ts && next dev",
     "build": "node scripts/vendor-bryntum.ts && next build",
     "start": "next start",
+    "analyze": "node scripts/analyze.ts",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
     "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest",

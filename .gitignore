@@ -53,3 +53,6 @@ pgdata/
 
 # Next.js generated (imports .next/types, which exists only after a build)
 next-env.d.ts
+
+# M4-04 Lighthouse CI results (local runs)
+.lighthouseci/
