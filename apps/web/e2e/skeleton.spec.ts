@@ -94,6 +94,8 @@ for (const locale of LOCALES) {
     await page.waitForURL(`**/${locale}/payments`);
     await expect(page.getByTestId("empty-state")).toBeVisible();
     await expect(page.getByRole("button", { name: m.empty.ctaName })).toBeVisible();
+    // M4-07: the demo retention note
+    await expect(page.getByTestId("demo-retention-note")).toHaveText(m.dashboard.demoRetention);
     await axe(page, `flow-empty-${locale}`);
 
     const clicked = Date.now();

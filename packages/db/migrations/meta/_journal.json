@@ -134,6 +134,13 @@
       "when": 1793681644495,
       "tag": "0018_seller_declared_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793706144453,
+      "tag": "0019_retention_purge",
+      "breakpoints": true
     }
   ]
 }
