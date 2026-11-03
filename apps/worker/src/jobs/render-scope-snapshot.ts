@@ -133,6 +133,8 @@ export async function snapshotContent(
       .map((i) => ({ kind: i.kind, createdAt: iso(i.createdAt), sha256: Sha256Schema.parse(i.sha256) })),
     ack: ackFor(items, scope.sha256),
     timeZone: workspace?.timezone ?? "UTC",
+    // M4-03: a Hindi workspace gets labels in both languages (English kept for PayPal)
+    locale: workspace?.locale ?? "en",
   };
 }
 

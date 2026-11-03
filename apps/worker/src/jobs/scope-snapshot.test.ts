@@ -1,10 +1,12 @@
 // M3-07 AC 1–5 on the fixture packs: the rendered PDF is deterministic, parses, stays under PayPal's 10 MB,
 // carries the scope verbatim (Devanagari included), says "signature" only in its negating footer, and shows
-// the acknowledgement block or "Not acknowledged by the client".
+// the acknowledgement block or "Not acknowledged by the client". M4-03: bilingual labels for a Hindi
+// workspace, and text snapshots of every fixture.
 import { extractPdfText, readPdfInfo, missingGlyphs, renderScopeSnapshotPdf } from "@cleared/adapters/files";
 import {
   EVIDENCE_FILE_MAX_BYTES,
   SCOPE_SNAPSHOT_FOOTER,
+  SCOPE_SNAPSHOT_LABELS,
   SCOPE_SNAPSHOT_NOT_ACKNOWLEDGED,
 } from "@cleared/core";
 import { describe, expect, it } from "vitest";
@@ -89,7 +91,31 @@ describe("scope snapshot PDF (M3-07)", () => {
     expect(await missingGlyphs(scope)).toEqual([]);
     expect(await missingGlyphs(doc.ack?.typedName ?? "")).toEqual([]);
     for (const line of scope.split("\n").filter((l) => l !== "")) expect(text).toContain(line); // line by line, exact
-    expect(text).toContain("Typed name: आशा राव");
+    expect(text).toContain("Typed name · टाइप किया गया नाम: आशा राव");
+  });
+
+  // M4-03 AC 6: the extracted text of each fixture, so a label or format change is reviewed. A Hindi
+  // workspace's labels are bilingual with English first; an English workspace's are English only.
+  for (const name of SNAPSHOT_FIXTURES) {
+    it(`M4-03: text snapshot, ${name}`, async () => {
+      const { doc, text } = await rendered(name);
+      expect(doc.locale).toBe(name === "hi" ? "hi" : "en");
+      expect(text).toMatchSnapshot();
+    });
+  }
+
+  it("M4-03: Hindi labels keep the English beside them, and every label glyph is in the font", async () => {
+    const { text } = await rendered("hi");
+    // the hi fixture has a scope text, delivery items and an acknowledgement: every other label prints
+    const conditional = new Set(["scopeFile", "noDelivery", "notAcknowledged", "footer", "page"]);
+    for (const [key, [en, hi]] of Object.entries(SCOPE_SNAPSHOT_LABELS)) {
+      if (!conditional.has(key)) expect(flat(text)).toContain(`${en} · ${hi}`);
+    }
+    expect(text).toContain("Page 1 of 1 · पृष्ठ 1 / 1");
+    expect(flat(text)).toContain(SCOPE_SNAPSHOT_LABELS.footer[1]);
+    expect(await missingGlyphs(Object.values(SCOPE_SNAPSHOT_LABELS).flat().join(" "))).toEqual([]);
+    const en = await rendered("en-ack");
+    expect(en.text).not.toMatch(/[ऀ-ॿ]/);
   });
 
   it("a glyph the font lacks is reported (it would print as a box)", async () => {
