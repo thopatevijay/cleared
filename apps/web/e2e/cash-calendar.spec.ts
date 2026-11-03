@@ -1,0 +1,584 @@
+// M3-05 E2E (local): the cash calendar over a seeded workspace with every kind (test/support/cash-seed.ts).
+// Month view (Bryntum) at 1440 with the kind colours and day totals; the list view at 360 (the default
+// below 768 px) without horizontal scroll; keyboard: Tab reaches every event, Enter / Space open the hold
+// or the dispute; axe (every WCAG 2.2 A/AA rule, any impact) on both; the text-alternative table lists
+// every event in the range. All-day days stay on their date in browser zones behind and ahead of the
+// workspace zone (BL-01 6490771972). Empty, loading and error states. No request leaves localhost (the
+// trial's GTM snippet and bryntum.com/verify, BL-01 6491378837). Review captures go to .review/M3-05/.
+import { mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { CashCalendarResponseSchema, type CashCalendarResponse } from "@cleared/core";
+import { closeDb, createDb, databaseUrl } from "@cleared/db";
+import { expect, test, type Browser, type Cookie, type Page } from "@playwright/test";
+import { seedCash } from "../test/support/cash-seed.ts";
+import { seedHeldPayment } from "../test/support/hold-seed.ts";
+import { axe, demoWorkspace, fits, local, shots, sql } from "./support/disputes.ts";
+import { axeClean } from "./support/holds.ts";
+
+const REVIEW_CAL = fileURLToPath(new URL("../../../.review/M3-05/", import.meta.url));
+
+test.describe.configure({ mode: "serial" });
+test.skip(!local, "local only");
+
+async function seeded(page: Page): Promise<{ ws: string; cal: CashCalendarResponse }> {
+  const ws = await demoWorkspace(page);
+  const db = createDb(databaseUrl());
+  try {
+    await seedCash(db, ws, new Date());
+  } finally {
+    await closeDb(db);
+  }
+  const res = await page.request.get("/api/cash-calendar");
+  return { ws, cal: CashCalendarResponseSchema.parse(await res.json()) };
+}
+
+/** Every request that leaves localhost (the trial's GTM / verify calls would show here). */
+function external(page: Page): string[] {
+  const out: string[] = [];
+  page.on("request", (r) => {
+    const u = new URL(r.url());
+    if (!["localhost", "127.0.0.1"].includes(u.hostname) && u.protocol !== "data:") out.push(r.url());
+  });
+  return out;
+}
+
+type Ready = (page: Page) => Promise<void>;
+/** The grid is drawn; from 768 px also its event bars (below 768 px cells show counts, no bars). */
+const engineReady: Ready = async (p) => {
+  await expect(p.locator(".cash-bryntum .b-calendar-cell[data-date]").first()).toBeAttached({
+    timeout: 60_000,
+  });
+  if ((p.viewportSize()?.width ?? 1440) >= 768)
+    await expect(p.locator(".cash-bryntum [data-event-id]").first()).toBeAttached({ timeout: 60_000 });
+  else await expect(p.locator(".cash-bryntum .cash-day-count").first()).toBeAttached({ timeout: 60_000 });
+};
+const listReady: Ready = async (p) => {
+  await expect(p.getByTestId("calendar-area")).toHaveAttribute("data-view", "list");
+};
+
+/**
+ * ui-reviewer captures: a FRESH load per width and theme (what a seller on that device sees; a resized
+ * Bryntum grid is not), no horizontal scroll, axe (serious/critical) next to each shot, in .review/M3-05/.
+ */
+async function shoot(
+  page: Page,
+  path: string,
+  name: string,
+  widths: readonly number[],
+  ready: Ready,
+  after?: Ready,
+  before?: Ready,
+): Promise<void> {
+  for (const theme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: "reduce" });
+    for (const width of widths) {
+      await page.setViewportSize({ width, height: width < 768 ? 800 : 900 });
+      if (before) await before(page);
+      await page.goto(path);
+      await ready(page);
+      if (after) await after(page);
+      await page.waitForTimeout(300);
+      await fits(page, `${name}-${String(width)}`);
+      if (shots) {
+        mkdirSync(REVIEW_CAL, { recursive: true });
+        await page.screenshot({ path: `${REVIEW_CAL}${name}-${String(width)}-${theme}.png`, fullPage: true });
+      }
+      await axe(page, `${name}-${String(width)}-${theme}`, REVIEW_CAL);
+    }
+  }
+  await page.emulateMedia({ colorScheme: "light", reducedMotion: "no-preference" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+}
+
+const events = (page: Page) => page.locator(".cash-bryntum [data-event-id]");
+
+test("month view at 1440: every event, kind colours, day totals, table, axe, no third-party request", async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  const calls = external(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { cal } = await seeded(page);
+  expect(cal.events.map((e) => e.kind).sort()).toEqual([
+    "dispute_deadline",
+    "estimated_release",
+    "estimated_release",
+    "released",
+    "service_completed_due",
+  ]);
+  await page.goto("/en/calendar");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cash calendar");
+  await expect(page.getByTestId("held-now")).toHaveText("€15.50 EUR · $264.00 USD held now");
+  await expect(page.getByTestId("calendar-area")).toHaveAttribute("data-view", "month");
+  await expect(events(page)).toHaveCount(cal.events.length, { timeout: 60_000 });
+  for (const e of cal.events) {
+    const el = page.locator(`.cash-bryntum [data-event-id="${e.id}"]`);
+    await expect(el).toHaveClass(new RegExp(`cash-ev--${e.kind}`));
+    // all-day: the event sits in its own day's cell
+    await expect(
+      page.locator(`.b-calendar-cell[data-date="${e.date}"] [data-event-id="${e.id}"]`),
+    ).toHaveCount(1);
+  }
+  await expect(events(page).filter({ hasText: "$64.00 USD · estimated" })).toHaveCount(1);
+  await expect(events(page).filter({ hasText: "Reply due · $120.00 USD" })).toHaveCount(1);
+  await expect(events(page).filter({ hasText: "$420.00 USD released" })).toHaveCount(1);
+  await expect(events(page).filter({ hasText: "Completed + 7 days · estimated" })).toHaveCount(1);
+  const review = cal.events.find((e) => e.amount.value === "64.00");
+  await expect(
+    page.locator(`.b-calendar-cell[data-date="${review?.date ?? ""}"] .cash-day-total`),
+  ).toHaveText("€15.50 · $64");
+  await expect(page.getByRole("button", { name: "Previous month" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Next month" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Today" })).toBeVisible();
+
+  // the text alternative lists every event in the range, with its source or "PayPal's date"
+  const rows = page.getByTestId("cash-table-row");
+  await expect(rows).toHaveCount(cal.events.length);
+  await expect(page.getByRole("table", { name: "Upcoming releases and deadlines" })).toBeVisible();
+  for (const [i, e] of cal.events.entries()) await expect(rows.nth(i)).toHaveAttribute("data-kind", e.kind);
+  await expect(rows.filter({ hasText: "Source" })).toHaveCount(3);
+  await expect(page.getByTestId("no-estimate")).toContainText("PayPal gives no timeline for this reason");
+
+  // a day shows its events beside the grid
+  await page.locator(`.b-calendar-cell[data-date="${review?.date ?? ""}"] .b-day-num`).click();
+  await expect(page.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(2);
+
+  await axeClean(page, "calendar-month-1440");
+  await shoot(page, "/en/calendar?view=month", "en-calendar-month", [375, 768, 1440], engineReady);
+
+  // Month at 375: no squeezed labels, a count and the totals per day; selecting a day lists it below the grid
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto("/en/calendar?view=month");
+  await engineReady(page);
+  await expect(page.locator(".cash-bryntum.cash-compact")).toBeVisible();
+  const cell = page.locator(`.b-calendar-cell[data-date="${review?.date ?? ""}"]`);
+  await expect(cell.locator(".cash-day-count > span")).toHaveText(["2", "€15.50", "$64"]);
+  await expect(cell.locator(".b-cal-event-bar-container")).toBeHidden();
+  // no day-cell line is clipped at 375 or 360 (the M0-09 failure)
+  for (const width of [375, 360]) {
+    await page.setViewportSize({ width, height: 800 });
+    const clipped = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>(".cash-day-count > span")]
+        .filter((s) => s.scrollWidth > s.clientWidth + 0.5)
+        .map((s) => s.innerText),
+    );
+    expect(clipped, `clipped day-cell lines at ${String(width)}`).toEqual([]);
+  }
+  await page.setViewportSize({ width: 375, height: 800 });
+  await expect(page.getByTestId("day-panel")).toHaveText("Select a day to see its events.");
+  await cell.locator(".b-day-num").click();
+  await expect(page.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(2);
+  const pick: Ready = async (p) => {
+    await p.locator(`.b-calendar-cell[data-date="${review?.date ?? ""}"] .b-day-num`).click();
+    await expect(p.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(2);
+  };
+  await shoot(page, "/en/calendar?view=month", "en-calendar-month-day", [375], engineReady, pick);
+  expect(calls, "requests that left localhost").toEqual([]);
+  const trial = await page.evaluate(() =>
+    Object.keys(localStorage).filter((k) => k.startsWith("b-calendar")),
+  );
+  test.info().annotations.push({ type: "bryntum-localStorage", description: trial.join(", ") });
+});
+
+test("keyboard: Tab reaches every event; Enter opens the hold, Space opens the dispute", async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const { cal } = await seeded(page);
+  await page.goto("/en/calendar?view=month");
+  await expect(events(page)).toHaveCount(cal.events.length, { timeout: 60_000 });
+  await page.getByTestId("view-switch").getByRole("button", { name: "Month" }).focus();
+  const seen = new Set<string>();
+  for (let i = 0; i < 120 && seen.size < cal.events.length; i++) {
+    await page.keyboard.press("Tab");
+    const id = await page.evaluate(() => document.activeElement?.getAttribute("data-event-id") ?? null);
+    if (id !== null) seen.add(id);
+  }
+  expect([...seen].sort()).toEqual(cal.events.map((e) => e.id).sort());
+
+  const hold = cal.events.find((e) => e.kind === "estimated_release" && e.amount.currency === "USD");
+  await page.locator(`.cash-bryntum [data-event-id="${hold?.id ?? ""}"]`).focus();
+  await page.keyboard.press("Enter");
+  await page.waitForURL(`**/en/holds/${hold?.ref.id ?? ""}`);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Held: $64.00 USD");
+
+  await page.goto("/en/calendar?view=month");
+  const deadline = cal.events.find((e) => e.kind === "dispute_deadline");
+  await expect(events(page)).toHaveCount(cal.events.length, { timeout: 60_000 });
+  await page.locator(`.cash-bryntum [data-event-id="${deadline?.id ?? ""}"]`).focus();
+  await page.keyboard.press(" ");
+  await page.waitForURL(`**/en/disputes/${deadline?.ref.id ?? ""}`);
+});
+
+test("list view at 360: the default below 768 px, no horizontal scroll, every event, axe", async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  const calls = external(page);
+  await page.setViewportSize({ width: 360, height: 800 });
+  const { ws, cal } = await seeded(page);
+  await page.goto("/en/calendar");
+  await expect(page.getByTestId("calendar-area")).toHaveAttribute("data-view", "list");
+  const rows = page.getByTestId("cash-list").getByTestId("cash-row");
+  await expect(rows).toHaveCount(cal.events.length);
+  for (const r of await rows.all()) expect((await r.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(56);
+  await expect(page.getByTestId("cash-day").nth(1)).toContainText("estimated");
+  const { sw, cw } = await page.evaluate(() => ({
+    sw: document.documentElement.scrollWidth,
+    cw: document.documentElement.clientWidth,
+  }));
+  expect(sw).toBeLessThanOrEqual(cw);
+  // the table is one disclosure away, with every event
+  await page.getByText("Show as table").click();
+  await expect(page.getByTestId("cash-table-row")).toHaveCount(cal.events.length);
+  await axeClean(page, "calendar-list-360");
+  // Enter on a row opens it
+  await rows.first().getByTestId("cash-row-link").focus();
+  await page.keyboard.press("Enter");
+  await page.waitForURL(/\/en\/(holds|disputes)\//);
+  await shoot(page, "/en/calendar?view=list", "en-calendar-list", [360, 375, 768, 1440], listReady);
+  await shoot(page, "/hi/calendar?view=list", "hi-calendar-list", [360, 1440], listReady);
+  await shoot(page, "/hi/calendar?view=month", "hi-calendar-month", [375, 1440], engineReady);
+
+  // a six-week month with events (May 2027: six rows with a Sunday start and with a Monday start) at 375:
+  // estimated releases on Mon 3 May (an early row) and on Mon 31 May (the last in-month day, in the last
+  // row). Every row keeps the compact cell height, the last row is not squeezed, and 31 May's count and
+  // total lines sit fully inside their cell and the calendar; the day stays selectable. EN (Sunday), HI (Monday).
+  const db = createDb(databaseUrl());
+  try {
+    await seedHeldPayment(db, ws, { amount: "25.00", seenAt: new Date("2027-05-02T12:00:00Z") });
+    await seedHeldPayment(db, ws, { amount: "420.00", seenAt: new Date("2027-05-30T12:00:00Z") });
+  } finally {
+    await closeDb(db);
+  }
+  for (const [locale, title] of [
+    ["en", "May 2027"],
+    ["hi", "मई 2027"],
+  ] as const) {
+    const toMay: Ready = async (p) => {
+      for (let i = 0; i < 36; i++) {
+        if ((await p.getByTestId("month-title").innerText()) === title) break;
+        await p.getByTestId("month-bar").getByRole("button").nth(2).click();
+      }
+      await expect(p.getByTestId("month-title")).toHaveText(title);
+      const may31 = p.locator('.b-calendar-cell[data-date="2027-05-31"]');
+      await expect(may31.locator(".cash-day-count > span")).toHaveText(["1", "$420"]);
+      await expect(p.locator('.b-calendar-cell[data-date="2027-05-03"] .cash-day-count > span')).toHaveText([
+        "1",
+        "$25",
+      ]);
+      const m = await p.evaluate(() => {
+        const box = document.querySelector(".cash-bryntum")?.getBoundingClientRect();
+        const cells = [
+          ...document.querySelectorAll<HTMLElement>(".cash-bryntum .b-calendar-cell[data-date]"),
+        ];
+        const rows = new Map<number, number>();
+        for (const c of cells) {
+          const r = c.getBoundingClientRect();
+          rows.set(Math.round(r.top), Math.round(r.height));
+        }
+        const cell = document
+          .querySelector('.b-calendar-cell[data-date="2027-05-31"]')
+          ?.getBoundingClientRect();
+        const lines = [
+          ...document.querySelectorAll('.b-calendar-cell[data-date="2027-05-31"] .cash-day-count > span'),
+        ].map((l) => l.getBoundingClientRect().bottom);
+        return {
+          heights: [...rows.entries()].sort((x, y) => x[0] - y[0]).map(([, h]) => h),
+          boxBottom: box?.bottom ?? 0,
+          cellBottom: cell?.bottom ?? 0,
+          linesBottom: Math.max(...lines),
+        };
+      });
+      // six rows of equal height, none below the compact cell height (count + totals)
+      expect(m.heights).toHaveLength(6);
+      expect(Math.min(...m.heights), `row heights ${m.heights.join(",")}`).toBeGreaterThanOrEqual(72);
+      expect(
+        Math.max(...m.heights) - Math.min(...m.heights),
+        `row heights ${m.heights.join(",")}`,
+      ).toBeLessThanOrEqual(1);
+      expect(m.linesBottom).toBeLessThanOrEqual(m.cellBottom);
+      expect(m.cellBottom).toBeLessThanOrEqual(m.boxBottom);
+      await may31.scrollIntoViewIfNeeded();
+      await may31.locator(".b-day-num").click();
+      await expect(p.getByTestId("day-panel").getByTestId("cash-row")).toHaveCount(1);
+      // back to the top, so the full-page capture is not taken mid-scroll under the sticky header
+      await p.evaluate(() => {
+        window.scrollTo(0, 0);
+      });
+    };
+    await shoot(
+      page,
+      `/${locale}/calendar?view=month`,
+      `${locale}-calendar-month-6wk-events`,
+      [375],
+      engineReady,
+      toMay,
+    );
+  }
+  expect(calls, "requests that left localhost").toEqual([]);
+});
+
+async function cellsIn(browser: Browser, cookie: Cookie, timezoneId: string) {
+  const ctx = await browser.newContext({ timezoneId, viewport: { width: 1440, height: 900 } });
+  await ctx.addCookies([cookie]);
+  const p = await ctx.newPage();
+  await p.goto("/en/calendar?view=month");
+  await expect(events(p)).toHaveCount(5, { timeout: 60_000 });
+  const placed = await p.evaluate(() =>
+    [...document.querySelectorAll(".cash-bryntum [data-event-id]")].map((e) => [
+      e.getAttribute("data-event-id"),
+      e.closest(".b-calendar-cell")?.getAttribute("data-date"),
+    ]),
+  );
+  await ctx.close();
+  return Object.fromEntries(placed) as Record<string, string>;
+}
+
+/** The focused element: a day number's date, or an event link's href inside the day list. */
+async function focused(p: Page): Promise<{ day: string | null; href: string | null }> {
+  return p.evaluate(() => {
+    const a = document.activeElement as HTMLElement | null;
+    const day =
+      a?.closest<HTMLElement>(".cash-bryntum .b-day-num[data-header-date]")?.dataset["headerDate"] ?? null;
+    const row = a?.closest('[data-testid="day-panel"] [data-testid="cash-row-link"]');
+    return { day, href: row === null || row === undefined ? null : (row.getAttribute("href") ?? null) };
+  });
+}
+
+test("375 month: day names carry count and totals; keyboard alone reaches every event; the date survives 768 px", async ({
+  page,
+}) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 375, height: 800 });
+  const { cal } = await seeded(page);
+  const days = [...new Set(cal.events.map((e) => e.date))];
+
+  // (a) spec rule 3: each drawn day's accessible name holds its visible count and its totals, spoken
+  for (const [locale, oneEvent, estimated, dollars] of [
+    ["en", "1 event", "estimated", "US dollars"],
+    ["hi", "1 घटना", "अनुमानित", "डॉलर"],
+  ] as const) {
+    await page.goto(`/${locale}/calendar?view=month`);
+    await engineReady(page);
+    const service = cal.events.find((e) => e.kind === "service_completed_due");
+    const num = page.locator(`.cash-bryntum .b-day-num[data-header-date="${service?.date ?? ""}"]`);
+    await expect(num).toHaveAttribute(
+      "aria-label",
+      new RegExp(`${oneEvent}, 80\\.00 [^,]*${dollars}[^,]* ${estimated}$`),
+    );
+    await expect(
+      page.locator(`.cash-bryntum .b-calendar-cell[data-date="${service?.date ?? ""}"]`),
+    ).toHaveAttribute("aria-label", new RegExp(`${oneEvent}, 80\\.00 [^,]*${dollars}[^,]* ${estimated}$`));
+    for (const d of days) {
+      const label =
+        (await page
+          .locator(`.cash-bryntum .b-day-num[data-header-date="${d}"]`)
+          .getAttribute("aria-label")) ?? "";
+      const visible = await page
+        .locator(`.cash-bryntum .b-calendar-cell[data-date="${d}"] .cash-day-n b`)
+        .innerText();
+      expect(label, d).toContain(visible); // the visible count
+      expect(label, d).toContain(d.slice(8).replace(/^0/, "")); // the visible day number
+    }
+  }
+  await expect(
+    page.locator(
+      `.cash-bryntum .b-day-num[data-header-date="${cal.events.find((e) => e.amount.value === "64.00")?.date ?? ""}"]`,
+    ),
+  ).toHaveAttribute("aria-label", /2 घटनाएँ, 15\.50 .* अनुमानित, 64\.00 .* अनुमानित$/);
+
+  // (b) keyboard alone at 375, as a user would: Tab to a day with events, Enter (or Space) opens its list
+  // (announced: the day panel is aria-live), keep tabbing past the grid into that list and through it, then
+  // on (Tab wraps to the top) to the next day; every event in the range is reached
+  await page.goto("/en/calendar?view=month");
+  await engineReady(page);
+  const want = new Set(
+    cal.events.map((e) => `/en/${e.ref.type === "hold" ? "holds" : "disputes"}/${e.ref.id}`),
+  );
+  const reached = new Set<string>();
+  const opened = new Set<string>();
+  let open: "none" | "opened" | "inList" = "none";
+  await page.getByTestId("view-switch").getByRole("button", { name: "Month" }).focus();
+  for (let i = 0; i < 1500 && reached.size < want.size; i++) {
+    await page.keyboard.press("Tab");
+    const f = await focused(page);
+    if (f.href !== null) {
+      reached.add(f.href);
+      open = "inList";
+    } else if (open === "inList") open = "none"; // left the day's list
+    if (open === "none" && f.day !== null && days.includes(f.day) && !opened.has(f.day)) {
+      open = "opened";
+      opened.add(f.day);
+      await page.keyboard.press(opened.size % 2 === 0 ? " " : "Enter");
+      await expect(page.getByTestId("day-panel").locator("time")).toHaveAttribute("datetime", f.day);
+      await expect(page.getByTestId("day-panel")).toHaveAttribute("aria-live", "polite");
+    }
+  }
+  expect([...reached].sort()).toEqual([...want].sort());
+
+  // (c) the selected date and the shown month survive crossing 768 px (1440 → 375 → 1440)
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/en/calendar?view=month");
+  await engineReady(page);
+  await page.getByRole("button", { name: "Next month" }).click();
+  const title = await page.getByTestId("month-title").innerText();
+  const pick = page.locator(".cash-bryntum .b-calendar-cell:not(.b-other-month)[data-date$='-15']");
+  const date = (await pick.getAttribute("data-date")) ?? "";
+  await pick.locator(".b-day-num").click();
+  const kept = async () => {
+    await expect(page.getByTestId("month-title")).toHaveText(title);
+    await expect(page.locator(`.cash-bryntum .b-calendar-cell[data-date="${date}"]`)).toHaveClass(
+      /cash-selected/,
+    );
+    await expect(page.getByTestId("day-panel")).toBeVisible();
+  };
+  await kept();
+  await page.setViewportSize({ width: 375, height: 800 });
+  await expect(page.locator(".cash-bryntum.cash-compact")).toBeVisible();
+  await kept();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.locator(".cash-bryntum.cash-compact")).toHaveCount(0);
+  await kept();
+});
+
+test("all-day days hold in browser zones behind and ahead of the workspace zone", async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(300_000);
+  const { ws } = await seeded(page);
+  await sql("update workspaces set timezone = 'Asia/Kolkata' where id = $1", [ws]);
+  const cal = CashCalendarResponseSchema.parse(await (await page.request.get("/api/cash-calendar")).json());
+  expect(cal.timezone).toBe("Asia/Kolkata");
+  const want = Object.fromEntries(cal.events.map((e) => [e.id, e.date]));
+  const cookie = (await page.context().cookies()).find((c) => c.name.startsWith("__Host-cleared_session"));
+  if (cookie === undefined) throw new Error("no session cookie");
+  for (const tz of ["America/Los_Angeles", "Pacific/Auckland", "Asia/Kolkata"])
+    expect(await cellsIn(browser, cookie, tz), tz).toEqual(want);
+});
+
+test("empty, loading and error states", async ({ page }) => {
+  test.setTimeout(300_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await demoWorkspace(page);
+  await page.goto("/en/calendar");
+  await expect(page.getByRole("heading", { name: "No held money." })).toBeVisible();
+  await expect(page.getByTestId("held-now")).toHaveText("Nothing held now");
+  await expect(page.getByTestId("cash-table")).toContainText("Nothing in this range.");
+  await axeClean(page, "calendar-empty");
+  const emptyReady: Ready = async (p) => {
+    await expect(p.getByRole("heading", { name: "No held money." })).toBeVisible();
+  };
+  await shoot(page, "/en/calendar", "en-calendar-empty", [360, 375, 768, 1440], emptyReady);
+  await shoot(page, "/hi/calendar", "hi-calendar-empty", [360, 1440], async (p) => {
+    await expect(p.getByTestId("empty-state")).toBeVisible();
+  });
+
+  // loading and error over a workspace with data: the server-rendered total and table stay true
+  await seeded(page);
+  await page.route("**/api/cash-calendar**", () => undefined);
+  await page.goto("/en/calendar");
+  await expect(page.getByTestId("loading")).toBeVisible();
+  await expect(page.getByTestId("held-now")).toHaveText("€15.50 EUR · $264.00 USD held now");
+  await expect(page.getByTestId("cash-table-row")).toHaveCount(5);
+  await axeClean(page, "calendar-loading");
+  const loadingReady: Ready = async (p) => {
+    await expect(p.getByTestId("loading")).toBeVisible();
+  };
+  await shoot(page, "/en/calendar?view=month", "en-calendar-loading", [375, 1440], loadingReady);
+  await shoot(page, "/hi/calendar?view=month", "hi-calendar-loading", [375], loadingReady);
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+
+  await page.route("**/api/cash-calendar**", (route) =>
+    route.fulfill({
+      status: 500,
+      headers: {
+        "content-type": "application/json",
+        "x-correlation-id": "c0ffee00-5ce7-4d1e-9a7a-000000000305",
+      },
+      body: JSON.stringify({ error: { code: "internal", message: "Something went wrong." } }),
+    }),
+  );
+  await page.goto("/en/calendar");
+  await expect(page.getByText("Couldn't load the calendar")).toBeVisible();
+  await expect(page.getByText("c0ffee00-5ce7-4d1e-9a7a-000000000305")).toBeVisible();
+  await expect(page.getByTestId("cash-table-row")).toHaveCount(5);
+  await axeClean(page, "calendar-error");
+  const errorReady: Ready = async (p) => {
+    await expect(p.getByText("Couldn't load the calendar")).toBeVisible();
+  };
+  await shoot(page, "/en/calendar?view=month", "en-calendar-error", [375, 1440], errorReady);
+  await shoot(page, "/hi/calendar?view=month", "hi-calendar-error", [375, 1440], async (p) => {
+    await expect(p.getByTestId("error-panel")).toBeVisible();
+  });
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+
+  // the engine's own states: its chunk hangs (loading) or fails (the table still has every date). The
+  // page loads in List view (no engine chunk yet); then chunks are held or refused and Month is chosen.
+  const reset: Ready = async (p) => {
+    await p.unrouteAll({ behavior: "ignoreErrors" });
+    await p.context().setOffline(false);
+  };
+  const toMonth =
+    (mode: "hang" | "fail", label: string): Ready =>
+    async (p) => {
+      await p.route("**/_next/static/chunks/**", (route) =>
+        mode === "hang" ? undefined : route.abort("failed"),
+      );
+      await p.getByTestId("view-switch").getByRole("button", { name: label }).click();
+    };
+  await shoot(
+    page,
+    "/en/calendar?view=list",
+    "en-calendar-engine-loading",
+    [375, 1440],
+    listReady,
+    async (p) => {
+      await toMonth("hang", "Month")(p);
+      await expect(p.getByTestId("engine-loading")).toContainText("Loading the calendar view…");
+    },
+    reset,
+  );
+  await shoot(
+    page,
+    "/en/calendar?view=list",
+    "en-calendar-engine-failed",
+    [375, 1440],
+    listReady,
+    async (p) => {
+      await toMonth("fail", "Month")(p);
+      await expect(p.getByTestId("engine-failed")).toHaveText(
+        "The calendar view couldn't load. All dates are in the table below.",
+      );
+      await expect(p.getByTestId("cash-table-row")).toHaveCount(5);
+    },
+    reset,
+  );
+  await shoot(
+    page,
+    "/hi/calendar?view=list",
+    "hi-calendar-engine-failed",
+    [375],
+    listReady,
+    async (p) => {
+      await toMonth("fail", "महीना")(p);
+      await expect(p.getByTestId("engine-failed")).toBeVisible();
+    },
+    reset,
+  );
+
+  // offline: the last data stays, under a banner naming when it was loaded
+  await shoot(
+    page,
+    "/en/calendar?view=month",
+    "en-calendar-offline",
+    [375, 1440],
+    engineReady,
+    async (p) => {
+      await p.context().setOffline(true);
+      await expect(p.getByTestId("offline-banner")).toBeVisible();
+    },
+    reset,
+  );
+  await reset(page);
+});

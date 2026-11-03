@@ -10,3 +10,9 @@ allowBuilds:
   # optional dependencies, and their install scripts only rebuild from source as a fallback.
   "@parcel/watcher": false
   "@swc/core": false
+  # M3-05 (ADR 0016): the Bryntum Calendar trial from public npm. Its postinstall (calendar-trial ->
+  # calendar-trial-lib/build.js, obfuscated) only rewrites `%LICENSE%` in the package's own .js files with
+  # a random per-install id; no network call (read 2026-10-29 in M0-09 and again 2026-11-02 in M3-05).
+  # Re-read build.js on every version bump (BL-01 6490771509). Versions are pinned exactly.
+  "@bryntum/calendar-trial": true
+  "@bryntum/calendar-trial-lib": true

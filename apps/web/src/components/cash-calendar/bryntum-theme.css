@@ -1,0 +1,224 @@
+/* M3-05 (cash-calendar.md "Light and dark"): our tokens mapped onto Bryntum's CSS variables, in one place.
+   Our tokens already switch for dark mode (tokens.css), so Bryntum follows without a second theme file.
+   The weekend header uses text-muted, never Bryntum's red (4.22:1 in the M0-09 spike). Event colours come
+   from the status pairs checked by design-tokens.mjs. The trial watermark is left alone (licence). */
+.cash-bryntum {
+  --b-widget-color: var(--color-text);
+  --b-panel-background: var(--color-surface);
+  --b-toolbar-background: var(--color-surface);
+  --b-widget-focus-outline-color: var(--color-focus);
+  --b-widget-focus-outline-width: 2px;
+  --b-calendar-background: var(--color-surface);
+  --b-calendar-border-color: var(--color-border);
+  --b-calendar-foreground-color: var(--color-text);
+  --b-calendar-other-month-foreground-color: var(--color-text-muted);
+  --b-calendar-non-working-day-background: var(--color-surface-sunken);
+  --b-calendar-view-header-cell-weekend-color: var(--color-text-muted);
+  --b-calendar-view-header-cell-non-working-day-color: var(--color-text-muted);
+  --b-calendar-date-hover-background: var(--color-surface-sunken);
+  --b-calendar-cell-overflow-color: var(--color-text);
+  --b-month-view-background: var(--color-surface);
+  --b-month-view-cell-color: var(--color-text);
+  --b-month-view-cell-header-color: var(--color-text);
+  --b-month-view-cell-other-month-color: var(--color-text-muted);
+  --b-month-view-cell-weekend-color: var(--color-text);
+  --b-month-view-header-cell-color: var(--color-text);
+  --b-month-view-header-cell-weekend-color: var(--color-text-muted);
+  --b-month-view-non-working-day-background: var(--color-surface-sunken);
+  --b-month-view-event-bar-font-size: 0.875rem;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.cash-bryntum .b-calendar,
+.cash-bryntum .b-toolbar,
+.cash-bryntum .b-calendar-cell,
+.cash-bryntum .b-cal-cell-header {
+  color: var(--color-text);
+}
+
+/* The month title ("November 2026") in the toolbar. */
+.cash-bryntum .b-calendar-view-desc,
+.cash-bryntum .b-calendar-view-desc-text {
+  color: var(--color-text) !important;
+}
+
+/* No week numbers (they are links Bryntum adds to every row, and they crowd the 375 px grid). */
+.cash-bryntum .b-week-num {
+  display: none !important;
+}
+
+/* Day headers: the day number and the month-start label ("Nov 1") in our text token, light and dark. */
+.cash-bryntum .b-cal-cell-header {
+  color: var(--color-text);
+}
+.cash-bryntum .b-cal-cell-header * {
+  color: inherit;
+}
+/* Bryntum sets the month-start label ("Nov" in "Nov 1") to `color: initial` (black, invisible in dark). */
+.cash-bryntum .b-cal-cell-header .b-day-num strong,
+.cash-bryntum .b-calendar-cell .b-day-num > * {
+  color: var(--color-text) !important;
+}
+.cash-bryntum .b-calendar-cell.b-other-month .b-cal-cell-header {
+  color: var(--color-text-muted);
+}
+/* The month-start label ("Nov" in "Nov 1") is Bryntum's ::before on the day number. */
+.cash-bryntum .b-day-num[data-start-of]::before {
+  color: var(--color-text) !important;
+  margin-inline-end: 0.25em;
+}
+/* Hover and focus on a day number: our sunken surface, the digits keep the text token. */
+.cash-bryntum .b-day-num:hover,
+.cash-bryntum .b-day-num:focus {
+  background: var(--color-surface-sunken) !important;
+  color: var(--color-text) !important;
+}
+/* Today: the accent ring (not Bryntum's blue). */
+.cash-bryntum .b-calendar-cell.b-today .b-day-num {
+  border-color: var(--color-accent) !important;
+  color: var(--color-accent) !important;
+  background: transparent !important;
+}
+/* The day selected in Month view (its list shows beside or below the grid). */
+.cash-bryntum .b-calendar-cell.cash-selected .b-day-num {
+  background: var(--color-accent) !important;
+  color: var(--color-on-accent) !important;
+  border-radius: 50%;
+}
+.cash-bryntum .b-calendar-cell.cash-selected {
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+/* The selected day: accent fill with on-accent digits (Bryntum's marker hides the digits in dark). */
+.cash-bryntum .b-cal-cell-header.b-selected-date .b-day-num,
+.cash-bryntum .b-calendar-cell.b-selected-date .b-day-num {
+  background: var(--color-accent) !important;
+  color: var(--color-on-accent) !important;
+  border-radius: 50%;
+}
+
+/* Event bars: token fill/text per kind; labels wrap, never cut. */
+.cash-bryntum .b-cal-event-wrap.cash-ev .b-cal-event {
+  border-radius: 4px;
+}
+/* Bryntum dims read-only events (opacity 0.8 + grayscale); ours are read-only by design, so keep them solid. */
+.cash-bryntum .b-cal-event-wrap.cash-ev,
+.cash-bryntum .b-cal-view-readonly {
+  opacity: 1;
+  filter: none;
+}
+.cash-bryntum .cash-ev-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+  font-weight: 600;
+}
+.cash-bryntum .b-cal-event-wrap.cash-ev--estimated_release .b-cal-event {
+  background: var(--color-status-held-bg) !important;
+  color: var(--color-status-held-fg) !important;
+  border: 1.5px dashed var(--color-border-strong);
+}
+.cash-bryntum .b-cal-event-wrap.cash-ev--dispute_deadline .b-cal-event {
+  background: var(--color-status-dispute-bg) !important;
+  color: var(--color-status-dispute-fg) !important;
+}
+.cash-bryntum .b-cal-event-wrap.cash-ev--released .b-cal-event {
+  background: var(--color-status-completed-bg) !important;
+  color: var(--color-status-completed-fg) !important;
+}
+.cash-bryntum .b-cal-event-wrap.cash-ev--service_completed_due .b-cal-event {
+  background: var(--color-status-info-bg) !important;
+  color: var(--color-status-info-fg) !important;
+}
+.cash-bryntum .b-cal-event-wrap.cash-ev:focus-visible,
+.cash-bryntum .b-cal-event-wrap.cash-ev:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* The event text takes the kind's token colour (Bryntum colours the body and description itself). */
+.cash-bryntum .b-cal-event-wrap.cash-ev .b-cal-event-body,
+.cash-bryntum .b-cal-event-wrap.cash-ev .b-cal-event-desc,
+.cash-bryntum .b-cal-event-wrap.cash-ev .cash-ev-text {
+  color: inherit !important;
+  background: transparent !important;
+}
+
+/* The day's totals per currency (short form) at the left of the day header. */
+.cash-bryntum .cash-day-total {
+  margin-inline-end: auto;
+  padding-inline-start: 0.4em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+/* Below 1024 px: no event bars in cells (labels are never squeezed), only the count and one total per
+   currency; selecting the day opens its full list below the grid. */
+.cash-bryntum .cash-day-count {
+  display: none;
+}
+.cash-bryntum.cash-compact .b-cal-event-bar-container,
+.cash-bryntum.cash-compact .cash-day-total {
+  display: none;
+}
+.cash-bryntum.cash-compact .cash-day-count {
+  display: block;
+  padding: 0 0.125em;
+  font-size: 0.625rem;
+  line-height: 1.25;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+.cash-bryntum.cash-compact .cash-day-count > span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.cash-bryntum .cash-day-n {
+  display: flex !important;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.75rem;
+}
+.cash-bryntum .cash-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.cash-bryntum .cash-dot--estimated_release {
+  background: var(--color-status-held-fg);
+}
+.cash-bryntum .cash-dot--dispute_deadline {
+  background: var(--color-status-dispute-fg);
+}
+.cash-bryntum .cash-dot--released {
+  background: var(--color-status-completed-fg);
+}
+.cash-bryntum .cash-dot--service_completed_due {
+  background: var(--color-status-info-fg);
+}
+
+/* 768-1279 px: a cell is too narrow for the totals beside the day number; the bars carry each amount and
+   the selected day's list carries the totals. */
+@media (max-width: 1279px) {
+  .cash-bryntum .cash-day-total {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cash-bryntum * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -1053,5 +1053,63 @@
     },
     "markShort": "पढ़ा हुआ मानें",
     "retry": "फिर कोशिश करें"
+  },
+  "calendar": {
+    "title": "नकदी कैलेंडर",
+    "intro": "रोका गया पैसा अनुमानित रूप से कब छूटेगा, PayPal ने क्या रिलीज़ किया, और विवादों के जवाब कब तक देने हैं।",
+    "heldNow": "अभी {amount} रोका गया",
+    "heldNone": "अभी कुछ नहीं रोका गया",
+    "viewLabel": "दृश्य",
+    "view": {
+      "list": "सूची",
+      "month": "महीना"
+    },
+    "kind": {
+      "estimated": "{amount} · अनुमानित",
+      "deadline": "जवाब की आख़िरी तारीख़ · {amount}",
+      "released": "{amount} रिलीज़ हुआ",
+      "completedDue": "Completed + 7 दिन · अनुमानित"
+    },
+    "kindName": {
+      "estimated_release": "अनुमानित रिलीज़",
+      "dispute_deadline": "विवाद का जवाब देय",
+      "released": "रिलीज़ हुआ, PayPal से",
+      "service_completed_due": "Completed + 7 दिन"
+    },
+    "estimated": "अनुमानित",
+    "sourceName": "स्रोत {source}",
+    "fromPayPal": "PayPal की तारीख़",
+    "table": {
+      "caption": "आने वाली रिलीज़ और आख़िरी तारीख़ें",
+      "date": "तारीख़",
+      "event": "घटना",
+      "amount": "राशि",
+      "source": "अनुमान का स्रोत",
+      "show": "तालिका के रूप में दिखाएँ",
+      "none": "इस अवधि में कुछ नहीं।"
+    },
+    "emptyTitle": "कोई पैसा रुका नहीं है।",
+    "empty": "जब PayPal कोई भुगतान रोकेगा, उसकी अनुमानित रिलीज़ यहाँ दिखेगी।",
+    "noEstimateHeading": "अभी कोई अनुमान नहीं",
+    "noEstimate": "इस कारण के लिए PayPal कोई समय-सीमा नहीं बताता",
+    "openHold": "{amount} पर रोक खोलें",
+    "loading": "कैलेंडर लोड हो रहा है…",
+    "engineLoading": "कैलेंडर दृश्य लोड हो रहा है…",
+    "engineFailed": "कैलेंडर नहीं खुल सका। सभी तारीख़ें नीचे की तालिका में हैं।",
+    "errorTitle": "कैलेंडर लोड नहीं हो सका",
+    "errorBody": "अपना कनेक्शन जाँचें और फिर कोशिश करें। नीचे की तालिका की सभी तारीख़ें अब भी लागू हैं।",
+    "showMore": "अगले 30 दिन दिखाएँ",
+    "listWindow": "अगले {days} दिन",
+    "listEmpty": "अगले {days} दिनों में कुछ नहीं।",
+    "dayEstimated": "{amount} अनुमानित",
+    "dayReleased": "{amount} रिलीज़ हुआ",
+    "dayEvents": "{count, plural, one {# घटना} other {# घटनाएँ}}",
+    "calendarLabel": "नकदी कैलेंडर, महीने का दृश्य",
+    "selectDay": "किसी दिन की घटनाएँ देखने के लिए वह दिन चुनें।",
+    "dayNothing": "इस दिन कुछ नहीं।",
+    "today": "आज",
+    "prev": "पिछला महीना",
+    "next": "अगला महीना",
+    "linkHint": "देखें कि रोका गया पैसा अनुमानित रूप से कब छूटेगा"
   }
 }
