@@ -9,6 +9,7 @@ import { consumerReceiptsRepo, outboxRepo, workerHeartbeatsRepo } from "./messag
 import { disputeDeadlinesRepo } from "../workspace/disputes.ts";
 import { opsChecksRepo, reconcileTargetsRepo, sloSamplesRepo } from "./ops.ts";
 import { reviewHoldPoolRepo } from "./pool.ts";
+import { retentionRepo } from "./retention.ts";
 
 export function platform(db: Db) {
   return {
@@ -29,6 +30,8 @@ export function platform(db: Db) {
     sloSamples: sloSamplesRepo(db),
     // M3-10: the review-hold pool (ADR 0019)
     reviewHoldPool: reviewHoldPoolRepo(db),
+    // M4-07: the demo retention purge (ADR 0020)
+    retention: retentionRepo(db),
   };
 }
 
@@ -41,3 +44,4 @@ export type * from "./messaging.ts";
 export type * from "./flags.ts";
 export type * from "./ops.ts";
 export type * from "./pool.ts";
+export type * from "./retention.ts";
