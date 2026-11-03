@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CURRENCY_EXPONENTS,
-  formatMoney,
+  moneyToDecimal,
   fromMinorUnits,
   isCurrencyCode,
   MoneySchema,
@@ -25,17 +25,17 @@ describe("Money", () => {
     ["0.10", "INR", 10n],
   ])("round-trips %s %s losslessly", (value, currency, minor) => {
     const m = must(value, currency);
-    expect(formatMoney(m)).toBe(value);
+    expect(moneyToDecimal(m)).toBe(value);
     expect(toMinorUnits(m)).toBe(minor);
     expect(fromMinorUnits(minor, m.currency)).toEqual(m);
     expect(moneyToPayPal(m)).toEqual({ currency_code: currency, value });
   });
 
   it("keeps values a float would corrupt", () => {
-    expect(formatMoney(must("90071992547409.93", "USD"))).toBe("90071992547409.93");
+    expect(moneyToDecimal(must("90071992547409.93", "USD"))).toBe("90071992547409.93");
     const a = toMinorUnits(must("0.10", "USD"));
     const b = toMinorUnits(must("0.20", "USD"));
-    expect(formatMoney(fromMinorUnits(a + b, "USD"))).toBe("0.30");
+    expect(moneyToDecimal(fromMinorUnits(a + b, "USD"))).toBe("0.30");
   });
 
   it("canonicalises: pads to the exponent, strips leading zeros", () => {

@@ -2,7 +2,12 @@
 // link to APP_BASE_URL, escaped HTML, no images or tracking pixels.
 import { describe, expect, it } from "vitest";
 import { addMinutes, type Instant } from "../../time.ts";
-import { deadlineAlert, disputeOpenedNotification, holdOpenedNotification } from "../rules.ts";
+import {
+  completedReminder,
+  deadlineAlert,
+  disputeOpenedNotification,
+  holdOpenedNotification,
+} from "../rules.ts";
 import { remaining } from "./format.ts";
 import { renderNotification } from "./render.ts";
 
@@ -58,6 +63,40 @@ describe("renderNotification", () => {
       "A buyer opened a dispute on $120.00 USD: item not received. A reply is being drafted.",
     );
     expect(renderNotification(opened, ctx(now, "hi")).url).toBe(`https://cleared.example/hi/disputes/${D}`);
+  });
+
+  // M4-03 AC 6: every template's subject, text and HTML, in both locales (INR shows the lakh grouping)
+  describe("snapshots", () => {
+    const now = addMinutes(DUE, -50 * 60);
+    const inr = { amount: "125000.00", currency: "INR" } as const;
+    const drafts = {
+      hold_opened: holdOpenedNotification({ holdId: D, paymentId: D, amount: inr, reason: "PENDING_REVIEW" }),
+      dispute_opened: disputeOpenedNotification({
+        disputeRowId: D,
+        amount: usd,
+        reason: "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+        dueDate: DUE,
+      }),
+      deadline_t72: deadlineAlert({ disputeRowId: D, dueDate: DUE, open: true, now, amount: usd, reason: null }),
+      deadline_t24: t24(addMinutes(DUE, -18 * 60)),
+      completed_reminder: completedReminder({
+        paymentId: D,
+        completedAt: addMinutes(DUE, -8 * 24 * 60),
+        now: DUE,
+        amount: inr,
+        releaseDate: addMinutes(DUE, 5 * 24 * 60),
+      }),
+    };
+    for (const locale of ["en", "hi"] as const) {
+      for (const [kind, draft] of Object.entries(drafts)) {
+        it(`${kind} in ${locale}`, () => {
+          if (draft === null) throw new Error(`no ${kind} draft`);
+          const at = kind === "deadline_t24" ? addMinutes(DUE, -18 * 60) : now;
+          const r = renderNotification(draft, ctx(at, locale));
+          expect({ subject: r.subject, text: r.text, html: r.html }).toMatchSnapshot();
+        });
+      }
+    }
   });
 
   it("escapes HTML in every interpolated value", () => {
