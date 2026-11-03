@@ -299,7 +299,8 @@
         "adviceOther": "{carrier} (अपुष्ट): PayPal इसे मानता है।",
         "faster": "मंज़ूर: {carriers}",
         "nudge": "मंज़ूर कैरियर: {carriers}",
-        "alternatives": "मंज़ूर कैरियर"
+        "alternatives": "मंज़ूर कैरियर",
+        "sourceApproved": "स्रोत: मंज़ूर कैरियर"
       }
     },
     "completed": {

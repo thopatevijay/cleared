@@ -299,7 +299,8 @@
         "adviceOther": "{carrier} (unconfirmed): PayPal accepts it.",
         "faster": "Approved: {carriers}",
         "nudge": "Approved carriers: {carriers}",
-        "alternatives": "Approved carriers"
+        "alternatives": "Approved carriers",
+        "sourceApproved": "Source: approved carriers"
       }
     },
     "completed": {

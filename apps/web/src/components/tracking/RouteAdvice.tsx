@@ -100,12 +100,12 @@ function Caveat() {
   );
 }
 
-function SourcesRow({ sources }: { sources: Sources }) {
+function SourcesRow({ sources, n }: { sources: Sources; n: string }) {
   const t = useTranslations("holds.tracking");
   return (
     <span className="flex flex-wrap gap-x-4">
       <TierSource source={sources.accepted} label={t("sourceAccepted")} />
-      <TierSource source={sources.approved} label={t("sourceApproved")} />
+      <TierSource source={sources.approved} label={t(`${n}sourceApproved`)} />
     </span>
   );
 }
@@ -162,7 +162,7 @@ export function RouteAdviceLine({
           )}
         </span>
       </p>
-      <SourcesRow sources={s.sources} />
+      <SourcesRow sources={s.sources} n={n} />
       <Caveat />
     </div>
   );
@@ -210,7 +210,7 @@ export function RouteAdvice({ s, releaseClaims = true }: { s: TrackingSummary; r
           </ul>
         </>
       )}
-      <SourcesRow sources={s.sources} />
+      <SourcesRow sources={s.sources} n={n} />
       <Caveat />
     </section>
   );
