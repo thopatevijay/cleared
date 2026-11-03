@@ -10,16 +10,22 @@
 //     (M2-04), the client confirms the acknowledgement link from a second browser (M3-06), the scope
 //     snapshot downloads (M3-07)
 //   2 (0:45–1:05) a real PENDING / PENDING_REVIEW hold in the held-money inbox, explained in Hindi with its
-//     estimate and source (M3-01/02; needs a review-hold pool row: docs/runbooks/review-hold-pool.md), and a
-//     goods hold with route advice and the tier badge (M3-03)
+//     estimate and source (M3-01/02). The video-pool row (docs/runbooks/review-hold-pool.md) is assigned to
+//     this run's workspace by the operator: the spec prints `storyboard workspace <uuid>` and waits up to
+//     20 min for the hold. Then the seller declares it goods (her declaration, never PayPal's: BL-01
+//     6570499264, option A), sees route advice and files tracking through the approval (real 2xx debug_id);
+//     PayPal's review estimate stays
 //   3 (1:05–1:50) the chargeback lands, the capture flips to PENDING / BUYER_COMPLAINT, the bell counts it
 //     (M3-08), the agent's draft is approved and filed (2xx debug_id), the labelled "Simulate PayPal's
 //     decision (sandbox only)" runs, the case reads RESOLVED_WITH_PAYOUT and the capture COMPLETED
-//   4 (1:50–2:15) the cash calendar (M3-05) and the audit log (proposal by the agent, approval by the seller)
-//   5 the guided Completed step (M3-04) on a service hold
-// Scenes 2 and 5 use soft assertions: a missing hold fails the run without stopping scenes 3–4.
+//   4 (1:50–2:15) the audit log (proposal by the agent, approval by the seller) and the cash calendar
+//     (M3-05) rendered by Bryntum in the browser, with no GTM / bryntum.com request
+//   5 the guided Completed step (M3-04): the seller declares the $120 logo payment's (still open) hold a
+//     service and confirms Completed. It runs between 3a and 3b, while the hold is still declarable
+// Soft assertions on scene 2 keep a missing hold from stopping the dispute path.
 //
-// Not automated (ticket scope): the owner's approval of the review-hold order as the sandbox buyer (P-52).
+// Not automated (ticket scope): the owner's approval of the review-hold order as the sandbox buyer (P-52)
+// and the operator's pool:assign.
 // The seller's Approve click on the dispute reply is scripted here on the synthetic demo seller, as in
 // judge-dispute.live.spec.ts; in the recording (M5-02) the owner clicks it on camera.
 //
@@ -45,6 +51,8 @@ const t = en.scenario;
 
 /** Synthetic: the scenario's client (fixtures/scenario/scope-chat.txt), never a real person. */
 const CLIENT_NAME = "Northwind Tea Co.";
+/** Synthetic tracking for the declared-goods hold (sandbox; the carrier is on PayPal's list). */
+const TRACKING = { carrier: "IND_DELHIVERY", number: "CLRM311001" } as const;
 const PASTED_CHAT =
   "[2026-10-19 09:02] Northwind Tea Co.: The brand guide colour codes match our packaging. Thanks, Meera.";
 
@@ -59,6 +67,8 @@ interface Run {
   marks: Record<string, string>;
   scenes: Record<string, { start: string; end: string; seconds: number; notes: string[] }>;
   sources: Record<string, string>;
+  /** other sandbox ids and refs (review-hold capture, tracking debug_id, …) */
+  ids: Record<string, string>;
   timeline: ScenarioView["timeline"];
 }
 
@@ -73,6 +83,7 @@ const run: Run = {
   marks: {},
   scenes: {},
   sources: {},
+  ids: {},
   timeline: [],
 };
 
@@ -192,6 +203,8 @@ async function sceneProof(page: Page, browser: Browser, notes: string[]): Promis
   run.workspaceId = (
     (await (await page.request.get("/api/workspace")).json()) as { workspace: { id: string } }
   ).workspace.id;
+  // the operator assigns the video-pool review hold to this workspace now (pool:assign, runbook step 5)
+  console.log(`storyboard workspace ${run.workspaceId}`);
   await page.getByRole("button", { name: t.ctaName }).click();
   await page.waitForURL("**/en/scenario/**");
   run.scenarioId = page.url().split("/").pop() ?? "";
@@ -247,32 +260,69 @@ async function sceneProof(page: Page, browser: Browser, notes: string[]): Promis
   mark("snapshot");
 }
 
+/** PayPal's review estimate, unchanged by any declaration (ADR 0017 addendum 3). */
+async function expectReviewEstimate(page: Page): Promise<void> {
+  const est = page.getByTestId("estimated-date").first();
+  await expect.soft(est).toHaveAttribute("data-rule", "payment_review");
+  await expect.soft(est).not.toContainText("courier");
+}
+
+/** Scene 2b: the seller declares the review hold goods, then files tracking through the approval. */
+async function declareGoodsAndTrack(page: Page, holdId: string, notes: string[]): Promise<void> {
+  await page.goto(`/en/holds/${holdId}`);
+  const decl = page.getByTestId("declaration");
+  await decl.getByTestId("declare-goods").check();
+  await decl.getByTestId("declare-save").click();
+  await expect(decl.getByTestId("declared-line")).toHaveText("You marked this as goods");
+  await expect(page.getByTestId("route-advice-full")).toBeVisible();
+  await expectReviewEstimate(page);
+  await shot(page, "s2-goods-route-advice");
+  const card = page.getByTestId("approval-card");
+  await card.getByTestId("carrier-select").selectOption(TRACKING.carrier);
+  await card.getByTestId("tracking-number").fill(TRACKING.number);
+  await card.getByTestId("tracking-review-button").click();
+  await expect(card.getByTestId("tracking-review")).toContainText("add_tracking");
+  await card.getByTestId("tracking-approve").click();
+  await page.getByTestId("tracking-send").click();
+  mark("tracking_approved");
+  await expect(page.getByTestId("tracking-filed")).toBeVisible({ timeout: 3 * MIN });
+  const debug = (await page.getByTestId("tracking-debug-id").textContent()) ?? "";
+  run.ids["tracking_debug_id"] = /debug_id (\w+)/.exec(debug)?.[1] ?? "";
+  expect(run.ids["tracking_debug_id"]).not.toBe("");
+  await expectReviewEstimate(page);
+  notes.push(
+    `tracking filed: ${TRACKING.carrier} ${TRACKING.number}, debug_id ${run.ids["tracking_debug_id"]}`,
+  );
+  await shot(page, "s2-tracking-filed");
+  mark("tracking_filed");
+}
+
 async function sceneHolds(page: Page, notes: string[]): Promise<void> {
-  const items = await payments(page);
-  const review = items.find((p) => p.hold?.reason === "PENDING_REVIEW");
-  expect
-    .soft(review, "a real PENDING / PENDING_REVIEW hold (review-hold pool, BL-01 6575469150)")
-    .toBeDefined();
-  if (review?.hold) {
-    notes.push(`review hold capture ${review.captureId}`);
-    await page.goto("/hi/holds");
-    await shot(page, "s2-hi-holds-inbox");
-    await page.goto(`/hi/holds/${review.hold.id}`);
-    const d = page.getByTestId("hold-detail");
-    await expect
-      .soft(d.getByTestId("explanation-summary"))
-      .toHaveAttribute("lang", "hi", { timeout: 2 * MIN });
-    await expect.soft(d.getByTestId("estimated-date")).toBeVisible();
-    await expect.soft(d.getByTestId("source-link").first()).toHaveAttribute("href", /^https:\/\//);
-    await shot(page, "s2-hi-hold-detail");
+  // the video-pool review hold arrives once the operator has run pool:assign for this workspace
+  let review: PaymentItem | undefined;
+  try {
+    review = await waitForPayment(page, (p) => p.hold?.reason === "PENDING_REVIEW", 20 * MIN);
+  } catch {
+    review = undefined;
   }
-  const goods = items.find((p) => p.hold?.type === "goods");
-  expect.soft(goods, "a goods hold with route advice (no product path: BL-01 6570499264)").toBeDefined();
-  if (goods?.hold) {
-    await page.goto(`/en/holds/${goods.hold.id}`);
-    await shot(page, "s2-goods-route-advice");
-  }
-  mark("holds_scene");
+  expect.soft(review, "a real PENDING / PENDING_REVIEW hold (video pool, pool:assign)").toBeDefined();
+  if (review?.hold === null || review?.hold === undefined) return;
+  run.ids["review_capture"] = review.captureId;
+  run.sources["review_hold"] = review.source;
+  mark("review_hold_seen");
+  await page.goto("/hi/holds");
+  await expect(page.locator(`[data-testid="hold-row"][data-hold="${review.hold.id}"]`)).toContainText(
+    "PENDING_REVIEW",
+  );
+  await shot(page, "s2-hi-holds-inbox");
+  await page.goto(`/hi/holds/${review.hold.id}`);
+  const d = page.getByTestId("hold-detail");
+  await expect.soft(d.getByTestId("explanation-summary")).toHaveAttribute("lang", "hi", { timeout: 3 * MIN });
+  await expect.soft(d.getByTestId("estimated-date").first()).toHaveAttribute("data-rule", "payment_review");
+  await expect.soft(d.getByTestId("source-link").first()).toHaveAttribute("href", /^https:\/\//);
+  await shot(page, "s2-hi-hold-detail");
+  mark("hi_explained");
+  await declareGoodsAndTrack(page, review.hold.id, notes);
 }
 
 async function approveDraft(page: Page): Promise<void> {
@@ -358,8 +408,11 @@ async function sceneDispute(page: Page, notes: string[]): Promise<void> {
   await shot(page, "s3-calendar-deadline");
 
   await approveDraft(page);
+}
 
+async function sceneDecision(page: Page): Promise<void> {
   // the labelled sandbox decision, on the dispute page
+  await page.goto(`/en/disputes/${run.disputeId}`);
   const box = page.getByTestId("dispute-scenario");
   const decide = box.getByRole("button", { name: t.decide });
   await expect(decide).toBeEnabled({ timeout: 20 * MIN });
@@ -395,8 +448,18 @@ async function sceneDispute(page: Page, notes: string[]): Promise<void> {
   await shot(page, "s3-dispute-resolved");
 }
 
-async function sceneCalendarAudit(page: Page): Promise<void> {
-  // the audit log first: it doesn't depend on the calendar build
+/** Hosts the calendar page called other than the app's own (the trial's GTM question, BL-01 6491378837). */
+function thirdParty(page: Page): string[] {
+  const own = new URL(run.baseUrl).hostname;
+  const out: string[] = [];
+  page.on("request", (r) => {
+    const u = new URL(r.url());
+    if (u.protocol.startsWith("http") && u.hostname !== own) out.push(u.hostname);
+  });
+  return out;
+}
+
+async function sceneCalendarAudit(page: Page, notes: string[]): Promise<void> {
   await page.goto("/en/audit");
   const row = (a: string) => page.locator(`[data-testid="audit-row"][data-action="${a}"]`);
   await expect(row("action.proposed").first()).toContainText("Agent", { timeout: MIN });
@@ -404,32 +467,55 @@ async function sceneCalendarAudit(page: Page): Promise<void> {
   await expect(row("action.sent").first()).toContainText(run.debugId);
   await shot(page, "s4-audit");
   mark("audit");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const calls = thirdParty(page);
   await page.goto("/en/calendar");
+  // the Bryntum month view rendered events in a real browser
+  await expect(page.locator(".cash-bryntum [data-event-id]").first()).toBeAttached({ timeout: MIN });
   await expect(page.locator('[data-testid="cash-table-row"][data-kind="released"]').first()).toBeAttached({
     timeout: MIN,
   });
+  await page.waitForLoadState("networkidle");
   await shot(page, "s4-calendar");
+  const hosts = [...new Set(calls)].sort();
+  run.ids["calendar_third_party_hosts"] = hosts.join(",");
+  notes.push(`calendar third-party hosts: ${hosts.length === 0 ? "none" : hosts.join(", ")}`);
+  expect(hosts.filter((h) => /googletagmanager|google-analytics|bryntum\.com/.test(h))).toEqual([]);
   mark("calendar");
 }
 
-async function sceneCompleted(page: Page): Promise<void> {
-  const service = (await payments(page)).find((p) => p.hold?.type === "service");
-  expect.soft(service, "a service hold with the guided Completed step (BL-01 6570499264)").toBeDefined();
-  if (service?.hold) {
-    await page.goto(`/en/holds/${service.hold.id}`);
-    await shot(page, "s5-completed-step");
-  }
+/** Scene 5: the $120 logo redesign is a service; the seller declares its (dispute) hold so, and confirms Completed. */
+async function sceneCompleted(page: Page, notes: string[]): Promise<void> {
+  const held = (await payments(page)).find((p) => p.captureId === run.captureId);
+  const holdId = held?.hold?.id ?? "";
+  expect(holdId, "the scenario payment's open hold").not.toBe("");
+  await page.goto(`/en/holds/${holdId}`);
+  const decl = page.getByTestId("declaration");
+  await decl.getByTestId("declare-service").check();
+  await decl.getByTestId("declare-save").click();
+  await expect(decl.getByTestId("declared-line")).toHaveText("You marked this as a service");
+  const slot = page.getByTestId("guided-completed");
+  await expect(slot).toBeVisible();
+  await shot(page, "s5-completed-step");
+  await slot.getByTestId("completed-submit").click();
+  await expect(slot.getByTestId("completed-done")).toBeVisible({ timeout: MIN });
+  await expect(page.getByTestId("completed-toast")).toHaveText("Saved. Your estimate hasn't changed.");
+  notes.push(`declared service + Completed on hold ${holdId} (dispute hold; PayPal's state unchanged)`);
+  await shot(page, "s5-completed-done");
+  mark("completed");
 }
 
 test("storyboard dry run: scenes 1–5 on the deployed app", async ({ page, browser }) => {
   test.skip(!deployed, "deployed only: set E2E_BASE_URL (M3-11 runs against production)");
-  test.setTimeout(90 * MIN);
+  test.setTimeout(120 * MIN);
   mark("start");
   await scene("1 proof pack", (n) => sceneProof(page, browser, n));
   await scene("2 held-money inbox", (n) => sceneHolds(page, n));
-  await scene("3 dispute to release", (n) => sceneDispute(page, n));
-  await scene("4 calendar and audit", () => sceneCalendarAudit(page));
-  await scene("5 guided Completed", () => sceneCompleted(page));
+  await scene("3a dispute lands, reply filed", (n) => sceneDispute(page, n));
+  // scene 5 runs while the case waits for the decision: the hold is still open (declarable) only now
+  await scene("5 guided Completed", (n) => sceneCompleted(page, n));
+  await scene("3b decision to release", () => sceneDecision(page));
+  await scene("4 calendar and audit", (n) => sceneCalendarAudit(page, n));
   mark("end");
   save();
 });
