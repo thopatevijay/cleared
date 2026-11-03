@@ -29,9 +29,14 @@ async function workspace(synthetic = false): Promise<string> {
 }
 
 // The recorded deliveries (M0-06, real sandbox): their bodies are what `webhook_events.raw` stores.
-const DELIVERIES = fileURLToPath(new URL("../../../../fixtures/paypal/webhooks/deliveries/", import.meta.url));
-const delivery = (name: string): { resource: Record<string, unknown> } & Record<string, unknown> =>
-  JSON.parse((JSON.parse(readFileSync(`${DELIVERIES}${name}.json`, "utf8")) as { raw_body: string }).raw_body);
+const DELIVERIES = fileURLToPath(
+  new URL("../../../../fixtures/paypal/webhooks/deliveries/", import.meta.url),
+);
+type Delivery = { resource: Record<string, unknown> } & Record<string, unknown>;
+const delivery = (name: string): Delivery =>
+  JSON.parse(
+    (JSON.parse(readFileSync(`${DELIVERIES}${name}.json`, "utf8")) as { raw_body: string }).raw_body,
+  ) as Delivery;
 
 /** `PAYMENT.CAPTURE.<status>` for `captureId`, on the recorded v2 capture body (PENDING carries its reason). */
 function captureBody(captureId: string, status: "COMPLETED" | "PENDING", reason?: string): unknown {
@@ -151,7 +156,11 @@ describe.skipIf(!dbAvailable)("SLO checks (integration)", () => {
     const disputeHold = new Date(disputeAt.getTime() + 5_000);
     await hold(ws, disputed, { type: "dispute", reason: "BUYER_COMPLAINT", visible: disputeHold });
     // a later dispute update (after the hold) is not its announcement
-    await webhook("CUSTOMER.DISPUTE.UPDATED", disputeBody(disputed), new Date(disputeHold.getTime() + 30_000));
+    await webhook(
+      "CUSTOMER.DISPUTE.UPDATED",
+      disputeBody(disputed),
+      new Date(disputeHold.getTime() + 30_000),
+    );
     expect(await samples()).toEqual([5]);
 
     // a capture PENDING hold is still measured, slow ones included (a real breach stays a breach)
