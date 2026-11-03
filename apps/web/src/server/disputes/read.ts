@@ -198,13 +198,16 @@ export async function findDispute(deps: Deps, ws: string, id: string) {
 export async function disputeDetail(deps: Deps, ws: string, id: string): Promise<DisputeDetail | null> {
   const d = await findDispute(deps, ws, id);
   if (d === null) return null;
-  const p =
-    d.paymentId === null ? null : await forWorkspace(deps.db, ws as WorkspaceId).payments.get(d.paymentId);
+  // M4-08: independent reads run together (one round trip per stage, not one per read)
+  const [p, byDispute] = await Promise.all([
+    d.paymentId === null ? null : forWorkspace(deps.db, ws as WorkspaceId).payments.get(d.paymentId),
+    draftsByDispute(deps, ws, [d.id]),
+  ]);
   const row: DisputeListRow = { dispute: d, payment: p };
-  const drafts = (await draftsByDispute(deps, ws, [d.id])).get(d.id) ?? [];
+  const drafts = byDispute.get(d.id) ?? [];
   const allowed = Links.parse(d.allowedActions);
   const cur = currentDraft(drafts, allowed);
-  const [draft, outcome, accept, flag, scenarioId, audit, w] = await Promise.all([
+  const [draft, outcome, accept, flag, scenarioId, audit, w, items] = await Promise.all([
     cur === null ? null : draftView(deps, ws, d.id, cur, allowed, d.paymentId),
     cur === null ? latestDraftOutcome(deps.db, ws, d.id) : null,
     latestAcceptClaim(deps.db, ws, d.disputeId),
@@ -212,6 +215,7 @@ export async function disputeDetail(deps: Deps, ws: string, id: string): Promise
     scenarioForDispute(deps.db, ws, d.disputeId),
     auditPage(deps.db, ws, { dispute: { rowId: d.id, paypalId: d.disputeId }, limit: 100 }),
     platform(deps.db).workspaces.get(ws),
+    cur === null ? packItems(deps, ws, d.paymentId) : [],
   ]);
   return {
     dispute: {
@@ -220,7 +224,7 @@ export async function disputeDetail(deps: Deps, ws: string, id: string): Promise
       paypalUpdatedAt: d.paypalUpdatedAt?.toISOString() ?? null,
     },
     draft,
-    packItems: cur === null ? await packItems(deps, ws, d.paymentId) : [],
+    packItems: items,
     draftOutcome:
       outcome === null
         ? null

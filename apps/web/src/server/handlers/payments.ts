@@ -89,14 +89,13 @@ export async function getPayments(req: Request, deps: Deps): Promise<Response> {
       correlationId(req),
     );
   }
-  const ws = await platform(deps.db).workspaces.get(session.workspaceId);
-  if (ws === null) {
-    return apiError(401, "unauthenticated", "Sign in or start a demo to continue.", correlationId(req));
-  }
   const v = workspaceViews(deps.db, session.workspaceId as WorkspaceId);
   const now = deps.now().getTime();
   const holds = holdsRepo(deps.db, session.workspaceId);
-  const [rows, total, held, today, recent] = await Promise.all([
+  // M4-08: the workspace row is read with the first stage (every read is workspace-scoped; nothing is
+  // returned when the row is gone)
+  const [ws, rows, total, held, today, recent] = await Promise.all([
+    platform(deps.db).workspaces.get(session.workspaceId),
     v.paymentsList.page(q.data.offset, q.data.limit),
     v.paymentsList.count(),
     // M3-01 (dashboard.md 3a): the held total counts active derived holds only, per currency
@@ -104,6 +103,9 @@ export async function getPayments(req: Request, deps: Deps): Promise<Response> {
     v.testPaymentRequests.since(new Date(now - DAY_MS)),
     v.testPaymentRequests.since(new Date(now - WAITING_WINDOW_MS)),
   ]);
+  if (ws === null) {
+    return apiError(401, "unauthenticated", "Sign in or start a demo to continue.", correlationId(req));
+  }
   const packs = packReadsRepo(deps.db, session.workspaceId as WorkspaceId);
   const [arrived, packOf, proofReady, holdOf] = await Promise.all([
     recent.oldest === null ? 0 : v.paymentsList.countCreatedSince(recent.oldest),
