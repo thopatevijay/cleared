@@ -1,6 +1,7 @@
 // Formatting for notification templates: money, a date in the seller's time zone, the time left to a
 // deadline, and HTML escaping. Built-in Intl only (no I/O).
 import type { Locale } from "../../accounts/workspace.ts";
+import { formatMoney } from "../../format/money.ts";
 import type { Money } from "../../money.ts";
 import { toEpochMs, type Instant } from "../../time.ts";
 
@@ -10,12 +11,7 @@ const intlLocale = (locale: Locale): string => (locale === "hi" ? "hi-IN-u-nu-la
 /** `$120.00 USD`: the symbol for recognition, the code so it is never ambiguous. */
 export function formatAmount(money: Money | null, locale: Locale): string {
   if (money === null) return locale === "hi" ? "राशि" : "the payment";
-  const n = new Intl.NumberFormat(locale === "hi" ? "en-IN" : "en-US", {
-    style: "currency",
-    currency: money.currency,
-    currencyDisplay: "narrowSymbol",
-  }).format(Number(money.amount));
-  return `${n} ${money.currency}`;
+  return `${formatMoney(money.amount, money.currency, intlLocale(locale))} ${money.currency}`;
 }
 
 export interface ZonedDate {

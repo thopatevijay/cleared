@@ -62,7 +62,7 @@ export function ScenarioTimeline({
             <div className="flex min-w-0 flex-col gap-1">
               <p className="font-medium">
                 {t(`step.${s.key}`)}
-                <span className="sr-only">, </span>
+                <span className="sr-only">{", "}</span>
                 <span className="ml-2 text-sm font-normal text-text-muted">
                   {t(`stepStatus.${s.status}`)}
                 </span>
@@ -74,7 +74,10 @@ export function ScenarioTimeline({
               ) : null}
               {s.paypalIds.map((id, n) => (
                 <p key={id} className="text-sm">
-                  <span className="text-text-muted">{t(`idLabel.${idLabel(s.key, n)}`)}: </span>
+                  <span className="text-text-muted">
+                    {t(`idLabel.${idLabel(s.key, n)}`)}
+                    {": "}
+                  </span>
                   <span className="font-mono text-xs break-words">{id}</span>
                 </p>
               ))}
@@ -82,7 +85,10 @@ export function ScenarioTimeline({
                 <p className="text-sm">{t("offered")}</p>
               ) : s.observed !== null && s.key !== "decision" ? (
                 <p className="text-sm">
-                  <span className="text-text-muted">{t("observed")}: </span>
+                  <span className="text-text-muted">
+                    {t("observed")}
+                    {": "}
+                  </span>
                   <span className="font-mono text-xs break-words">{s.observed.replace(" / ", " /​ ")}</span>
                 </p>
               ) : null}

@@ -7,10 +7,14 @@ import { createHash } from "node:crypto";
 import fontkit from "@cantoo/fontkit";
 import { PDFDocument, rgb, type PDFPage } from "@cantoo/pdf-lib";
 import {
+  formatMoney,
   SCOPE_SNAPSHOT_FOOTER,
-  SCOPE_SNAPSHOT_NOT_ACKNOWLEDGED,
+  SCOPE_SNAPSHOT_LABELS,
   SCOPE_SNAPSHOT_TITLE,
+  scopeSnapshotLabel,
+  type Locale,
   type ScopeSnapshotDocument,
+  type ScopeSnapshotLabel,
 } from "@cleared/core";
 import { EVIDENCE_LIMITS } from "../paypal/disputes.ts";
 import { loadEvidenceFont, wrapText } from "./compile-evidence.ts";
@@ -86,47 +90,55 @@ export function localTime(iso: string, timeZone: string): string {
 }
 
 function body(flow: Flow, d: ScopeSnapshotDocument): void {
-  flow.text(SCOPE_SNAPSHOT_TITLE, H1);
-  flow.text(`Generator: Cleared · generated at ${d.generatedAt}`, SMALL);
+  // M4-03: Hindi workspaces get "English · हिन्दी" labels; values stay as recorded (PayPal-bound evidence)
+  const l = (key: ScopeSnapshotLabel): string => scopeSnapshotLabel(key, d.locale);
+  // English grouping for PayPal's reviewer, from the decimal string (core formatMoney, never a float)
+  const amount = `${formatMoney(d.payment.amount, d.payment.currency, "en-US")} ${d.payment.currency}`;
+  flow.text(l("title"), H1);
+  flow.text(`${l("generator")} ${d.generatedAt}`, SMALL);
   flow.gap(10);
-  flow.text("Payment", H2);
-  flow.text(`PayPal capture id: ${d.payment.captureId}`, BODY);
-  flow.text(`Amount: ${d.payment.amount} ${d.payment.currency}`, BODY);
-  flow.text(`Date: ${d.payment.date}`, BODY);
+  flow.text(l("payment"), H2);
+  flow.text(`${l("captureId")}: ${d.payment.captureId}`, BODY);
+  flow.text(`${l("amount")}: ${amount}`, BODY);
+  flow.text(`${l("date")}: ${d.payment.date}`, BODY);
   flow.gap(10);
-  flow.text("Agreed scope (verbatim, as the seller provided it)", H2);
-  flow.text(`Scope evidence sha256: ${d.scope.sha256}`, SMALL);
+  flow.text(l("scope"), H2);
+  flow.text(`${l("scopeSha")}: ${d.scope.sha256}`, SMALL);
   flow.gap(4);
-  flow.text(
-    d.scope.text ?? "The scope was provided as a file without a text layer; its sha256 is above.",
-    BODY,
-  );
+  flow.text(d.scope.text ?? l("scopeFile"), BODY);
   flow.gap(10);
-  flow.text("Delivery evidence (metadata only)", H2);
-  if (d.delivery.length === 0) flow.text("No delivery evidence recorded.", BODY);
+  flow.text(l("delivery"), H2);
+  if (d.delivery.length === 0) flow.text(l("noDelivery"), BODY);
   for (const item of d.delivery)
-    flow.text(`${item.kind} · added ${item.createdAt} · sha256 ${item.sha256}`, SMALL);
+    flow.text(`${item.kind} · ${l("added")} ${item.createdAt} · sha256 ${item.sha256}`, SMALL);
   flow.gap(10);
-  flow.text("Client acknowledgement", H2);
-  if (d.ack === null) flow.text(SCOPE_SNAPSHOT_NOT_ACKNOWLEDGED, BODY);
+  flow.text(l("ack"), H2);
+  if (d.ack === null) flow.text(l("notAcknowledged"), BODY);
   else {
-    flow.text(`Typed name: ${d.ack.typedName}`, BODY);
-    flow.text(`Accepted at: ${d.ack.acceptedAt} (UTC)`, BODY);
-    flow.text(`Seller's local time: ${localTime(d.ack.acceptedAt, d.timeZone)}`, BODY);
-    flow.text(`IP address: ${d.ack.ip}`, BODY);
-    flow.text(`User agent: ${d.ack.userAgent}`, SMALL);
-    flow.text(`Acknowledgement record sha256: ${d.ack.sha256}`, SMALL);
+    flow.text(`${l("typedName")}: ${d.ack.typedName}`, BODY);
+    flow.text(`${l("acceptedAt")}: ${d.ack.acceptedAt} (UTC)`, BODY);
+    flow.text(`${l("sellerTime")}: ${localTime(d.ack.acceptedAt, d.timeZone)}`, BODY);
+    flow.text(`${l("ip")}: ${d.ack.ip}`, BODY);
+    flow.text(`${l("userAgent")}: ${d.ack.userAgent}`, SMALL);
+    flow.text(`${l("ackSha")}: ${d.ack.sha256}`, SMALL);
   }
   flow.gap(10);
-  flow.text(`Generated at: ${d.generatedAt}`, BODY);
+  flow.text(`${l("generatedAt")}: ${d.generatedAt}`, BODY);
+  if (d.locale === "hi") {
+    flow.gap(6);
+    flow.text(SCOPE_SNAPSHOT_LABELS.footer[1], SMALL);
+  }
 }
 
-function footers(doc: PDFDocument, gt: GlyphText): void {
+function footers(doc: PDFDocument, gt: GlyphText, locale: Locale): void {
   const lines = wrapText(SCOPE_SNAPSHOT_FOOTER, gt.font, FOOTER_SIZE, WIDTH);
   const pages = doc.getPages();
+  const [, pageHi] = SCOPE_SNAPSHOT_LABELS.page;
   pages.forEach((page, i) => {
+    const [n, of] = [String(i + 1), String(pages.length)];
+    const number = `Page ${n} of ${of}${locale === "hi" ? ` · ${pageHi} ${n} / ${of}` : ""}`;
     let y = MARGIN + 11 * lines.length;
-    for (const line of [...lines, `Page ${String(i + 1)} of ${String(pages.length)}`]) {
+    for (const line of [...lines, number]) {
       gt.draw(page, line, { x: MARGIN, y, size: FOOTER_SIZE, color: MUTED });
       y -= 11;
     }
@@ -139,7 +151,7 @@ export async function renderScopeSnapshotPdf(d: ScopeSnapshotDocument): Promise<
   doc.registerFontkit(fontkit);
   const gt = await glyphText(doc, await loadEvidenceFont());
   body(flowOn(doc, gt), d);
-  footers(doc, gt);
+  footers(doc, gt, d.locale);
   const at = new Date(d.generatedAt);
   doc.setTitle(`${SCOPE_SNAPSHOT_TITLE} · PayPal capture ${d.payment.captureId}`);
   doc.setSubject(`Cleared scope snapshot of proof pack ${d.packId}`);

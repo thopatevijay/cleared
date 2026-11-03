@@ -80,6 +80,9 @@ if [ -f docs/design/tokens.json ]; then
   node scripts/design-tokens.mjs --check >/dev/null || { node scripts/design-tokens.mjs --check | grep -E "FAIL|design-tokens"; exit 1; }
 fi
 
+# i18n (M4-03): en/hi key parity, no empty value, matching ICU placeholders, no hard-coded UI attributes.
+node scripts/check-i18n.ts >/dev/null || { node scripts/check-i18n.ts; exit 1; }
+
 # M4-05: every STRIDE row of the threat model names a test file that exists.
 if [ -f docs/security/threat-model.md ]; then
   node scripts/check-security-doc.ts

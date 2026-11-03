@@ -48,7 +48,7 @@ function Payload({ captureId }: { captureId: string }) {
         <dt className={dt}>{t("action")}</dt>
         <dd>
           <code lang="en" className="font-mono text-sm">
-            record_service_completed
+            {"record_service_completed"}
           </code>
         </dd>
       </div>
@@ -60,7 +60,7 @@ function Payload({ captureId }: { captureId: string }) {
         <dt className={dt}>{t("fieldStatus")}</dt>
         <dd>
           <code lang="en" className="font-mono text-sm">
-            COMPLETED
+            {"COMPLETED"}
           </code>
         </dd>
       </div>

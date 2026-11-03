@@ -31,9 +31,17 @@ export function postJson(path: string, body: unknown, idempotencyKey: string): P
   return sendJson("POST", path, body, idempotencyKey);
 }
 
-/** M3-08: PATCH /api/notifications (mark read). */
-export function patchJson(path: string, body: unknown, idempotencyKey: string): Promise<ApiResult> {
-  return sendJson("PATCH", path, body, idempotencyKey);
+/**
+ * M3-08: PATCH /api/notifications (mark read). M4-03: `keepalive` lets the language switch's save outlive
+ * the page it starts on (switching /en ↔ /hi loads a new document).
+ */
+export function patchJson(
+  path: string,
+  body: unknown,
+  idempotencyKey: string,
+  keepalive = false,
+): Promise<ApiResult> {
+  return sendJson("PATCH", path, body, idempotencyKey, keepalive);
 }
 
 async function sendJson(
@@ -41,10 +49,12 @@ async function sendJson(
   path: string,
   body: unknown,
   idempotencyKey: string,
+  keepalive = false,
 ): Promise<ApiResult> {
   try {
     const res = await fetch(path, {
       method,
+      keepalive,
       headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
       body: JSON.stringify(body),
       credentials: "same-origin",

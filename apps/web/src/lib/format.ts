@@ -1,6 +1,6 @@
 // Amounts and times for the UI (README "Numbers, currency and dates"): Intl only, Latin digits, the ISO
 // code beside the symbol, workspace time zone. Never converts or sums across currencies.
-import type { Amount } from "@cleared/core";
+import { formatDateTime, formatMoney, type Amount } from "@cleared/core";
 
 export interface FormattedAmount {
   /** "$120.00" (narrow symbol) */
@@ -11,52 +11,26 @@ export interface FormattedAmount {
   readonly spoken: string;
 }
 
-function numberFormat(locale: string, currency: string, display: "narrowSymbol" | "name"): Intl.NumberFormat {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    currencyDisplay: display,
-    numberingSystem: "latn",
-  });
-}
-
+/**
+ * PayPal's decimal string through core `formatMoney` (M4-03): never a float. A currency code Intl does not
+ * know shows PayPal's value verbatim rather than a guess.
+ */
 export function formatAmount(locale: string, a: Amount): FormattedAmount {
-  const n = Number(a.value);
-  try {
-    return {
-      text: numberFormat(locale, a.currency, "narrowSymbol").format(n),
-      code: a.currency,
-      spoken: numberFormat(locale, a.currency, "name").format(n),
-    };
-  } catch {
-    // A currency code Intl does not know: show PayPal's value verbatim rather than guess.
-    return { text: a.value, code: a.currency, spoken: `${a.value} ${a.currency}` };
-  }
+  const text = formatMoney(a.value, a.currency, locale);
+  return {
+    text,
+    code: a.currency,
+    spoken: text === a.value ? `${a.value} ${a.currency}` : formatMoney(a.value, a.currency, locale, "name"),
+  };
 }
 
-/** "30 Oct 2026, 6:12 pm IST" in the workspace time zone. */
+/** "30 Oct 2026, 6:12 pm IST" (HI: 24 h) in the workspace time zone: core `formatDateTime`. */
 export function formatTime(locale: string, iso: string, timeZone: string): string {
-  const d = new Date(iso);
-  try {
-    // dateStyle/timeStyle can't be combined with timeZoneName, so the fields are listed.
-    return new Intl.DateTimeFormat(locale, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone,
-      timeZoneName: "short",
-      numberingSystem: "latn",
-    }).format(d);
-  } catch {
-    return new Intl.DateTimeFormat(locale, {
-      dateStyle: "medium",
-      timeStyle: "short",
-      timeZone: "UTC",
-    }).format(d);
-  }
+  return formatDateTime(iso, timeZone, locale);
 }
+
+/** The UTC tooltip beside a deadline shown in the workspace zone (README "Dates", M4-03). */
+export { formatUtc } from "@cleared/core";
 
 export type StatusKey = "completed" | "held" | "refunded" | "failed" | "info" | "resolved" | "dispute";
 

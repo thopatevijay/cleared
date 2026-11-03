@@ -27,6 +27,17 @@ export function workspacesRepo(db: Db) {
       const rows = await (tx ?? db).select().from(workspaces).where(eq(workspaces.id, id)).limit(1);
       return rows[0] ?? null;
     },
+    /** M4-03: the seller's own settings (language switch, time-zone control); the updated row, or null. */
+    async updateSettings(
+      id: string,
+      values: Partial<Pick<WorkspaceRow, "locale" | "timezone">>,
+      tx?: Executor,
+    ): Promise<WorkspaceRow | null> {
+      if (!isUuid(id)) return null;
+      if (values.locale === undefined && values.timezone === undefined) return this.get(id, tx);
+      const rows = await (tx ?? db).update(workspaces).set(values).where(eq(workspaces.id, id)).returning();
+      return rows[0] ?? null;
+    },
     /**
      * Whether a PayPal mirror (capture or dispute sync) may still write into the workspace, with its row
      * locked `for share` until `tx` ends. A synthetic workspace past `expires_at` takes no more rows: its

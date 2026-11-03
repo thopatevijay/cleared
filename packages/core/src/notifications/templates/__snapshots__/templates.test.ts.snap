@@ -1,0 +1,131 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderNotification > snapshots > completed_reminder in en 1`] = `
+{
+  "html": "<p>7 days since you marked the order Completed. The estimated release for ₹1,25,000.00 INR is 7 Nov.</p><p><a href="https://cleared.example/en/payments/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11">Open in Cleared</a></p><p style="color:#555;font-size:12px">Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.</p>",
+  "subject": "7 days since you marked the order Completed. The estimated release for ₹1,25,000.00 INR is 7 Nov.",
+  "text": "7 days since you marked the order Completed. The estimated release for ₹1,25,000.00 INR is 7 Nov.
+
+Open in Cleared: https://cleared.example/en/payments/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11
+
+Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.
+",
+}
+`;
+
+exports[`renderNotification > snapshots > completed_reminder in hi 1`] = `
+{
+  "html": "<p>आपने ऑर्डर को 7 दिन पहले पूरा बताया था। ₹1,25,000.00 INR के जारी होने की अनुमानित तारीख 7 नव॰ है।</p><p><a href="https://cleared.example/hi/payments/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11">Cleared में खोलें</a></p><p style="color:#555;font-size:12px">Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।</p>",
+  "subject": "आपने ऑर्डर को 7 दिन पहले पूरा बताया था। ₹1,25,000.00 INR के जारी होने की अनुमानित तारीख 7 नव॰ है।",
+  "text": "आपने ऑर्डर को 7 दिन पहले पूरा बताया था। ₹1,25,000.00 INR के जारी होने की अनुमानित तारीख 7 नव॰ है।
+
+Cleared में खोलें: https://cleared.example/hi/payments/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11
+
+Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।
+",
+}
+`;
+
+exports[`renderNotification > snapshots > deadline_t24 in en 1`] = `
+{
+  "html": "<p>Reply to the $120.00 USD dispute is due in 18 hours (2 Nov, 23:59 IST).</p><p><a href="https://cleared.example/en/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11">Open in Cleared</a></p><p style="color:#555;font-size:12px">Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.</p>",
+  "subject": "Reply to the $120.00 USD dispute is due in 18 hours (2 Nov, 23:59 IST).",
+  "text": "Reply to the $120.00 USD dispute is due in 18 hours (2 Nov, 23:59 IST).
+
+Open in Cleared: https://cleared.example/en/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11
+
+Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.
+",
+}
+`;
+
+exports[`renderNotification > snapshots > deadline_t24 in hi 1`] = `
+{
+  "html": "<p>$120.00 USD वाले विवाद का जवाब 18 घंटे में देना है (2 नव॰, 23:59 IST)।</p><p><a href="https://cleared.example/hi/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11">Cleared में खोलें</a></p><p style="color:#555;font-size:12px">Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।</p>",
+  "subject": "$120.00 USD वाले विवाद का जवाब 18 घंटे में देना है (2 नव॰, 23:59 IST)।",
+  "text": "$120.00 USD वाले विवाद का जवाब 18 घंटे में देना है (2 नव॰, 23:59 IST)।
+
+Cleared में खोलें: https://cleared.example/hi/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11
+
+Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।
+",
+}
+`;
+
+exports[`renderNotification > snapshots > deadline_t72 in en 1`] = `
+{
+  "html": "<p>Reply to the $120.00 USD dispute is due in 2 days (2 Nov, 23:59 IST).</p><p><a href="https://cleared.example/en/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11">Open in Cleared</a></p><p style="color:#555;font-size:12px">Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.</p>",
+  "subject": "Reply to the $120.00 USD dispute is due in 2 days (2 Nov, 23:59 IST).",
+  "text": "Reply to the $120.00 USD dispute is due in 2 days (2 Nov, 23:59 IST).
+
+Open in Cleared: https://cleared.example/en/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11
+
+Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.
+",
+}
+`;
+
+exports[`renderNotification > snapshots > deadline_t72 in hi 1`] = `
+{
+  "html": "<p>$120.00 USD वाले विवाद का जवाब 2 दिन में देना है (2 नव॰, 23:59 IST)।</p><p><a href="https://cleared.example/hi/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11">Cleared में खोलें</a></p><p style="color:#555;font-size:12px">Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।</p>",
+  "subject": "$120.00 USD वाले विवाद का जवाब 2 दिन में देना है (2 नव॰, 23:59 IST)।",
+  "text": "$120.00 USD वाले विवाद का जवाब 2 दिन में देना है (2 नव॰, 23:59 IST)।
+
+Cleared में खोलें: https://cleared.example/hi/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11
+
+Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।
+",
+}
+`;
+
+exports[`renderNotification > snapshots > dispute_opened in en 1`] = `
+{
+  "html": "<p>A buyer opened a dispute on $120.00 USD: item not as described. A reply is being drafted.</p><p><a href="https://cleared.example/en/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11">Open in Cleared</a></p><p style="color:#555;font-size:12px">Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.</p>",
+  "subject": "A buyer opened a dispute on $120.00 USD: item not as described. A reply is being drafted.",
+  "text": "A buyer opened a dispute on $120.00 USD: item not as described. A reply is being drafted.
+
+Open in Cleared: https://cleared.example/en/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11
+
+Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.
+",
+}
+`;
+
+exports[`renderNotification > snapshots > dispute_opened in hi 1`] = `
+{
+  "html": "<p>एक खरीदार ने $120.00 USD पर विवाद खोला है: सामान बताए अनुसार नहीं। जवाब तैयार किया जा रहा है।</p><p><a href="https://cleared.example/hi/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11">Cleared में खोलें</a></p><p style="color:#555;font-size:12px">Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।</p>",
+  "subject": "एक खरीदार ने $120.00 USD पर विवाद खोला है: सामान बताए अनुसार नहीं। जवाब तैयार किया जा रहा है।",
+  "text": "एक खरीदार ने $120.00 USD पर विवाद खोला है: सामान बताए अनुसार नहीं। जवाब तैयार किया जा रहा है।
+
+Cleared में खोलें: https://cleared.example/hi/disputes/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11
+
+Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।
+",
+}
+`;
+
+exports[`renderNotification > snapshots > hold_opened in en 1`] = `
+{
+  "html": "<p>PayPal is holding ₹1,25,000.00 INR (PENDING_REVIEW).</p><p><a href="https://cleared.example/en/payments/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11">Open in Cleared</a></p><p style="color:#555;font-size:12px">Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.</p>",
+  "subject": "PayPal is holding ₹1,25,000.00 INR (PENDING_REVIEW).",
+  "text": "PayPal is holding ₹1,25,000.00 INR (PENDING_REVIEW).
+
+Open in Cleared: https://cleared.example/en/payments/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11
+
+Sent by Cleared about your PayPal sandbox account. Evidence and buyer messages are never included in email.
+",
+}
+`;
+
+exports[`renderNotification > snapshots > hold_opened in hi 1`] = `
+{
+  "html": "<p>PayPal ने ₹1,25,000.00 INR रोका है (PENDING_REVIEW)।</p><p><a href="https://cleared.example/hi/payments/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11">Cleared में खोलें</a></p><p style="color:#555;font-size:12px">Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।</p>",
+  "subject": "PayPal ने ₹1,25,000.00 INR रोका है (PENDING_REVIEW)।",
+  "text": "PayPal ने ₹1,25,000.00 INR रोका है (PENDING_REVIEW)।
+
+Cleared में खोलें: https://cleared.example/hi/payments/6f0b8e43-3f0e-4c69-9a0e-6f3d1b4b9a11
+
+Cleared ने आपके PayPal sandbox खाते के बारे में भेजा। ईमेल में सबूत या खरीदार के संदेश कभी नहीं होते।
+",
+}
+`;

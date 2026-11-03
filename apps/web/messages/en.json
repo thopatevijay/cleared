@@ -72,6 +72,17 @@
     "errorBody": "Check your connection and retry.",
     "footer": "The agent does the work. You hold the keys.",
     "footerAudit": "Audit log",
+    "timeZone": {
+      "current": "Times shown in <tz>{zone}</tz>",
+      "change": "Change time zone",
+      "label": "Time zone",
+      "hint": "Dates and deadlines follow this zone. Times are kept in UTC.",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "saved": "Times now shown in {zone}.",
+      "error": "Couldn't save the time zone. Nothing changed. Try again."
+    },
     "summary": {
       "proofReady": "{count, plural, one {# payment proof-ready} other {# payments proof-ready}}",
       "proofReadyName": "{count, plural, one {# payment proof-ready} other {# payments proof-ready}}: show only these"
@@ -86,6 +97,7 @@
     "viaWebhook": "via webhook",
     "viaPoll": "via sync",
     "receive": "you receive {amount}",
+    "rate": "PayPal's rate: {rate}",
     "waiting": "Waiting for PayPal…",
     "waitingHint": "Usually under 2 minutes.",
     "arrived": "Payment {amount} arrived from PayPal: {status}",
@@ -745,6 +757,7 @@
       "receives": "What PayPal receives",
       "action": "Action",
       "notesLabel": "Reply notes",
+      "notesEnglish": "Sent to PayPal in English, whatever language you use here.",
       "count": "{n} / 2000",
       "over": "Over the 2000-character limit",
       "near": "{n} of 2000 characters",
@@ -1014,6 +1027,16 @@
       "hold_completed_confirmed": "You marked the order Completed in PayPal",
       "action_read_back": "Read PayPal's record back",
       "hold_declared": "You marked the payment as {what}",
+      "agent_run_succeeded": "AI run finished",
+      "agent_run_cache_hit": "Reused an earlier AI result",
+      "agent_run_failed_output": "AI run stopped: output didn't pass the checks",
+      "agent_run_limit_calls": "AI run stopped: step limit reached",
+      "agent_run_limit_time": "AI run stopped: time limit reached",
+      "agent_run_budget_exceeded": "AI run stopped: spend limit reached",
+      "agent_run_kill_switch": "AI run stopped: AI is switched off",
+      "agent_run_degraded": "AI unavailable; no result",
+      "agent_run_failed": "AI run failed",
+      "extract_no_facts": "No facts found in an evidence item",
       "other": "{action}"
     },
     "what": {
@@ -1072,7 +1095,7 @@
       "nameTooLong": "Use 120 characters or fewer.",
       "agreeRequired": "Tick the box to confirm you agree."
     },
-    "success": "Thanks, {name}. Your confirmation is recorded.",
+    "success": "Thanks, {name}{stop, select, yes {} other {.}} Your confirmation is recorded.",
     "recordedAt": "Recorded {time}",
     "successClose": "You can close this page. This link won't open again.",
     "rateLimited": "Too many attempts. Try again in a few minutes.",

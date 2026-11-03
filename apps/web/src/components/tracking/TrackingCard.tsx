@@ -142,7 +142,7 @@ function Filed({ s, debugId }: { s: TrackingSummary; debugId: string | null }) {
         <p className="flex flex-wrap items-center gap-x-2 text-sm" data-testid="tracking-debug-id">
           {t("filedAfterApproval")}
           <code lang="en" className="font-mono text-xs">
-            debug_id {debugId}
+            {"debug_id"} {debugId}
           </code>
         </p>
       )}
@@ -216,7 +216,7 @@ function Review({
           <dt className="text-text-muted sm:w-40">{t("action")}</dt>
           <dd>
             <code lang="en" className="font-mono text-sm">
-              add_tracking
+              {"add_tracking"}
             </code>
           </dd>
         </div>
@@ -255,7 +255,7 @@ function Review({
           <dd className="flex flex-wrap items-center gap-2">
             {t("notifyNo")}
             <code lang="en" className="font-mono text-xs text-text-muted">
-              notify_payer: false
+              {"notify_payer: false"}
             </code>
           </dd>
         </div>
@@ -367,7 +367,10 @@ function Form({
         >
           {options.map((o) => (
             <option key={o.code} value={o.code}>
-              {o.name} ({o.code})
+              {o.name}
+              {" ("}
+              {o.code}
+              {")"}
             </option>
           ))}
           <option value={OTHER}>{t("carrierOtherOption")}</option>

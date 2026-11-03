@@ -2,6 +2,19 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 
+// ESLint 10 core rule selectors (eslint-plugin-react 7.37.5 has no ESLint 10 support: M4-03 ticket).
+const JSX_TEXT = {
+  selector: "JSXText[value=/\\S/]",
+  message: 'User-visible text comes from apps/web/messages (en.json, hi.json). Codes: {"CODE"} (M4-03).',
+};
+const MONEY_FORMAT = [
+  {
+    selector: "CallExpression[callee.property.name=/^(toFixed|toLocaleString)$/]",
+    message:
+      "Format amounts and times with core's formatMoney / formatDateTime (Intl from the string) (M4-03).",
+  },
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -48,6 +61,24 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  // M4-03: user-visible text comes from apps/web/messages (en, hi), never a JSX literal; amounts and times
+  // go through core's formatMoney / formatDateTime (PayPal's decimal string, never a float). One
+  // `no-restricted-syntax` entry per file set: a later block's entry replaces an earlier one's.
+  {
+    files: ["apps/web/app/**/*.tsx", "apps/web/src/**/*.tsx"],
+    ignores: ["**/*.test.tsx"],
+    rules: { "no-restricted-syntax": ["error", JSX_TEXT, ...MONEY_FORMAT] },
+  },
+  {
+    files: [
+      "apps/web/app/**/*.ts",
+      "apps/web/src/**/*.ts",
+      "packages/core/src/notifications/**/*.ts",
+      "packages/adapters/src/pdf/**/*.ts",
+    ],
+    ignores: ["**/*.test.ts"],
+    rules: { "no-restricted-syntax": ["error", ...MONEY_FORMAT] },
   },
   {
     files: ["**/*.{js,mjs,cjs}"],

@@ -1,6 +1,7 @@
-// GET /api/workspace (M1-05): a thin wrapper; the handler and its tests live in src/server/handlers.
+// GET / PATCH /api/workspace (M1-05, M4-03): thin wrappers; the handlers and their tests live in
+// src/server/handlers.
 import { getDeps } from "../../../src/server/deps.ts";
-import { getWorkspace } from "../../../src/server/handlers/session-routes.ts";
+import { getWorkspace, patchWorkspace } from "../../../src/server/handlers/session-routes.ts";
 
 import { withRoute } from "../../../src/server/with-route.ts";
 
@@ -8,3 +9,4 @@ import { withRoute } from "../../../src/server/with-route.ts";
 export const dynamic = "force-dynamic";
 
 export const GET = withRoute("/api/workspace", (req: Request) => getWorkspace(req, getDeps()));
+export const PATCH = withRoute("/api/workspace", (req: Request) => patchWorkspace(req, getDeps()));
