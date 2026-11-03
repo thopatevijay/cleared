@@ -34,11 +34,16 @@ export interface Journey {
 
 const usd = (amount: string) => ({ amount, currency: "USD" as const });
 
-async function seedNotifications(ws: string, holdPaymentId: string, disputeRowId: string): Promise<void> {
+async function seedNotifications(
+  ws: string,
+  holdPaymentId: string,
+  disputeRowId: string,
+  dueDate: Date,
+): Promise<void> {
   const db = createDb(databaseUrl());
   try {
     const repo = forWorkspace(db, WorkspaceIdSchema.parse(ws)).notifications;
-    const due = new Date(Date.now() + 18 * 3_600_000 + 600_000).toISOString() as Instant;
+    const due = dueDate.toISOString() as Instant;
     const reason = "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED";
     await repo.insertOnce(
       holdOpenedNotification({
@@ -96,8 +101,10 @@ export async function seedWorkspace(page: Page, ws: string): Promise<Journey> {
     await closeDb(db);
   }
   const hold = await seedHeld(ws);
-  const dispute = await seedDispute(ws);
-  await seedNotifications(ws, hold.paymentId, dispute.disputeRowId);
+  // one due date for the dispute and its deadline notification (the alert is computed from it)
+  const dueDate = new Date(Date.now() + 18 * 3_600_000 + 600_000);
+  const dispute = await seedDispute(ws, { dueDate });
+  await seedNotifications(ws, hold.paymentId, dispute.disputeRowId, dueDate);
   const res = await page.request.post(`/api/packs/${pack.packId}/ack-links`, {
     headers: { origin: new URL(page.url()).origin, "idempotency-key": randomUUID() },
     data: {},
