@@ -18,7 +18,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
-    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest"
+    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest",
+    "test:security": "vitest run src/files/ src/paypal/webhook-verify.test.ts src/paypal/webhook-verify.replay.test.ts test/paypal/webhook-ingest.test.ts src/ai/worst-case.test.ts"
   },
   "dependencies": {
     "@cantoo/fontkit": "2.0.12",

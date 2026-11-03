@@ -75,7 +75,7 @@ A dispute arrives, and its reply is already drafted from the proof pack. The sel
 `outcome.payout` is used only for `RESOLVED_WITH_PAYOUT` with `REPRESENTED_BY_PAYPAL`. Other outcomes are worded from PayPal's meaning, never as a victory or a loss of ours.
 
 ## Accessibility
-- h1 "Dispute on {amount} from {buyer}". The stepper is an `<ol>` with `aria-current="step"`.
+- h1 "Dispute on {amount}" (HI "{amount} पर विवाद (dispute)"). The buyer's name is not stored (owner decision 2026-11-02), so the heading names the amount only; the dispute ID and the linked payment identify the case (M4-03, BL-01 6539205590). The stepper is an `<ol>` with `aria-current="step"`.
 - State changes in the stepper and outcome are announced politely once. Refusals use `role="alert"` once.
 - The character count is linked to the textarea via `aria-describedby` and announced only at 1900 and above 2000, not on every keystroke.
 - The deadline is given as an absolute date and time in text (the countdown is supplementary).

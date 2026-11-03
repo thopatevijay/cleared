@@ -107,12 +107,21 @@ export function atOrOverCap(spentUsd: number, capUsd: number): boolean {
   return toMicroUsd(spentUsd) >= toMicroUsd(capUsd);
 }
 
-/** At or over a cap → no call. */
-export function checkBudget(s: SpendSnapshot, config: AgentConfig): BudgetDecision {
+/** `spent + reserve` would end above the cap (micro-dollars, like `atOrOverCap`). */
+function wouldCross(spentUsd: number, reserveUsd: number, capUsd: number): boolean {
+  return toMicroUsd(spentUsd) + toMicroUsd(reserveUsd) > toMicroUsd(capUsd);
+}
+
+/**
+ * At or over a cap → no call. With `reserveUsd` (the next call's worst-case cost, M4-05, owner decision on
+ * #49) also no call when spent + reserved would end above a cap, so no single call can cross one.
+ */
+export function checkBudget(s: SpendSnapshot, config: AgentConfig, reserveUsd = 0): BudgetDecision {
   const wsCap = workspaceCap(s, config);
-  if (wsCap !== null && atOrOverCap(s.workspaceUsd, wsCap))
+  if (wsCap !== null && (atOrOverCap(s.workspaceUsd, wsCap) || wouldCross(s.workspaceUsd, reserveUsd, wsCap)))
     return { ok: false, cap: "workspace", spentUsd: s.workspaceUsd, capUsd: wsCap };
-  if (atOrOverCap(s.globalTodayUsd, config.dailyCapUsd))
-    return { ok: false, cap: "daily", spentUsd: s.globalTodayUsd, capUsd: config.dailyCapUsd };
+  const daily = config.dailyCapUsd;
+  if (atOrOverCap(s.globalTodayUsd, daily) || wouldCross(s.globalTodayUsd, reserveUsd, daily))
+    return { ok: false, cap: "daily", spentUsd: s.globalTodayUsd, capUsd: daily };
   return { ok: true };
 }

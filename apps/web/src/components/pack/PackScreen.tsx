@@ -62,7 +62,7 @@ function Verdicts({ view, kindOf }: { view: PackView; kindOf: (id: string) => st
   if (UNAVAILABLE.includes(view.pack.view)) {
     return (
       <p data-testid="no-verdict">
-        <span aria-hidden="true">—</span> <span className="text-text-muted">{t("noVerdict")}</span>
+        <span aria-hidden="true">{"—"}</span> <span className="text-text-muted">{t("noVerdict")}</span>
       </p>
     );
   }

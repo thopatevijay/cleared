@@ -1,7 +1,7 @@
 // M3-05 cash calendar words (cash-calendar.md "Copy" and rule 2): the visible label of each event kind,
 // its accessible name ("64.00 US dollars, estimated release, estimated, Thursday 5 November, source …"),
-// the day heading and the day's totals per currency. Amounts in PayPal's currency (polish is M4-03).
-import type { Amount, CashDayTotal, CashEvent } from "@cleared/core";
+// the day heading and the day's totals per currency. Amounts in PayPal's currency (core formatMoney, M4-03).
+import { formatMoney, type Amount, type CashDayTotal, type CashEvent } from "@cleared/core";
 import { useTranslations } from "next-intl";
 import { formatAmount } from "../../lib/format.ts";
 import { dayInstant } from "./types.ts";
@@ -13,18 +13,7 @@ const money = (locale: string, a: Amount): string => {
 
 /** "$420" for whole amounts, "€15.50" otherwise: the 375 px day cell (the full amount is in the day list). */
 function shortAmount(locale: string, a: Amount): string {
-  const whole = /\.0+$/.test(a.value);
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: a.currency,
-      currencyDisplay: "narrowSymbol",
-      numberingSystem: "latn",
-      ...(whole ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {}),
-    }).format(Number(a.value));
-  } catch {
-    return formatAmount(locale, a).text;
-  }
+  return formatMoney(a.value, a.currency, locale, "narrowSymbol", true);
 }
 
 function formatDayName(locale: string, date: string, long: boolean): string {

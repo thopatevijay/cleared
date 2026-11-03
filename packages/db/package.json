@@ -10,9 +10,11 @@
     "migrate": "node src/migrate.ts",
     "generate": "drizzle-kit generate",
     "seed": "node src/seed.ts",
+    "count": "node src/count.ts",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
-    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest"
+    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest",
+    "test:security": "vitest run test/grants.test.ts test/constraints.test.ts test/agent-runs.test.ts"
   },
   "dependencies": {
     "@cleared/core": "workspace:*",

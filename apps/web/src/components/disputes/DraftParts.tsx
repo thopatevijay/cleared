@@ -15,6 +15,9 @@ import {
 import { formatTime } from "../../lib/format.ts";
 import { useUiLocale } from "./text.ts";
 
+/** The notes' character count ("1,500"): Latin digits in both locales. */
+const COUNT = new Intl.NumberFormat("en-US");
+
 export function NotesField({
   value,
   readOnly,
@@ -43,12 +46,17 @@ export function NotesField({
       <label htmlFor={`${id}-notes`} className="font-medium">
         {t("notesLabel")}
       </label>
+      {/* M4-03: the reply is filed in English whatever the UI language */}
+      <p id={`${id}-lang`} className="text-sm text-text-muted" data-testid="notes-english">
+        {t("notesEnglish")}
+      </p>
       <textarea
         id={`${id}-notes`}
         value={value}
         readOnly={readOnly}
         rows={10}
-        aria-describedby={`${id}-count`}
+        lang="en"
+        aria-describedby={`${id}-lang ${id}-count`}
         aria-invalid={over || undefined}
         onChange={(e) => {
           onChange(e.target.value);
@@ -63,7 +71,7 @@ export function NotesField({
         data-testid="notes-count"
         data-over={over}
       >
-        {t("count", { n: n.toLocaleString("en-US") })}
+        {t("count", { n: COUNT.format(n) })}
         {over ? <span className="ml-2">{t("over")}</span> : null}
       </p>
       <p aria-live="polite" className="sr-only">

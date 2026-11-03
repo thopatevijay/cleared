@@ -139,7 +139,11 @@ function Timeline({ state, completedOn }: { state: HoldState; completedOn: strin
                   ? t("completed.timeline", { date: completedOn })
                   : t(`timeline.${s}`)}
               </span>
-              <span className="text-sm text-text-muted">({t(`step.${mark}`)})</span>
+              <span className="text-sm text-text-muted">
+                {"("}
+                {t(`step.${mark}`)}
+                {")"}
+              </span>
             </li>
           );
         })}

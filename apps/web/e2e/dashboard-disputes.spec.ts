@@ -78,7 +78,7 @@ test("dispute total, dispute row, Review and approve, filter, partial state", as
 
   // HI
   await page.goto("/hi/payments");
-  await expect(summary).toContainText("$240.00 USD विवाद में");
+  await expect(summary).toContainText("$240.00 USD विवाद (dispute) में");
   await expect(page.getByTestId("review-approve").first()).toHaveText("देखें और मंज़ूरी दें");
   await capture(page, "hi-dashboard-dispute");
 });

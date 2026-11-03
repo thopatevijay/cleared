@@ -70,6 +70,7 @@ async function storeSnapshot(s: Seller): Promise<{ sha256: string; bytes: Uint8A
     delivery: [],
     ack: null,
     timeZone: "UTC",
+    locale: "en",
     generatedAt: "2026-11-02T06:00:00.000Z",
   });
   const sha256 = Sha256Schema.parse(pdf.sha256);

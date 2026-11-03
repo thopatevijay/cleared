@@ -44,7 +44,7 @@ Bell button, count pill, notification item, `StatusBadge` families (held, disput
 ## Interactions
 - SWR polls the count every 5 s. When the count rises, the announcement (polite) is "1 new notification: dispute reply due in 18 hours".
 - Selecting an item opens its target (hold or dispute) and marks it read.
-- "Mark all as read" → PATCH; the count goes to 0 with a toast "All notifications marked as read".
+- "Mark all as read" → PATCH; the count goes to 0 and a polite inline status line reads `notifications.allMarked` "All notifications marked as read" (an `aria-live` line under the button, not a toast: M4-03, BL-01 6569282125).
 - The panel (768+) is a non-modal popover: Escape closes it and returns focus to the bell, and clicking outside closes it.
 - Keyboard path: Tab to the bell → Enter opens the panel (focus moves to its heading) → "Mark all as read" → each item link, then its "Mark as read" button → "See all" → Escape returns focus to the bell. At 375 px: bell → the `/notifications` page h1 → "Mark all as read" → items as above.
 
@@ -56,8 +56,8 @@ Bell button, count pill, notification item, `StatusBadge` families (held, disput
 | new | New | नई |
 | markAll | Mark all as read | सभी को पढ़ा हुआ मानें |
 | markOne | Mark as read | पढ़ा हुआ मानें |
-| holdOpened | PayPal is holding {amount} from {buyer} ({reason}). | PayPal ने {buyer} का {amount} रोका है ({reason})। |
-| disputeOpened | {buyer} opened a dispute on {amount}: {reason}. A reply is being drafted. | {buyer} ने {amount} पर विवाद खोला है: {reason}। जवाब तैयार किया जा रहा है। |
+| holdOpened | PayPal is holding {amount} ({reason}). | PayPal ने {amount} रोका है ({reason})। |
+| disputeOpened | A buyer opened a dispute on {amount}: {reason}. A reply is being drafted. | एक खरीदार ने {amount} पर विवाद खोला है: {reason}। जवाब तैयार किया जा रहा है। |
 | t72 | Reply to the {amount} dispute is due in {days} days ({date}, {time} {tz}). | {amount} वाले विवाद का जवाब {days} दिन में देना है ({date}, {time} {tz})। |
 | t24 | Reply to the {amount} dispute is due in {hours} hours ({date}, {time} {tz}). | {amount} वाले विवाद का जवाब {hours} घंटे में देना है ({date}, {time} {tz})। |
 | empty | No notifications. We'll tell you here when PayPal holds money or a dispute needs a reply. | कोई सूचना नहीं। जब PayPal पैसा रोकेगा या किसी विवाद में जवाब चाहिए होगा, हम यहाँ बताएँगे। |

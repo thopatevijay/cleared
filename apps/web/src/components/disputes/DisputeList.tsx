@@ -10,7 +10,7 @@ import { useRouter } from "../../i18n/navigation.ts";
 import { Link } from "../../i18n/navigation.ts";
 import { ApiError, getJson } from "../../lib/api.ts";
 import { DisputeListSchema, type DisputeList as List, type DisputeSummary } from "../../lib/dispute-view.ts";
-import { formatTime } from "../../lib/format.ts";
+import { formatTime, formatUtc } from "../../lib/format.ts";
 import { EmptyState } from "../EmptyState.tsx";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 import { MoneyCell } from "../MoneyCell.tsx";
@@ -65,7 +65,7 @@ function Row({ d, timeZone, now }: { d: DisputeSummary; timeZone: string; now: n
             status={d.status === "RESOLVED" ? "resolved" : "dispute"}
             detail={d.stage === null ? d.status : `${d.status} · ${d.stage}`}
           />
-          <span className="text-sm">
+          <span className="text-sm" title={d.dueDate === null ? undefined : formatUtc(d.dueDate, locale)}>
             {d.dueDate === null ? t("dueNone") : t("due", { date: formatTime(locale, d.dueDate, timeZone) })}
           </span>
           {d.status === "RESOLVED" ? null : (

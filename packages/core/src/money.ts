@@ -83,7 +83,7 @@ export function fromMinorUnits(minor: bigint, currency: CurrencyCode): Money {
 }
 
 /** The decimal string to send to PayPal. */
-export function formatMoney(money: Money): string {
+export function moneyToDecimal(money: Money): string {
   return money.amount;
 }
 
@@ -96,7 +96,7 @@ export function moneyFromPayPal(raw: PayPalMoney): Result<Money, DomainError> {
 }
 
 export function moneyToPayPal(money: Money): PayPalMoney {
-  return { currency_code: money.currency, value: formatMoney(money) };
+  return { currency_code: money.currency, value: moneyToDecimal(money) };
 }
 
 /** Schema for Money inside our own payloads (events, contracts): the amount must already be canonical. */

@@ -15,7 +15,8 @@
     "build": "tsc --noEmit -p .",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
-    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest"
+    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest",
+    "test:security": "vitest run test/security/ test/jobs/capture-sync.test.ts src/jobs/dispute-sync.int.test.ts src/jobs/reconcile.int.test.ts src/jobs/execute-action.int.test.ts src/actions/add-tracking.int.test.ts src/actions/record-service-completed.int.test.ts test/agent-harness.test.ts src/jobs/explain-hold.int.test.ts"
   },
   "dependencies": {
     "@cleared/adapters": "workspace:*",

@@ -32,7 +32,10 @@ export function RuleSource({ source, label }: { source: Source; label?: string }
         }}
       >
         {label ?? t("source")}
-        <span className="sr-only">: {source.title}</span>
+        <span className="sr-only">
+          {": "}
+          {source.title}
+        </span>
       </button>
       <span
         id={id}

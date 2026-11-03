@@ -25,7 +25,13 @@ import {
   type OutputValidator,
   type ProposalCheck,
 } from "./guardrails.ts";
-import { checkBudget, utcDayStart, type AgentConfig, type SpendSnapshot } from "./limits.ts";
+import {
+  checkBudget,
+  utcDayStart,
+  type AgentConfig,
+  type BudgetDecision,
+  type SpendSnapshot,
+} from "./limits.ts";
 import { DATA_CHANNEL_RULES, type PromptDef } from "./prompts.ts";
 
 export const RUN_STATUSES = [
@@ -67,6 +73,8 @@ export interface StepRecord {
   readonly tokensIn: number;
   readonly tokensOut: number;
   readonly costUsd: number;
+  /** M4-05: the worst case reserved for this call; the store settles the run's cost by costUsd - this */
+  readonly reservedUsd?: number;
   readonly latencyMs: number | null;
   readonly status: string;
   readonly detail: JsonValue;
@@ -86,11 +94,24 @@ export interface RunFinish {
   readonly proposals: readonly CheckedProposal[];
 }
 
+export interface ReserveRequest {
+  readonly workspaceId: WorkspaceId;
+  readonly runId: string;
+  readonly dayStart: Date;
+  readonly usd: number;
+  readonly decide: (spend: SpendSnapshot) => BudgetDecision;
+}
+
 /** Persistence port; `packages/db` implements it over agent_runs / agent_steps / proposed_actions. */
 export interface RunStore {
   /** the DB flag `platform_flags.agent_kill_switch` */
   killSwitch(): Promise<boolean>;
   spend(workspaceId: WorkspaceId, dayStart: Date): Promise<SpendSnapshot>;
+  /**
+   * M4-05: atomically (one lock for every process) read the spend, ask `decide`, and when it allows, add
+   * `usd` to the run's cost, so a concurrent run's budget check already counts this call's worst case.
+   */
+  reserve(r: ReserveRequest): Promise<BudgetDecision>;
   /** the newest `succeeded` run with this hash, in this workspace */
   findCachedOutput(
     workspaceId: WorkspaceId,
@@ -350,8 +371,8 @@ class Run<I extends JsonValue, O> {
     });
   }
 
-  /** Call limit, wall clock and both budgets, before any request leaves. */
-  private async preflight(name: string): Promise<void> {
+  /** Call limit, wall clock and both budgets (this call's worst case reserved), before any request leaves. */
+  private async preflight(name: string, reserveUsd: number): Promise<void> {
     const { limits } = this.deps.config;
     if (this.halted) throw this.halted;
     if (this.totals.calls >= limits.maxCalls) {
@@ -365,10 +386,15 @@ class Run<I extends JsonValue, O> {
       await this.guardStep(name, "limit_time", { wallClockMs: limits.wallClockMs });
       throw this.halt("limit_time", `run exceeded ${String(limits.wallClockMs)} ms`);
     }
-    const spend = await this.deps.store.spend(this.deps.workspaceId, utcDayStart(this.now()));
-    const budget = checkBudget(spend, this.deps.config);
+    const budget = await this.deps.store.reserve({
+      workspaceId: this.deps.workspaceId,
+      runId: this.runId,
+      dayStart: utcDayStart(this.now()),
+      usd: reserveUsd,
+      decide: (spend) => checkBudget(spend, this.deps.config, reserveUsd),
+    });
     if (!budget.ok) {
-      await this.guardStep(name, "budget_exceeded", { ...budget });
+      await this.guardStep(name, "budget_exceeded", { ...budget, reservedUsd: reserveUsd });
       throw this.halt(
         "budget_exceeded",
         `${budget.cap} cap $${String(budget.capUsd)} reached ($${budget.spentUsd.toFixed(6)} spent)`,
@@ -403,10 +429,8 @@ class Run<I extends JsonValue, O> {
     attempt: number,
   ): Promise<{ ok: true; value: z.infer<S> } | { ok: false; problems: string[] }> {
     const name = attempt === 0 ? spec.name : `${spec.name}:repair`;
-    await this.preflight(name);
     const model = this.deps.config.models[spec.model ?? this.def.model];
     const maxOutputTokens = Math.min(spec.maxOutputTokens, this.deps.config.limits.maxOutputTokensPerStep);
-    const started = this.now();
     const request = {
       model,
       system,
@@ -417,19 +441,22 @@ class Run<I extends JsonValue, O> {
       maxOutputTokens,
       ...(spec.reasoningEffort ? { reasoningEffort: spec.reasoningEffort } : {}),
     };
+    const reserved = this.deps.provider.worstCaseUsd?.(request) ?? 0;
+    await this.preflight(name, reserved);
+    const started = this.now();
     this.totals = { ...this.totals, calls: this.totals.calls + 1 };
     const pending = this.deps.provider.complete(request);
     const res = await withDeadline(pending, this.remainingMs(), name).catch(async (e: unknown) => {
       if (e instanceof RunHalt) {
         await this.guardStep(name, "limit_time", { wallClockMs: this.deps.config.limits.wallClockMs });
-        this.recordLate(`${name}:late`, request, pending, guarded.flags, started);
+        this.recordLate(`${name}:late`, request, pending, guarded.flags, started, reserved);
       }
       throw e instanceof RunHalt ? this.halt(e.status, e.message) : e;
     });
     const outcome = res.ok ? checkOutput(spec.schema, res.output, spec.validators ?? []) : null;
     const reported = outcome?.ok && spec.reportedFlags ? spec.reportedFlags(outcome.value) : [];
     const latency = Math.round(this.now() - started);
-    await this.recordCall(name, request, res, guarded.flags, outcome, latency, reported);
+    await this.recordCall(name, request, res, guarded.flags, outcome, latency, reported, reserved);
     if (!res.ok) return this.onFailure(name, res.error);
     return outcome?.ok
       ? { ok: true, value: outcome.value }
@@ -443,9 +470,13 @@ class Run<I extends JsonValue, O> {
     pending: Promise<CompletionResult<unknown>>,
     flags: Parameters<Run<I, O>["recordCall"]>[3],
     started: number,
+    reserved: number,
   ): void {
+    // The reservation is settled when the late answer lands; if it never does, it stays (fails closed).
     void pending
-      .then((late) => this.recordCall(name, request, late, flags, "late", Math.round(this.now() - started)))
+      .then((late) =>
+        this.recordCall(name, request, late, flags, "late", Math.round(this.now() - started), [], reserved),
+      )
       .catch(() => undefined);
   }
 
@@ -475,6 +506,7 @@ class Run<I extends JsonValue, O> {
     outcome: { ok: boolean } | "late" | null,
     latencyMs: number,
     reported: readonly InjectionFlag[] = [],
+    reservedUsd = 0,
   ): Promise<void> {
     const tokensIn = res.usage?.inputTokens ?? 0;
     const tokensOut = res.usage?.outputTokens ?? 0;
@@ -502,6 +534,7 @@ class Run<I extends JsonValue, O> {
       tokensIn,
       tokensOut,
       costUsd: res.costUsd,
+      reservedUsd,
       latencyMs,
       status,
       detail: {

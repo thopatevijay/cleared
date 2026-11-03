@@ -27,20 +27,36 @@ export function workspacesRepo(db: Db) {
       const rows = await (tx ?? db).select().from(workspaces).where(eq(workspaces.id, id)).limit(1);
       return rows[0] ?? null;
     },
+    /** M4-03: the seller's own settings (language switch, time-zone control); the updated row, or null. */
+    async updateSettings(
+      id: string,
+      values: Partial<Pick<WorkspaceRow, "locale" | "timezone">>,
+      tx?: Executor,
+    ): Promise<WorkspaceRow | null> {
+      if (!isUuid(id)) return null;
+      if (values.locale === undefined && values.timezone === undefined) return this.get(id, tx);
+      const rows = await (tx ?? db).update(workspaces).set(values).where(eq(workspaces.id, id)).returning();
+      return rows[0] ?? null;
+    },
     /**
      * Whether a PayPal mirror (capture or dispute sync) may still write into the workspace, with its row
      * locked `for share` until `tx` ends. A synthetic workspace past `expires_at` takes no more rows: its
      * purge sets `expires_at` and holds the row `for update`, so a sync that read the owner row before the
-     * purge committed waits here and then sees the purge (BL-01 6594517545).
+     * purge committed waits here and then sees the purge (BL-01 6594517545). A demo workspace the retention
+     * purge emptied (`purged_at`, M4-07) takes none either: `purge_workspace` locks the row the same way.
      */
     async acceptsMirror(id: string, now: Date, tx: Executor): Promise<boolean> {
       const rows = await tx
-        .select({ synthetic: workspaces.synthetic, expiresAt: workspaces.expiresAt })
+        .select({
+          synthetic: workspaces.synthetic,
+          expiresAt: workspaces.expiresAt,
+          purgedAt: workspaces.purgedAt,
+        })
         .from(workspaces)
         .where(eq(workspaces.id, id))
         .for("share");
       const ws = rows[0];
-      if (ws === undefined) return false;
+      if (ws === undefined || ws.purgedAt !== null) return false;
       return !(ws.synthetic && ws.expiresAt !== null && ws.expiresAt.getTime() <= now.getTime());
     },
     /** Demo caps (ADR 0007): workspaces created since `since`, optionally from one IP hash. */

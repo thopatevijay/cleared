@@ -59,7 +59,10 @@ function Ref({ label, value, href }: { label: string; value: string; href?: stri
       {href === undefined ? (
         <code className="font-mono text-xs [overflow-wrap:anywhere]">{value}</code>
       ) : (
-        <Link href={href} className="font-mono text-xs text-accent underline [overflow-wrap:anywhere]">
+        <Link
+          href={href}
+          className="inline-flex min-h-6 items-center font-mono text-xs text-accent underline [overflow-wrap:anywhere]"
+        >
           {value}
         </Link>
       )}

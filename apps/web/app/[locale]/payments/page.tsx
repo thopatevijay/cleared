@@ -17,13 +17,23 @@ export async function generateMetadata() {
 
 export default async function Payments({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  if ((await pageSession()) === null) redirect(`/${locale}?ended=1`);
+  const session = await pageSession();
+  if (session === null) redirect(`/${locale}?ended=1`);
   const t = await getTranslations("dashboard");
   return (
     <>
       <SiteHeader skipTo="payments" skipLabel="skipPayments" signedIn />
       <main id="main" className="mx-auto flex max-w-[720px] flex-col gap-6 px-4 py-6 xl:max-w-[1200px]">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
+        {/* M4-07: demo data retention (ADR 0020) */}
+        {session.kind === "demo" ? (
+          <p
+            className="rounded-lg border border-border bg-surface px-4 py-3 text-sm"
+            data-testid="demo-retention-note"
+          >
+            {t("demoRetention")}
+          </p>
+        ) : null}
         <PaymentsView />
       </main>
       <DashboardFooter />

@@ -5,7 +5,7 @@
 import { useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
 import type { DisputeDetail } from "../../lib/dispute-view.ts";
-import { formatTime } from "../../lib/format.ts";
+import { formatTime, formatUtc } from "../../lib/format.ts";
 import { MoneyCell } from "../MoneyCell.tsx";
 import { StatusBadge } from "../StatusBadge.tsx";
 import { useDisputeText, useUiLocale } from "./text.ts";
@@ -59,7 +59,9 @@ export function PaypalFacts({ d, timeZone }: { d: DisputeDetail["dispute"]; time
           <StatusBadge status={d.status === "RESOLVED" ? "resolved" : "dispute"} detail={d.status} />
           {d.stage === null ? null : (
             <span className="mt-1 block text-sm text-text-muted">
-              {t("stage")}: <code className="font-mono text-xs">{d.stage}</code>
+              {t("stage")}
+              {": "}
+              <code className="font-mono text-xs">{d.stage}</code>
             </span>
           )}
         </Pair>
@@ -97,7 +99,9 @@ export function PaypalFacts({ d, timeZone }: { d: DisputeDetail["dispute"]; time
           {d.dueDate === null ? (
             td("dueNone")
           ) : (
-            <span className="tabular">{formatTime(locale, d.dueDate, timeZone)}</span>
+            <time className="tabular" dateTime={d.dueDate} title={formatUtc(d.dueDate, locale)}>
+              {formatTime(locale, d.dueDate, timeZone)}
+            </time>
           )}
         </Pair>
         <Pair label={t("allowed")} wide>

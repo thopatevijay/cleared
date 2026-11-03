@@ -48,7 +48,10 @@ export function ErrorPanel({
         ) : null}
         {reference ? (
           <span className="inline-flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-text-muted">{t("reference")}:</span>
+            <span className="text-text-muted">
+              {t("reference")}
+              {":"}
+            </span>
             <code className="font-mono text-xs break-all" data-testid="correlation-id">
               {reference}
             </code>

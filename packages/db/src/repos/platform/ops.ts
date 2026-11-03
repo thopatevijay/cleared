@@ -97,6 +97,12 @@ export function opsChecksRepo(db: Db) {
   };
 }
 
+/**
+ * M4-06: a load-test workspace's rows are seeded, not mirrored from PayPal (loadtest.ts), so the poll never
+ * fetches them: PayPal doesn't know those ids.
+ */
+export const LOADTEST_TAG = "loadtest";
+
 export function reconcileTargetsRepo(db: Db) {
   return {
     /** Owned captures that are PENDING, or that PayPal changed since `recentSince`. */
@@ -106,6 +112,7 @@ export function reconcileTargetsRepo(db: Db) {
         from payments p
         join paypal_resource_owner o
           on o.resource_type = 'capture' and o.resource_id = p.capture_id and o.workspace_id = p.workspace_id
+        join workspaces w on w.id = p.workspace_id and w.created_ip_hash is distinct from ${LOADTEST_TAG}
         where p.status = 'PENDING' or p.paypal_updated_at >= ${recentSince}
         order by p.paypal_updated_at desc nulls last
         limit ${MAX_ITEMS}`);
@@ -118,6 +125,7 @@ export function reconcileTargetsRepo(db: Db) {
         from disputes d
         join paypal_resource_owner o
           on o.resource_type = 'dispute' and o.resource_id = d.dispute_id and o.workspace_id = d.workspace_id
+        join workspaces w on w.id = d.workspace_id and w.created_ip_hash is distinct from ${LOADTEST_TAG}
         where d.status <> 'RESOLVED'
         order by d.seller_response_due_date asc nulls last
         limit ${MAX_ITEMS}`);

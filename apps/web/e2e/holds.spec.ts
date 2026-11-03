@@ -108,12 +108,12 @@ test("inbox and detail with a derived PENDING_REVIEW hold; PayPal's release", as
 
   // HI
   await page.goto(`/hi/holds/${s.holdId}`);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("रोका गया: $64.00 USD");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("रोका गया (hold): $64.00 USD");
   await expect(page.getByTestId("estimated-date")).toContainText("अनुमानित");
   await axeClean(page, "hold-detail-hi");
   await capture(page, "hi-hold-detail", REVIEW_HOLDS);
   await page.goto("/hi/holds");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("रोका गया पैसा");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("रोका गया पैसा (hold)");
   await capture(page, "hi-holds-inbox", REVIEW_HOLDS);
 
   // PayPal releases it: the detail shows Released, the inbox empties

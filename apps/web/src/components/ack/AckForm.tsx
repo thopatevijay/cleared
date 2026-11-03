@@ -65,7 +65,7 @@ export function NeutralPanel() {
   );
 }
 
-function Success({ name, at }: { name: string; at: string }) {
+export function Success({ name, at }: { name: string; at: string }) {
   const t = useTranslations("ack");
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
@@ -80,7 +80,8 @@ function Success({ name, at }: { name: string; at: string }) {
     >
       <CircleCheck aria-hidden="true" size={32} strokeWidth={1.75} className="text-status-completed-fg" />
       <h2 ref={heading} tabIndex={-1} className="text-xl font-semibold">
-        {t("success", { name })}
+        {/* BL-01 6595502129: a name that already ends in a full stop ("Northwind Tea Co.") gets no second one */}
+        {t("success", { name, stop: /[.।]$/.test(name.trim()) ? "yes" : "no" })}
       </h2>
       <p>{t("recordedAt", { time })}</p>
       <p className="text-text-muted">{t("successClose")}</p>
