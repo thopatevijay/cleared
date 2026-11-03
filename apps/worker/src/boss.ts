@@ -24,9 +24,18 @@ export interface WireDeps extends ConsumeDeps {
   readonly opsSchedules?: boolean;
 }
 
-function workOptions(deps: WireDeps) {
+/**
+ * M4-06: while a queue has runnable jobs (pg-boss's cached ready count, refreshed every 60 s) and the last
+ * fetch got one, a consumer fetches again at once instead of sleeping the poll interval. Without it each
+ * slot takes at most one job per 2 s poll, so a queue drains at ≤ 2.5 jobs/s: below a 5/s webhook burst
+ * (docs/evidence/load-report.md). An empty fetch drops back to polling, so an idle worker costs the same.
+ */
+export const BURST_WHEN_READY_EXCEEDS = 0;
+
+export function workOptions(deps: Pick<WireDeps, "pollingIntervalSeconds">) {
   return {
     localConcurrency: CONCURRENCY,
+    burstWhenReadyExceeds: BURST_WHEN_READY_EXCEEDS,
     batchSize: 1,
     includeMetadata: true,
     pollingIntervalSeconds: deps.pollingIntervalSeconds ?? POLLING_INTERVAL_SECONDS,
