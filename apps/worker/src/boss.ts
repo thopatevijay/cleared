@@ -1,13 +1,14 @@
 // Wires the registry onto pg-boss (M1-03): creates each queue and its `.dlq`, starts its consumer with
 // concurrency 5 (architecture §12), starts a dead-letter consumer that logs and records the message,
 // and schedules the outbox relay every minute, the dispute deadline watcher every 15 (M2-06), and the
-// reconcile poll every 15 plus the daily synthetic judge path (M3-09).
+// reconcile poll every 15 plus the daily synthetic judge path (M3-09), and the daily retention purge (M4-07).
 import { correlationIdOrNew, reportError } from "@cleared/adapters";
 import { createPublisher, RELAY_CRON, RELAY_QUEUE, relayOutbox, type Db, type Queue } from "@cleared/db";
 import { consume, type ConsumeDeps, type Handler } from "./consume.ts";
 import { dlqName, ensureQueue } from "./queues.ts";
 import { scheduleDeadlineWatch } from "./jobs/deadline-watcher.ts";
 import { scheduleReconcile } from "./jobs/reconcile.ts";
+import { scheduleRetentionPurge } from "./jobs/retention-purge.ts";
 import { scheduleSynthetic } from "./jobs/synthetic-judge-path.ts";
 import type { Registry } from "./registry.ts";
 
@@ -20,7 +21,7 @@ export interface WireDeps extends ConsumeDeps {
   readonly db: Db;
   readonly boss: Queue;
   readonly pollingIntervalSeconds?: number;
-  /** M3-09: false skips the reconcile and synthetic schedules (`OPS_SCHEDULES=off`: local stubbed E2E) */
+  /** M3-09: false skips the reconcile, synthetic and retention schedules (`OPS_SCHEDULES=off`: local stubbed E2E) */
   readonly opsSchedules?: boolean;
 }
 
@@ -79,4 +80,6 @@ export async function wireWorker(deps: WireDeps, registry: Registry): Promise<vo
   if (deps.opsSchedules === false) return;
   await scheduleReconcile({ ...deps, publisher });
   await scheduleSynthetic({ ...deps, publisher });
+  // M4-07: the daily demo retention purge (ADR 0020)
+  await scheduleRetentionPurge(deps);
 }
