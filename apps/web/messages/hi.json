@@ -1022,7 +1022,7 @@
       "dispute_status_changed": "PayPal की स्थिति दर्ज की",
       "dispute_draft_too_late": "मसौदा नहीं: जवाब देने में देर हो चुकी",
       "dispute_draft_unavailable": "मसौदा नहीं: मसौदा उपलब्ध नहीं",
-      "dispute_draft_evidence_added": "मसौदे में क्लाइंट की पुष्टि और दायरे का स्नैपशॉट जोड़ा",
+      "dispute_draft_evidence_added": "मसौदे में क्लाइंट की पुष्टि और दायरे के स्नैपशॉट की जाँच की (सबूत की चीज़ें देखें)",
       "scenario_started": "विवाद वाला परिदृश्य शुरू किया",
       "scenario_decision_requested": "Simulate PayPal's decision (sandbox only)",
       "scenario_decision_sent": "सैंडबॉक्स निर्णय भेजा",

@@ -27,7 +27,13 @@ async function draftWithAuto(page: Page, locale: "en" | "hi"): Promise<string> {
     return id;
   };
   const ack = await add("client_ack", text);
-  const snap = await add("scope_snapshot", "Scope snapshot stand-in");
+  // the snapshot is a PDF file, as M3-07 stores it (the left-out note then sits beside its "Open E5" link)
+  const pdf = Buffer.from("%PDF-1.4\n% scope snapshot stand-in\n");
+  const snap = crypto.randomUUID();
+  await sql(
+    "with b as (insert into blobs (workspace_id, mime, bytes, size, sha256) values ($1, 'application/pdf', $2, $3, $4) returning id) insert into evidence_items (id, workspace_id, pack_id, kind, blob_id, sha256) select $5, $1, d.pack_id, 'scope_snapshot', b.id, $4 from dispute_drafts d, b where d.id = $6",
+    [ws, pdf, pdf.byteLength, sha(pdf.toString("latin1")), snap, s.draftId],
+  );
   await sql(
     "update dispute_drafts set evidence_item_ids = array_append(evidence_item_ids, $1::uuid) where id = $2",
     [ack, s.draftId],
@@ -65,7 +71,11 @@ test("the card lists what Cleared added and why an item was left out (EN)", asyn
     "Not added: with this item (10 MB) the PDF would reach PayPal's 10 MB limit.",
   );
   await expect(page.getByRole("checkbox", { name: /scope snapshot.*Not added/ })).not.toBeChecked();
-  await expect(page.getByText("Added your client's sign-off and scope snapshot to the draft")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Checked the draft for your client's sign-off and scope snapshot (see the evidence items)",
+    ),
+  ).toBeVisible();
   await capture(page, "en-auto-evidence", DIR);
 });
 

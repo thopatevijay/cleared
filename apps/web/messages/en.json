@@ -1022,7 +1022,7 @@
       "dispute_status_changed": "Mirrored PayPal status",
       "dispute_draft_too_late": "No draft: too late to reply",
       "dispute_draft_unavailable": "No draft: drafting unavailable",
-      "dispute_draft_evidence_added": "Added your client's sign-off and scope snapshot to the draft",
+      "dispute_draft_evidence_added": "Checked the draft for your client's sign-off and scope snapshot (see the evidence items)",
       "scenario_started": "Started the dispute scenario",
       "scenario_decision_requested": "Simulate PayPal's decision (sandbox only)",
       "scenario_decision_sent": "Sent the sandbox decision",
