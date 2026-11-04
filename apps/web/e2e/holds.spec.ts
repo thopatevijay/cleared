@@ -149,7 +149,7 @@ test("inbox variants: dispute-linked, no-timeline and review holds; held total p
   const dispute = await seedHeld(ws, { amount: "120.00", reason: "BUYER_COMPLAINT" });
   const echeck = await seedHeld(ws, { amount: "15.00", currency: "EUR", reason: "ECHECK" });
   await page.goto("/en/holds");
-  await expect(page.getByTestId("holds-total")).toHaveText("€15.00 EUR + $184.00 USD held in 3 payments");
+  await expect(page.getByTestId("holds-total")).toHaveText("€15.00 EUR and $184.00 USD held in 3 payments");
   const row = (id: string) => page.locator(`[data-testid="hold-row"][data-hold="${id}"]`);
   await expect(row(dispute.holdId)).toContainText("Held because the buyer opened a dispute");
   await expect(row(dispute.holdId).getByTestId("estimated-date")).toContainText(

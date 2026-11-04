@@ -83,7 +83,7 @@ States: default, hover, focus-visible, pressed, busy (inline 16 px spinner + ver
 **Anatomy.** The money line, one sentence with three facts, each a link that filters the list:
 `$604.00 USD held · $120.00 USD in dispute · 6 payments proof-ready`
 - The amounts use the `money` step at ≥ 768 px and `2xl` at 375 px. They wrap one fact per line at 375 px (no middle dots on mobile; each fact on its own line, with its icon: `hourglass`, `scale`, `file-check`).
-- **Totals are per currency.** With more than one currency: "$604.00 USD + €95.00 EUR held".
+- **Totals are per currency, never summed.** With more than one currency the amounts are joined as a list with the locale's conjunction (`Intl.ListFormat`, `type: "conjunction"`), never "+", which reads as a sum (owner 2026-11-04, BL-01 6569296578 (i)): EN "$604.00 USD and €95.00 EUR held", three: "$604.00 USD, €95.00 EUR and ₹5,000.00 INR held"; HI "$604.00 USD और €95.00 EUR". One helper (`formatAmountList`) builds every multi-currency total (summary bar held / in dispute, held-money inbox total).
 - **Not-yet-built parts** (M1): the fact shows "—" with an `sr-only` and tooltip text "Arrives with dispute support" (in dispute; M2-09) or "Arrives with proof packs" (proof-ready; M2-05). In M1 the held total is computed from mirrored `PENDING` captures.
 - **States:** loading (three skeleton bars), zero ("Nothing held · No disputes · 0 proof-ready"), partial (a fact whose source failed shows "—" and "Couldn't load", with a retry), and changed (flash + polite announcement).
 - **Keyboard.** Each fact is a link (Tab stop), and Enter applies the filter. The applied filter shows as a removable chip ("Showing: held", followed by a lucide `x` icon button labelled "Clear filter").

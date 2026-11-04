@@ -8,7 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Link } from "../i18n/navigation.ts";
 import { intlLocale, isAppLocale } from "../i18n/routing.ts";
-import { formatAmount } from "../lib/format.ts";
+import { formatAmountList } from "../lib/format.ts";
 
 /** One fact; `pending` is the visible "Arrives with …" line for parts later tickets deliver. */
 function Fact({
@@ -53,7 +53,7 @@ function DisputeFact({
   const locale = intlLocale(isAppLocale(raw) ? raw : "en");
   if (inDispute === undefined || inDispute === null) return <Fact icon={Scale}>{t("inDisputeNone")}</Fact>;
   if (inDispute.length === 0) return <Fact icon={Scale}>{td("noneInDispute")}</Fact>;
-  const text = inDispute.map((a) => `${formatAmount(locale, a).text} ${a.currency}`).join(" + ");
+  const text = formatAmountList(locale, inDispute);
   return (
     <Link
       href={{ pathname: "/payments", query: { filter: "dispute" } }}
@@ -113,12 +113,7 @@ export function SummaryBar({
   const t = useTranslations("dashboard");
   const raw = useLocale();
   const locale = intlLocale(isAppLocale(raw) ? raw : "en");
-  const heldText = held
-    .map((a) => {
-      const f = formatAmount(locale, a);
-      return `${f.text} ${f.code}`;
-    })
-    .join(" + ");
+  const heldText = formatAmountList(locale, held);
   return (
     <p
       className="tabular flex flex-col gap-1 text-2xl font-bold md:flex-row md:flex-wrap md:gap-x-6 md:text-money"

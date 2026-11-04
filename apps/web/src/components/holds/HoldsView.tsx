@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { Link, useRouter } from "../../i18n/navigation.ts";
 import { ApiError, getParsed } from "../../lib/api.ts";
-import { formatAmount, formatTime } from "../../lib/format.ts";
+import { formatAmount, formatAmountList, formatTime } from "../../lib/format.ts";
 import { useUiLocale } from "../disputes/text.ts";
 import { EmptyState } from "../EmptyState.tsx";
 import { ErrorPanel } from "../ErrorPanel.tsx";
@@ -145,12 +145,7 @@ export function HoldsView() {
   else if (data.items.length === 0)
     body = <EmptyState icon={CircleCheck} title={t("emptyTitle")} body={t("empty")} />;
   else {
-    const total = data.summary.held
-      .map((a) => {
-        const f = formatAmount(locale, a);
-        return `${f.text} ${f.code}`;
-      })
-      .join(" + ");
+    const total = formatAmountList(locale, data.summary.held);
     body = (
       <section aria-labelledby="holds-heading" className="flex flex-col gap-3">
         <p className="tabular text-2xl font-bold md:text-money" data-testid="holds-total">
