@@ -105,6 +105,24 @@ describe("ScenarioTimeline and outcome", () => {
     expect(out.match(/data-status="done"/g)?.length).toBe(7);
   });
 
+  // sweep M5 (BL-01 6604837005 item 6): step 1's spinner says what it waits for (EN + HI)
+  it("says what the active capture step waits for", () => {
+    const running = scenarioTimeline({
+      state: "capturing",
+      steps: {},
+      evidenceFiledAt: null,
+      decisionRequestedAt: null,
+      finishedAt: null,
+    });
+    expect(running[0]?.status).toBe("active");
+    expect(html(<ScenarioTimeline steps={running} locale="en" timeZone="UTC" />)).toContain(
+      "Creating a card payment in the PayPal sandbox and waiting for PayPal to confirm the capture.",
+    );
+    expect(html(<ScenarioTimeline steps={running} locale="hi" timeZone="UTC" />, "hi")).toContain(
+      "PayPal सैंडबॉक्स में कार्ड भुगतान बनाया जा रहा है",
+    );
+  });
+
   it("words the payout outcome as PayPal covering the case, and the hold as released (EN + HI)", () => {
     const s = {
       outcome: "payout_paypal_covered",
