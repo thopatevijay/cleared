@@ -27,7 +27,7 @@ export default async function Hold({ params }: { params: Promise<{ locale: strin
   const fallback = await firstView([[`/api/holds/${holdId}`, (req, d) => getHold(req, d, holdId)]]);
   return (
     <>
-      <SiteHeader skipTo="main" skipLabel="skipMain" />
+      <SiteHeader skipTo="main" skipLabel="skipMain" signedIn />
       <main id="main" tabIndex={-1} className="mx-auto flex max-w-[720px] flex-col gap-4 px-4 py-6">
         <Link
           href="/holds"

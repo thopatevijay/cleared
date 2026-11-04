@@ -74,6 +74,13 @@ test("bell count, panel list, mark read, open an item (EN, ≥ 768 px)", async (
   await page.goto("/en/payments");
   await expect(bell(page)).toHaveAccessibleName("Notifications, 3 unread");
   await expect(page.getByTestId("notification-count")).toHaveText("3");
+  // sweep M5 (BL-01 6604837005 item 4): every signed-in page carries the bell, so the header and its tab
+  // order match between pages
+  for (const path of ["/en/holds", "/en/calendar"]) {
+    await page.goto(path);
+    await expect(bell(page), path).toHaveAccessibleName("Notifications, 3 unread");
+  }
+  await page.goto("/en/payments");
 
   await bell(page).click();
   const panel = page.getByRole("dialog", { name: "Notifications" });

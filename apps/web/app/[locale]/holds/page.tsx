@@ -23,7 +23,7 @@ export default async function Holds({ params }: { params: Promise<{ locale: stri
   const tc = await getTranslations("calendar");
   return (
     <>
-      <SiteHeader skipTo="main" skipLabel="skipMain" />
+      <SiteHeader skipTo="main" skipLabel="skipMain" signedIn />
       <main id="main" tabIndex={-1} className="mx-auto flex max-w-[720px] flex-col gap-6 px-4 py-6">
         <Link
           href="/payments"
