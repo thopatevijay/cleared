@@ -51,7 +51,7 @@ import { holdsForEvent } from "../consumers/holds.ts";
 import { CaptureSyncInputSchema, syncCapture } from "./capture-sync.ts";
 import { executeAction } from "./execute-action.ts";
 import { reconcileAction, ReconcileActionInputSchema } from "./reconcile-action.ts";
-import { RECONCILE_LOCK_ID, runReconcile, scheduleReconcile, type ReconcileDeps } from "./reconcile.ts";
+import { BUCKET_MS, RECONCILE_LOCK_ID, runReconcile, scheduleReconcile, type ReconcileDeps } from "./reconcile.ts";
 
 const server = setupServer();
 const db = createDb(url);
@@ -227,6 +227,35 @@ describe.skipIf(!dbAvailable)("reconcile poll (integration)", () => {
     await runReconcile(deps(at));
     await runReconcile(deps(new Date(at.getTime() + 1_000)));
     expect(await captureJobs([captureId])).toHaveLength(1);
+  });
+
+  it("BL-01 6603617791: PENDING every tick, a COMPLETED capture once in the hour's four ticks, none past 72 h", async () => {
+    const ws = await workspace();
+    const [pend, done, stale] = [freshCapture(), freshCapture(), freshCapture()];
+    for (const id of [pend, done, stale]) {
+      await platform(db).resourceOwners.claim({ resourceType: "capture", resourceId: id, workspaceId: ws });
+    }
+    const row = (captureId: string, status: string) => ({
+      captureId,
+      status,
+      amount: "12.00",
+      currency: "USD",
+      source: "webhook" as const,
+      syncedAt: NOW,
+    });
+    await forWorkspace(db, ws).payments.insert({ ...row(pend, "PENDING"), statusReason: "BUYER_COMPLAINT" });
+    await forWorkspace(db, ws).payments.insert(row(done, "COMPLETED"));
+    await forWorkspace(db, ws).payments.insert(row(stale, "COMPLETED"));
+    const update = "update payments set paypal_updated_at = $2 where capture_id = $1";
+    await db.$client.query(update, [done, new Date(Date.now() - 3_600_000)]);
+    await db.$client.query(update, [stale, new Date(Date.now() - 73 * 3_600_000)]);
+    const base = Math.floor(Date.now() / BUCKET_MS) * BUCKET_MS;
+    for (let k = 0; k < 4; k += 1) await runReconcile(deps(new Date(base + k * BUCKET_MS + 1_000)));
+    const jobs = await captureJobs([pend, done, stale]);
+    const count = (id: string) => jobs.filter((j) => j.captureId === id).length;
+    expect(count(pend)).toBe(4);
+    expect(count(done)).toBe(1);
+    expect(count(stale)).toBe(0);
   });
 
   it("AC 2: a foreign or unowned capture is never enqueued or fetched", async () => {

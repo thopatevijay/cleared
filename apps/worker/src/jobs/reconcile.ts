@@ -2,7 +2,9 @@
 // (webhooks are app-scoped and can be lost) and for `unknown` executions whose reconcile chain was lost.
 // Every 15 minutes, one tick (a singleton queue, and a transaction-scoped advisory lock: an overlapping
 // tick is skipped) enqueues one idempotent sub-job per item, on the queues the webhooks already use:
-// - owned captures that are PENDING or changed in the last 72 h → `paypal.capture.sync {source: poll}`
+// - owned captures → `paypal.capture.sync {source: poll}`, tiered (BL-01 6603617791, owner decision
+//   2026-11-04): PENDING every tick; captures changed in the last 72 h that are no longer PENDING (the ones
+//   that catch a missed refund/reversal webhook) once an hour, each in its own tick of the hour's four
 //   (the M1-04 consumer: re-fetch, mirror, `payment.status_changed`, which M3-01 turns into the hold
 //   change; an unchanged capture writes nothing)
 // - owned disputes not RESOLVED → `paypal.dispute.sync {source: poll}` (M2-06: status, due date, links)
@@ -45,6 +47,8 @@ import { raiseAlerts, runSloChecks, type SloAlert, type StoredCheck } from "./sl
 import { cronWorkOptions } from "../poll-intervals.ts";
 
 export const BUCKET_MS = 15 * 60_000;
+/** Ticks per hour: a settled capture is re-checked on one of them. */
+export const TICKS_PER_HOUR = 4;
 /** `pg_try_advisory_xact_lock` key of the reconcile tick. */
 export const RECONCILE_LOCK_ID = 3_090_915;
 
@@ -77,6 +81,22 @@ export function jobIdFor(...parts: readonly string[]): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-5${h.slice(13, 16)}-${variant}${h.slice(17, 20)}-${h.slice(20, 32)}`;
 }
 
+/**
+ * The captures this tick enqueues: every PENDING one, and a settled one only when its hash bucket matches
+ * the tick, so each is re-fetched once an hour (a missed refund is caught within 1 h). Pure.
+ */
+export function capturesDue<T extends { captureId: string; status: string }>(
+  captures: readonly T[],
+  tick: number,
+): T[] {
+  return captures.filter(
+    (c) =>
+      c.status === "PENDING" ||
+      createHash("sha256").update(c.captureId).digest().readUInt32BE(0) % TICKS_PER_HOUR ===
+        tick % TICKS_PER_HOUR,
+  );
+}
+
 async function tryLock(tx: Tx): Promise<boolean> {
   const r = await tx.execute(`select pg_try_advisory_xact_lock(${String(RECONCILE_LOCK_ID)}) as ok`);
   return (r.rows[0] as { ok: boolean } | undefined)?.ok === true;
@@ -92,7 +112,8 @@ function finalTry(a: StrandedAction) {
 async function enqueueItems(deps: ReconcileDeps, tx: Tx, now: Date): Promise<ReconcileCounts> {
   const targets = platform(deps.db).reconcileTargets;
   const bucket = String(Math.floor(now.getTime() / BUCKET_MS));
-  const captures = await targets.captures(new Date(now.getTime() - RECONCILE_RECENT_MS), tx);
+  const candidates = await targets.captures(new Date(now.getTime() - RECONCILE_RECENT_MS), tx);
+  const captures = capturesDue(candidates, Math.floor(now.getTime() / BUCKET_MS));
   for (const c of captures) {
     const data = { captureId: c.captureId, source: "poll" as const };
     const jobId = jobIdFor("capture", c.captureId, bucket);
