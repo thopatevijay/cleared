@@ -1,0 +1,215 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-04T16:14:24.152Z",
+    "env": "sandbox",
+    "ticket": "BL-01",
+    "scrubbed": true,
+    "note": "BL-01: Transaction Search, last 7 days, page_size 5, one call. paypal_account_id and account_number replaced by hand with ACCOUNT-N (the scrubber keys on account_id only); everything else verbatim"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://api-m.sandbox.paypal.com/v1/reporting/transactions?start_date=2026-10-28T16%3A00%3A00Z&end_date=2026-11-04T16%3A00%3A00Z&fields=transaction_info&page_size=5",
+    "headers": {
+      "accept": "application/json"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "paypal-debug-id": "f8600342b09bf"
+    },
+    "body": {
+      "transaction_details": [
+        {
+          "transaction_info": {
+            "paypal_account_id": "ACCOUNT-1",
+            "transaction_id": "6BC19320SY177903T",
+            "paypal_reference_id": "0XB99852V4005830G",
+            "paypal_reference_id_type": "TXN",
+            "transaction_event_code": "T0005",
+            "transaction_initiation_date": "2026-10-29T04:57:06Z",
+            "transaction_updated_date": "2026-10-29T04:57:06Z",
+            "transaction_amount": {
+              "currency_code": "USD",
+              "value": "42.00"
+            },
+            "fee_amount": {
+              "currency_code": "USD",
+              "value": "-1.58"
+            },
+            "transaction_status": "S",
+            "ending_balance": {
+              "currency_code": "USD",
+              "value": "5472.89"
+            },
+            "available_balance": {
+              "currency_code": "USD",
+              "value": "5412.57"
+            },
+            "custom_field": "spike-63d98cb5-7e7a-4972-b28b-937684136e12",
+            "protection_eligibility": "02",
+            "instrument_type": "Debit Card",
+            "instrument_sub_type": "Visa"
+          }
+        },
+        {
+          "transaction_info": {
+            "paypal_account_id": "ACCOUNT-2",
+            "transaction_id": "7F7924957B2117201",
+            "paypal_reference_id": "0WY66400NS0811107",
+            "paypal_reference_id_type": "TXN",
+            "transaction_event_code": "T0005",
+            "transaction_initiation_date": "2026-10-29T04:57:19Z",
+            "transaction_updated_date": "2026-10-29T04:57:19Z",
+            "transaction_amount": {
+              "currency_code": "USD",
+              "value": "18.50"
+            },
+            "fee_amount": {
+              "currency_code": "USD",
+              "value": "-0.97"
+            },
+            "transaction_status": "S",
+            "ending_balance": {
+              "currency_code": "USD",
+              "value": "5490.42"
+            },
+            "available_balance": {
+              "currency_code": "USD",
+              "value": "5430.10"
+            },
+            "custom_field": "spike-c897b1d1-604a-4d01-8ec5-84da8bf660b6",
+            "protection_eligibility": "02",
+            "instrument_type": "Debit Card",
+            "instrument_sub_type": "Visa"
+          }
+        },
+        {
+          "transaction_info": {
+            "paypal_account_id": "ACCOUNT-3",
+            "transaction_id": "7AS90958XD7569923",
+            "paypal_reference_id": "4XC35541DS303242B",
+            "paypal_reference_id_type": "TXN",
+            "transaction_event_code": "T0005",
+            "transaction_initiation_date": "2026-10-29T04:57:26Z",
+            "transaction_updated_date": "2026-10-29T04:57:26Z",
+            "transaction_amount": {
+              "currency_code": "USD",
+              "value": "120.00"
+            },
+            "fee_amount": {
+              "currency_code": "USD",
+              "value": "-3.60"
+            },
+            "transaction_status": "S",
+            "ending_balance": {
+              "currency_code": "USD",
+              "value": "5606.82"
+            },
+            "available_balance": {
+              "currency_code": "USD",
+              "value": "5546.50"
+            },
+            "custom_field": "spike-a4798113-de90-43c3-a99f-abe2bc7dc9d2",
+            "protection_eligibility": "02",
+            "instrument_type": "Debit Card",
+            "instrument_sub_type": "Visa"
+          }
+        },
+        {
+          "transaction_info": {
+            "paypal_account_id": "ACCOUNT-4",
+            "transaction_id": "794390931G848631R",
+            "paypal_reference_id": "3DU47244EB672003U",
+            "paypal_reference_id_type": "TXN",
+            "transaction_event_code": "T0005",
+            "transaction_initiation_date": "2026-10-29T05:16:54Z",
+            "transaction_updated_date": "2026-10-29T05:16:54Z",
+            "transaction_amount": {
+              "currency_code": "USD",
+              "value": "64.00"
+            },
+            "fee_amount": {
+              "currency_code": "USD",
+              "value": "-2.15"
+            },
+            "transaction_status": "S",
+            "ending_balance": {
+              "currency_code": "USD",
+              "value": "5668.67"
+            },
+            "available_balance": {
+              "currency_code": "USD",
+              "value": "5608.35"
+            },
+            "custom_field": "spike-7f168094-2c09-4159-97c2-aa52549f3cb1",
+            "protection_eligibility": "02",
+            "instrument_type": "Debit Card",
+            "instrument_sub_type": "Visa"
+          }
+        },
+        {
+          "transaction_info": {
+            "paypal_account_id": "ACCOUNT-5",
+            "transaction_id": "7MJ69441LL4596355",
+            "paypal_reference_id": "648548579F305092D",
+            "paypal_reference_id_type": "TXN",
+            "transaction_event_code": "T0005",
+            "transaction_initiation_date": "2026-10-29T05:16:54Z",
+            "transaction_updated_date": "2026-10-29T05:16:54Z",
+            "transaction_amount": {
+              "currency_code": "USD",
+              "value": "23.00"
+            },
+            "fee_amount": {
+              "currency_code": "USD",
+              "value": "-1.09"
+            },
+            "transaction_status": "S",
+            "ending_balance": {
+              "currency_code": "USD",
+              "value": "5690.58"
+            },
+            "available_balance": {
+              "currency_code": "USD",
+              "value": "5630.26"
+            },
+            "custom_field": "spike-fd2a8258-dde2-4325-b2da-68ca9bcd8722",
+            "protection_eligibility": "02",
+            "instrument_type": "Debit Card",
+            "instrument_sub_type": "Visa"
+          }
+        }
+      ],
+      "account_number": "ACCOUNT-6",
+      "start_date": "2026-10-28T16:00:00Z",
+      "end_date": "2026-11-04T12:29:59Z",
+      "last_refreshed_datetime": "2026-11-04T12:29:59Z",
+      "page": 1,
+      "total_items": 84,
+      "total_pages": 17,
+      "links": [
+        {
+          "href": "https://api.sandbox.paypal.com/v1/reporting/transactions?end_date=2026-11-04T16%3A00%3A00Z&fields=transaction_info&start_date=2026-10-28T16%3A00%3A00Z&page_size=5&page=17",
+          "rel": "last",
+          "method": "GET",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v1/reporting/transactions?end_date=2026-11-04T16%3A00%3A00Z&fields=transaction_info&start_date=2026-10-28T16%3A00%3A00Z&page_size=5&page=2",
+          "rel": "next",
+          "method": "GET",
+          "encType": "application/json"
+        },
+        {
+          "href": "https://api.sandbox.paypal.com/v1/reporting/transactions?end_date=2026-11-04T16%3A00%3A00Z&fields=transaction_info&start_date=2026-10-28T16%3A00%3A00Z&page_size=5&page=1",
+          "rel": "self",
+          "method": "GET",
+          "encType": "application/json"
+        }
+      ]
+    }
+  }
+}
