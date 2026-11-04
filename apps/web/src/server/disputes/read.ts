@@ -16,6 +16,7 @@ import {
   latestDraftOutcome,
   platform,
   scenarioForDispute,
+  scopeChecksRepo,
   type AutoEvidence,
   type DisputeListRow,
   type DraftWithAction,
@@ -26,6 +27,7 @@ import type {
   DisputeList,
   DisputeSummary,
   Draft,
+  DraftGap,
   DraftItem,
   DraftItemAuto,
 } from "../../lib/dispute-view.ts";
@@ -164,6 +166,35 @@ async function draftItems(
   }));
 }
 
+const LineRefs = z
+  .array(z.object({ refs: z.array(z.object({ ref: z.string(), kind: z.string() }).catch({ ref: "", kind: "" })) }))
+  .catch([]);
+
+/**
+ * BL-01 6539398891: the draft's scope gaps, from data, never from the notes' prose: the lines of the check
+ * version the draft read whose verdict is `partial` / `missing` and that a notes paragraph relies on
+ * (`fact_refs` kind `line`; a seller's revision keeps them). Lines keep the check's order.
+ */
+export function scopeGaps(
+  factRefs: unknown,
+  lines: readonly { readonly lineId: string; readonly line: string; readonly verdict: string }[],
+): DraftGap[] {
+  const used = new Set(
+    LineRefs.parse(factRefs).flatMap((p) => p.refs.filter((r) => r.kind === "line").map((r) => r.ref)),
+  );
+  return lines.flatMap((l) =>
+    (l.verdict === "partial" || l.verdict === "missing") && used.has(l.lineId)
+      ? [{ lineId: l.lineId, requirement: l.line, verdict: l.verdict }]
+      : [],
+  );
+}
+
+async function draftGaps(deps: Deps, ws: string, d: DraftWithAction["draft"]): Promise<DraftGap[]> {
+  if (d.packId === null || d.checkVersion === null) return [];
+  const lines = await scopeChecksRepo(deps.db, ws as WorkspaceId).forVersion(d.packId, d.checkVersion);
+  return scopeGaps(d.factRefs, lines);
+}
+
 async function draftView(
   deps: Deps,
   ws: string,
@@ -177,10 +208,11 @@ async function draftView(
   // a pre-M2-07 row has no filing action to approve
   if (kind !== "provide_evidence" && kind !== "provide_supporting_info") return null;
   const auto = await disputeDraftsRepo(deps.db, ws as WorkspaceId).autoEvidence(d.id);
-  const [items, pdf, action] = await Promise.all([
+  const [items, pdf, action, gaps] = await Promise.all([
     draftItems(deps, ws, d, paymentId, auto),
     d.compiledBlobId === null ? null : blobMeta(deps.db, ws, d.compiledBlobId),
     d.proposedActionId === null ? null : getProposedAction(deps.db, ws, d.proposedActionId),
+    draftGaps(deps, ws, d),
   ]);
   return {
     id: d.id,
@@ -193,6 +225,7 @@ async function draftView(
       pdf === null ? null : { url: `/api/disputes/${disputeRowId}/draft/pdf?draft=${d.id}`, bytes: pdf.size },
     action: action === null ? null : await view(deps, action),
     allowed: allowed.includes(kind),
+    gaps,
   };
 }
 

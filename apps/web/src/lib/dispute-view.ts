@@ -102,6 +102,18 @@ export const DraftItemSchema = z.object({
 });
 export type DraftItem = z.infer<typeof DraftItemSchema>;
 
+/**
+ * BL-01 6539398891 (owner decision 2026-11-04): a scope line the pack's check marks `partial` or `missing`
+ * that the draft's notes rely on (its `fact_refs`). The seller sees it as a warning; it is never sent.
+ * `requirement` is model output (M2-04 pass 1): plain text only.
+ */
+export const DraftGapSchema = z.object({
+  lineId: z.string(),
+  requirement: z.string(),
+  verdict: z.enum(["partial", "missing"]),
+});
+export type DraftGap = z.infer<typeof DraftGapSchema>;
+
 export const DraftSchema = z.object({
   id: z.uuid(),
   actionKind: z.enum(["provide_evidence", "provide_supporting_info"]),
@@ -115,6 +127,8 @@ export const DraftSchema = z.object({
   action: ActionViewSchema.nullable(),
   /** PayPal still offers this draft's action in the dispute's current links */
   allowed: z.boolean(),
+  /** scope lines the notes admit were not fully delivered (seller-only warning) */
+  gaps: z.array(DraftGapSchema),
 });
 export type Draft = z.infer<typeof DraftSchema>;
 

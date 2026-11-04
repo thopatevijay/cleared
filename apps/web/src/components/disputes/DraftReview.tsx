@@ -13,6 +13,7 @@ import { formatBytes, formatTime, formatUtc } from "../../lib/format.ts";
 import { AcceptClaimDialog } from "./AcceptClaimDialog.tsx";
 import { ApproveDialog } from "./ApproveDialog.tsx";
 import { EvidenceItems, Fingerprint, NotesField } from "./DraftParts.tsx";
+import { ScopeGapWarning } from "./ScopeGapWarning.tsx";
 import { useDisputeText, useUiLocale } from "./text.ts";
 import { useRevise, type Refresh } from "./useRevise.ts";
 
@@ -140,6 +141,9 @@ export function DraftReview({
           {sentOrSending ? t("approvedSub") : action?.createdBy === "seller" ? t("seller") : t("agent")}
         </p>
       </div>
+      {readOnly ? null : (
+        <ScopeGapWarning gaps={draft.gaps} edited={action?.createdBy === "seller"} />
+      )}
       <h3 className="font-semibold">{t("receives")}</h3>
       <dl className="flex flex-col gap-3">
         <div>
