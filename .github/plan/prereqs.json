@@ -851,7 +851,7 @@
     "who": "owner",
     "how": "owner: Bryntum Discord DM + the M0-01 email to sales@bryntum.com; record the written answer (link or screenshot) on M0-01 (#3), then reply 'done P-38'",
     "lands_in": "apps/web/config/cash-calendar.ts decision note",
-    "status": "pending",
+    "status": "done",
     "required": true
   },
   {
