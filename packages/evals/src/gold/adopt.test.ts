@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adoptDevItem, adoptDevSet, adoptionProblem, ownerQueue } from "./adopt.ts";
+import { adoptDevItem, adoptDevSet, adoptionProblem, labelQueue } from "./adopt.ts";
 import { checkSpans, type Report } from "./checks.ts";
 import { PROD_MODEL, REVIEW_MODEL, type DraftItem, type GoldItem, type Review } from "./schema.ts";
 
@@ -59,7 +59,7 @@ describe("eval:adopt-dev (dev items from the review)", () => {
     const { items, refused } = adoptDevSet([d], [noSpan("scope-028")], []);
     expect(items).toEqual([]);
     expect(refused).toHaveLength(1);
-    expect(ownerQueue([draft("scope-001", "test"), d, draft("scope-009", "dev")], [noSpan("scope-028"), review("scope-009")]).map((x) => x.id)).toEqual(["scope-001", "scope-028"]);
+    expect(labelQueue([draft("scope-001", "test"), d, draft("scope-009", "dev")], [noSpan("scope-028"), review("scope-009")]).map((x) => x.id)).toEqual(["scope-001", "scope-028"]);
   });
 
   it("refuses a non-verbatim span, a production-model review and a test item", () => {
@@ -78,5 +78,12 @@ describe("eval:adopt-dev (dev items from the review)", () => {
     expect(once.items.map((i) => [i.id, i.labelled_by])).toEqual([["scope-001", "owner"], ["scope-009", `model:${REVIEW_MODEL.scope}`], ["scope-028", "owner"]]);
     expect(once.refused).toEqual([]);
     expect(adoptDevSet(drafts, reviews, once.items).items).toEqual(once.items);
+  });
+
+  it("keeps a Claude-labelled refused dev item instead of re-adopting (and dropping) it", () => {
+    const claudeDev: GoldItem = { ...adoptDevItem(draft("scope-028", "dev"), review("scope-028")), labelled_by: "claude:claude-opus-5-5" };
+    const out = adoptDevSet([draft("scope-009", "dev"), draft("scope-028", "dev")], [review("scope-009"), noSpan("scope-028")], [claudeDev]);
+    expect(out.items.map((i) => [i.id, i.labelled_by])).toEqual([["scope-009", `model:${REVIEW_MODEL.scope}`], ["scope-028", "claude:claude-opus-5-5"]]);
+    expect(out.refused).toEqual([]);
   });
 });

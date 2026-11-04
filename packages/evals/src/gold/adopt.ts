@@ -1,12 +1,13 @@
 // `pnpm eval:adopt-dev`: writes the `dev` items into gold/<set>.jsonl from the second-model reviews.
-// Owner decision 2026-11-03 (#45): the owner labels the `test` split; `dev` items (prompt work, never
-// reported) take the review's labels and spans verbatim, marked `labelled_by: "model:<reviewer id>"`.
+// Owner decisions 2026-11-03/04 (#45): `test` items get a primary label (`claude:<id>` or `owner`);
+// `dev` items (prompt work, never reported) take the review's labels and spans verbatim, marked
+// `labelled_by: "model:<reviewer id>"`.
 // A `dev` item whose review cannot stand as a label (e.g. `met` with no verbatim span) is refused: nothing
-// is written for it, no rule is relaxed, and it joins the owner's `eval:label` queue instead.
-// Deterministic: no API call, no spend; re-running it rewrites the same bytes. Owner-labelled items
-// already in the file are kept as they are.
+// is written for it, no rule is relaxed, and it joins the `eval:label` queue instead.
+// Deterministic: no API call, no spend; re-running it rewrites the same bytes. Items with a primary label
+// (`owner` or `claude:<id>`) already in the file are kept as they are.
 import { draftFile, goldFile, readJsonl, reviewFile, writeJsonl } from "./io.ts";
-import { DraftItemSchema, GoldItemSchema, modelLabel, PROD_MODEL, ReviewSchema, SETS, type DraftItem, type GoldItem, type GoldSet, type Review } from "./schema.ts";
+import { DraftItemSchema, GoldItemSchema, isPrimaryLabel, modelLabel, PROD_MODEL, ReviewSchema, SETS, type DraftItem, type GoldItem, type GoldSet, type Review } from "./schema.ts";
 import { spanProblem } from "./spans.ts";
 
 /** Why `review` cannot stand as the label of the dev item `draft`, or null when it can. */
@@ -28,8 +29,8 @@ export function adoptionProblem(draft: DraftItem, review: Review | undefined): s
   return null;
 }
 
-/** What the owner labels (`eval:label`): every `test` item, plus each `dev` item adoption refuses. */
-export function ownerQueue(drafts: readonly DraftItem[], reviews: readonly Review[]): DraftItem[] {
+/** What `eval:label` labels (owner or Claude): every `test` item, plus each `dev` item adoption refuses. */
+export function labelQueue(drafts: readonly DraftItem[], reviews: readonly Review[]): DraftItem[] {
   return drafts.filter((d) => d.split === "test" || adoptionProblem(d, reviews.find((r) => r.item_id === d.id)) !== null);
 }
 
@@ -46,8 +47,8 @@ export function adoptDevItem(draft: DraftItem, review: Review): GoldItem {
 }
 
 /**
- * The set's gold items in draft order. A `dev` draft is adopted from its review unless the owner already
- * labelled it; a refused one is left out and listed in `refused`. Every other item stays as it is.
+ * The set's gold items in draft order. A `dev` draft is adopted from its review unless it already has a
+ * primary label (owner or Claude); a refused one is left out and listed in `refused`. Every other item stays.
  */
 export function adoptDevSet(
   drafts: readonly DraftItem[],
@@ -58,7 +59,7 @@ export function adoptDevSet(
   const refused: string[] = [];
   const items = drafts.flatMap((d) => {
     const have = byId.get(d.id);
-    if (d.split !== "dev" || have?.labelled_by === "owner") return have === undefined ? [] : [have];
+    if (d.split !== "dev" || (have !== undefined && isPrimaryLabel(have.labelled_by))) return have === undefined ? [] : [have];
     const review = reviews.find((r) => r.item_id === d.id);
     const problem = adoptionProblem(d, review);
     if (problem !== null || review === undefined) {
@@ -75,8 +76,8 @@ function adoptSet(set: GoldSet): string[] {
   const { items, refused } = adoptDevSet(drafts, readJsonl(reviewFile(set), ReviewSchema), readJsonl(goldFile(set), GoldItemSchema));
   writeJsonl(goldFile(set), items);
   const dev = drafts.filter((d) => d.split === "dev").length;
-  const adopted = items.filter((i) => i.labelled_by !== "owner").length;
-  console.log(`${set}: ${String(adopted)}/${String(dev)} dev items adopted from the review, ${String(refused.length)} refused (owner labels them)`);
+  const adopted = items.filter((i) => i.split === "dev" && !isPrimaryLabel(i.labelled_by)).length;
+  console.log(`${set}: ${String(adopted)}/${String(dev)} dev items adopted from the review, ${String(refused.length)} refused (eval:label labels them)`);
   return refused;
 }
 

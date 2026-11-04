@@ -3,7 +3,7 @@ import {
   checkCounts,
   checkCoverage,
   checkHolds,
-  checkOwnerLabels,
+  checkQueueLabels,
   checkReviews,
   checkSpans,
   checkSpend,
@@ -12,8 +12,9 @@ import {
   type Report,
 } from "./checks.ts";
 import { splitFor } from "./plan.ts";
-import { PROD_MODEL, REVIEW_MODEL, type Disagreement, type GoldItem, type Label } from "./schema.ts";
+import { DisagreementSchema, PROD_MODEL, REVIEW_MODEL, type Disagreement, type GoldItem, type Label } from "./schema.ts";
 
+const CLAUDE = "claude:claude-opus-5-5";
 const TEXT = "Logo in two colours. Logo files as SVG.";
 
 function item(id: string, labels: readonly Label[], over: Partial<GoldItem> = {}): GoldItem {
@@ -110,7 +111,7 @@ describe("eval:validate checks", () => {
     expect(r.errors.join("\n")).toMatch(/scope-002: reviewed by the production model/);
     expect(r.errors.join("\n")).toMatch(/scope-003\/H1: disagreement without a decision/);
     expect(r.errors.join("\n")).toMatch(/scope-004: no review record/);
-    const row: Disagreement = { set: "scope", item_id: "scope-003", h_id: "H1", owner_label: "missing", model_label: "met", model: "x", final: "missing", reason: "the chat shows it was not sent" };
+    const row: Disagreement = { set: "scope", item_id: "scope-003", h_id: "H1", labeller_label: "missing", model_label: "met", model: "x", final: "missing", reason: "the chat shows it was not sent", decided_by: "owner" };
     const ok = report();
     checkReviews({ ...empty, scope: [agreed, disputed] }, [row], ok);
     expect(ok.errors).toEqual([]);
@@ -133,7 +134,7 @@ describe("eval:validate checks", () => {
 
     it("fails a test item labelled by a model", () => {
       expect(errorsFor([testItem("scope-001", ["met"], { labelled_by: `model:${REVIEW_MODEL.scope}` })])).toMatch(
-        /scope-001: test item labelled_by model:gpt-5\.4-mini-2026-03-17, must be owner/,
+        /scope-001: test item labelled_by model:gpt-5\.4-mini-2026-03-17, must be owner or claude:<id>/,
       );
     });
 
@@ -163,19 +164,53 @@ describe("eval:validate checks", () => {
       checkReviews({ ...empty, scope: [testItem("scope-001", ["met", "missing"]), disputedDev] }, [], r);
       expect(r.errors).toEqual([]);
       expect(r.lines.find((l) => l.startsWith("kappa scope"))).toMatch(/n=2 hypotheses, 0 disagreements\)$/);
-      const row: Disagreement = { set: "scope", item_id: "scope-009", h_id: "H1", owner_label: "missing", model_label: "met", model: "x", final: "missing", reason: "dev" };
+      const row: Disagreement = { set: "scope", item_id: "scope-009", h_id: "H1", labeller_label: "missing", model_label: "met", model: "x", final: "missing", reason: "dev", decided_by: "owner" };
       expect(errorsFor([disputedDev], [row])).toMatch(/scope-009\/H1: disagreements.jsonl row on a dev item/);
     });
 
-    it("reports owner labels missing (P-53) for queued items without an owner label", () => {
+    it("reports primary labels missing for queued items labelled by neither the owner nor Claude", () => {
       const r = report();
       const queue = { extraction: [], scope: ["scope-001", "scope-028"], holds: [] };
-      checkOwnerLabels({ ...empty, scope: [testItem("scope-001", ["met"]), devItem("scope-028", ["met"])] }, queue, r);
-      expect(r.lines).toContain("owner-labelled: 1/2 (test split + dev items the review could not label)");
-      expect(r.errors).toEqual(["owner labels missing (P-53): 1/2 items: run `pnpm eval:label`, then `pnpm eval:label --reconcile`"]);
+      checkQueueLabels({ ...empty, scope: [testItem("scope-001", ["met"]), devItem("scope-028", ["met"])] }, queue, r);
+      expect(r.lines).toContain("labelled: 1/2 queued items (test split + dev items the review could not label): owner 1");
+      expect(r.errors).toEqual(["labels missing: 1/2 queued items: run `pnpm eval:label`, then `pnpm eval:label --reconcile`"]);
       const ok = report();
-      checkOwnerLabels({ ...empty, scope: [testItem("scope-001", ["met"]), devItem("scope-028", ["met"], { labelled_by: "owner" })] }, queue, ok);
+      checkQueueLabels({ ...empty, scope: [testItem("scope-001", ["met"]), devItem("scope-028", ["met"], { labelled_by: CLAUDE })] }, queue, ok);
       expect(ok.errors).toEqual([]);
+      expect(ok.lines).toContain(`labelled: 2/2 queued items (test split + dev items the review could not label): ${CLAUDE} 1, owner 1`);
+    });
+  });
+
+  describe("amended AC 3 (owner decision 2026-11-04: Claude labels the gold sets)", () => {
+    const errorsFor = (items: GoldItem[], rows: Disagreement[] = []): string => {
+      const r = report();
+      checkReviews({ ...empty, scope: items }, rows, r);
+      return r.errors.join("\n");
+    };
+
+    it("passes claude:<id> on a test item and on a dev item the review could not label", () => {
+      expect(errorsFor([item("scope-001", ["met"], { split: "test", labelled_by: CLAUDE }), item("scope-028", ["met"], { split: "dev", labelled_by: CLAUDE })])).toBe("");
+    });
+
+    it("must fail: a test item marked model:<id>, even the item's own reviewer", () => {
+      expect(errorsFor([item("scope-001", ["met"], { split: "test", labelled_by: `model:${REVIEW_MODEL.scope}` })])).toMatch(/scope-001: test item labelled_by model:.*must be owner or claude:<id>/);
+    });
+
+    it("fails a labeller id equal to the task's production model", () => {
+      expect(errorsFor([item("scope-001", ["met"], { split: "test", labelled_by: `claude:${PROD_MODEL.scope}` })])).toMatch(
+        new RegExp(`scope-001: labelled_by claude:${PROD_MODEL.scope.replace(/\./g, "\\.")} is the production model for scope`),
+      );
+      const ext = item("ext-001", ["met"], { set: "extraction", split: "test", labelled_by: `claude:${PROD_MODEL.extraction}` });
+      expect(errorsFor([ext])).toMatch(/ext-001: labelled_by claude:.* is the production model for extraction/);
+    });
+
+    it("records who decided a disagreement, and refuses a row without decided_by", () => {
+      const base = item("scope-003", ["missing"], { split: "test", labelled_by: CLAUDE });
+      const disputed: GoldItem = { ...base, review: base.review === null ? null : { ...base.review, labels: [{ h_id: "H1", label: "met", spans: [], unmatched_quotes: 0 }] } };
+      const row: Disagreement = { set: "scope", item_id: "scope-003", h_id: "H1", labeller_label: "missing", model_label: "met", model: "x", final: "missing", reason: "the handover says it was not sent", decided_by: CLAUDE };
+      expect(errorsFor([disputed], [row])).toBe("");
+      expect(DisagreementSchema.safeParse({ ...row, decided_by: undefined }).success).toBe(false);
+      expect(DisagreementSchema.safeParse({ ...row, decided_by: `model:${REVIEW_MODEL.scope}` }).success).toBe(false);
     });
   });
 

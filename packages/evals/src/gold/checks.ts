@@ -3,7 +3,21 @@
 import { holdRule } from "@cleared/core";
 import { cohensKappa } from "./kappa.ts";
 import { DEV_SHARE, splitFor } from "./plan.ts";
-import { LABELS, modelLabel, PROD_MODEL, SET_SIZE, SETS, type Disagreement, type GoldItem, type GoldSet, type Label, type Review } from "./schema.ts";
+import {
+  isPrimaryLabel,
+  labellerModel,
+  LABELS,
+  modelLabel,
+  PROD_MODEL,
+  SET_SIZE,
+  SETS,
+  type Disagreement,
+  type GoldItem,
+  type GoldSet,
+  type Label,
+  type LabelledBy,
+  type Review,
+} from "./schema.ts";
 import { spanProblem } from "./spans.ts";
 import { DAILY_BUDGET_USD } from "./spend.ts";
 
@@ -93,13 +107,16 @@ export function checkHolds(holds: readonly GoldItem[], r: Report): void {
 }
 
 /**
- * AC 3 (amended 2026-11-03): who labelled the item. A `test` item is `owner`; a `dev` item is `owner` or
- * `model:<its reviewer>` (a non-production model), and a model-labelled one carries the review verbatim.
+ * AC 3 (amended 2026-11-04, #45): who labelled the item. A `test` item is `owner` or `claude:<id>`; a `dev`
+ * item is `model:<its reviewer>` and carries the review verbatim, or a primary label (`owner`/`claude:<id>`)
+ * when the review could not stand as one. No labeller is the task's production model.
  */
 function checkLabelledBy(item: GoldItem, review: Review, r: Report): void {
-  if (item.split === "test" && item.labelled_by !== "owner") r.errors.push(`${item.id}: test item labelled_by ${item.labelled_by}, must be owner`);
-  if (item.labelled_by === "owner") return;
-  if (item.labelled_by !== modelLabel(review.model)) r.errors.push(`${item.id}: labelled_by ${item.labelled_by} is not its reviewer ${modelLabel(review.model)}`);
+  const by = item.labelled_by;
+  if (labellerModel(by) === PROD_MODEL[item.set]) r.errors.push(`${item.id}: labelled_by ${by} is the production model for ${item.set}`);
+  if (item.split === "test" && !isPrimaryLabel(by)) r.errors.push(`${item.id}: test item labelled_by ${by}, must be owner or claude:<id>`);
+  if (isPrimaryLabel(by)) return;
+  if (by !== modelLabel(review.model)) r.errors.push(`${item.id}: labelled_by ${by} is not its reviewer ${modelLabel(review.model)}`);
   for (const h of item.hypotheses) {
     const m = review.labels.find((l) => l.h_id === h.h_id);
     if (m !== undefined && (m.label !== h.label || JSON.stringify(m.spans) !== JSON.stringify(h.spans))) {
@@ -108,7 +125,7 @@ function checkLabelledBy(item: GoldItem, review: Review, r: Report): void {
   }
 }
 
-/** AC 4 (amended): every owner/reviewer disagreement on a `test` item has a decision; kappa over `test` only. */
+/** AC 4 (amended): every labeller/reviewer disagreement on a `test` item has a decision; kappa over `test` only. */
 function testPairs(item: GoldItem, review: Review, rows: readonly Disagreement[], r: Report): (readonly [Label, Label])[] {
   const pairs: (readonly [Label, Label])[] = [];
   for (const h of item.hypotheses) {
@@ -124,7 +141,7 @@ function testPairs(item: GoldItem, review: Review, rows: readonly Disagreement[]
     }
     if (row === undefined && model !== h.label) r.errors.push(`${item.id}/${h.h_id}: disagreement without a decision`);
     if (row !== undefined && (row.final !== h.label || row.model_label !== model)) r.errors.push(`${item.id}/${h.h_id}: disagreements.jsonl does not match the item`);
-    pairs.push([row?.owner_label ?? h.label, model]);
+    pairs.push([row?.labeller_label ?? h.label, model]);
   }
   return pairs;
 }
@@ -149,14 +166,15 @@ export function checkReviews(sets: GoldSets, rows: readonly Disagreement[], r: R
   }
 }
 
-/** Owner labels still to come: queued items (test + refused dev) without `labelled_by: "owner"`. */
-export function checkOwnerLabels(sets: GoldSets, queue: Readonly<Record<GoldSet, readonly string[]>>, r: Report): void {
-  const missing = SETS.flatMap((s) => queue[s].filter((id) => sets[s].find((i) => i.id === id)?.labelled_by !== "owner"));
-  const total = SETS.reduce((n, s) => n + queue[s].length, 0);
-  r.lines.push(`owner-labelled: ${String(total - missing.length)}/${String(total)} (test split + dev items the review could not label)`);
-  if (missing.length > 0) {
-    r.errors.push(`owner labels missing (P-53): ${String(missing.length)}/${String(total)} items: run \`pnpm eval:label\`, then \`pnpm eval:label --reconcile\``);
-  }
+/** Primary labels still to come: queued items (test + refused dev) without an `owner` or `claude:<id>` label. */
+export function checkQueueLabels(sets: GoldSets, queue: Readonly<Record<GoldSet, readonly string[]>>, r: Report): void {
+  const marks = SETS.flatMap((s) => queue[s].map((id) => sets[s].find((i) => i.id === id)?.labelled_by));
+  const labelled = marks.filter((m): m is LabelledBy => m !== undefined && isPrimaryLabel(m));
+  const by = [...new Set(labelled)].sort().map((m) => `${m} ${String(labelled.filter((x) => x === m).length)}`);
+  const total = String(marks.length);
+  r.lines.push(`labelled: ${String(labelled.length)}/${total} queued items (test split + dev items the review could not label)${by.length > 0 ? `: ${by.join(", ")}` : ""}`);
+  const missing = marks.length - labelled.length;
+  if (missing > 0) r.errors.push(`labels missing: ${String(missing)}/${total} queued items: run \`pnpm eval:label\`, then \`pnpm eval:label --reconcile\``);
 }
 
 export function checkSpend(byDay: ReadonlyMap<string, number>, r: Report): void {

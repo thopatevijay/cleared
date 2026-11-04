@@ -136,14 +136,27 @@ export const GoldHypothesisSchema = DraftHypothesisSchema.extend({
 export type GoldHypothesis = z.infer<typeof GoldHypothesisSchema>;
 
 /**
- * Who labelled an item (owner decision 2026-11-03, #45): the owner labels every `test` item; a `dev` item
- * takes the second-model review verbatim and is marked `model:<reviewer model id>` (never reported).
+ * Who labelled an item (owner decisions 2026-11-03 and 2026-11-04, #45). A `test` item is labelled by the
+ * owner or by Claude (`claude:<model id>`, a different vendor from every model under test or reviewing); a
+ * `dev` item takes the second-model review verbatim and is marked `model:<reviewer model id>` (never
+ * reported), unless the review cannot stand as a label, in which case it is labelled like a `test` item.
  */
-export const LabelledBySchema = z.union([z.literal("owner"), z.templateLiteral(["model:", z.string().min(1)])]);
+const ClaudeMarkSchema = z.templateLiteral(["claude:", z.string().min(1)]);
+export const LabelledBySchema = z.union([z.literal("owner"), ClaudeMarkSchema, z.templateLiteral(["model:", z.string().min(1)])]);
 export type LabelledBy = z.infer<typeof LabelledBySchema>;
+
+/** Who decided a disagreement: the owner or Claude (never the reviewer itself). */
+export const DecidedBySchema = z.union([z.literal("owner"), ClaudeMarkSchema]);
+export type DecidedBy = z.infer<typeof DecidedBySchema>;
 
 /** The `labelled_by` mark of an item adopted from a review by `model`. */
 export const modelLabel = (model: string): LabelledBy => `model:${model}`;
+
+/** A primary label (owner or Claude), as opposed to one adopted from the second-model review. */
+export const isPrimaryLabel = (by: LabelledBy): by is DecidedBy => by === "owner" || by.startsWith("claude:");
+
+/** The model id behind a `claude:` or `model:` mark; null for the owner. */
+export const labellerModel = (by: LabelledBy): string | null => (by === "owner" ? null : by.slice(by.indexOf(":") + 1));
 
 export const GoldItemSchema = DraftItemSchema.extend({
   hypotheses: z.array(GoldHypothesisSchema).min(1),
@@ -157,10 +170,12 @@ export const DisagreementSchema = z.object({
   set: z.enum(SETS),
   item_id: z.string(),
   h_id: z.string(),
-  owner_label: LabelSchema,
+  /** the item's primary label before reconciling (owner or Claude, see the item's `labelled_by`) */
+  labeller_label: LabelSchema,
   model_label: LabelSchema,
   model: z.string(),
   final: LabelSchema,
   reason: z.string().min(1),
+  decided_by: DecidedBySchema,
 });
 export type Disagreement = z.infer<typeof DisagreementSchema>;

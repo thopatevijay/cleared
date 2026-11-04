@@ -1,17 +1,17 @@
 // `pnpm eval:validate [--pii]`
 // Default: checks the labelled gold sets (schema, counts, per-label minimums, injection items, EN/HI
-// pairs, verbatim spans, seeded split, who labelled each item (owner on test; owner or model:<reviewer>
-// on dev), a non-production review, test-split disagreements and kappa) and the spend ledger; prints the
+// pairs, verbatim spans, seeded split, who labelled each item (owner or claude:<id> on test; model:<reviewer>
+// or a primary label on dev), a non-production review, test-split disagreements and kappa) and the spend ledger; prints the
 // report and exits 1 on any error.
 // --pii: scans the drafts, the reviews and the gold sets for real-looking emails, phones and PayPal ids.
 import { existsSync, readFileSync } from "node:fs";
 import { relative } from "node:path";
-import { ownerQueue } from "./adopt.ts";
+import { labelQueue } from "./adopt.ts";
 import {
   checkCounts,
   checkCoverage,
   checkHolds,
-  checkOwnerLabels,
+  checkQueueLabels,
   checkReviews,
   checkSpans,
   checkSpend,
@@ -37,7 +37,7 @@ export function validate(): Report {
   checkSpans(sets, r);
   checkReviews(sets, readJsonl(DISAGREEMENTS_FILE, DisagreementSchema), r);
   checkSpend(spendByDay(existsSync(SPEND_FILE) ? readFileSync(SPEND_FILE, "utf8") : ""), r);
-  checkOwnerLabels(sets, bySet((s) => ownerQueue(drafts[s], readJsonl(reviewFile(s), ReviewSchema)).map((d) => d.id)), r);
+  checkQueueLabels(sets, bySet((s) => labelQueue(drafts[s], readJsonl(reviewFile(s), ReviewSchema)).map((d) => d.id)), r);
   return r;
 }
 
