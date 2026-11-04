@@ -2,9 +2,9 @@
 // with data behind a session, so this wrapper:
 //   1. starts `next start` and the worker on the msw PayPal stub (as playwright.config.ts does; no network),
 //   2. creates a demo seller (POST /api/demo) and seeds the judge path (e2e/support/journey.ts),
-//   3. runs `lhci collect` twice into one result set: the public pages without a cookie, then the
-//      signed-in pages with the session cookie in the browser's jar (lhci-session.cjs; a cookie on the
-//      landing page would redirect it to the dashboard),
+//   3. runs `lhci collect` into one result set: the public pages without a cookie, then each signed-in
+//      page with the session cookie in the browser's jar (lhci-session.cjs; a cookie on the landing page
+//      would redirect it to the dashboard), one fresh browser per run so every run starts cold,
 //   4. runs `lhci assert` (lighthouserc.json: LCP ≤ 3200 ms, CLS ≤ 0.1, TBT ≤ 200 ms, median of 3 runs on
 //      Lighthouse's mobile preset: simulated Slow 4G and 4× CPU) and `lhci upload`.
 // Any other lhci command passes straight through. `--upload.*`, `--collect.*` and `--assert.*` options are
@@ -149,6 +149,14 @@ async function seedSeller(): Promise<{ cookies: { name: string; value: string }[
   }
 }
 
+/** lighthouserc.json's `numberOfRuns` (the median is taken over these). */
+function collectRuns(): number {
+  const rc = JSON.parse(readFileSync(join(root, "lighthouserc.json"), "utf8")) as {
+    ci: { collect: { numberOfRuns?: number } };
+  };
+  return rc.ci.collect.numberOfRuns ?? 1;
+}
+
 function rcWith(collect: Record<string, unknown>): string {
   const base = JSON.parse(readFileSync(join(root, "lighthouserc.json"), "utf8")) as {
     ci: { collect: Record<string, unknown> & { settings?: Record<string, unknown> } };
@@ -187,23 +195,28 @@ async function autorun(args: readonly string[]): Promise<void> {
       ...a.collect,
       ...a.all,
     ]);
-    // one lhci process (and so one fresh browser, with only the session cookie) per URL, so no page
-    // starts from the cache or state another URL left behind
+    // one lhci process (and so one fresh browser, with only the session cookie) per URL *and per run*.
+    // `disableStorageReset` also keeps the HTTP cache, and lhci runs the puppeteer script once per URL, so
+    // with 3 runs in one browser, runs 2 and 3 loaded every script and font from cache: LCP ≈ 0.82 s
+    // against ≈ 3.15 s cold, and the median was a warm run (M4-08). Every run now starts cold.
     for (const url of urls) {
-      lhci([
-        "collect",
-        "--additive",
-        `--config=${rcWith({
-          url: [url],
-          // lhci resolves the script against its cwd (the repo root)
-          puppeteerScript: "apps/web/scripts/lhci-session.cjs",
-          puppeteerLaunchOptions: { args: ["--no-sandbox"] },
-          // Lighthouse clears the origin's cookies before each run unless told not to
-          settings: { disableStorageReset: true },
-        })}`,
-        ...a.collect,
-        ...a.all,
-      ]);
+      for (let run = 0; run < collectRuns(); run++) {
+        lhci([
+          "collect",
+          "--additive",
+          `--config=${rcWith({
+            url: [url],
+            numberOfRuns: 1,
+            // lhci resolves the script against its cwd (the repo root)
+            puppeteerScript: "apps/web/scripts/lhci-session.cjs",
+            puppeteerLaunchOptions: { args: ["--no-sandbox"] },
+            // Lighthouse clears the origin's cookies before each run unless told not to
+            settings: { disableStorageReset: true },
+          })}`,
+          ...a.collect,
+          ...a.all,
+        ]);
+      }
     }
   } finally {
     for (const p of procs) if (p.pid !== undefined) process.kill(-p.pid, "SIGTERM");

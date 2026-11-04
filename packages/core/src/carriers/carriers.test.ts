@@ -1,37 +1,37 @@
 import { describe, expect, it } from "vitest";
 import {
   adviseRoute,
-  API_CARRIERS,
+  apiCarriers,
   carrierCountry,
   carrierDisplayName,
   carrierTier,
   classifyCarrier,
   countryFromTimeZone,
   matchCarrier,
-  SHIPPED_BY_DROPDOWN,
+  shippedByDropdown,
   TIER_SOURCES,
 } from "./index.ts";
 
 describe("carrier data files", () => {
   it("each file names its source, date and a count that matches its list", () => {
-    expect(SHIPPED_BY_DROPDOWN.source.length).toBeGreaterThan(0);
-    expect(SHIPPED_BY_DROPDOWN.captured_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(SHIPPED_BY_DROPDOWN.count).toBe(SHIPPED_BY_DROPDOWN.codes.length);
-    expect(API_CARRIERS.source).toBe("https://developer.paypal.com/docs/tracking/reference/carriers/");
-    expect(API_CARRIERS.retrieved_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(API_CARRIERS.count).toBe(API_CARRIERS.carriers.length);
+    expect(shippedByDropdown().source.length).toBeGreaterThan(0);
+    expect(shippedByDropdown().captured_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(shippedByDropdown().count).toBe(shippedByDropdown().codes.length);
+    expect(apiCarriers().source).toBe("https://developer.paypal.com/docs/tracking/reference/carriers/");
+    expect(apiCarriers().retrieved_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(apiCarriers().count).toBe(apiCarriers().carriers.length);
   });
 
   it("every dropdown code except OTHER is in the API list (the dropdown is a subset)", () => {
-    const api = new Set(API_CARRIERS.carriers.map((c) => c.code));
-    const missing = SHIPPED_BY_DROPDOWN.codes.filter((c) => c !== "OTHER" && !api.has(c));
+    const api = new Set(apiCarriers().carriers.map((c) => c.code));
+    const missing = shippedByDropdown().codes.filter((c) => c !== "OTHER" && !api.has(c));
     expect(missing).toEqual([]);
-    expect(SHIPPED_BY_DROPDOWN.codes).toContain("OTHER");
+    expect(shippedByDropdown().codes).toContain("OTHER");
   });
 
   it("every API-list code from outside the developer page cites a known source and a PayPal debug id", () => {
-    const sources = new Set(API_CARRIERS.additional_sources.map((s) => s.id));
-    const extra = API_CARRIERS.carriers.filter((c) => c.source !== undefined);
+    const sources = new Set(apiCarriers().additional_sources.map((s) => s.id));
+    const extra = apiCarriers().carriers.filter((c) => c.source !== undefined);
     // Exactly the 9 dropdown codes the sandbox track API accepted on 2026-11-02 (fixtures/paypal/tracking/carrier-probe/).
     expect(extra.map((c) => c.code)).toEqual([
       "_2EBOX",
@@ -51,8 +51,8 @@ describe("carrier data files", () => {
   });
 
   it("no code is listed twice", () => {
-    expect(new Set(API_CARRIERS.carriers.map((c) => c.code)).size).toBe(API_CARRIERS.count);
-    expect(new Set(SHIPPED_BY_DROPDOWN.codes).size).toBe(SHIPPED_BY_DROPDOWN.count);
+    expect(new Set(apiCarriers().carriers.map((c) => c.code)).size).toBe(apiCarriers().count);
+    expect(new Set(shippedByDropdown().codes).size).toBe(shippedByDropdown().count);
   });
 });
 
@@ -94,8 +94,8 @@ describe("two-tier map", () => {
     expect(classifyCarrier("IND_DELHIVERY")?.source).toBe(TIER_SOURCES.approved);
     expect(classifyCarrier("INDIA_POST")?.source).toBe(TIER_SOURCES.accepted);
     expect(classifyCarrier("OTHER", "Local courier")?.source).toBe(TIER_SOURCES.other);
-    expect(TIER_SOURCES.approved.date).toBe(SHIPPED_BY_DROPDOWN.captured_at);
-    expect(TIER_SOURCES.accepted.url).toBe(API_CARRIERS.source);
+    expect(TIER_SOURCES.approved.date).toBe(shippedByDropdown().captured_at);
+    expect(TIER_SOURCES.accepted.url).toBe(apiCarriers().source);
   });
 });
 

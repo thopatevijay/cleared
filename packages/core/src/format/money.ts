@@ -2,6 +2,7 @@
 // amount never passes through a float. PayPal's minor units win over Intl's (HUF, JPY, TWD: none).
 // Indian grouping (1,00,000.00) comes from the hi-IN / en-IN locale data. Never converts currencies.
 import { CURRENCY_EXPONENTS, isCurrencyCode } from "../currency.ts";
+import { numberFormat } from "./intl-cache.ts";
 
 /** `narrowSymbol` → "$120.00", `name` → "120.00 US dollars" (accessible name), `code` → "USD 120.00". */
 export type MoneyDisplay = "narrowSymbol" | "name" | "code";
@@ -27,7 +28,7 @@ export function formatMoney(
   const whole = compact && /^-?\d+(?:\.0+)?$/.test(value);
   const digits = whole ? 0 : isCurrencyCode(currency) ? CURRENCY_EXPONENTS[currency] : undefined;
   try {
-    return new Intl.NumberFormat(locale, {
+    return numberFormat(locale, {
       style: "currency",
       currency,
       currencyDisplay: display,
@@ -46,7 +47,7 @@ export function formatMoney(
 export function formatExchangeRate(rate: string, from: string, to: string, locale: string): string {
   if (!isDecimal(rate)) return `1 ${from} = ${rate} ${to}`;
   const fraction = rate.split(".")[1]?.length ?? 0;
-  const n = new Intl.NumberFormat(locale, {
+  const n = numberFormat(locale, {
     numberingSystem: "latn",
     minimumFractionDigits: fraction,
     maximumFractionDigits: fraction,

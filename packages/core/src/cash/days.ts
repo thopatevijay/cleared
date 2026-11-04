@@ -1,5 +1,6 @@
 // Calendar-day arithmetic for the cash calendar, without zod (M4-08): the calendar screen and its Bryntum
 // view use these in the browser. calendar.ts re-exports them.
+import { dateTimeFormat } from "../format/intl-cache.ts";
 
 export const DAY_MS = 86_400_000;
 
@@ -16,7 +17,7 @@ export function addDays(date: string, n: number): string {
 /** The calendar day of `iso` in `timeZone` (`YYYY-MM-DD`); an unknown zone falls back to UTC. */
 export function localDay(iso: string, timeZone: string): string {
   const fmt = (tz: string) =>
-    new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" });
+    dateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" });
   try {
     return fmt(timeZone).format(new Date(iso));
   } catch {
