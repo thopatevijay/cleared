@@ -1,0 +1,51 @@
+# README claims check (M5-01, `pnpm readme:check`). Separate from ci.yml because ci.yml skips markdown-only
+# PRs, and this check matters most exactly when README.md or docs/** change. Needs no DB and no secrets.
+# Runs when the README, docs, fixtures, the checker or package.json change, and whenever ci.yml runs.
+name: readme-check
+
+on:
+  pull_request:
+    # ci.yml's filter (non-markdown, ticket files), then re-include the inputs of the claims check.
+    paths:
+      - "**"
+      - "!**/*.md"
+      - ".github/plan/**"
+      - "README.md"
+      - "docs/**"
+      - "fixtures/paypal/**"
+      - "scripts/check-readme-claims.ts"
+      - "package.json"
+  push:
+    branches: [main]
+    paths:
+      - "**"
+      - "!**/*.md"
+      - ".github/plan/**"
+      - "README.md"
+      - "docs/**"
+      - "fixtures/paypal/**"
+      - "scripts/check-readme-claims.ts"
+      - "package.json"
+
+concurrency:
+  group: readme-check-${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  readme-check:
+    name: readme claims
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 (reads packageManager)
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm readme:check
