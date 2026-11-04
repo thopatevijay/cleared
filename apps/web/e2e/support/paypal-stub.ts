@@ -11,7 +11,7 @@
 //                           M0-06 response (SUCCESS). Everything else is refused (network error).
 import { randomBytes, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { http, HttpResponse, passthrough } from "msw";
+import { getResponse, http, HttpResponse, passthrough } from "msw";
 import { setupServer } from "msw/node";
 import {
   FIXTURES_DIR,
@@ -260,16 +260,31 @@ const webHandlers = [
   }),
 ];
 
-if (role === "worker" || role === "web") {
-  const server = setupServer(
-    // M2-05: the worker's AI calls replay the recorded OpenAI responses (openai-stub.ts)
-    ...(role === "worker" ? [...workerHandlers, ...openAiHandlers] : webHandlers),
-    // Nothing else leaves the process: no real PayPal, no passthrough.
-    http.all("*", ({ request }) => {
-      console.error(JSON.stringify({ service: "e2e-paypal-stub", msg: "refused", url: request.url }));
-      return HttpResponse.error();
-    }),
-  );
+// Nothing else leaves the process: no real PayPal, no passthrough.
+const refuse = http.all("*", ({ request }) => {
+  console.error(JSON.stringify({ service: "e2e-paypal-stub", msg: "refused", url: request.url }));
+  return HttpResponse.error();
+});
+
+if (role === "worker") {
+  // M2-05: the worker's AI calls replay the recorded OpenAI responses (openai-stub.ts)
+  const server = setupServer(...workerHandlers, ...openAiHandlers, refuse);
   server.listen({ onUnhandledFrame: "error" });
   console.log(JSON.stringify({ service: "e2e-paypal-stub", msg: "msw listening", role }));
+}
+
+if (role === "web") {
+  // BL-01 6634658835: the web process answers at the `fetch` level (the PayPal client's only transport)
+  // with the same handlers, but without msw's interceptors. Those patch the global Headers / Request
+  // classes, and under the patch the proxy's `new NextRequest(req, { headers })` (the per-request CSP)
+  // recorded every header twice: Next saw `next-url: /en/payments, /en/payments`, failed its RSC
+  // cache-busting check, answered each client navigation with a 307 to another `_rsc`, and the redirected
+  // response dropped the URL's hash (`#why`, `#tracking`). Without the stub, Next sees one value.
+  const handlers = [...webHandlers, refuse];
+  globalThis.fetch = async (input, init) => {
+    const res = await getResponse(handlers, new Request(input, init));
+    if (res === undefined || res.type === "error") throw new TypeError("fetch failed (e2e stub)");
+    return res;
+  };
+  console.log(JSON.stringify({ service: "e2e-paypal-stub", msg: "fetch stub installed", role }));
 }
