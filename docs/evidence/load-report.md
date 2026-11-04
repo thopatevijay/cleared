@@ -187,6 +187,8 @@ Top statements before: the pg-boss fetch (`WITH next AS (SELECT j.id FROM pgboss
 
 ## Cost
 
+**Production (AC 3, read in the Render dashboard on 2026-11-04 after cec22b1 went live at about 13:12Z / 6:42 pm IST):** `cleared-db` CPU (0.1-CPU limit) fell from **about 95–100 %**, its level for days, to **about 12–22 %** at idle. That's roughly a 5× drop in database CPU. Memory is unchanged at about 35–50 % of 0.25 GB. Route latency on production hasn't been re-measured yet; the next `pnpm load:launch` run (DEPLOY holder) should show whether the M4-06 p95 of 949 ms improves now that the database isn't saturated.
+
 OpenAI spend during the local burst was $0.0000 (`agent_runs`), and the production runs trigger no AI. PayPal calls: none from Cleared. Production made one public cert GET for self-verify.
 
 ## How to re-run
