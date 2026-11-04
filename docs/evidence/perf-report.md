@@ -170,3 +170,23 @@ Meeting LCP ≤ 2.5 s needs one of these, each beyond this ticket:
   data calls failing. It is not specific to Hindi. Now `apps/web/scripts/lhci-session.cjs` (an lhci
   `puppeteerScript`) puts the cookie in the jar, with `disableStorageReset`, one browser per URL.
   Every signed-in run now ends on its own URL.
+
+## Final result (owner decision 2026-11-04)
+Owner decision on #142: stop Lighthouse work here; the two remaining misses are accepted and documented, and features take priority. Final cold run (1d6b83e, 3 runs per URL, median run):
+
+| URL | LCP s (median run) | TBT ms | CLS |
+|---|---:|---:|---:|
+| /en | 2.71 | 82 | 0 |
+| /en/payments | 3.15 | 133 | 0 |
+| /hi/payments | 3.77 ✘ | 133 | 0 |
+| pack | 3.15 | 181 | 0 |
+| /en/holds | 3.00 | 123 | 0.075 |
+| hold | 3.17 | 146 | 0 |
+| dispute | 3.15 | 140 | 0 |
+| /en/calendar | 2.89 | 252 ✘ | 0 |
+
+- **Accepted miss:** `/hi/payments` LCP 3.77 s against 3.2 s. Cause: the Devanagari fonts (121 + 26 KB). The fix is known (subset the font for hi only) and not done.
+- **Accepted miss:** `/en/calendar` TBT 252 ms (range 252-283, one run 166) against 200 ms. Not investigated.
+- **Withdrawn:** the earlier "LCP 0.82 s" figures were warm-cache runs and are withdrawn.
+- **CI:** the `lighthouse ci` job is report-only (`continue-on-error: true`); budgets in `lighthouserc.json` are unchanged.
+- **Claim wording:** "6 of 8 audited routes within LCP ≤ 3.2 s / TBT ≤ 200 ms (Lighthouse mobile simulation, localhost)". Dashboard first-load JS is 185 KB against 200 (pass).
