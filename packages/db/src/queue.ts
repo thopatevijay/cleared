@@ -38,7 +38,9 @@ export async function createQueue(db: Db, opts: CreateQueueOptions = {}): Promis
     connectionString: connectionStringOf(db),
     schema: QUEUE_SCHEMA,
     max: opts.max ?? QUEUE_POOL_MAX,
-    ...(background ? {} : { supervise: false, schedule: false, migrate: false }),
+    // M5-PERF: the worker LISTENs, so a notify-enabled queue's consumers wake on a new job instead of
+    // polling every 2 s. A producer needs no listener: its insert emits the NOTIFY.
+    ...(background ? { useListenNotify: true } : { supervise: false, schedule: false, migrate: false }),
   });
   boss.on("error", (error: unknown) => {
     console.error(JSON.stringify({ service: "queue", msg: "pg-boss error", error: String(error) }));

@@ -10,12 +10,19 @@ import { scheduleDeadlineWatch } from "./jobs/deadline-watcher.ts";
 import { scheduleReconcile } from "./jobs/reconcile.ts";
 import { scheduleRetentionPurge } from "./jobs/retention-purge.ts";
 import { scheduleSynthetic } from "./jobs/synthetic-judge-path.ts";
+import {
+  cronWorkOptions,
+  DLQ_CONCURRENCY,
+  DLQ_POLLING_INTERVAL_SECONDS,
+  notifyPollingSeconds,
+  POLLING_INTERVAL_SECONDS,
+} from "./poll-intervals.ts";
 import type { Registry } from "./registry.ts";
+
+export { POLLING_INTERVAL_SECONDS } from "./poll-intervals.ts";
 
 /** Jobs in flight per queue per worker process (architecture §12). */
 export const CONCURRENCY = 5;
-/** pg-boss's default idle poll; tests pass 0.5 (its minimum). */
-export const POLLING_INTERVAL_SECONDS = 2;
 
 export interface WireDeps extends ConsumeDeps {
   readonly db: Db;
@@ -34,13 +41,28 @@ export interface WireDeps extends ConsumeDeps {
  */
 export const BURST_WHEN_READY_EXCEEDS = 1;
 
-export function workOptions(deps: Pick<WireDeps, "pollingIntervalSeconds">) {
+/**
+ * A registry queue's consumer. M5-PERF: while LISTEN/NOTIFY is up, an idle consumer polls only every
+ * `notifyPollingSeconds` (a new job wakes it at once); without the listener it falls back to the 2 s poll.
+ */
+export function workOptions(deps: Pick<WireDeps, "pollingIntervalSeconds">, queue = "") {
   return {
     localConcurrency: CONCURRENCY,
     burstWhenReadyExceeds: BURST_WHEN_READY_EXCEEDS,
     batchSize: 1,
     includeMetadata: true,
     pollingIntervalSeconds: deps.pollingIntervalSeconds ?? POLLING_INTERVAL_SECONDS,
+    notifyPollingIntervalSeconds: notifyPollingSeconds(deps, queue),
+  } as const;
+}
+
+/** M5-PERF: a dead-letter queue's consumer only logs, so one slot polling once a minute is enough. */
+export function deadLetterWorkOptions(deps: Pick<WireDeps, "pollingIntervalSeconds">) {
+  return {
+    localConcurrency: DLQ_CONCURRENCY,
+    batchSize: 1,
+    includeMetadata: true,
+    pollingIntervalSeconds: deps.pollingIntervalSeconds ?? DLQ_POLLING_INTERVAL_SECONDS,
   } as const;
 }
 
@@ -55,12 +77,12 @@ export function deadLetterHandler(queue: string): Handler {
 }
 
 export async function wireRegistry(deps: WireDeps, registry: Registry): Promise<void> {
-  const opts = workOptions(deps);
+  const dlqOpts = deadLetterWorkOptions(deps);
   for (const { queue, handler } of registry) {
     await ensureQueue(deps.boss, queue);
-    await deps.boss.work(queue.name, opts, consume(deps, queue.name, handler));
+    await deps.boss.work(queue.name, workOptions(deps, queue.name), consume(deps, queue.name, handler));
     const dlq = dlqName(queue.name);
-    await deps.boss.work(dlq, opts, consume(deps, dlq, deadLetterHandler(queue.name)));
+    await deps.boss.work(dlq, dlqOpts, consume(deps, dlq, deadLetterHandler(queue.name)));
   }
 }
 
@@ -70,14 +92,10 @@ export async function scheduleRelay(deps: WireDeps): Promise<void> {
     await deps.boss.createQueue(RELAY_QUEUE, { policy: "singleton", expireInSeconds: 60, retryLimit: 0 });
   }
   await deps.boss.schedule(RELAY_QUEUE, RELAY_CRON);
-  await deps.boss.work(
-    RELAY_QUEUE,
-    { pollingIntervalSeconds: workOptions(deps).pollingIntervalSeconds },
-    async () => {
-      const result = await relayOutbox({ ...deps, correlation: correlationIdOrNew });
-      if (result.stale > 0) deps.log.warn(result, "outbox relay re-sent unpublished rows");
-    },
-  );
+  await deps.boss.work(RELAY_QUEUE, cronWorkOptions(deps), async () => {
+    const result = await relayOutbox({ ...deps, correlation: correlationIdOrNew });
+    if (result.stale > 0) deps.log.warn(result, "outbox relay re-sent unpublished rows");
+  });
 }
 
 export async function wireWorker(deps: WireDeps, registry: Registry): Promise<void> {

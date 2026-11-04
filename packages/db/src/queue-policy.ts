@@ -36,6 +36,9 @@ export async function ensureQueue(boss: Queue, spec: QueueSpec): Promise<void> {
     retryBackoff: true,
     retryDelayMax: RETRY_DELAY_MAX_SECONDS,
     deadLetter: dlq,
+    // M5-PERF: a runnable job wakes its consumers by NOTIFY (in the inserting transaction, so on commit);
+    // the worker's idle poll is then only a backstop. The `.dlq` stays poll-only (it only logs).
+    notify: true,
   });
 }
 
@@ -46,6 +49,7 @@ interface QueueSettings {
   readonly retryBackoff?: boolean;
   readonly retryDelayMax?: number;
   readonly deadLetter?: string;
+  readonly notify?: boolean;
 }
 
 /** `createQueue` keeps an existing queue's settings, so an existing queue is updated to match. */

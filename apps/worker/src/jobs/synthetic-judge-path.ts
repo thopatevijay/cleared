@@ -29,6 +29,7 @@ import {
   type Queue,
 } from "@cleared/db";
 import { startSyntheticRun, syntheticProbes, type ProbeState } from "./synthetic-steps.ts";
+import { cronWorkOptions } from "../poll-intervals.ts";
 
 export interface SyntheticDeps {
   readonly db: Db;
@@ -195,11 +196,7 @@ export async function scheduleSynthetic(
     });
   }
   await deps.boss.schedule(OPS_SYNTHETIC_QUEUE, SYNTHETIC_CRON);
-  await deps.boss.work(
-    OPS_SYNTHETIC_QUEUE,
-    deps.pollingIntervalSeconds === undefined ? {} : { pollingIntervalSeconds: deps.pollingIntervalSeconds },
-    async () => {
-      await runSyntheticJudgePath(deps);
-    },
-  );
+  await deps.boss.work(OPS_SYNTHETIC_QUEUE, cronWorkOptions(deps), async () => {
+    await runSyntheticJudgePath(deps);
+  });
 }
