@@ -1,7 +1,7 @@
 {
   "date": "2026-11-04",
-  "spend_usd": 0.291453,
-  "cap_usd": 0.65,
-  "calls": 275,
-  "command": "pnpm eval --mode live --set all --split test"
+  "spend_usd": 0.025781,
+  "cap_usd": 0.1,
+  "calls": 30,
+  "command": "pnpm eval --mode live --set holds --split test"
 }

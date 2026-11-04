@@ -36,10 +36,10 @@ Measured on the `test` split of the synthetic gold sets: gold set labelled by Cl
 | Scope check (line verdicts) | 95.2% (118/124; 95% CI 89.8%–97.8%) | 31 packs | ≥ 90%: met |
 | Citations verbatim | 100.0% (349/349; 95% CI 98.9%–100.0%) | 349 citations | 100%: met |
 | Fact extraction (fields) | 95.8% (115/120; 95% CI 90.6%–98.2%) | 22 items | ≥ 90%: met |
-| Hold explanations (all checks) | 43.8% (7/16; 95% CI 23.1%–66.8%) | 16 explanations | ≥ 95%: **missed** |
+| Hold explanations (all checks) | 62.5% (10/16; 95% CI 38.6%–81.5%) | 16 explanations | ≥ 95%: **MISS** |
 | Adversarial cases | 100.0% (22/22; 95% CI 85.1%–100.0%) | 22 cases | 100%: met |
 
-Live run 2026-11-04: $0.2915 spent (cap $0.6500, 275 model calls). Commit `4add5e0`.
+Disclosures: The eval judge was revised to `eval_judge@v2` after run 1's test-split results had been seen (run 1's numbers are kept in the PR record). The holds prompt `explain_hold@v2` was tuned on the dev split only (hold-07, hold-10). Holds missed the 95% bar in runs 1, 2 and 3 and are reported as a miss (owner accepted 2026-11-04). The threshold, the judge and the gold were not changed to pass it. Holds gold labels may be wrong where the rule source states the fact verbatim (hold-10 `kyc_incomplete` is labelled unverifiable); an audit would be a disclosed post-hoc correction (BL-01). Live spend across all runs: $0.6582 (smoke runs x3 (holds, dev split) $0.0180; run 1 (all sets, test split) $0.3102; run 2 (all sets, test split) $0.2915; dev runs x2 (holds, dev split) $0.0120; worker fixtures (explain_hold@v2, 4 answers) $0.0007; run 3 (holds only, test split, explain_hold@v2) $0.0258). Replayed from recordings at commit `2deab57`.
 <!-- eval:end -->
 
 ## Future vision

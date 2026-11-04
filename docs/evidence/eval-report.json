@@ -1,8 +1,8 @@
 {
   "schema": "eval-report@v1",
-  "generated_at": "2026-11-04T07:00:44.929Z",
-  "commit": "4add5e0",
-  "mode": "live",
+  "generated_at": "2026-11-04T07:40:13.459Z",
+  "commit": "2deab57",
+  "mode": "replay",
   "split": "test",
   "claims": {
     "wording": "gold set labelled by Claude (independent of the OpenAI models under test), cross-checked by a second model",
@@ -20,15 +20,15 @@
   "prompt_versions": [
     "extract@v1",
     "check_scope@v1",
-    "explain_hold@v1",
+    "explain_hold@v2",
     "eval_judge@v2"
   ],
   "live_run": {
     "date": "2026-11-04",
-    "spend_usd": 0.291453,
-    "cap_usd": 0.65,
-    "calls": 275,
-    "command": "pnpm eval --mode live --set all --split test"
+    "spend_usd": 0.025781,
+    "cap_usd": 0.1,
+    "calls": 30,
+    "command": "pnpm eval --mode live --set holds --split test"
   },
   "sets": {
     "extraction": {
@@ -164,19 +164,19 @@
       "items": 16,
       "hypotheses": 64,
       "accuracy": {
-        "k": 7,
+        "k": 10,
         "n": 16,
-        "rate": 0.4375,
+        "rate": 0.625,
         "ci95": [
-          0.23098652405492354,
-          0.6682144360118811
+          0.38641040545502714,
+          0.8151876744113636
         ]
       },
       "per_label": {
         "met": {
           "precision": 1,
-          "recall": 0.7916666666666666,
-          "f1": 0.8837209302325582,
+          "recall": 0.875,
+          "f1": 0.9333333333333333,
           "support": 48
         },
         "partial": {
@@ -186,9 +186,9 @@
           "support": 0
         },
         "missing": {
-          "precision": 0.6153846153846154,
+          "precision": 0.7272727272727273,
           "recall": 1,
-          "f1": 0.761904761904762,
+          "f1": 0.8421052631578948,
           "support": 16
         },
         "unverifiable": {
@@ -198,17 +198,17 @@
           "support": 0
         }
       },
-      "macro_f1": 0.8228128460686601,
-      "cost_per_pack_usd": 0.00015599374999999998,
+      "macro_f1": 0.8877192982456141,
+      "cost_per_pack_usd": 0.00016222625000000002,
       "latency": {
         "eval_judge": {
-          "p50_ms": 2878,
-          "p95_ms": 3818,
+          "p50_ms": 2804,
+          "p95_ms": 3751,
           "runs": 16
         },
         "explain_hold": {
-          "p50_ms": 1985,
-          "p95_ms": 3762,
+          "p50_ms": 2462,
+          "p95_ms": 5167,
           "runs": 16
         }
       },
@@ -216,12 +216,12 @@
       "threshold": 0.95,
       "pass": false,
       "fact_accuracy": {
-        "k": 54,
+        "k": 58,
         "n": 64,
-        "rate": 0.84375,
+        "rate": 0.90625,
         "ci95": [
-          0.7357193822745122,
-          0.912851576617934
+          0.810171204003544,
+          0.9563217474148016
         ]
       },
       "rule_ok": {
@@ -245,15 +245,15 @@
       "forbidden_claims": 0,
       "fallbacks": 1,
       "pair_parity": {
-        "k": 4,
+        "k": 8,
         "n": 8,
-        "rate": 0.5,
+        "rate": 1,
         "ci95": [
-          0.21521606221387757,
-          0.7847839377861224
+          0.6755924351161198,
+          1
         ]
       },
-      "judge_cost_usd": 0.024934000000000005
+      "judge_cost_usd": 0.023681000000000004
     }
   },
   "adversarial": {
@@ -428,7 +428,7 @@
     "runs": 247,
     "max_calls_per_run": 2,
     "max_output_tokens_step": 747,
-    "max_run_latency_ms": 15358,
+    "max_run_latency_ms": 28,
     "pass": true
   },
   "pass": false
