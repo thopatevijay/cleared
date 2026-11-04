@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { attentionRank, captureStatusKey, formatAmount, formatTime } from "./format.ts";
+import { attentionRank, captureStatusKey, formatAmount, formatBytes, formatTime } from "./format.ts";
+
+describe("formatBytes", () => {
+  it("one decimal in MB, whole KB, and never rounds a file under the 10 MB limit up to 10 MB", () => {
+    expect(formatBytes("en-IN", 2_400_000)).toBe("2.4 MB");
+    expect(formatBytes("en-IN", 126_400)).toBe("126 KB");
+    expect(formatBytes("en-IN", 9_990_000)).toBe("9.99 MB");
+    expect(formatBytes("en-IN", 9_999_999)).toBe("9.99 MB");
+    expect(formatBytes("en-IN", 9_940_000)).toBe("9.9 MB");
+    expect(formatBytes("en-IN", 10_000_000)).toBe("10 MB");
+    expect(formatBytes("hi-IN", 9_990_000)).toBe("9.99 MB");
+  });
+});
 
 describe("formatAmount", () => {
   it("narrow symbol + ISO code, spoken name, Latin digits in Hindi", () => {
