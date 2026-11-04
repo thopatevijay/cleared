@@ -350,7 +350,7 @@ test("AC 8: /hi renders every string from hi.json (no missing-key warnings)", as
   }
   // the dashboard's pack strings in Hindi (summary count, sub-line, Add proof)
   await page.goto("/hi/payments");
-  await expect(page.getByTestId("summary-proof-ready")).toContainText("0 भुगतान सबूत के साथ तैयार");
+  await expect(page.getByTestId("summary-proof-ready")).toContainText("कोई सबूत पैक तैयार नहीं");
   await expect(page.getByTestId("pack-line")).toContainText("सबूत पैक:");
   await expect(page.getByTestId("add-proof")).toHaveText("सबूत जोड़ें");
   // sweep M5 (BL-01 6609551440 item 6): at 375 px a row reads its status before its action

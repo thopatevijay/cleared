@@ -70,7 +70,8 @@ function DisputeFact({
 }
 
 /**
- * dashboard.md 3c (M2-05): the proof-ready count, a link that filters the list (`?filter=proof-ready`).
+ * dashboard.md 3c (M2-05): the proof-pack count ("2 proof packs ready"), a link that filters the list
+ * (`?filter=proof-ready`; the hyphenated term is the URL value only, so the copy never breaks at a hyphen).
  * Zero is plain text like "Nothing held" and "Nothing in dispute": a filter to an empty list is not a
  * useful link (BL-01 6604837005 item 8, sweep M5). An active filter keeps the link (its aria-current).
  */
@@ -79,13 +80,13 @@ function ProofReadyFact({ count, active }: { count: number; active: boolean }) {
   if (count === 0 && !active)
     return (
       <Fact icon={FileCheck} testId="summary-proof-ready">
-        {t("proofReady", { count })}
+        {t("proofReadyZero")}
       </Fact>
     );
   return (
     <Link
       href={{ pathname: "/payments", query: { filter: "proof-ready" } }}
-      aria-label={t("proofReadyName", { count })}
+      aria-label={count === 0 ? undefined : t("proofReadyName", { count })}
       aria-current={active ? "true" : undefined}
       className="inline-flex min-h-11 items-start gap-2 underline decoration-border-strong underline-offset-4 hover:decoration-accent"
       data-testid="summary-proof-ready"
@@ -93,7 +94,7 @@ function ProofReadyFact({ count, active }: { count: number; active: boolean }) {
       <span className="flex h-[1lh] shrink-0 items-center">
         <FileCheck aria-hidden="true" size={22} strokeWidth={1.75} className="text-text-muted" />
       </span>
-      <span>{t("proofReady", { count })}</span>
+      <span>{count === 0 ? t("proofReadyZero") : t("proofReady", { count })}</span>
     </Link>
   );
 }

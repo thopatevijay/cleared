@@ -223,8 +223,14 @@ describe("sample scenarios", () => {
 describe("review-hold pool explainer (M3-10)", () => {
   it("badged, with the ticket's words in EN and a HI translation", () => {
     const out = html(<ReviewPoolNote />);
-    expect(text(out)).toContain("Sandbox Review holds need a buyer approval; see README for timing");
+    expect(text(out)).toContain("Sandbox This demo has no payment-review hold");
+    expect(out).toContain('<code lang="en" class="font-mono text-sm">PENDING_REVIEW</code>');
+    expect(out).toContain('<code lang="en"');
     expect(out).toContain('data-testid="review-pool-note"');
-    expect(text(html(<ReviewPoolNote />, "hi"))).toContain("README");
+    // plain-language and self-contained: no pointer to the README (sweep M5 decision 5)
+    expect(text(out)).not.toContain("README");
+    const hi = text(html(<ReviewPoolNote />, "hi"));
+    expect(hi).toContain("सैंडबॉक्स");
+    expect(hi).not.toContain("README");
   });
 });

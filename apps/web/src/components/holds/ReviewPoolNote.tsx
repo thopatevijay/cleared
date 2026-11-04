@@ -15,7 +15,15 @@ export function ReviewPoolNote() {
         <FlaskConical aria-hidden="true" size={14} strokeWidth={1.75} />
         {t("badge")}
       </span>
-      <span>{t("body")}</span>
+      <span className="min-w-0 flex-1 basis-60">
+        {t.rich("body", {
+          code: (chunks) => (
+            <code lang="en" className="font-mono text-sm">
+              {chunks}
+            </code>
+          ),
+        })}
+      </span>
     </p>
   );
 }

@@ -19,6 +19,7 @@ import { RouteAdvice, RouteAdviceLine } from "../tracking/RouteAdvice.tsx";
 import { DeclarationControl } from "./DeclarationControl.tsx";
 import { GuidedCompleted } from "./GuidedCompleted.tsx";
 import { HeldLines } from "./HeldLines.tsx";
+import { ActionSlot } from "./HoldDetailView.tsx";
 
 const ID = "0f1d4f0e-3d5b-4b8e-9f7a-1c2d3e4f5a61";
 const tracking = trackingSummary({
@@ -189,5 +190,24 @@ describe("the seller's declaration (BL-01 6570499264)", () => {
     expect(m).not.toContain(en.holds.completed.intro);
     expect(m).toContain("so marking it Completed won't change its estimate");
     expect(m).toContain("Effect on release unconfirmed");
+  });
+});
+
+describe("the action slot's closing line (hold.md, sweep M5 decision 5)", () => {
+  it("the goods/service question is open: 'answering is optional', never 'nothing to do' under it (EN/HI)", () => {
+    const m = text(render(<ActionSlot d={review()} onChanged={noop} />));
+    expect(m).toContain(en.holds.detail.declareFirst);
+    expect(m).not.toContain(en.holds.detail.nothingToDo);
+    const h = text(render(<ActionSlot d={review()} onChanged={noop} />, "hi"));
+    expect(h).toContain(hi.holds.detail.declareFirst);
+    expect(h).not.toContain(hi.holds.detail.nothingToDo);
+  });
+
+  it("not declarable with no action: 'No action needed in Cleared', which can't contradict the steps", () => {
+    const d = review({ type: "other", declaration: decl({ declarable: false }) });
+    const m = text(render(<ActionSlot d={d} onChanged={noop} />));
+    expect(m).toContain("No action needed in Cleared.");
+    expect(m).not.toContain(en.holds.detail.declareFirst);
+    expect(m).not.toContain("Nothing to do");
   });
 });

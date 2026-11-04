@@ -29,7 +29,9 @@ describe("SummaryBar zero facts", () => {
     const out = html(<SummaryBar held={[]} proofReady={0} filter={null} inDispute={[]} />);
     expect(out).not.toContain("<a ");
     expect(proofFact(out)).toMatch(/^<span/);
-    expect(out).toContain("0 payments proof-ready");
+    expect(out).toContain("No proof packs ready");
+    // the copy has no hyphenated "proof-ready" to break at 375 px (the term is the URL filter value only)
+    expect(html(<SummaryBar held={[]} proofReady={2} filter={null} inDispute={[]} />)).toContain("2 proof packs ready");
   });
 
   it("a non-zero count, or an active proof-ready filter, keeps the filter link", () => {
@@ -37,5 +39,6 @@ describe("SummaryBar zero facts", () => {
     const active = proofFact(html(<SummaryBar held={[]} proofReady={0} filter="proof-ready" inDispute={[]} />));
     expect(active).toMatch(/^<a/);
     expect(active).toContain('aria-current="true"');
+    expect(active).not.toContain("aria-label");
   });
 });
