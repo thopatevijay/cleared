@@ -16,6 +16,7 @@ export type NewOpsCheck = Omit<typeof opsChecks.$inferInsert, "id">;
 export interface PollCapture {
   readonly workspaceId: string;
   readonly captureId: string;
+  readonly status: string;
 }
 export interface PollDispute {
   readonly workspaceId: string;
@@ -108,7 +109,7 @@ export function reconcileTargetsRepo(db: Db) {
     /** Owned captures that are PENDING, or that PayPal changed since `recentSince`. */
     async captures(recentSince: Date, tx?: Executor): Promise<PollCapture[]> {
       const r = await (tx ?? db).execute(sql`
-        select p.workspace_id as "workspaceId", p.capture_id as "captureId"
+        select p.workspace_id as "workspaceId", p.capture_id as "captureId", p.status as "status"
         from payments p
         join paypal_resource_owner o
           on o.resource_type = 'capture' and o.resource_id = p.capture_id and o.workspace_id = p.workspace_id

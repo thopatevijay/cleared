@@ -334,4 +334,4 @@ Not applicable: Cleared puts nothing on-chain.
 - **Main cost driver:** the LLM. Cost per pack is therefore the tracked metric.
 - **Next bottlenecks:**
   - Blob storage in Postgres moves to S3 behind the BlobStore adapter at > 5 GB.
-  - The reconcile poll re-fetches every owned capture changed in the last 72 h every 15 min, up to 2,000 per tick (one tick re-queued ~1,850 after the measured burst). At 100× that's thousands of PayPal GETs per tick, so it should poll only non-terminal captures (BL-01 6603617791).
+  - The reconcile poll (tiered, BL-01 6603617791): PENDING captures every 15 min tick, recently changed (72 h) settled captures once an hour (hash bucket, 1 tick in 4), up to 2,000 per tick. At 100× that's about 5k PayPal GETs an hour for settled captures instead of per tick (4× fewer); a missed refund is caught within 1 h.
