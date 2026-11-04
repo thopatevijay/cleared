@@ -6,7 +6,7 @@ These are the measured numbers behind architecture §1's load and latency target
 
 | Target (architecture §1) | Measured | Where | Result |
 |---|---|---|---|
-| Dashboard and read routes p95 < 800 ms, launch load (20 concurrent sessions) | **FAIL** on production: overall p95 **949.4 ms** (p50 432.6, p99 1,724.7), 0 errors in 2,985 requests; 7 of 13 routes over 800 ms (worst `GET /api/payments` p95 1,413.5 ms). Client-side from Pune, network floor p95 337.3 ms. Local reference: worst route p95 38.9 ms, 0 errors in 679 requests | production / local | **FAIL** (p95; errors PASS) |
+| Dashboard and read routes p95 < 800 ms, launch load (20 concurrent sessions) | **FAIL** on production, re-measured 2026-11-04 after M5-PERF: overall p95 **912.3 ms** (p50 330.6, p99 1,485.6), 0 errors in 3,021 requests; 9 of 13 routes over 800 ms (worst page `/en/payments` p95 1,331.5 ms). Client-side from Pune, network floor p95 296.4 ms. First run (2026-11-03): p95 949.4 ms. Local reference: worst route p95 38.9 ms, 0 errors in 679 requests | production / local | **FAIL** (p95; errors PASS) |
 | Webhook ack p95 < 500 ms, production | server-side p95 **1 ms** (p99 4 ms, n = 1,500). Client-side from Pune, India, p95 **344.1 ms**, network floor alone p95 320.9 ms. 0 × 5xx | Render, Oregon | PASS |
 | Forged signature refused fast | **401**, server-side p95 1 ms (client-side p95 337.3 ms, n = 300) | Render, Oregon | PASS (status 401, not 400; see [Deviations](#deviations-from-the-ticket-text)) |
 | 100× burst ack p95 < 500 ms | **15.7 ms** (n = 2,100 unique events plus 105 redeliveries) | local, production build | PASS |
@@ -116,6 +116,43 @@ What it does:
 
 **Render CPU and memory** for web and Postgres during the run: the Render CLI has no metrics command and the agent holds no API key (BL-01 6603618375). The owner reads the dashboard Metrics tab for the run window and adds the peaks here.
 
+## Production launch load, re-run after M5-PERF (2026-11-04)
+
+- **Run:** 2026-11-04 13:31:08Z → 13:41:13Z. Production web and worker on `cec22b1` (M5-PERF, #150; Render deploys list: Live, finished 13:12:36Z). The load script ran from the `161df9f` checkout (docs-only changes since). `pnpm load:launch --target https://cleared-web-gd1b.onrender.com --sessions 20 --minutes 10`, from Pune, India. The burst line was not run.
+- **Result:** `pnpm load:assert --p95 800 --err 0.005` → **FAIL (9)**. The error rate passes (0.000%, 0 × 5xx in 3,021 requests). The p95 target fails on 9 of 13 routes. Overall p95 **912.3 ms**, p50 330.6 ms, p99 1,485.6 ms. The thresholds were not changed. Against the first run (949.4 / 432.6 / 1,724.7 ms) the p95 moved by 4 %, so the target is **not met**.
+- **Network floor:** `/healthz` from the load machine p50 250.2 ms, p95 296.4 ms. Client-side numbers include that round trip.
+
+| Route | n | p50 ms | p95 ms | p99 ms | max ms | statuses | errors |
+|---|---:|---:|---:|---:|---:|---|---:|
+| GET /api/disputes | 230 | 287.6 | 650.5 | 885.5 | 4241.8 | 200×230 | 0 |
+| GET /api/disputes/[id] | 231 | 314.6 | 940 | 1344.9 | 5704.8 | 200×231 | 0 |
+| GET /api/holds | 234 | 314.6 | 793.7 | 1146.9 | 4326 | 200×234 | 0 |
+| GET /api/holds/[id] | 234 | 302.3 | 612.8 | 885.5 | 5672.3 | 200×234 | 0 |
+| GET /api/notifications | 231 | 279.2 | 507.2 | 842.5 | 4786.2 | 200×231 | 0 |
+| GET /api/packs/[id] | 233 | 314.6 | 842.5 | 1413.5 | 5351.2 | 200×233 | 0 |
+| GET /api/payments | 232 | 340.7 | 876.7 | 2324.6 | 6600.6 | 200×232 | 0 |
+| page /en/disputes | 233 | 317.7 | 940 | 1331.5 | 3392.2 | 200×233 | 0 |
+| page /en/disputes/[id] | 231 | 383.9 | 987.9 | 1318.4 | 5614.4 | 200×231 | 0 |
+| page /en/holds | 233 | 314.6 | 859.4 | 1331.5 | 3226.2 | 200×233 | 0 |
+| page /en/holds/[id] | 235 | 380.1 | 949.4 | 1344.9 | 4119.1 | 200×235 | 0 |
+| page /en/payments (dashboard) | 232 | 543.8 | 1331.5 | 1982.5 | 7093.9 | 200×232 | 0 |
+| page /en/payments/[id]/pack | 232 | 380.1 | 1102.2 | 2419 | 5816.8 | 200×232 | 0 |
+| healthz (network floor) | 20 | 250.2 | 296.4 | 362.1 | 362.1 | 200×20 | 0 |
+| **all** | 3021 | 330.6 | 912.3 | 1485.6 | 7093.9 | 5xx×0 | 0.00% |
+
+Server-side (render logs, `durationMs`; the log sample again returned only three routes):
+
+| Route | n | p50 ms | p95 ms | p99 ms | max ms |
+|---|---:|---:|---:|---:|---:|
+| /api/notifications | 231 | 10.1 | 187.5 | 324.1 | 2937 |
+| /api/disputes | 230 | 15.1 | 317.7 | 549.2 | 3266 |
+| /api/disputes/[id] | 231 | 44.3 | 522.6 | 940 | 3520 |
+
+Server-side p50 fell sharply against the first run (`/api/disputes` 104.3 → 15.1 ms, `/api/notifications` 90.7 → 10.1, `/api/disputes/[id]` 302.3 → 44.3), and p95 fell too (372.6 → 317.7, 293.4 → 187.5, 850.9 → 522.6). The tail did not go away: `/api/disputes/[id]` is still over the 400 ms server-side budget at p95, and max values of 3–7 s remain on every route. The client-side p95 barely moved, so the database CPU was not the main cause of the tail. The budget for the other four of the seven M4-08 routes could not be checked server-side (not in the log sample). The cause of the remaining tail is not established by this run; the Render Metrics tab for the window (`web` CPU) is the next place to look.
+
+- **Cleanup:** the launch purged its 20 workspaces (320 rows); `pnpm db:count --tag loadtest --target production` prints 0.
+- **Cost:** no OpenAI spend and no PayPal call (read-only journey).
+
 ## M4-08 follow-up: the data routes (2026-11-03)
 
 The production launch run on `379d4e4` (#50) had 0 errors, but its overall p95 was 949 ms against 800. Seven routes were over: `GET /api/payments` 1,413 ms, `/api/disputes/[id]` 1,170, `/api/packs/[id]` 968, `/api/holds` 940, the page `/en/holds/[id]` 886, the page `/en/payments/[id]/pack` 826 and `/api/holds/[id]` 818. The network floor from Pune was p95 337 ms. M4-08 (#142) worked on the server side of those routes.
@@ -177,7 +214,7 @@ Top statements before: the pg-boss fetch (`WITH next AS (SELECT j.id FROM pgboss
 
 **Tests:** `apps/worker/test/work-options.test.ts` (intervals per consumer kind, backstop ≥ fallback), `apps/worker/test/listen-notify.int.test.ts` (every known queue has `notify` and its `.dlq` doesn't; a send from a second pg-boss instance wakes a consumer whose fallback and backstop polls are both 30 s, in under 5 s), `scenario.int.test.ts` "M5-PERF" (back-off 30 → 60 → 120 → 120 s; a webhook sync resets it to 30 s; a state change resets it to 30 s), and core `judge-dispute.test.ts` (`nextPollDelayMs`).
 
-**Production:** to be read by the manager after deploy. Record Render `cleared-db` CPU and the route latencies here.
+**Production:** `cleared-db` CPU and the route latencies are recorded under Cost and in [the re-run](#production-launch-load-re-run-after-m5-perf-2026-11-04).
 
 ## Deviations from the ticket text
 
@@ -187,7 +224,7 @@ Top statements before: the pg-boss fetch (`WITH next AS (SELECT j.id FROM pgboss
 
 ## Cost
 
-**Production (AC 3, read in the Render dashboard on 2026-11-04 after cec22b1 went live at about 13:12Z / 6:42 pm IST):** `cleared-db` CPU (0.1-CPU limit) fell from **about 95–100 %**, its level for days, to **about 12–22 %** at idle. That's roughly a 5× drop in database CPU. Memory is unchanged at about 35–50 % of 0.25 GB. Route latency on production hasn't been re-measured yet; the next `pnpm load:launch` run (DEPLOY holder) should show whether the M4-06 p95 of 949 ms improves now that the database isn't saturated.
+**Production (AC 3, read in the Render dashboard on 2026-11-04 after cec22b1 went live at about 13:12Z / 6:42 pm IST):** `cleared-db` CPU (0.1-CPU limit) fell from **about 95–100 %**, its level for days, to **about 12–22 %** at idle. That's roughly a 5× drop in database CPU. Memory is unchanged at about 35–50 % of 0.25 GB. Route latency was re-measured the same day (see [the re-run](#production-launch-load-re-run-after-m5-perf-2026-11-04)): overall p95 912.3 ms against 949.4 ms before, so the 800 ms target is still not met.
 
 OpenAI spend during the local burst was $0.0000 (`agent_runs`), and the production runs trigger no AI. PayPal calls: none from Cleared. Production made one public cert GET for self-verify.
 

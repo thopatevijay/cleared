@@ -154,7 +154,7 @@ The miss in detail ([eval report](docs/evidence/eval-report.md), [JSON](docs/evi
 **Load**:
 - A 100× webhook burst on a local production build: 2,100 events, ack p95 **15.7 ms**, 0 duplicates, 0 dead letters, queue drained in **35 s** ([load report §1](docs/evidence/load-report.md#1-100-webhook-burst-local-production-like-stack)).
 - Production webhook ack, server-side: p95 **1 ms** ([§2](docs/evidence/load-report.md#2-production-webhook-burst)).
-- Production launch load (20 concurrent sessions on Render's Starter plan): overall p95 **949.4 ms** against a target of 800 ms: **not met** ([launch load](docs/evidence/load-report.md#production-launch-load)). The production database (0.1 CPU) is the bottleneck; a fix that cuts its idle load is in progress, and no result is claimed for it yet.
+- Production launch load (20 concurrent sessions on Render's Starter plan): overall p95 **912.3 ms** against a target of 800 ms: **not met** ([launch load](docs/evidence/load-report.md#production-launch-load-re-run-after-m5-perf-2026-11-04)). This is after the idle database load fix; the run before it measured 949.4 ms. 9 of 13 routes are still over 800 ms and 0 requests failed.
 
 ## Limits
 
