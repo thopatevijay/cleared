@@ -878,7 +878,7 @@
     "who": "owner",
     "how": "paypalaihackathon.devpost.com → Join hackathon (logged in as the owner) → accept the rules",
     "lands_in": "Devpost account",
-    "status": "pending",
+    "status": "done",
     "required": true
   },
   {
@@ -892,7 +892,7 @@
     "who": "owner",
     "how": "youtube.com → profile → Create a channel (if none) → studio.youtube.com → Settings → Channel → Feature eligibility: verify phone",
     "lands_in": "YouTube account",
-    "status": "pending",
+    "status": "done",
     "required": true
   },
   {
