@@ -24,7 +24,7 @@ const UNTRACKED_LATER = [
   ".github/plan",
   "docs/engineering-standards.md",
 ];
-const FORBIDDEN: readonly [RegExp, string][] = [
+export const FORBIDDEN: readonly [RegExp, string][] = [
   [
     /seller (has )?won|won the dispute/i,
     '"seller won" (say "the seller keeps the money (PayPal covered the case)")',
@@ -103,10 +103,10 @@ export function checkEndpoints(lines: readonly Line[], recorded: ReadonlySet<str
 }
 
 /** Measured numbers: values with a unit, k/n fractions, "k of n", and costs with 4 decimals. */
-const MEASURED =
+export const MEASURED =
   /\$\d+\.\d{4}\b|\b\d+ of \d+\b|\b\d+\/\d+\b(?![/\w])|\b\d[\d,]*(?:\.\d+)?\s?(?:%|ms\b|KB\b|s\b)/g;
 /** Bold marks and thousands separators dropped, a number and its unit joined ("200 %" = "200%"). */
-const squash = (s: string): string =>
+export const squash = (s: string): string =>
   s
     .replace(/\*/g, "")
     .replace(/(\d),(?=\d{3}\b)/g, "$1")
@@ -114,7 +114,7 @@ const squash = (s: string): string =>
     .replace(/\s+/g, " ");
 
 /** The README text without link targets and URLs, so `item?id=…` and paths aren't read as numbers. */
-const withoutUrls = (text: string): string =>
+export const withoutUrls = (text: string): string =>
   text
     .replace(/\]\([^)]*\)/g, "]")
     .replace(/https?:\/\/\S+/g, "")
@@ -138,7 +138,7 @@ export function jsonTokens(v: unknown, out: Set<string> = new Set()): Set<string
 }
 
 /** True when `token` appears in the evidence file (squashed text match, or a rendered JSON number). */
-function inEvidence(token: string, file: string): boolean {
+export function inEvidence(token: string, file: string): boolean {
   const raw = readFileSync(join(ROOT, file), "utf8");
   if (file.endsWith(".json")) return jsonTokens(JSON.parse(raw) as unknown).has(squash(token));
   // whole numbers only: "1 ms" must not match inside "21 ms" or "1.5 ms"
