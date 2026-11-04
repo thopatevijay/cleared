@@ -29,6 +29,7 @@
     "security:check-doc": "node scripts/check-security-doc.ts",
     "runbook:check": "node scripts/check-runbook.ts",
     "readme:check": "node scripts/check-readme-claims.ts",
+    "devpost:check": "node scripts/check-devpost.ts",
     "eval": "pnpm --filter @cleared/evals --if-present run eval",
     "eval:validate": "pnpm --filter @cleared/evals --if-present run eval:validate",
     "eval:check-readme": "pnpm --filter @cleared/evals --if-present run eval:check-readme",
