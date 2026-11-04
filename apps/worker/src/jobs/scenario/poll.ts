@@ -1,17 +1,19 @@
-// `scenario.poll` (M2-10 step 4): every 30 s, a targeted dispute sync and capture sync for this run's ids
-// only (works without webhooks, e.g. on a local stack). It stops at a terminal state (dispute RESOLVED and
-// the capture no longer PENDING) or 60 minutes after the chargeback; a finished run schedules nothing, and
-// a late poll job for a finished run is a no-op (`lockForStep`). States are only ever PayPal's, mirrored by
-// the M2-06 / M1-04 syncs; the run records what it observed.
+// `scenario.poll` (M2-10 step 4): a targeted dispute sync and capture sync for this run's ids only (works
+// without webhooks, e.g. on a local stack). M5-PERF: every 30 s while PayPal's state moves, backing off to
+// 2 min while it doesn't (core `nextPollDelayMs`); any change, or any sync since the last poll (a webhook),
+// resets it to 30 s. It stops at a terminal state (dispute RESOLVED and the capture no longer PENDING) or
+// 60 minutes after the chargeback; a finished run schedules nothing, and a late poll job for a finished run
+// is a no-op (`lockForStep`). States are only ever PayPal's, mirrored by the M2-06 / M1-04 syncs; the run
+// records what it observed.
 import {
+  nextPollDelayMs,
   pollExpired,
   pollVerdict,
   recordMilestones,
-  SCENARIO_POLL_INTERVAL_MS,
   WorkspaceIdSchema,
   type PollVerdict,
 } from "@cleared/core";
-import { forWorkspace, SCENARIO_POLL_QUEUE } from "@cleared/db";
+import { forWorkspace, SCENARIO_POLL_QUEUE, type ScenarioRunRow } from "@cleared/db";
 import type { ConsumeContext, Handler } from "../../consume.ts";
 import { syncCapture } from "../capture-sync.ts";
 import { syncDispute } from "../dispute-sync.ts";
@@ -25,6 +27,20 @@ import {
 } from "./shared.ts";
 
 export type PollOutcome = PollVerdict | "skipped";
+
+type Ws = ReturnType<typeof forWorkspace>;
+type SyncOutcome = Awaited<ReturnType<typeof syncDispute>>;
+
+const isChange = (o: SyncOutcome): boolean => o === "inserted" || o === "changed";
+
+/** Whether the dispute or capture mirror was synced after the last poll (a webhook, or another re-fetch). */
+async function syncedSinceLastPoll(ws: Ws, run: ScenarioRunRow, ctx: ConsumeContext): Promise<boolean> {
+  const last = run.lastPolledAt;
+  if (last === null || run.disputeId === null || run.captureId === null) return false;
+  const dispute = await ws.disputes.getByDisputeId(run.disputeId, ctx.tx);
+  const payment = await ws.payments.getByCaptureId(run.captureId, ctx.tx);
+  return (dispute?.syncedAt ?? last) > last || (payment?.syncedAt ?? last) > last;
+}
 
 export async function runPollStep(
   deps: ScenarioDeps,
@@ -49,9 +65,12 @@ export async function runPollStep(
     ctx.log.warn({ scenarioId: run.id }, "scenario poll gave up after 60 minutes");
     return "timed_out";
   }
-  await syncDispute(deps, { disputeId: run.disputeId, source: "poll" }, ctx);
-  await syncCapture(deps, { captureId: run.captureId, source: "poll" }, ctx);
   const ws = forWorkspace(deps.db, WorkspaceIdSchema.parse(job.workspaceId));
+  const woken = await syncedSinceLastPoll(ws, run, ctx);
+  const d = await syncDispute(deps, { disputeId: run.disputeId, source: "poll" }, ctx);
+  const c = await syncCapture(deps, { captureId: run.captureId, source: "poll" }, ctx);
+  const moved = woken || isChange(d) || isChange(c);
+  const unchanged = moved ? 0 : (steps.poll?.unchanged ?? 0) + 1;
   const dispute = await ws.disputes.getByDisputeId(run.disputeId, ctx.tx);
   const payment = await ws.payments.getByCaptureId(run.captureId, ctx.tx);
   const observed = { disputeStatus: dispute?.status ?? null, captureStatus: payment?.status ?? null };
@@ -67,7 +86,7 @@ export async function runPollStep(
       lastPolledAt: now,
       steps: {
         ...steps,
-        poll: { at: now.toISOString(), count: polls, ...observed, captureReason },
+        poll: { at: now.toISOString(), count: polls, ...observed, captureReason, unchanged },
         seen: recordMilestones(
           steps.seen ?? {},
           {
@@ -88,10 +107,10 @@ export async function runPollStep(
   if (verdict === "continue") {
     await enqueueStep(deps, ctx, SCENARIO_POLL_QUEUE, job, {
       key: `poll:${String(polls + 1)}`,
-      startAfter: new Date(now.getTime() + SCENARIO_POLL_INTERVAL_MS),
+      startAfter: new Date(now.getTime() + nextPollDelayMs(unchanged)),
     });
   }
-  ctx.log.info({ scenarioId: run.id, polls, ...observed, verdict }, "scenario polled");
+  ctx.log.info({ scenarioId: run.id, polls, ...observed, unchanged, verdict }, "scenario polled");
   return verdict;
 }
 

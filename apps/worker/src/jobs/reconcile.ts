@@ -42,6 +42,7 @@ import {
 import { NO_SNAPSHOT } from "../actions/hold-action.ts";
 import { DisputeSnapshotSchema } from "./action-runtime.ts";
 import { raiseAlerts, runSloChecks, type SloAlert, type StoredCheck } from "./slo-checks.ts";
+import { cronWorkOptions } from "../poll-intervals.ts";
 
 export const BUCKET_MS = 15 * 60_000;
 /** `pg_try_advisory_xact_lock` key of the reconcile tick. */
@@ -201,13 +202,9 @@ export async function scheduleReconcile(
     });
   }
   await deps.boss.schedule(OPS_RECONCILE_QUEUE, RECONCILE_CRON);
-  await deps.boss.work(
-    OPS_RECONCILE_QUEUE,
-    deps.pollingIntervalSeconds === undefined ? {} : { pollingIntervalSeconds: deps.pollingIntervalSeconds },
-    async () => {
-      await runReconcile(deps);
-    },
-  );
+  await deps.boss.work(OPS_RECONCILE_QUEUE, cronWorkOptions(deps), async () => {
+    await runReconcile(deps);
+  });
   // `/readyz` needs a tick within 30 minutes: don't wait up to 15 for the first cron one
   await deps.boss.send(OPS_RECONCILE_QUEUE, {});
 }

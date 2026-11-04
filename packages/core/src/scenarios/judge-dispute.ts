@@ -26,6 +26,12 @@ export const SCENARIO_STEP_STATES: Readonly<
 /** The scenario's payment: one card capture of $120.00 USD (the design's synthetic "logo redesign"). */
 export const SCENARIO_AMOUNT = { currency_code: "USD", value: "120.00" } as const;
 export const SCENARIO_POLL_INTERVAL_MS = 30_000;
+/**
+ * M5-PERF: the poll backs off while PayPal's state stays the same (30 s, 60 s, then 2 min), and drops back
+ * to 30 s on any change or any sync between polls (a webhook). 2 min keeps a timeline milestone at most
+ * 2 min late: M0-05's steps came ≈ 3.5 min apart.
+ */
+export const SCENARIO_POLL_MAX_INTERVAL_MS = 120_000;
 /** The poll gives up 60 minutes after the chargeback (M0-05 measured ≈ 21.5 min end to end). */
 export const SCENARIO_POLL_LIMIT_MS = 60 * 60_000;
 /** An active run older than this has lost its job chain (dead-lettered); a new start may close it. */
@@ -82,6 +88,8 @@ export const ScenarioStepsSchema = z.object({
       disputeStatus: z.string().nullable(),
       captureStatus: z.string().nullable(),
       captureReason: z.string().nullable(),
+      /** M5-PERF: polls in a row that saw no change (absent on runs from before the back-off) */
+      unchanged: z.number().int().nonnegative().optional(),
     })
     .optional(),
   /**
@@ -151,6 +159,15 @@ export function isTerminal(o: PollObservation): boolean {
 export function pollVerdict(startedAtMs: number, nowMs: number, o: PollObservation): PollVerdict {
   if (isTerminal(o)) return "resolved";
   return nowMs - startedAtMs >= SCENARIO_POLL_LIMIT_MS ? "timed_out" : "continue";
+}
+
+/**
+ * M5-PERF: the delay before the next poll, after `unchanged` polls in a row that saw no change: 30 s
+ * doubled per unchanged poll, capped at 2 min. 0 (something changed) is the base 30 s.
+ */
+export function nextPollDelayMs(unchanged: number): number {
+  const steps = Number.isFinite(unchanged) ? Math.min(Math.max(0, Math.floor(unchanged)), 16) : 0;
+  return Math.min(SCENARIO_POLL_INTERVAL_MS * 2 ** steps, SCENARIO_POLL_MAX_INTERVAL_MS);
 }
 
 /** True when the poll may not even run: the run is already past its 60-minute window. */
