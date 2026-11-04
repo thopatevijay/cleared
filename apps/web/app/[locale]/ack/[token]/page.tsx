@@ -83,7 +83,13 @@ export default async function AckPage({ params }: { params: Promise<{ locale: st
           </>
         )}
       </main>
-      <footer className="mx-auto max-w-[640px] px-4 pb-8 text-xs text-text-muted">{t("footer")}</footer>
+      {/* nothing can be confirmed on the neutral page, so no "records this confirmation" footer (BL-01
+          6569408949 item 10, sweep M5) */}
+      {ack === null ? null : (
+        <footer className="mx-auto max-w-[640px] px-4 pb-8 text-xs text-text-muted" data-testid="ack-footer">
+          {t("footer")}
+        </footer>
+      )}
     </>
   );
 }
