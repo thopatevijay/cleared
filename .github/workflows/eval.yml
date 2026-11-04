@@ -1,6 +1,6 @@
 # Live eval (M4-02): the gold sets through the real workflows on OpenAI, with a per-run spend cap
-# (EVAL_MAX_USD). Runs on PRs labelled `eval`, on PRs that change prompts, schemas or model config, nightly,
-# and on demand. It records fresh responses and writes the report, uploads both as an artefact, and
+# (EVAL_MAX_USD). Runs only on PRs labelled `eval` and on demand (never automatically on push; the paths
+# check below only reminds authors to add the label). It records fresh responses and writes the report, uploads both as an artefact, and
 # commits nothing: a person commits the recordings when a prompt, model or schema change is meant to land.
 # PR CI (ci.yml, job `eval-replay`) replays the committed recordings offline instead.
 # Actions are pinned to commit SHAs (tag in the trailing comment).
@@ -41,21 +41,18 @@ jobs:
           # prompts, output schemas, the harness, model config and pricing, and the eval itself
           pattern='^(packages/core/src/(agent|proof|disputes|ai)/|packages/core/src/holds/rules\.ts|packages/adapters/src/ai/|packages/evals/(src|gold)/|render\.yaml|\.env\.example)'
           if git diff --name-only "$BASE" HEAD | grep -qE "$pattern"; then
+            echo "::notice::prompt, schema or model change: add the \`eval\` label to run the live eval (about \$0.31) before merging"
             echo "ai=true" >> "$GITHUB_OUTPUT"
           else
             echo "ai=false" >> "$GITHUB_OUTPUT"
           fi
 
+  # live eval on label/manual only: owner 2026-11-04 (#46), ≈ $0.31 per run
   live:
     name: live eval
-    needs: [changes]
-    # always() lets dispatch run although `changes` is skipped for them
     if: >-
-      always() && (
-        github.event_name != 'pull_request' ||
-        contains(github.event.pull_request.labels.*.name, 'eval') ||
-        needs.changes.outputs.ai == 'true'
-      )
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'eval')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:

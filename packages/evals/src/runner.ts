@@ -10,6 +10,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { parseArgs } from "node:util";
 import { setupServer } from "msw/node";
+import { gatePasses, holdsAccepted } from "./accepted-misses.ts";
 import { evaluate, EVAL_SETS, RUN_FILE, type EvalSet, type LiveRun, type Split } from "./evaluate.ts";
 import { createRecorder, STALE_MESSAGE, type EvalMode } from "./recording.ts";
 import { README, readmeBlock, REPORT_JSON, withReadmeBlock, writeReport, type EvalReport } from "./report.ts";
@@ -70,7 +71,7 @@ function summary(r: EvalReport): string[] {
   const { extraction: e, scope: s, holds: h } = r.sets;
   if (e) out.push(`extraction  n=${String(e.items)} items / ${String(e.hypotheses)} facts  accuracy ${pct(e.accuracy.rate)}  ${e.pass ? "PASS" : "MISS (≥ 90%)"}`);
   if (s) out.push(`scope       n=${String(s.items)} packs / ${String(s.hypotheses)} lines  accuracy ${pct(s.accuracy.rate)}  macro-F1 ${s.macro_f1.toFixed(3)}  verbatim ${pct(s.verbatim.rate)} (n=${String(s.verbatim.n)})  ${s.pass ? "PASS" : "MISS (≥ 90%, verbatim 100%)"}`);
-  if (h) out.push(`holds       n=${String(h.items)} explanations / ${String(h.hypotheses)} facts  accuracy ${pct(h.accuracy.rate)}  ${h.pass ? "PASS" : "MISS (≥ 95%)"}`);
+  if (h) out.push(`holds       n=${String(h.items)} explanations / ${String(h.hypotheses)} facts  accuracy ${pct(h.accuracy.rate)}  ${h.pass ? "PASS" : holdsAccepted(r) ? "MISS (≥ 95%) · accepted (#46)" : "MISS (≥ 95%)"}`);
   if (r.adversarial) out.push(`adversarial n=${String(r.adversarial.cases.length)} cases  passed ${pct(r.adversarial.passed.rate)}  ${r.adversarial.pass ? "PASS" : "MISS (100%)"}`);
   for (const c of r.adversarial?.cases.filter((x) => !x.pass) ?? []) out.push(`  adversarial fail ${c.id}: ${c.detail}`);
   out.push(`trajectory  runs=${String(r.trajectory.runs)} max calls/run ${String(r.trajectory.max_calls_per_run)}  ${r.trajectory.pass ? "PASS" : "MISS"}`);
@@ -111,7 +112,7 @@ async function main(): Promise<number> {
   }
   for (const line of summary(report)) console.log(line);
   if (args.report || args.mode === "live") emit(args.mode === "live" ? { ...report, live_run: readLiveRunSync() } : report, args.out);
-  return report.pass ? 0 : 1;
+  return gatePasses(report) ? 0 : 1;
 }
 
 function commandLine(a: Args): string {

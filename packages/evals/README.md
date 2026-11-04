@@ -37,9 +37,22 @@ node --env-file=<main checkout>/.env -e 'require("node:child_process").execFileS
 ## Branch rule
 
 A PR that changes a **prompt, an output schema, the harness or the model config** merges only with a
-green **live** eval (CLAUDE.md). `.github/workflows/eval.yml` runs it on such PRs (paths check), on PRs
-labelled `eval` and on demand (`workflow_dispatch`; no nightly run: budget, BL-01 6624696324), and uploads the report and recordings as an artefact; it commits
-nothing. Commit the new recordings and the regenerated report with the change, so PR CI's replay is green.
+green **live** eval (CLAUDE.md). `.github/workflows/eval.yml` runs it **only** on PRs labelled `eval` and
+on demand (`workflow_dispatch`); never automatically on push (owner 2026-11-04, #46: about $0.31 per run;
+no nightly run either: budget, BL-01 6624696324). A paths check on PRs only prints a reminder to add the
+label. The run uploads the report and recordings as an artefact and commits nothing. Commit the new
+recordings and the regenerated report with the change, so PR CI's replay is green.
+
+## Gating and accepted misses
+
+The 95% holds bar is unchanged and stays in every report, the README block and the runner output, where
+holds reads `MISS (≥ 95%) · accepted (#46)`. The gate (`pnpm eval` exit code, `src/accepted-misses.ts`)
+treats holds as an accepted miss: it passes only at or above the recorded baseline (explanations 10/16,
+facts 58/64, rule, language and EN/HI parity 100%, forbidden claims 0) and fails on any regression below it.
+Every other set keeps its absolute threshold.
+
+Raising the baseline, or removing the accepted miss once holds meets 95%, needs a new owner decision on
+#46. The baseline is a regression guard, not a claim: accuracy claims still cite the report with *n*.
 
 ## Scoring (code first)
 

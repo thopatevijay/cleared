@@ -145,7 +145,7 @@ export function readmeBlock(r: EvalReport): string {
   if (s.holds) rows.push(`| Hold explanations (all checks) | ${ci(s.holds.accuracy)} | ${String(s.holds.items)} explanations | ≥ 95%: ${ok(s.holds.pass)} |`);
   if (r.adversarial) rows.push(`| Adversarial cases | ${ci(r.adversarial.passed)} | ${String(r.adversarial.cases.length)} cases | 100%: ${ok(r.adversarial.pass)} |`);
   const kappa = Object.entries(r.claims.kappa).map(([k, v]) => `${k} ${v.toFixed(3)}`).join(", ");
-  const live = `Disclosures: ${DISCLOSURES.slice(0, 2).join(" ")} ${DISCLOSURES[2]} ${spendLine()}`;
+  const live = `Disclosures: ${DISCLOSURES.slice(0, 3).join(" ")} ${spendLine()}`;
   return [
     README_START,
     `Measured on the \`${r.split}\` split of the synthetic gold sets: ${r.claims.wording} (kappa = ${kappa}). Models: \`${r.models.small}\` (extract, explain), \`${r.models.large}\` (scope check); explanations judged by \`${r.models.judge}\` for "fact conveyed" only. Full report: [docs/evidence/eval-report.md](docs/evidence/eval-report.md).`,
