@@ -103,4 +103,4 @@ English, then repeat steps 1, 3 and 6 in Hindi. Mark each line **pass / fail + w
 | 11 | Notifications bell | "Notifications, n unread, button"; the panel opens on its heading | | |
 | 12 | Language switch → हिन्दी | the page is read in Hindi (`lang="hi"`); PayPal codes and the wordmark in English | | |
 
-Result: _to be filled by the owner_ (date, device, OS and Safari versions).
+Result: **all 12 steps pass on macOS Safari and iOS Safari, and steps 1, 3 and 6 pass in Hindi**. Reported by the owner on 2026-11-04 against production `eb12b48` (https://cleared-web-gd1b.onrender.com). The owner reported an overall pass; device, OS and Safari versions and the per-step utterances were not recorded.
