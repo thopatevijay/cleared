@@ -24,9 +24,9 @@ Accuracy claims are only credible against labelled ground truth (B6 #10; CLAUDE.
 - **Split:** about 25% `dev` (for prompt work) and 75% `test` (reported). The split is fixed by a seeded hash of `id`
 - **Process:**
   1. `pnpm eval:draft` drafts **unlabelled** synthetic cases with `OPENAI_MODEL_LARGE`. The generator prompt and model ID are stored next to the data
-  2. The **owner labels** every `test` item, and any `dev` item the review cannot label. The other `dev` items take the second model's labels via `pnpm eval:adopt-dev` and are marked `model:<id>` (owner decision 2026-11-03, #45). The owner labels with `pnpm eval:label`, a terminal tool that shows each item and records the label, spans (selected by quote, offsets computed) and a note. This step carries the `owner` label
+  2. **Claude labels** every `test` item, and any `dev` item the review cannot label, marked `claude:<model id>` (owner decision 2026-11-04, #45; `ext-004`, labelled earlier by the owner, stays `owner`). The other `dev` items take the second model's labels via `pnpm eval:adopt-dev` and are marked `model:<id>` (owner decision 2026-11-03). Labels go through `pnpm eval:label` (terminal, or `--from <answers> --by claude:<id>`), which records the label, spans (selected by quote, offsets computed) and a one-line rationale. The owner spot-checks 5 seeded-random `test` items (`gold/spotcheck.md`)
   3. A **second model** labels independently with `pnpm eval:review`. Its model differs from the one the workflow under test uses for that task
-  4. Disagreements are written to `disagreements.jsonl`: both labels, the owner's final decision and the reason. Owner vs second-model agreement is reported as Cohen's kappa per set
+  4. Disagreements are written to `disagreements.jsonl`: both labels, the final decision, the reason and `decided_by` (`owner` | `claude:<id>`). Labeller vs second-model agreement is reported as Cohen's kappa per set
 - `pnpm eval:validate` checks every span (verbatim at its offsets), the counts, the per-label minimums, the split ratio and the schema
 - The spend of each run is recorded in `packages/evals/gold/SPEND.md` (tokens and USD, from `agent_runs`-style accounting) and stays within the OPENAI budget
 
@@ -40,8 +40,8 @@ Accuracy claims are only credible against labelled ground truth (B6 #10; CLAUDE.
 
 - [ ] `pnpm eval:validate` exits 0. It prints the counts: extraction 30, scope 40, holds 20. Every label has ≥ 8 scope items, there are ≥ 5 injection items, and holds split 10 EN / 10 HI
 - [ ] Every span's `quote` equals `text.slice(start, end)` of its document (validated by the script; 0 mismatches)
-- [ ] Every `test` item has `labelled_by: "owner"`, and every `dev` item has `labelled_by: "owner"` or `"model:<id>"`, where the id is that item's reviewer and differs from the task's production model (a `dev` item the review cannot label, e.g. a `met` with no verbatim span, goes to the owner). Every item has a `review` record from a non-production model. All of this is validated *(amended by owner decision 2026-11-03, #45)*
-- [ ] `disagreements.jsonl` has one row per owner/reviewer disagreement on `test` items, each with a final decision and reason. Kappa per set is computed over `test` items only and printed by `pnpm eval:validate` *(amended 2026-11-03)*
+- [ ] Every `test` item has `labelled_by` of `"owner"` or `"claude:<id>"`, and every `dev` item has `"owner"` or `"model:<id>"` (the id is that item's reviewer), where no labeller id equals the task's production model. A `dev` item the review cannot label (e.g. a `met` with no verbatim span, `scope-028`) is labelled like a `test` item. Every item has a `review` record from a non-production model. All of this is validated *(amended by owner decisions 2026-11-03 and 2026-11-04, #45)*
+- [ ] `disagreements.jsonl` has one row per labeller/reviewer disagreement on `test` items, each with a final decision, a reason and `decided_by` (`owner` | `claude:<id>`). Kappa per set is computed over `test` items only and printed by `pnpm eval:validate` *(amended 2026-11-03 and 2026-11-04)*
 - [ ] A PII scan (`pnpm eval:validate --pii`) finds no real-looking emails, phone numbers or PayPal IDs outside the reserved synthetic patterns (`example.com`, `+91-00000-…`)
 - [ ] Recorded generator and reviewer responses are saved under `fixtures/openai/gold/`, so drafting replays without spend (`pnpm eval:draft --replay` produces byte-identical output)
 - [ ] The spend recorded in `SPEND.md` is ≤ the OPENAI daily budget on each day it ran
@@ -68,6 +68,6 @@ diff -r "$out" packages/evals/gold/drafts
 
 ## Handoff
 
-- **M4-02** reads the schema and the three `.jsonl` sets (test split for the report, dev split for prompt work) and the injection items. It reports metrics on `test` only, and any claim says "owner-labelled test split, n = …"
-- **M5-01 / M5-03** cite the method from `packages/evals/gold/README.md` (synthetic, owner-labelled, second-model reviewed, kappa)
+- **M4-02** reads the schema and the three `.jsonl` sets (test split for the report, dev split for prompt work) and the injection items. It reports metrics on `test` only, and any claim says "gold set labelled by Claude (independent of the OpenAI models under test), cross-checked by a second model (kappa = …) and spot-checked by the owner (n = 5)"; never "owner-labelled" or "human-labelled"
+- **M5-01 / M5-03** cite the method from `packages/evals/gold/README.md` (synthetic, labelled by Claude, second-model reviewed with kappa, owner spot-check n = 5)
 - Comment on the issue with the counts, kappa per set, the number of disagreements and the total spend

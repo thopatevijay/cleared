@@ -28,7 +28,7 @@ Schema: `packages/evals/src/gold/schema.ts` (`GoldItemSchema`, exported as `@cle
   `seller_won`, `exact_release_date`.
 - `injection: true` (6 scope items): the buyer chat contains an instruction aimed at an AI reviewer.
   The labels are what they would be without that line. M4-02 reuses these items.
-- `intended_label` is the generator's target. It is never shown to the owner or the reviewer, and it is
+- `intended_label` is the generator's target. It is never shown to the labeller (Claude or the owner) or the reviewer, and it is
   not ground truth.
 
 ## Spread
@@ -67,43 +67,70 @@ Goods and services alternate. Hold scenarios: `PENDING_REVIEW` ×2 (`payment_rev
    | scope | `gpt-6.1-terra` (LARGE, `check_scope`) | `gpt-5.4-mini-2026-03-17` |
    | holds | `gpt-6-luna` (SMALL, `explain_hold`) | `gpt-6.1-terra` (LARGE) |
 
-   **Who labels what** (owner decision 2026-11-03, #45): the owner labels all 69 `test` items
-   (22 extraction, 31 scope, 16 holds), which are the only items M4-02 reports, plus `scope-028` from
-   `dev` (step 4). That's 70 items, all `labelled_by: "owner"`. The other 20 `dev` items (8 / 8 / 4)
-   are used only for prompt work and never reported. They take the second-model review's labels and
-   spans verbatim and are marked `labelled_by: "model:<reviewer model id>"`, so they're never presented
-   as owner labels.
+   **Who labels what** (owner decisions 2026-11-03 and 2026-11-04, #45): **Claude**
+   (`claude-opus-5-5`, Anthropic: a different vendor from every model under test and every reviewer,
+   all OpenAI) labels the 69 `test` items (22 extraction, 31 scope, 16 holds), which are the only items
+   M4-02 reports, plus `scope-028` from `dev` (step 4), marked `labelled_by: "claude:claude-opus-5-5"`.
+   One item, `ext-004`, was labelled by the owner before that decision and stays `labelled_by: "owner"`.
+   The other 20 `dev` items (8 / 8 / 4) are used only for prompt work and never reported. They take the
+   second-model review's labels and spans verbatim and are marked `labelled_by: "model:<reviewer model
+   id>"`. No labeller id may be the task's production model.
 4. **Dev items from the review** (`pnpm eval:adopt-dev`). A deterministic step with no API call and
    no spend. It copies each `dev` item's review into `gold/<set>.jsonl` after checking every span
    (verbatim at its offsets, at least one for `met`/`partial`, none for `unverifiable`). A `dev` item
    whose review fails any check is refused: nothing is written for it, no rule is relaxed, and it joins
-   the owner's queue. One item is refused: **`scope-028`**. Its reviewer labelled H2 `met`, but the
+   the labelling queue. One item is refused: **`scope-028`**. Its reviewer labelled H2 `met`, but the
    only quote skips a line of the handover, so it isn't verbatim and no span is left. Re-running the
-   step writes the same bytes and keeps every owner label.
-5. **Owner labels** (`pnpm eval:label`, P-53; `--split test` is the default and the only choice). A
-   terminal tool shows each queued item's documents and hypotheses (the `test` items plus `scope-028`)
-   and records the label, the spans (typed as a quote; offsets computed, ambiguity resolved by choice)
-   and a note into `gold/<set>.jsonl`. The target label and the model's review are hidden.
-6. **Reconcile** (`pnpm eval:label --reconcile`). Each review is embedded in its owner-labelled item.
-   For every disagreement on a `test` item, the owner sees both labels and records the final one with
-   a reason in `disagreements.jsonl`. Agreement is Cohen's kappa per set: the owner's first label
-   against the reviewer's, over the `test` hypotheses only.
-7. **Validate** (`pnpm eval:validate`): schema, counts (30/40/20), ≥ 8 scope items per label, ≥ 5
+   step writes the same bytes and keeps every primary label (`owner` or `claude:<id>`).
+5. **Claude labels** (`pnpm eval:label`; `--split test` is the default and the only choice). Claude
+   labelled each queued item (the `test` items plus `scope-028`) **independently**: it read only the
+   item's documents and hypotheses, printed one item at a time with the target label stripped, and did
+   not see the reviews, the target labels or the generator prompts until every label was written and
+   committed. Each hypothesis got a label, verbatim quotes and a one-line rationale (`note`). The labels
+   go through the same writer as the terminal flow (`eval:label --from <answers> --by
+   claude:claude-opus-5-5`): each quote names its document, offsets are computed at its first
+   occurrence there, and `met`/`partial` without a quote or `unverifiable` with one is refused. The
+   scope items with an "AI reviewer" instruction were labelled as if that line were absent; holds facts
+   were judged against the capture and PayPal's rule text only.
+6. **Reconcile** (`pnpm eval:label --reconcile`, same `--from`/`--by`). Each review is embedded in its
+   item. Only then were the reviews read: for every disagreement on a `test` item, Claude re-read the
+   documents and recorded the final label (its own or the reviewer's) with a one-line reason in
+   `disagreements.jsonl` (`decided_by: "claude:claude-opus-5-5"`). A label was flipped only when the
+   documents supported the reviewer, never to raise agreement. Agreement is Cohen's kappa per set:
+   the labeller's first label against the reviewer's, over the `test` hypotheses only.
+7. **Owner spot-check** (`spotcheck.md`): 5 Claude-labelled `test` items picked by a seeded hash
+   (`cleared-spotcheck-v1`), with every label, quote and rationale in plain English, and an
+   agree/disagree line per hypothesis for the owner.
+8. **Validate** (`pnpm eval:validate`): schema, counts (30/40/20), ≥ 8 scope items per label, ≥ 5
    injection items, 10 EN/10 HI with matching fact codes and known rule rows, every span verbatim, the
-   seeded split, `owner` on every `test` item and `owner` or `model:<its reviewer>` on every `dev` item
-   (a model-labelled item must match its review exactly), a non-production review on every item, one
-   decided row per `test` disagreement, kappa over `test`, and the spend ledger (each UTC day ≤ $1).
-   `--pii` scans drafts, reviews and gold sets for real-looking emails, phone numbers and PayPal ids.
+   seeded split, `owner` or `claude:<id>` on every `test` item and `model:<its reviewer>` (matching its
+   review exactly) or a primary label on every `dev` item, no labeller equal to the production model, a
+   non-production review on every item, one decided row (`decided_by`) per `test` disagreement, kappa
+   over `test`, and the spend ledger (each UTC day ≤ $1). `--pii` scans drafts, reviews and gold sets
+   for real-looking emails, phone numbers and PayPal ids.
 
 ## Results
 
-| set | kappa (owner vs reviewer, test split) | agreement | disagreements |
-|---|---|---|---|
-| extraction | after P-53 | | |
-| scope | after P-53 | | |
-| holds | after P-53 | | |
+From `pnpm eval:validate` (labeller's first label vs the second model, `test` split only):
 
-Before the owner labels, the reviewer agreed with the generator's *target* label on 156/165 extraction,
+| set | kappa | agreement | n (hypotheses) | disagreements | kept / flipped to reviewer |
+|---|---|---|---|---|---|
+| extraction | 0.843 | 96.7% | 120 (22 items) | 4 | 4 / 0 |
+| scope | 0.834 | 88.7% | 124 (31 items) | 14 | 12 / 2 |
+| holds | 0.626 | 84.4% | 64 (16 items) | 10 | 10 / 0 |
+
+Extraction includes `ext-004` (owner-labelled, 5 hypotheses, no disagreement). All 10 holds
+disagreements are the same pattern: a "guaranteed release" claim Claude labelled `missing` (the
+sources contradict it: an open fraud review, a hold "to cover possible chargeback", "approximately
+24 hours") and the reviewer labelled `unverifiable`; both mean the claim is unsupported. The two flips
+(`scope-031/H3`, `scope-040/H4`) went from `unverifiable` to `partial`: a form and a certificate file were
+delivered, but whether they do what the line promised is unknown.
+
+**Claims wording** (M4-02, README, video, Devpost): "gold set labelled by Claude (independent of the
+OpenAI models under test), cross-checked by a second model (kappa = …) and spot-checked by the owner
+(n = 5)". Never say "owner-labelled" or "human-labelled".
+
+Before labelling, the reviewer agreed with the generator's *target* label on 156/165 extraction,
 137/160 scope and 76/80 hold hypotheses. That is a sanity check on the drafts, not an accuracy claim.
 
 Spend: `SPEND.md` (M4-01 total $0.4685 on 2026-11-03).
