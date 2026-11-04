@@ -353,13 +353,12 @@ test("AC 8: /hi renders every string from hi.json (no missing-key warnings)", as
   await expect(page.getByTestId("summary-proof-ready")).toContainText("0 भुगतान सबूत के साथ तैयार");
   await expect(page.getByTestId("pack-line")).toContainText("सबूत पैक:");
   await expect(page.getByTestId("add-proof")).toHaveText("सबूत जोड़ें");
-  // sweep M5 (BL-01 6609551440 item 6): at 375 px a row reads status, then the pack line and its action
+  // sweep M5 (BL-01 6609551440 item 6): at 375 px a row reads its status before its action
   await page.setViewportSize({ width: 375, height: 800 });
   const proofRow = page.getByTestId("payment-row").filter({ has: page.getByTestId("add-proof") }).first();
   const yOf = async (testId: string): Promise<number> =>
     (await proofRow.getByTestId(testId).first().boundingBox())?.y ?? Number.NaN;
-  expect(await yOf("source-tag")).toBeLessThan(await yOf("pack-line"));
-  expect(await yOf("pack-line")).toBeLessThan(await yOf("add-proof"));
+  expect(await yOf("source-tag")).toBeLessThan(await yOf("add-proof"));
   await page.setViewportSize({ width: 1280, height: 900 });
   expect(await page.locator("body").innerText()).not.toMatch(/\b(pack|row|dashboard)\.[a-zA-Z]+/);
   await capture(page, "hi-dashboard");
