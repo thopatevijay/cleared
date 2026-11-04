@@ -212,6 +212,10 @@ Each playbook gives the symptom, the check, the action and the rollback. An acti
   Drafts stay saved, and the UI says "Sending to PayPal is paused. Your draft is saved." The sandbox scenario simulator (test payment, buyer chargeback, PayPal's decision) is not stopped: accepted design A-7, still pending the owner's confirmation.
 - **Rollback:** set the env var back to `false`, or set `agent_kill_switch = false` with the same statement. Stranded `unknown` actions are reconciled by the 15-minute poll.
 
+## Known limitations
+
+- **Alert emails land in spam.** Dispute and hold alert emails go out from Resend's shared `resend.dev` sender, with no verified domain (owner decision P-44), and only to `EMAIL_RECIPIENT_ALLOWLIST`. Resend reports them delivered, but in the M4-GATE production run (2026-11-04) both landed in the spam folder. Check the spam folder before treating an alert as missing; the in-app bell shows the same alert and is the reliable signal. Don't change the sender during judging (it needs a domain, an owner decision). BL-01 6629802819.
+
 ## Change freeze
 
 From **2026-12-01**, `main` takes fixes only. Each fix is a PR with a test that reproduces the bug, CI green, and squash-merged. After each deploy:
