@@ -6,6 +6,7 @@
 // timeline ("PayPal gives no timeline for this reason" + Source). Never an undated "~".
 import { CalendarClock } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { formatDate } from "../../lib/format.ts";
 import { useUiLocale } from "../disputes/text.ts";
 import { RuleSource } from "./RuleSource.tsx";
@@ -24,6 +25,22 @@ const Dot = () => (
     {" · "}
   </span>
 );
+
+/**
+ * Rows (the compact form) past the latest estimated date: the hold detail's "Still held after the
+ * estimate" line, so a row never shows a passed "Free by" date alone (BL-01 6604837005 item 3, sweep M5).
+ */
+function PastEstimate({ e, full }: { e: EstimateInput; full: boolean }) {
+  const t = useTranslations("holds.detail");
+  const [now] = useState(() => Date.now());
+  const last = e.estimateUpperBoundAt ?? e.estimatedReleaseAt;
+  if (full || last === null || Date.parse(last) >= now) return null;
+  return (
+    <span className="font-medium" data-testid="past-estimate">
+      {t("stillHeld")}
+    </span>
+  );
+}
 
 export function EstimatedDate({
   e,
@@ -79,6 +96,7 @@ export function EstimatedDate({
             {t("est.service")}
           </span>
         ) : null}
+        <PastEstimate e={e} full={full} />
       </div>
     );
   return (
@@ -136,6 +154,7 @@ export function EstimatedDate({
       ) : source === null || at !== null ? null : (
         <RuleSource source={source} />
       )}
+      <PastEstimate e={e} full={full} />
     </div>
   );
 }

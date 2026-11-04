@@ -97,6 +97,21 @@ describe("EstimatedDate", () => {
     expect(none).toContain("The payer paid by an eCheck that has not yet cleared.");
   });
 
+  // sweep M5 (BL-01 6604837005 item 3): a row past the latest estimate says it is still held
+  it("compact form past the estimate: 'Still held after the estimate' (EN and HI); not before, not full", () => {
+    const future: PaymentHold = {
+      ...REVIEW,
+      estimatedReleaseAt: "2999-01-01T10:00:00.000Z",
+      estimateUpperBoundAt: "2999-01-03T10:00:00.000Z",
+    };
+    expect(text(html(<EstimatedDate e={REVIEW} timeZone="UTC" />))).toContain(
+      "Still held after the estimate. PayPal hasn't released it yet.",
+    );
+    expect(text(html(<EstimatedDate e={REVIEW} timeZone="UTC" />, "hi"))).toContain("अनुमान के बाद भी रुका है");
+    expect(html(<EstimatedDate e={future} timeZone="UTC" />)).not.toContain("past-estimate");
+    expect(html(<EstimatedDate e={REVIEW} timeZone="UTC" full />)).not.toContain("past-estimate");
+  });
+
   it("HI keeps 'अनुमानित' and the source", () => {
     const out = text(html(<EstimatedDate e={REVIEW} timeZone="UTC" />, "hi"));
     expect(out).toContain("अनुमानित");
