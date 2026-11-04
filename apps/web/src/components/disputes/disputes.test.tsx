@@ -65,6 +65,7 @@ function detail(notes: string, patch: Partial<DisputeDetail> = {}): DisputeDetai
     pdf: { url: "/api/disputes/x/draft/pdf?draft=y", bytes: 129_619 },
     action: action(),
     allowed: true,
+    gaps: [],
   };
   return {
     dispute: {
@@ -327,5 +328,55 @@ describe("auto-added evidence on the approval card (BL-01 6595501766)", () => {
 
   it("shows no auto lines when code added nothing", () => {
     expect(review(detail("ok"))).not.toContain("evidence-auto");
+  });
+});
+
+describe("unmet scope lines warning on the approval card (BL-01 6539398891)", () => {
+  const gaps: Draft["gaps"] = [
+    { lineId: "C7", requirement: "Provide the editable Adobe Illustrator (.ai) source file.", verdict: "missing" },
+    { lineId: "C9", requirement: "Provide up to two revision rounds <b>now</b>.", verdict: "partial" },
+  ];
+  const withGaps = (patch: Partial<Draft> = {}): DisputeDetail & { draft: Draft } => {
+    const d = detail("Editable Illustrator .ai source file: this was agreed but is not shown as delivered.");
+    return { ...d, draft: { ...d.draft, gaps, ...patch } };
+  };
+
+  it("lists each partial or missing line the notes rely on, says it's sent and editable, and keeps the notes (EN)", () => {
+    const out = decode(review(withGaps()));
+    expect(out).toContain('data-testid="scope-gap-warning"');
+    expect(out).toContain(en.disputes.draft.gaps.title);
+    expect(out).toContain(en.disputes.draft.gaps.edit);
+    expect(out).toContain(en.disputes.draft.gaps.private);
+    expect(out).toContain('<span lang="en">Provide the editable Adobe Illustrator (.ai) source file.</span>');
+    expect(out).toContain('<span class="font-semibold">Missing:</span> <span lang="en">Provide the editable');
+    expect(out).toContain("Partly met:");
+    expect(out.match(/data-testid="scope-gap"/g)).toHaveLength(2);
+    // the notes are unchanged: the line stays in the reply by default
+    expect(out).toContain("this was agreed but is not shown as delivered.</textarea>");
+    // Approve is still available: the warning informs, it never blocks
+    expect(approveButton(out)).not.toContain('disabled=""');
+  });
+
+  it("renders model text as plain text, in English, inside the HI screen", () => {
+    const out = review(withGaps(), "hi");
+    expect(out).toContain(hi.disputes.draft.gaps.title);
+    expect(out).toContain(hi.disputes.draft.gaps.verdict.missing);
+    expect(out).toContain('<span lang="en">Provide up to two revision rounds &lt;b&gt;now&lt;/b&gt;.</span>');
+    expect(out).not.toContain("<b>now</b>");
+  });
+
+  it("after a seller edit, asks the seller to check the edited notes (EN, HI)", () => {
+    const edited = withGaps({ action: action({ createdBy: "seller" }) });
+    const out = decode(review(edited));
+    expect(out).toContain(en.disputes.draft.gaps.titleEdited);
+    expect(out).toContain(en.disputes.draft.gaps.bodyEdited);
+    expect(out).not.toContain(en.disputes.draft.gaps.title);
+    expect(review(edited, "hi")).toContain(hi.disputes.draft.gaps.bodyEdited);
+  });
+
+  it("shows nothing without gaps, or once the card can no longer be edited", () => {
+    expect(review(detail("ok"))).not.toContain("scope-gap-warning");
+    expect(review(withGaps({ action: action({ state: "approved" }) }))).not.toContain("scope-gap-warning");
+    expect(review(withGaps({ allowed: false }))).not.toContain("scope-gap-warning");
   });
 });

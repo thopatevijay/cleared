@@ -779,6 +779,18 @@
         "pdf_too_large": "Not added: with this item ({size}) the PDF would reach PayPal's 10 MB limit.",
         "unreadable": "Not added: Cleared couldn't read this file."
       },
+      "gaps": {
+        "title": "This reply tells PayPal some agreed work isn't shown as delivered",
+        "body": "Your proof pack doesn't show these agreed items as fully delivered, and the notes below say so:",
+        "titleEdited": "Check what your reply tells PayPal about agreed work",
+        "bodyEdited": "The agent's draft said these agreed items aren't shown as fully delivered. Check whether your edited notes still say so:",
+        "verdict": {
+          "partial": "Partly met:",
+          "missing": "Missing:"
+        },
+        "edit": "That's honest, and PayPal will read it. To change or remove it, edit the notes before you approve. Your approval covers the notes exactly as you leave them.",
+        "private": "Only you see this warning. It isn't sent to PayPal."
+      },
       "item": "{ref} · {kind} · added {date}",
       "openItem": "Open {ref}",
       "noFile": "Text only (no file)",

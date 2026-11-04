@@ -14,6 +14,7 @@ import {
   forWorkspace,
   insertProposedAction,
   platform,
+  scopeChecksRepo,
   withTransaction,
   type Db,
 } from "@cleared/db";
@@ -192,4 +193,49 @@ export async function seedDispute(db: Db, ws: string, o: SeedOptions = {}): Prom
       itemIds: items.map((i) => i.id),
     };
   });
+}
+
+/**
+ * BL-01 6539398891: the seeded draft's scope check (version 1, the one the draft read) as M2-04 writes it,
+ * with C7 `missing`, and the draft's fact_refs pointing a paragraph at C1 and C7, as the recorded M2-07
+ * answer does (fixtures/openai/draft-v1/logo.json paragraph 5). The notes are left as they are.
+ */
+export async function seedScopeGap(db: Db, ws: string, s: SeededDispute): Promise<void> {
+  const wsId = WorkspaceIdSchema.parse(ws);
+  const line = (lineId: string, text: string, verdict: "met" | "missing") => ({
+    lineId,
+    line: text,
+    verdict,
+    modelVerdict: verdict,
+    note: null,
+    rationale: "seeded",
+    lineCitation: null,
+    citations: [],
+  });
+  await withTransaction(db, async (tx) => {
+    const draft = (await disputeDraftsRepo(db, wsId).listForDispute(s.disputeRowId, tx))[0];
+    if (draft?.packId == null) throw new Error("seedScopeGap: no seeded draft");
+    const check = await scopeChecksRepo(db, wsId).insertCheck(
+      {
+        packId: draft.packId,
+        evidenceSetHash: "e".repeat(64),
+        promptVersion: "check_scope@v1",
+        runId: null,
+        lines: [
+          line("C1", "Provide the primary logo in SVG format.", "met"),
+          line("C7", "Provide the editable Adobe Illustrator (.ai) source file.", "missing"),
+        ],
+      },
+      tx,
+    );
+    if (check?.checkVersion !== draft.checkVersion) throw new Error("seedScopeGap: check version mismatch");
+  });
+  const factRefs = [
+    { paragraph: 2, refs: [{ ref: "C1", kind: "line", evidence_item_id: null }] },
+    { paragraph: 5, refs: [{ ref: "C7", kind: "line", evidence_item_id: null }] },
+  ];
+  await db.$client.query("update dispute_drafts set fact_refs = $1::jsonb where id = $2", [
+    JSON.stringify(factRefs),
+    s.draftId,
+  ]);
 }

@@ -23,7 +23,7 @@ import { getWorkspace } from "../../../src/server/handlers/session-routes.ts";
 import type { DisputeDetail, DisputeList } from "../../../src/lib/dispute-view.ts";
 import { cookieFrom, freshIp, req, testDb, testDeps } from "../../../test/support/db.ts";
 import { dbAvailable } from "../../../test/support/db-available.ts";
-import { recordedNotes, seedDispute } from "../../../test/support/dispute-seed.ts";
+import { recordedNotes, seedDispute, seedScopeGap } from "../../../test/support/dispute-seed.ts";
 
 const created: string[] = [];
 let pub: Promise<Publisher> | undefined;
@@ -131,6 +131,29 @@ describe.skipIf(!dbAvailable)("dispute API (integration)", () => {
       s.disputeRowId,
     );
     expect(foreign.status).toBe(404);
+  });
+
+  it("BL-01 6539398891: the draft lists the partial/missing scope lines its notes rely on; the notes are unchanged; a seller edit keeps them", async () => {
+    const a = await demo();
+    const s = await seedDispute(testDb(), a.ws);
+    expect((await detail(a.cookie, s.disputeRowId)).body.draft?.gaps).toEqual([]);
+    await seedScopeGap(testDb(), a.ws, s);
+    const d = await detail(a.cookie, s.disputeRowId);
+    expect(d.body.draft?.gaps).toEqual([
+      {
+        lineId: "C7",
+        requirement: "Provide the editable Adobe Illustrator (.ai) source file.",
+        verdict: "missing",
+      },
+    ]);
+    expect(d.body.draft?.notes).toBe(recordedNotes());
+    const edited = await revise(a.cookie, s.disputeRowId, {
+      draft_id: s.draftId,
+      notes: "We delivered the logo files listed in the scope.",
+      evidence_item_ids: s.itemIds,
+    });
+    expect(edited.status).toBe(200);
+    expect((await detail(a.cookie, s.disputeRowId)).body.draft?.gaps.map((g) => g.lineId)).toEqual(["C7"]);
   });
 
   it("BL-01 6595501766: the card marks what code added and what it left out (and why); the audit trail lists it", async () => {
