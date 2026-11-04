@@ -3,13 +3,13 @@
 // link for the pack's current scope item, copy it (shown only right after creation: the server keeps a
 // hash), revoke it, and see pending / accepted / expired / revoked / scope changed. Polls while pending and
 // announces an acceptance once.
-import { AckLinkCreatedSchema, AckLinkViewSchema, type AckLinkStatus, type AckLinkView } from "@cleared/core";
+import type { AckLinkStatus, AckLinkView } from "@cleared/core";
 import { CircleCheck, CircleDashed, Clock, Lock, X, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { intlLocale, isAppLocale } from "../../i18n/routing.ts";
-import { getJson, postJson, type ApiResult } from "../../lib/api.ts";
+import { type ApiResult, getParsed, loadSchemas, postJson } from "../../lib/api.ts";
 import { formatTime } from "../../lib/format.ts";
 import { useOnline } from "../../lib/use-online.ts";
 import { ErrorPanel } from "../ErrorPanel.tsx";
@@ -239,7 +239,7 @@ function LinkBody(props: {
 }
 
 async function fetchView(path: string): Promise<AckLinkView> {
-  return AckLinkViewSchema.parse(await getJson(path));
+  return getParsed(path, (s) => s.AckLinkViewSchema);
 }
 
 /** Pending → accepted is announced once, and the pack reloads to show the new evidence item. */
@@ -303,12 +303,13 @@ export function AckLinkPanel({
     void run(
       "create",
       () => postJson(path, {}, crypto.randomUUID()),
-      (r) => {
-        const body = AckLinkCreatedSchema.parse(r.body);
-        setUrl(body.url);
-        setLive(t("created"));
-        void mutate(body.view, { revalidate: false });
-      },
+      (r) =>
+        void loadSchemas().then((schemas) => {
+          const body = schemas.AckLinkCreatedSchema.parse(r.body);
+          setUrl(body.url);
+          setLive(t("created"));
+          void mutate(body.view, { revalidate: false });
+        }),
     );
   const revoke = () => {
     const id = data?.link?.id;
@@ -318,7 +319,9 @@ export function AckLinkPanel({
       () => postJson(`${path}/${id}/revoke`, {}, crypto.randomUUID()),
       (r) => {
         setUrl(null);
-        void mutate(AckLinkViewSchema.parse(r.body), { revalidate: false });
+        void loadSchemas().then((schemas) =>
+          mutate(schemas.AckLinkViewSchema.parse(r.body), { revalidate: false }),
+        );
       },
     );
   };

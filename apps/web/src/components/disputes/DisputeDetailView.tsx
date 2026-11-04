@@ -8,8 +8,8 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "../../i18n/navigation.ts";
-import { ApiError, getJson } from "../../lib/api.ts";
-import { DisputeDetailSchema, type DisputeDetail, type Draft } from "../../lib/dispute-view.ts";
+import { ApiError, getParsed } from "../../lib/api.ts";
+import type { DisputeDetail, Draft } from "../../lib/dispute-view.ts";
 import { countdown, formatAmount } from "../../lib/format.ts";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 import { AuditTrail } from "./AuditTrail.tsx";
@@ -26,7 +26,7 @@ export const DETAIL_POLL_MS = 5_000;
 const IN_FLIGHT = new Set(["approved", "executing", "unknown"]);
 
 async function fetchDetail(path: string): Promise<DisputeDetail> {
-  return DisputeDetailSchema.parse(await getJson(path));
+  return getParsed(path, (s) => s.DisputeDetailSchema);
 }
 
 function NoDraft({ d }: { d: DisputeDetail }) {
@@ -92,6 +92,7 @@ function DueBand({ d, now }: { d: DisputeDetail["dispute"]; now: number }) {
     <p
       className="sticky top-14 z-10 -mx-4 border-b border-border bg-bg px-4 py-2 text-sm font-medium xl:static xl:mx-0 xl:border-0 xl:p-0"
       data-testid="due-band"
+      data-sticky-band
     >
       {label}
     </p>

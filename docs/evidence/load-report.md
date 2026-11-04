@@ -116,6 +116,41 @@ What it does:
 
 **Render CPU and memory** for web and Postgres during the run: the Render CLI has no metrics command and the agent holds no API key (BL-01 6603618375). The owner reads the dashboard Metrics tab for the run window and adds the peaks here.
 
+## M4-08 follow-up: the data routes (2026-11-03)
+
+The production launch run on `379d4e4` (#50) had 0 errors, but its overall p95 was 949 ms against 800. Seven routes were over: `GET /api/payments` 1,413 ms, `/api/disputes/[id]` 1,170, `/api/packs/[id]` 968, `/api/holds` 940, the page `/en/holds/[id]` 886, the page `/en/payments/[id]/pack` 826 and `/api/holds/[id]` 818. The network floor from Pune was p95 337 ms. M4-08 (#142) worked on the server side of those routes.
+
+**What the database does on these routes.** Postgres statement logging covered the journey's traffic. The slowest application statement took 0.36 ms, and no read statement took more than that. The tables hold a few hundred rows; production keeps demo workspaces for a limited time (ADR 0020), so they stay small there too. No index would change these numbers, so **M4-08 adds no index and no migration**.
+
+**What changed:**
+- **Fewer database round trips per request.** Reads that don't depend on each other now run together:
+  - `/api/disputes/[id]`: the payment and the drafts; the pack items join the main stage.
+  - `/api/holds/[id]`: the hold, the time zone and the explanations.
+  - `/api/payments`: the workspace row joins the first stage.
+- **First views are rendered on the server.** The pages `/en/payments`, `/en/payments/[id]/pack`, `/en/holds/[id]` and `/en/disputes/[id]` call their API's own handler and render its data into the HTML (`apps/web/src/server/first-view.ts`). A page request now does the work of its API request, so these pages take longer on the server. The browser still refreshes the data with one API call after it loads, as before.
+
+**Local server-side p95** (`pnpm load:server-timing`: 20 sessions on the launch journey with 2–5 s think time, 2 min, local production build on loopback, Apple M4; each route n ≈ 50):
+
+| Route | Before (`01b5b3e`) | After (this PR) |
+|---|---:|---:|
+| `GET /api/payments` | 20.8 ms | 19.2 ms |
+| `GET /api/disputes/[id]` | 20.4 | 17.2 |
+| `GET /api/packs/[id]` | 23.9 | 21.2 |
+| `GET /api/holds` | 19.0 | 19.0 |
+| `GET /api/holds/[id]` | 17.7 | 10.8 |
+| page `/en/holds/[id]` | 25.6 | 35.6 |
+| page `/en/payments/[id]/pack` | 30.7 | 33.5 |
+| page `/en/payments` (not one of the seven) | 21.4 | 43.0 |
+| page `/en/disputes/[id]` (not one of the seven) | 21.0 | 40.9 |
+
+Every one of the seven is far under the 400 ms server-side budget on this machine. The same routes took 800–1,400 ms on Render, so locally the database and the code are not the bottleneck. **Cold start:** with no warm-up pass, the first concurrent requests after `next start` stalled for 1.1–2.3 s (`GET /api/payments` p95 1,280 ms in a 2-minute run). The harness warms up by default and measures steady state; `--no-warmup` measures the cold start. A deploy or restart during a judge's session will show that stall once.
+
+**What this doesn't prove.** The local machine is much faster than a Render `starter` instance (0.5 CPU). Whether the remaining production time is CPU on that plan can only be shown on production. **The production re-measure (DEPLOY holder, after merge and deploy) must show:**
+- `pnpm load:launch --target "$PROD_URL" --sessions 20 --minutes 10` → `load:assert --p95 800 --err 0.005` passes.
+- Render's server-side `durationMs` p95 for each of the seven routes is at or under 400 ms.
+
+If the server-side p95 is still above 400 ms while the database stays sub-millisecond, the limit is the plan's CPU. Read the Render Metrics tab for the run window (CPU near 100 % on `web`) and write that up for the owner's plan decision. Don't change the threshold.
+
 ## Deviations from the ticket text
 
 - **Forged signature → 401, not 400.** 401 is the M1-04 contract (`apps/web/test/webhooks/paypal-webhook.int.test.ts`, "tampering → 401"). A 400 comes back only for a verified body that isn't an event envelope. `load:assert` checks that every forged delivery gets a 4xx and reports the real status (BL-01 6603616566).
@@ -129,4 +164,5 @@ OpenAI spend during the local burst was $0.0000 (`agent_runs`), and the producti
 ## How to re-run
 
 - **Local (M4-GATE re-runs a 60 s burst):** `export PORT_OFFSET=<n> DATABASE_URL=…`, then `make reset`, `source scripts/load/local-env.sh`, then the gate lines. The env file prepares a run-scoped session secret, a dummy PayPal client, the harness key pair under `$TMPDIR` and the msw preload. It never touches `.env`. A 60 s burst: `pnpm load:burst --target http://localhost:3000 --rate 5 --count 300 --out …`.
+- **Local data-route timing (M4-08):** after `pnpm --filter @cleared/web build` and a migrated, seeded database: `pnpm load:server-timing --routes payments,disputes-id,packs-id,holds,holds-id,page-holds-id,page-pack --p95 400`. It starts `next start` itself, seeds its own loadtest workspaces and purges them afterwards.
 - **Production:** the DEPLOY holder runs the burst and launch lines. The burst trips the Sentry alert "webhook verification failures above 5 per 10 min" by design (BL-01 6603619029). Don't run it during the judging window without telling the owner.

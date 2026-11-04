@@ -8,9 +8,10 @@ import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "../../i18n/navigation.ts";
 import { Link } from "../../i18n/navigation.ts";
-import { ApiError, getJson } from "../../lib/api.ts";
-import { DisputeListSchema, type DisputeList as List, type DisputeSummary } from "../../lib/dispute-view.ts";
+import { ApiError, getParsed } from "../../lib/api.ts";
+import type { DisputeList as List, DisputeSummary } from "../../lib/dispute-view.ts";
 import { formatTime, formatUtc } from "../../lib/format.ts";
+import { codeBreaks } from "../CodeText.tsx";
 import { EmptyState } from "../EmptyState.tsx";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 import { MoneyCell } from "../MoneyCell.tsx";
@@ -21,7 +22,7 @@ import { useDisputeText, useUiLocale } from "./text.ts";
 export const DISPUTES_POLL_MS = 5_000;
 
 export async function fetchDisputes(path: string): Promise<List> {
-  return DisputeListSchema.parse(await getJson(path));
+  return getParsed(path, (s) => s.DisputeListSchema);
 }
 
 /** The current time, refreshed every minute (countdowns; client-only so the server render never differs). */
@@ -55,7 +56,9 @@ function Row({ d, timeZone, now }: { d: DisputeSummary; timeZone: string; now: n
           <span>
             {text.reason(d.reason)}
             {d.reason === null ? null : (
-              <span className="ml-2 font-mono text-xs break-all text-text-muted">{d.reason}</span>
+              <span className="ml-2 font-mono text-xs [overflow-wrap:anywhere] text-text-muted">
+                {codeBreaks(d.reason)}
+              </span>
             )}
           </span>
           <span className="sr-only">{t("open", { id: d.disputeId })}</span>

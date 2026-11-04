@@ -6,7 +6,7 @@
 // `closed_for_action` starts AT `due − DEADLINE_MARGIN_MINUTES` (the same cutoff as `canExecute`, which
 // refuses at or after it). Each boundary is inclusive: the state changes at the instant itself.
 import { DEADLINE_MARGIN_MINUTES } from "../actions/policy.ts";
-import { addMinutes, compareInstants, type Instant } from "../time.ts";
+import { addMinutes, compareInstants, type Instant } from "../instant.ts";
 
 export const DEADLINE_STATES = ["ok", "t72", "t24", "closed_for_action"] as const;
 export type DeadlineState = (typeof DEADLINE_STATES)[number];

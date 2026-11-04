@@ -6,8 +6,7 @@
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
-import { NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
-import { ActionViewSchema } from "../../lib/dispute-view.ts";
+import { loadSchemas, NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
 import { refusalOf, useDisputeText } from "./text.ts";
 
 export function AcceptClaimDialog({
@@ -57,7 +56,9 @@ export function AcceptClaimDialog({
       keys.current.propose,
     );
     const action =
-      p.status === 201 ? ActionViewSchema.safeParse((p.body as { action?: unknown }).action) : null;
+      p.status === 201
+        ? (await loadSchemas()).ActionViewSchema.safeParse((p.body as { action?: unknown }).action)
+        : null;
     const a =
       action?.success === true
         ? await postJson(

@@ -6,8 +6,8 @@ import { ScrollText } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
-import { ApiError, getJson } from "../../lib/api.ts";
-import { AuditPageSchema, type AuditEntry, type AuditPageData } from "../../lib/dispute-view.ts";
+import { ApiError, getParsed } from "../../lib/api.ts";
+import type { AuditEntry, AuditPageData } from "../../lib/dispute-view.ts";
 import { dayKey, formatDay } from "../../lib/format.ts";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 import { useUiLocale } from "../disputes/text.ts";
@@ -28,7 +28,7 @@ export function auditPath(f: AuditFilterValue, cursor?: string): string {
 }
 
 async function fetchPage(path: string): Promise<AuditPageData> {
-  return AuditPageSchema.parse(await getJson(path));
+  return getParsed(path, (s) => s.AuditPageSchema);
 }
 
 function useOlder(filters: AuditFilterValue) {

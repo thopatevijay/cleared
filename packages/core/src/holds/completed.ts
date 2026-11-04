@@ -7,35 +7,15 @@
 // release unconfirmed" and never changes the estimate. Pure: no I/O.
 import { z } from "zod";
 import { err, ok, type Result } from "../result.ts";
-import { compareInstants, fromEpochMs, toEpochMs, type Instant } from "../time.ts";
+import { compareInstants, fromEpochMs, type Instant } from "../time.ts";
 import { SERVICE_COMPLETED_RULE, type HoldEstimate, type HoldType } from "./rules.ts";
 import { transitionHold, type HoldEvent, type HoldState } from "./state.ts";
 import { guidedAction, releaseRuleAfterAction, type DeclaredKind } from "./declaration.ts";
 
-/** What PayPal support wrote to the owner (reply pasted 2026-10-26; docs/research RESEARCH.md log). */
-export interface SupportQuote {
-  readonly quote: string;
-  /** YYYY-MM-DD */
-  readonly date: string;
-  readonly from: "PayPal support";
-}
+import { localDate } from "./completed-quotes.ts";
 
-export const PAYPAL_SUPPORT_QUOTES = {
-  /** the web path the guided step follows */
-  webPath: {
-    quote:
-      'For services or intangible items, you can update the order status to "Completed" in your Activity section to help release the hold.',
-    date: "2026-10-26",
-    from: "PayPal support",
-  },
-  /** why the API record is labelled "Effect on release unconfirmed" */
-  apiUnconfirmed: {
-    quote:
-      'information confirming that an API-based "Completed" status update is functionally identical to the manual web update is not available.',
-    date: "2026-10-26",
-    from: "PayPal support",
-  },
-} as const satisfies Record<string, SupportQuote>;
+// The quotes and localDate live in completed-quotes.ts (no zod) for the browser (M4-08).
+export { localDate, PAYPAL_SUPPORT_QUOTES, type SupportQuote } from "./completed-quotes.ts";
 
 export const PAYPAL_ENVS = ["sandbox", "live"] as const;
 export type PayPalEnv = (typeof PAYPAL_ENVS)[number];
@@ -89,16 +69,6 @@ export function walkToFiled(state: HoldState): HoldState {
     if (next.ok) s = next.value;
   }
   return s;
-}
-
-/** The calendar date (YYYY-MM-DD) of an instant in a time zone. */
-export function localDate(at: Instant, timeZone: string): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(toEpochMs(at)));
 }
 
 /** How far the zone is ahead of UTC at that moment, in ms. */

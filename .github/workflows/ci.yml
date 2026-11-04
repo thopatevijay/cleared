@@ -74,6 +74,50 @@ jobs:
       - run: pnpm eval --mode replay --set all --split test
       - run: pnpm eval:check-readme
 
+  # M4-04: the Core Web Vitals budget (lighthouserc.json) on a local production build with seeded data, on
+  # the msw PayPal stub (apps/web/scripts/lhci.ts), and the dashboard's first-load JS budget.
+  lhci:
+    name: lighthouse ci
+    # report-only by owner decision 2026-11-04 (#142); budgets in lighthouserc.json unchanged
+    continue-on-error: true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18.6-alpine
+        env:
+          POSTGRES_USER: cleared
+          POSTGRES_PASSWORD: cleared
+          POSTGRES_DB: cleared
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cleared -d cleared"
+          --health-interval 1s
+          --health-timeout 3s
+          --health-retries 30
+          --health-start-period 5s
+    env:
+      DATABASE_URL: postgres://cleared:cleared@localhost:5432/cleared
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 (reads packageManager)
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate && pnpm db:seed
+      - name: Playwright Chromium (seeding and Lighthouse's browser)
+        run: pnpm --filter @cleared/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @cleared/web build
+      - run: pnpm lhci autorun --upload.target=filesystem --upload.outputDir="$RUNNER_TEMP/lhci"
+      - name: dashboard first-load JS ≤ 200 KB gzip
+        run: |
+          pnpm --filter @cleared/web analyze --json > "$RUNNER_TEMP/bundle.json"
+          node -e 'const b=require(process.argv[1]);console.log(`dashboard ${b.dashboardFirstLoadGzipKB} KB gz`);if(b.dashboardFirstLoadGzipKB>200)process.exit(1)' "$RUNNER_TEMP/bundle.json"
+
   security:
     name: gitleaks + audit
     runs-on: ubuntu-24.04

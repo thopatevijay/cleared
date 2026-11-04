@@ -154,19 +154,10 @@ function useCompact(): boolean {
   return compact;
 }
 
-function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-  }, []);
-  return reduced;
-}
-
 export default function BryntumCashCalendar(p: CashCalendarProps) {
   const t = useTranslations("calendar");
   const text = useCashText(p.locale);
   const ready = useBryntumLocale(p.locale);
-  const reduced = useReducedMotion();
   const compact = useCompact();
   const [shown, setShown] = useState(() => firstOfMonth(p.initialDate));
   const byId = useMemo(() => new Map(p.events.map((e) => [e.id, e])), [p.events]);
@@ -297,7 +288,9 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
       return dom;
     };
     return {
-      animateTimeShift: !reduced,
+      // M4-04: no slide between months. While it ran, the outgoing month's day numbers and bars stayed in the
+      // tab order off-screen (WCAG 2.4.7 / 2.4.11), and the motion adds nothing the month title doesn't say.
+      animateTimeShift: false,
       // below 768 px the bars are hidden: six equal rows that always fit the container (no inner scroll
       // hides the last week); wider, rows grow with their bars
       autoRowHeight: !compact,
@@ -307,7 +300,7 @@ export default function BryntumCashCalendar(p: CashCalendarProps) {
       eventRenderer,
       dayCellRenderer,
     };
-  }, [byId, totalsByDay, countByDay, kindsByDay, shortByDay, nameByDay, p.selectedDay, reduced, compact]);
+  }, [byId, totalsByDay, countByDay, kindsByDay, shortByDay, nameByDay, p.selectedDay, compact]);
 
   useEffect(() => {
     if (ready) p.onEngineReady?.();

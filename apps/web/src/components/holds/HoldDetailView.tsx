@@ -5,13 +5,13 @@
 // mirroring the hold machine. "#why" (the dashboard's "Why?") moves focus to the explanation section.
 // "Released" shows only when the hold is released, i.e. the mirrored capture left PENDING: the badge
 // then mirrors the capture (COMPLETED), the old reason stays as history, and the release leads.
-import { guidedAction, HoldDetailSchema, HOLD_STATES, type HoldDetail, type HoldState } from "@cleared/core";
+import { guidedAction, HOLD_STATES, type HoldDetail, type HoldState } from "@cleared/core";
 import { Circle, CircleCheck, CircleDot, SearchX } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { Link, useRouter } from "../../i18n/navigation.ts";
-import { ApiError, getJson } from "../../lib/api.ts";
+import { ApiError, getParsed } from "../../lib/api.ts";
 import { formatAmount, formatDate, formatTime } from "../../lib/format.ts";
 import { useUiLocale } from "../disputes/text.ts";
 import { EmptyState } from "../EmptyState.tsx";
@@ -29,7 +29,7 @@ import { GuidedCompleted } from "./GuidedCompleted.tsx";
 import { DeclarationControl, ShipFirst } from "./DeclarationControl.tsx";
 import { ruleOf, useReasonText } from "./text.ts";
 
-const fetchHold = async (path: string): Promise<HoldDetail> => HoldDetailSchema.parse(await getJson(path));
+const fetchHold = async (path: string): Promise<HoldDetail> => getParsed(path, (s) => s.HoldDetailSchema);
 const linkClass = "inline-flex min-h-11 items-center text-accent underline underline-offset-2";
 
 function Why({ d }: { d: HoldDetail }) {

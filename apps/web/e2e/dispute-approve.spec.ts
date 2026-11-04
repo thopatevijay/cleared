@@ -6,6 +6,7 @@
 // case)". Also: axe, 360 px, HI, the list, and the ui-reviewer captures of each state.
 import { expect, test } from "@playwright/test";
 import { e2eDisputeIds, recordedNotes } from "../test/support/dispute-seed.ts";
+import { firstViewOff, firstViewOn } from "./support/journey.ts";
 import {
   approveByKeyboard,
   capture,
@@ -130,7 +131,8 @@ test("dispute screens in HI, the 'drafting' state and a failed filing (ui-review
   await expect(page.getByTestId("drafting")).toBeVisible();
   await capture(page, "en-detail-drafting");
 
-  // error and loading
+  // error and loading (M4-08: without the server-rendered first view)
+  await firstViewOff(page);
   await page.route("**/api/disputes/**", (route) =>
     route.fulfill({
       status: 500,
@@ -151,6 +153,7 @@ test("dispute screens in HI, the 'drafting' state and a failed filing (ui-review
   await page.waitForTimeout(3_500);
   await capture(page, "en-detail-loading");
   await page.unroute("**/api/disputes/**");
+  await firstViewOn(page);
 
   // empty list
   await demoWorkspace(page);

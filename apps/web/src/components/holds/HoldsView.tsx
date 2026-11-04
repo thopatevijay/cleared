@@ -3,13 +3,13 @@
 // payment"), the hold rows (held badge + reason + EstimatedDate + "Why?"), then the Sample scenarios
 // section. SWR polls GET /api/holds every 5 s while the tab is visible; a hold that leaves the list (PayPal
 // released it) is announced once. States: loading, empty (the samples still show), error.
-import { HoldsResponseSchema, type HoldItem, type HoldsResponse } from "@cleared/core";
+import type { HoldItem, HoldsResponse } from "@cleared/core";
 import { CircleCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { Link, useRouter } from "../../i18n/navigation.ts";
-import { ApiError, getJson } from "../../lib/api.ts";
+import { ApiError, getParsed } from "../../lib/api.ts";
 import { formatAmount, formatTime } from "../../lib/format.ts";
 import { useUiLocale } from "../disputes/text.ts";
 import { EmptyState } from "../EmptyState.tsx";
@@ -25,7 +25,7 @@ import { useReasonText } from "./text.ts";
 export const HOLDS_POLL_MS = 5_000;
 
 const fetchHolds = async (path: string): Promise<HoldsResponse> =>
-  HoldsResponseSchema.parse(await getJson(path));
+  getParsed(path, (s) => s.HoldsResponseSchema);
 
 function useSlow(): boolean {
   const [slow, setSlow] = useState(false);

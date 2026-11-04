@@ -1,6 +1,7 @@
 // Dates for display (M4-03): instants are stored in UTC and shown in the workspace's IANA time zone, with
 // the zone's short name. Latin digits always; Hindi uses the 24-hour clock (no Latin "am"/"pm" inside
 // Devanagari text: BL-01 6569282428). Intl only.
+import { dateTimeFormat } from "./intl-cache.ts";
 
 /**
  * IANA "backward" links that Chromium and ICU still report (`Intl.supportedValuesOf`, `resolvedOptions`)
@@ -42,9 +43,9 @@ export function formatDateTime(utcIso: string, timeZone: string, locale: string)
     ...(isHindi(locale) ? { hourCycle: "h23" as const } : {}),
   };
   try {
-    return new Intl.DateTimeFormat(locale, { ...options, timeZone }).format(d);
+    return dateTimeFormat(locale, { ...options, timeZone }).format(d);
   } catch {
-    return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(d);
+    return dateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(d);
   }
 }
 

@@ -14,6 +14,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "i18n:check": "node scripts/check-i18n.ts",
+    "lhci": "node apps/web/scripts/lhci.ts",
     "db:migrate": "pnpm --filter @cleared/db --if-present run migrate",
     "db:seed": "pnpm --filter @cleared/db --if-present run seed",
     "db:count": "pnpm --filter @cleared/db --if-present run count",
@@ -21,6 +22,7 @@
     "load:launch": "node scripts/load/launch.ts",
     "load:burst": "node scripts/load/webhook-burst.ts",
     "load:assert": "node scripts/load/run.ts",
+    "load:server-timing": "node scripts/load/server-timing.ts",
     "start:all": "pnpm --parallel --filter @cleared/web --filter @cleared/worker --if-present run start",
     "test:security": "pnpm -r --if-present run test:security",
     "security:check-doc": "node scripts/check-security-doc.ts",
@@ -36,6 +38,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@lhci/cli": "0.15.1",
     "@types/node": "24.19.2",
     "eslint": "10.13.0",
     "prettier": "3.9.10",
