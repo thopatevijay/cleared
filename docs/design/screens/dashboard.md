@@ -29,7 +29,7 @@ This screen answers the seller's question in one glance: how much money is held,
 | 14 | "[Explain]" | Inside the sample scenario explainer (hold screen) | M3-01 | M3 | moved off the dashboard with #13 |
 | 15 | "[Doc pack ▸]" | — | **none** | — | **out of scope:** no ticket builds a limitation document pack (flagged to the owner; PROJECT story 8) |
 | 16 | "New payment from Acme Ltd $350 → drop scope / delivery here ⬆" | A new-payment row with an empty pack: "New payment from Acme Ltd · Add proof so it's ready if PayPal asks" + secondary button **"Add proof"** → pack intake panel | M2-05 (intake panel), M2-01 (intake API) | M2 | **adjusted:** a drag-and-drop target on the dashboard is not in any ticket. "Add proof" covers the job on every device, and the drop target lives on the pack page |
-| 17 | Footer "The agent does the work · you hold the keys · audit log ▸" | `<footer>`: "The agent does the work. You hold the keys." + link "Audit log" | M1-07 (footer + placeholder route) | **M1** | the audit-log page itself has **no owning ticket** (flagged; see `audit-log.md`) |
+| 17 | Footer "The agent does the work · you hold the keys · audit log ▸" | `<footer>`: "The agent does the work. You hold the keys." + link "Audit log" + a **Secondary** button "Sign out" (bordered, so it never reads as part of the link; its error line is `role="alert"` on its own row) | M1-07 (footer + placeholder route) | **M1** | the audit-log page itself has **no owning ticket** (flagged; see `audit-log.md`) |
 
 Added beyond the wireframe: **"Create a sandbox test payment"** (Sandbox) in the empty state (M1-07, **M1**); the "via webhook" source tag and "Waiting for PayPal…" row (M1-07, **M1**); **"Run the dispute scenario"** (Sandbox) on demo dashboards (M2-10, M2).
 
@@ -92,7 +92,7 @@ Rows are full width with the status rail on the left. The single row action wrap
 - A row click opens the payment detail (375/768) or selects it into the right pane (1440, with the URL updated, `aria-current`).
 - A row action opens the target screen with focus on the relevant section ("Review and approve" → dispute review `ApprovalCard`; "Why?" → hold explanation; "File tracking" → tracking approval; "Add proof" → pack intake).
 - "Create a sandbox test payment" sends `POST` with an `Idempotency-Key`. A double tap is safe, and the button shows busy as "Creating…".
-- Keyboard path: Skip link "Skip to payments" → language switch (EN, हिं) → notification bell → summary facts (held, in dispute, proof-ready) → "Run the dispute scenario" (demo) → each payment row link, then its single row action → "Sample scenarios" link → footer "Audit log". Enter activates; Escape clears an active filter when focus is in the summary.
+- Keyboard path: Skip link "Skip to payments" → language switch (EN, हिं) → notification bell → summary facts (held, in dispute, proof-ready) → "Run the dispute scenario" (demo) → each payment row link, then its single row action → "Sample scenarios" link → footer "Audit log" → "Sign out". Enter activates; Escape clears an active filter when focus is in the summary.
 
 ## Copy
 | Key | EN | HI |
@@ -125,6 +125,8 @@ Rows are full width with the status rail on the left. The single row action wrap
 | error.title | Couldn't load your payments | आपके भुगतान लोड नहीं हो सके |
 | footer | The agent does the work. You hold the keys. | काम एजेंट करता है। चाबी आपके हाथ में है। |
 | footer.audit | Audit log | ऑडिट लॉग |
+| signOut | Sign out | साइन आउट करें |
+| signOutError | Couldn't sign out. Check your connection and try again. | साइन आउट नहीं हो सका। कनेक्शन जाँचें और फिर कोशिश करें। |
 
 Synthetic demo data: Asha Rao (logo redesign, $120.00 USD), Acme Ltd ($350.00 USD), Kofi Mensah ($64.00 USD), Ravi Traders (goods, $420.00 USD).
 

@@ -1,6 +1,6 @@
 "use client";
-// Sign out (BL-01 6629801956, sweep M4): a secondary text button in the dashboard footer, beside the
-// audit-log link. POST /api/auth/sign-out (idempotency key), then a full load of the landing page so no
+// Sign out (BL-01 6629801956, sweep M4): a Secondary button (components.md) in the dashboard footer, after
+// the audit-log link; bordered so the two read as separate controls (BL-01 6631771197, sweep M5). POST /api/auth/sign-out (idempotency key), then a full load of the landing page so no
 // client cache of the workspace survives. A 401 means the session had already ended: same outcome.
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
@@ -31,13 +31,13 @@ export function SignOutButton() {
         disabled={busy}
         aria-busy={busy || undefined}
         onClick={() => void signOut()}
-        className="inline-flex min-h-11 items-center text-accent underline underline-offset-2 disabled:opacity-70"
+        className="inline-flex min-h-11 items-center rounded-md border border-border-strong bg-surface px-3 font-medium text-accent hover:bg-surface-sunken disabled:opacity-70"
         data-testid="sign-out"
       >
         {t("signOut")}
       </button>
       {failed ? (
-        <span role="alert" className="basis-full text-danger" data-testid="sign-out-error">
+        <span role="alert" className="basis-full pb-1 text-danger" data-testid="sign-out-error">
           {t("signOutError")}
         </span>
       ) : null}

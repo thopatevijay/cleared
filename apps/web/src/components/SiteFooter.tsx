@@ -19,7 +19,7 @@ export function DashboardFooter({ current = false }: { current?: boolean }) {
   return (
     <footer className="border-t border-border py-6 text-sm text-text-muted">
       <div className="mx-auto flex max-w-[720px] flex-col gap-1 px-4 xl:max-w-[1200px]">
-        <p className="flex flex-wrap items-center gap-x-3">
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <span>{t("footer")}</span>
           <Link
             href="/audit"
