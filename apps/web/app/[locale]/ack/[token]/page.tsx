@@ -43,6 +43,7 @@ async function Header() {
 export default async function AckPage({ params }: { params: Promise<{ locale: string; token: string }> }) {
   const { token } = await params;
   const t = await getTranslations("ack");
+  const tc = await getTranslations("common");
   const ack = await loadPublicAck(getDeps(), token);
   const seller = ack?.sellerName ?? t("sellerFallback");
   return (
@@ -83,13 +84,14 @@ export default async function AckPage({ params }: { params: Promise<{ locale: st
           </>
         )}
       </main>
-      {/* nothing can be confirmed on the neutral page, so no "records this confirmation" footer (BL-01
-          6569408949 item 10, sweep M5) */}
-      {ack === null ? null : (
-        <footer className="mx-auto max-w-[640px] px-4 pb-8 text-xs text-text-muted" data-testid="ack-footer">
-          {t("footer")}
-        </footer>
-      )}
+      {/* nothing can be confirmed on the neutral page: its footer (the landmark client-ack.md lists) carries
+          the sandbox disclaimer, not "records this confirmation" (BL-01 6569408949 item 10, sweep M5) */}
+      <footer
+        className="mx-auto max-w-[640px] px-4 pb-8 text-xs text-text-muted"
+        data-testid={ack === null ? "ack-footer-neutral" : "ack-footer"}
+      >
+        {ack === null ? tc("footerSandbox") : t("footer")}
+      </footer>
     </>
   );
 }

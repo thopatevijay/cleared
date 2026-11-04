@@ -167,8 +167,10 @@ test("seller creates a link; the client sees the scope as plain text and confirm
   await c.page.reload();
   await expect(c.page.getByTestId("ack-neutral")).toContainText("This link can't be used");
   await expect(c.page.getByTestId("ack-scope")).toHaveCount(0);
-  // sweep M5 (BL-01 6569408949 item 10): no "records this confirmation" footer where nothing can be confirmed
+  // sweep M5 (BL-01 6569408949 item 10): no "records this confirmation" footer where nothing can be confirmed;
+  // the footer landmark stays, with the sandbox disclaimer
   await expect(c.page.getByTestId("ack-footer")).toHaveCount(0);
+  await expect(c.page.getByRole("contentinfo")).toHaveText("Sandbox only. Cleared is not affiliated with PayPal.");
   await capture(c.page, "public-neutral", DIR);
   expect(c.violations).toEqual([]);
   await c.ctx.close();
