@@ -1,8 +1,8 @@
 // M5-PERF: a registry queue's consumer polls only every 30 s while idle, so a new job must reach it by
 // LISTEN/NOTIFY. Proves the wake path end to end on the compose Postgres: every known queue carries the
-// `notify` flag after `migrate` (its `.dlq` doesn't), and a job sent from another pg-boss instance (the
-// web's send-only producer) is consumed well inside the 30 s backstop.
-import { closeDb, createDb, createQueue, KNOWN_QUEUES, type Queue } from "@cleared/db";
+// `notify` flag after `ensureKnownQueues` (what `migrate` runs; its `.dlq` doesn't), and a job sent from
+// another pg-boss instance (the web's send-only producer) is consumed well inside the 30 s backstop.
+import { closeDb, createDb, createQueue, ensureKnownQueues, KNOWN_QUEUES, type Queue } from "@cleared/db";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { workOptions } from "../src/boss.ts";
 import { NOTIFY_POLLING_INTERVAL_SECONDS } from "../src/poll-intervals.ts";
@@ -28,6 +28,8 @@ describe.skipIf(!dbAvailable)("LISTEN/NOTIFY wake-up (M5-PERF)", () => {
   });
 
   it("flags every known queue for NOTIFY, and no dead-letter queue", async () => {
+    // what `migrate` runs (other files' harnesses delete the registry queues they wired)
+    await ensureKnownQueues(producer);
     const r = await db.$client.query<{ name: string; notify: boolean }>(
       "select name, notify from pgboss.queue where name = any($1)",
       [KNOWN_QUEUES.flatMap((q) => [q.name, dlqName(q.name)])],
