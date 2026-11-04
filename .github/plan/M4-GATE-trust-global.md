@@ -33,6 +33,8 @@ Run from a fresh worktree of `main`, with a fresh stack (`make down && make up`)
 
 ## Acceptance Criteria
 
+> Amended by the owner on 2026-11-04 (#52, comment 6627675260): holds at the accepted baseline (the 0.95 miss is reported), the `eval replay` CI job on `main` instead of the removed scheduled run, Lighthouse report-only, and the production load p95 recorded as not met. The originals stay below.
+
 - [ ] Every command in the Validation Gate exits 0 on a fresh stack. The output is attached to the issue
 - [ ] `docs/evidence/eval-report.json` shows scope ≥ 0.90, extraction ≥ 0.90, explanations ≥ 0.95, citation verbatim 1.0 and adversarial pass 1.0, each with *n*
 - [ ] The latest scheduled `eval` workflow run on `main` concluded `success` (`gh run list`)
@@ -54,17 +56,29 @@ make down && make up && pnpm db:migrate && pnpm db:seed
 pnpm eval:validate
 pnpm eval --mode replay --set all --split test
 pnpm eval:check-readme
-node -e 'const r=require("./docs/evidence/eval-report.json");const t={scope:.9,extraction:.9,holds:.95};for(const[k,v]of Object.entries(t)){if(!(r.sets[k].accuracy>=v&&r.sets[k].n>0))process.exit(1)};if(r.citationVerbatimRate!==1||r.adversarialPassRate!==1)process.exit(1)'
-gh run list --workflow eval.yml --branch main --event schedule --limit 1 --json conclusion --jq '.[0].conclusion' | grep -x success
+# the report's real fields (sets.<k>.accuracy.rate, sets.scope.verbatim.rate, adversarial.pass); holds is
+# checked against the owner-accepted baseline (amended AC, #52 comment 6627675260) and its 0.95 miss printed
+node -e 'const r=require("./docs/evidence/eval-report.json"),s=r.sets,ok=(c,m)=>{if(!c){console.error("FAIL "+m);process.exitCode=1}};for(const k of ["scope","extraction"])ok(s[k].accuracy.rate>=.9&&s[k].accuracy.n>0,k);ok(s.scope.verbatim.rate===1&&s.scope.verbatim.n>0,"citation verbatim");ok(r.adversarial.pass===true,"adversarial");const h=s.holds;ok(h.accuracy.rate>=10/16&&h.fact_accuracy.rate>=58/64&&h.rule_ok.rate===1&&h.language_ok.rate===1&&h.pair_parity.rate===1&&h.forbidden_claims===0,"holds baseline");console.log("holds "+h.accuracy.k+"/"+h.accuracy.n+(h.accuracy.rate>=.95?" ≥ 0.95":" MISS (≥ 0.95) · accepted (#46)"))'
+# the nightly scheduled run was removed for budget (#46): the `eval replay` CI job on main is the check
+gh api 'repos/{owner}/{repo}/commits/main/check-runs' --jq '[.check_runs[]|select(.name=="eval replay")][0].conclusion' | grep -x success
 pnpm i18n:check
 pnpm --filter @cleared/web build
-pnpm --filter @cleared/web exec playwright test e2e/judge-path.spec.ts e2e/i18n-hi.spec.ts e2e/a11y.spec.ts e2e/keyboard-judge-path.spec.ts e2e/reflow.spec.ts --output "$TMPDIR/m4gate-pw"
+# judge path: HI in i18n-hi.spec.ts, keyboard-only EN in keyboard-judge-path.spec.ts (there is no judge-path.spec.ts)
+pnpm --filter @cleared/web exec playwright test e2e/i18n-hi.spec.ts e2e/a11y.spec.ts e2e/keyboard-judge-path.spec.ts e2e/reflow.spec.ts --output "$TMPDIR/m4gate-pw"
 pnpm lhci autorun --upload.target=filesystem --upload.outputDir="$TMPDIR/m4gate-lhci"
 pnpm test:security
 pnpm audit --prod --audit-level high
 gitleaks detect --source . --log-opts="--all" --report-path "$TMPDIR/m4gate-gitleaks.json"
 test -s docs/evidence/load-report.md
-pnpm load:burst --target http://localhost:3000 --rate 5 --seconds 60 --out "$TMPDIR/m4gate-burst.json"
+# 60 s local burst at 5/s = 300 signed events (there is no --seconds flag) against a NODE_ENV=test stack on
+# the seeded database (the events' custom_id is the seed workspace); docs/evidence/load-report.md "How to re-run"
+make down && make up && pnpm db:migrate && pnpm db:seed
+( source scripts/load/local-env.sh
+  pnpm build
+  NODE_ENV=test pnpm start:all > "$TMPDIR/m4gate-stack.log" 2>&1 & stack=$!
+  trap 'kill "$stack" 2>/dev/null || true' EXIT
+  until curl -sf "$APP_BASE_URL/healthz" >/dev/null; do sleep 2; done
+  pnpm load:burst --target "$APP_BASE_URL" --rate 5 --count 300 --out "$TMPDIR/m4gate-burst.json" )
 pnpm load:assert "$TMPDIR/m4gate-burst.json" --ack-p95 500 --dup 0 --dlq 0
 FAKE_NOW=2026-12-22T00:01:00Z pnpm --filter @cleared/worker exec tsx src/jobs/retention-purge.ts --dry-run
 pnpm runbook:check
