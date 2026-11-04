@@ -116,8 +116,15 @@ export {
   type ScopeChecksRepo,
 } from "./repositories/scope-checks.ts";
 export {
+  AUTO_EVIDENCE_KINDS,
+  AUTO_LEFT_OUT_CODES,
+  AutoEvidenceSchema,
   disputeDraftsRepo,
   DRAFT_AUDIT_ACTIONS,
+  DRAFT_EVIDENCE_ADDED_AUDIT,
+  type AutoEvidence,
+  type AutoEvidenceKind,
+  type AutoLeftOutCode,
   type DisputeDraftRow,
   type DisputeDraftsRepo,
   type DraftRevision,

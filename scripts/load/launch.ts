@@ -106,30 +106,49 @@ async function main(argv: readonly string[]): Promise<void> {
   );
   const rec = new Recorder(NOT_OK);
   const startedAt = new Date();
+  // The measurement is written BEFORE the purge (M4-06, 2026-11-03: a failed purge used to lose the run).
   try {
     const endAt = performance.now() + minutes * 60_000;
     await Promise.all(ws.map((w, n) => session(target, w, endAt, rec, n)));
+    const endedAt = new Date();
+    const floor = new Recorder();
+    await networkFloor(target, floor);
+    const server = await serverTimingsFor(target, startedAt, endedAt);
+    writeResult(out, {
+      kind: "launch",
+      target,
+      startedAt: startedAt.toISOString(),
+      endedAt: endedAt.toISOString(),
+      commit: commitSha(),
+      params: { sessions, minutes, thinkTimeS: "2-5", journey: JOURNEY.length },
+      overall: overallOf(rec),
+      routes: [...rec.routes(), ...floor.routes()],
+      ...(server === null ? {} : { server }),
+      notes,
+    });
   } finally {
-    const purged = dbCli(target, "seed.ts", ["--purge", "loadtest"]);
-    notes.push(`purge: ${JSON.stringify(purged)}`);
-    console.log(`load:launch: purged ${JSON.stringify(purged)}`);
+    purge(target);
   }
-  const endedAt = new Date();
-  const floor = new Recorder();
-  await networkFloor(target, floor);
-  const server = await serverTimingsFor(target, startedAt, endedAt);
-  writeResult(out, {
-    kind: "launch",
-    target,
-    startedAt: startedAt.toISOString(),
-    endedAt: endedAt.toISOString(),
-    commit: commitSha(),
-    params: { sessions, minutes, thinkTimeS: "2-5", journey: JOURNEY.length },
-    overall: overallOf(rec),
-    routes: [...rec.routes(), ...floor.routes()],
-    ...(server === null ? {} : { server }),
-    notes,
-  });
+}
+
+/** Purges the run's workspaces; on failure prints the CLI's own output (the remote error) and exits 1. */
+function purge(target: string): void {
+  try {
+    console.log(`load:launch: purged ${JSON.stringify(dbCli(target, "seed.ts", ["--purge", "loadtest"]))}`);
+  } catch (e) {
+    const err = e as { stdout?: string; stderr?: string; message?: string };
+    console.error(`load:launch: PURGE FAILED: ${err.message ?? String(e)}`);
+    console.error(
+      [err.stdout, err.stderr]
+        .filter((s) => s !== undefined && s !== "")
+        .join("\n")
+        .slice(-4000),
+    );
+    console.error(
+      "load:launch: loadtest workspaces are left; run `seed.ts --purge loadtest` once the cause is fixed",
+    );
+    process.exitCode = 1;
+  }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
