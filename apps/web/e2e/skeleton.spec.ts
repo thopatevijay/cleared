@@ -262,6 +262,10 @@ test("screens and states for ui-reviewer (local)", async ({ browser }) => {
     await page.getByLabel(m.landing.emailLabel).fill("not-an-email");
     await page.getByRole("button", { name: m.landing.signinCta }).click();
     await expect(page.getByText(m.landing.invalidEmail)).toBeVisible();
+    // sweep M5 (BL-01 6531216924 item 6): the aria-invalid input takes the 2 px danger border
+    const field = page.getByLabel(m.landing.emailLabel);
+    await expect(field).toHaveAttribute("aria-invalid", "true");
+    await expect(field).toHaveCSS("border-top-width", "2px");
     await capture(page, `landing-invalid-email-${locale}`);
     await page.getByLabel(m.landing.emailLabel).fill("seller@example.test");
     await page.getByRole("button", { name: m.landing.signinCta }).click();

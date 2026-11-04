@@ -6,7 +6,20 @@ import { ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useRef, useState } from "react";
 
-export function RuleSource({ source, label }: { source: Source; label?: string }) {
+/**
+ * `named`: the visible label carries the source's title ("Source: PayPal transaction event codes: …"),
+ * for places that list several sources together, so no two read as the same "Source" link (BL-01
+ * 6601579774 item 1 / 6570430240 item 2, sweep M5). Titles are PayPal's English page names.
+ */
+export function RuleSource({
+  source,
+  label,
+  named = false,
+}: {
+  source: Source;
+  label?: string;
+  named?: boolean;
+}) {
   const t = useTranslations("holds");
   const [open, setOpen] = useState(false);
   const id = useId();
@@ -31,11 +44,21 @@ export function RuleSource({ source, label }: { source: Source; label?: string }
           setOpen(!open);
         }}
       >
-        {label ?? t("source")}
-        <span className="sr-only">
-          {": "}
-          {source.title}
-        </span>
+        {named ? (
+          <span>
+            {label ?? t("source")}
+            {": "}
+            <span lang="en">{source.title}</span>
+          </span>
+        ) : (
+          <>
+            {label ?? t("source")}
+            <span className="sr-only">
+              {": "}
+              {source.title}
+            </span>
+          </>
+        )}
       </button>
       <span
         id={id}

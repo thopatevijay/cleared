@@ -12,6 +12,7 @@ import en from "../../../messages/en.json" with { type: "json" };
 import hi from "../../../messages/hi.json" with { type: "json" };
 import type { ActionViewData, DisputeDetail, Draft } from "../../lib/dispute-view.ts";
 import { AcceptClaimBody, canAcceptClaim } from "./AcceptClaimDialog.tsx";
+import { DeadlineBadge, shownDeadlineState } from "./DeadlineBadge.tsx";
 import { DraftReview } from "./DraftReview.tsx";
 import { FilingStatus } from "./FilingStatus.tsx";
 import { Outcome } from "./Outcome.tsx";
@@ -378,5 +379,25 @@ describe("unmet scope lines warning on the approval card (BL-01 6539398891)", ()
     expect(review(detail("ok"))).not.toContain("scope-gap-warning");
     expect(review(withGaps({ action: action({ state: "approved" }) }))).not.toContain("scope-gap-warning");
     expect(review(withGaps({ allowed: false }))).not.toContain("scope-gap-warning");
+  });
+});
+
+// sweep M5 (BL-01 6604837005 item 2): a stored state that lags the clock still shows the t24 treatment
+describe("DeadlineBadge (shown state)", () => {
+  const due = "2026-11-09T04:59:59.000Z";
+  const at = (hoursBefore: number): number => Date.parse(due) - hoursBefore * 3_600_000;
+  it("takes the more urgent of the stored state and the clock", () => {
+    expect(shownDeadlineState("ok", due, at(18))).toBe("t24");
+    expect(shownDeadlineState("ok", due, at(48))).toBe("t72");
+    expect(shownDeadlineState("ok", due, at(100))).toBe("ok");
+    expect(shownDeadlineState("closed_for_action", due, at(48))).toBe("closed_for_action");
+    expect(shownDeadlineState("t72", null, at(18))).toBe("t72");
+  });
+  it("renders status-error colours and the alarm clock inside 24 h", () => {
+    const out = html(<DeadlineBadge state="ok" dueDate={due} now={at(18)} />);
+    expect(out).toContain('data-state="t24"');
+    expect(out).toContain("bg-status-error-bg");
+    expect(out).toContain("lucide-alarm-clock");
+    expect(decode(out)).toContain("18 hours");
   });
 });

@@ -167,6 +167,10 @@ test("seller creates a link; the client sees the scope as plain text and confirm
   await c.page.reload();
   await expect(c.page.getByTestId("ack-neutral")).toContainText("This link can't be used");
   await expect(c.page.getByTestId("ack-scope")).toHaveCount(0);
+  // sweep M5 (BL-01 6569408949 item 10): no "records this confirmation" footer where nothing can be confirmed;
+  // the footer landmark stays, with the sandbox disclaimer
+  await expect(c.page.getByTestId("ack-footer")).toHaveCount(0);
+  await expect(c.page.getByRole("contentinfo")).toHaveText("Sandbox only. Cleared is not affiliated with PayPal.");
   await capture(c.page, "public-neutral", DIR);
   expect(c.violations).toEqual([]);
   await c.ctx.close();
@@ -255,7 +259,12 @@ test("seller states: loading, no scope, pending after reload, revoke, expired, c
   await page.unrouteAll({ behavior: "wait" });
   const releaseRevoke = await hold(page, revokeUrl, "POST");
   await panel(page).getByRole("button", { name: "Revoke", exact: true }).click();
-  await expect(panel(page).getByRole("button", { name: "Revoking…" })).toBeVisible();
+  const revoking = panel(page).getByRole("button", { name: "Revoking…" });
+  await expect(revoking).toBeVisible();
+  // sweep M5 (BL-01 6569408949 item 9): a spinner and the full-strength fill, not the faded disabled one
+  await expect(revoking.locator("svg.animate-spin")).toHaveCount(1);
+  await expect(revoking).toHaveAttribute("aria-busy", "true");
+  await expect(revoking).toHaveCSS("opacity", "1");
   await capture(page, "seller-revoking", DIR);
   releaseRevoke();
   await expect(panel(page)).toContainText("Revoked");

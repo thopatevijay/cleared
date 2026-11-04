@@ -42,7 +42,7 @@
     "checkBody": "If {email} can sign in, a link is on its way. It works once and expires in 15 minutes.",
     "differentEmail": "Use a different email",
     "sendAgain": "Didn't get it? Send again",
-    "sendAgainIn": "Didn't get it? Send again in {seconds} s",
+    "sendAgainIn": "Didn't get it? Send again in {seconds}\u00a0s",
     "capBusy": "The demo is busy right now. Try again in {minutes} minutes.",
     "capIp": "This network has made 3 demo workspaces today. Try again tomorrow, or <video>watch the video</video>.",
     "tooMany": "Too many sign-in requests. Try again in {minutes} minutes.",
@@ -460,8 +460,9 @@
       "outcome": "Outcome and hold"
     },
     "wait": {
+      "capture": "Creating a card payment in the PayPal sandbox and waiting for PayPal to confirm the capture.",
       "evidence_step": "Waiting for PayPal to open the evidence step. It usually opens within ~15 min.",
-      "evidence_filed": "Waiting for your approved reply. Reviewing and approving the drafted reply arrives with dispute support.",
+      "evidence_filed": "Waiting for your approved reply. Open the dispute to review and approve the drafted reply.",
       "decision": "PayPal usually offers the decision step within ~5 min of your evidence.",
       "outcome": "PayPal usually resolves the case within ~10 min of the decision."
     },

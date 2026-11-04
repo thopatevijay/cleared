@@ -4,7 +4,7 @@
 // hash), revoke it, and see pending / accepted / expired / revoked / scope changed. Polls while pending and
 // announces an acceptance once.
 import type { AckLinkStatus, AckLinkView } from "@cleared/core";
-import { CircleCheck, CircleDashed, Clock, Lock, X, type LucideIcon } from "lucide-react";
+import { CircleCheck, CircleDashed, Clock, LoaderCircle, Lock, X, type LucideIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
@@ -134,9 +134,15 @@ function Revoke({ busy, disabled, onRevoke }: { busy: boolean; disabled: boolean
         <button
           type="button"
           disabled={busy || disabled}
+          aria-busy={busy || undefined}
           onClick={onRevoke}
-          className="inline-flex min-h-11 items-center rounded-md bg-danger px-4 font-semibold text-on-danger disabled:opacity-60"
+          // busy: full-strength fill + spinner like the public form's "Confirming…" (BL-01 6569408949
+          // item 9, sweep M5); the faded fill stays for "disabled" (offline)
+          className={`inline-flex min-h-11 items-center gap-2 rounded-md bg-danger px-4 font-semibold text-on-danger ${busy ? "cursor-wait" : "disabled:opacity-60"}`}
         >
+          {busy ? (
+            <LoaderCircle aria-hidden="true" size={16} className="animate-spin motion-reduce:animate-none" />
+          ) : null}
           {busy ? t("revoking") : t("revokeYes")}
         </button>
         <button ref={keep} type="button" className={SECONDARY} onClick={cancel}>
@@ -361,6 +367,7 @@ export function AckLinkPanel({
           title={t(failure.what === "create" ? "createError" : "revokeError")}
           reference={failure.reference}
           onRetry={failure.what === "create" ? create : revoke}
+          disabled={!online}
         />
       ) : null}
       {!online ? <p className="text-sm text-text-muted">{t("offline")}</p> : null}

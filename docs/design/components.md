@@ -13,7 +13,7 @@ Every component uses tokens from `tokens.css` and no raw hex values. Icons come 
 | Variant | Fill / text | Boundary | Use |
 |---|---|---|---|
 | Primary | `accent` / `on-accent`; hover and pressed `accent-hover` | itself (3:1 vs surface) | One per view: Approve, File tracking, Try as demo seller |
-| Secondary | `surface` / `accent` | 1 px `border-strong` | Why?, Explain, View pack |
+| Secondary | `surface` / `accent` | 1 px `border-strong` | Why?, Explain, View pack, Sign out (footer) |
 | Destructive | `danger` / `on-danger` | itself | Accept claim (only after typed confirmation) |
 | Sandbox | `status-sandbox-bg` / `status-sandbox-fg` | 1.5 px **dashed** `border-strong` + Sandbox badge inside | Every sandbox-only control |
 

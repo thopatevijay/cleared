@@ -101,8 +101,10 @@ export function PaymentRow({
         aria-hidden="true"
         className={`absolute inset-y-0 left-0 w-1 ${RAIL[dispute !== null && dispute.status !== "RESOLVED" ? "dispute" : key]}`}
       />
+      {/* < 768 px the left column dissolves (`contents`) so the order reads amount, status, then the pack
+          line and the row action (dashboard.md: status, reason, action; BL-01 6609551440 item 6, sweep M5) */}
       <div className="flex min-w-0 flex-1 flex-col gap-1 md:grid md:grid-cols-2 md:items-start md:gap-4">
-        <div className="flex flex-col gap-1">
+        <div className="contents md:flex md:flex-col md:gap-1">
           {p.pack === null ? (
             <MoneyCell amount={p.amount} receivable={p.receivable} />
           ) : (
@@ -117,10 +119,12 @@ export function PaymentRow({
           )}
           <span className="font-mono text-xs break-all text-text-muted">{p.captureId}</span>
           {/* one row action: a held row's "Why?" (M3-01) replaces "Add proof" */}
-          {p.pack !== null && !p.pack.hasEvidence && p.hold === null ? (
-            <AddProof p={p} amount={amount} />
-          ) : null}
-          {p.pack !== null ? <PackLine pack={p.pack} /> : null}
+          {p.pack === null ? null : (
+            <div className="order-1 flex flex-col items-start gap-1 md:order-none">
+              <PackLine pack={p.pack} />
+              {!p.pack.hasEvidence && p.hold === null ? <AddProof p={p} amount={amount} /> : null}
+            </div>
+          )}
         </div>
         <div className="flex flex-col gap-1 md:items-end md:text-right">
           <StatusBadge status={key} detail={detail} />
@@ -136,13 +140,13 @@ export function PaymentRow({
           </span>
         </div>
         {p.hold === null ? null : (
-          <div className="md:col-span-2">
+          <div className="order-2 md:order-none md:col-span-2">
             {/* a dispute row's single action is the dispute's own ("Review and approve") */}
             <HeldLines hold={p.hold} amount={amount} timeZone={timeZone} action={dispute === null} />
           </div>
         )}
         {dispute === null ? null : (
-          <div className="md:col-span-2">
+          <div className="order-2 md:order-none md:col-span-2">
             <DisputeLines d={dispute} timeZone={timeZone} />
           </div>
         )}

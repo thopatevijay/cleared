@@ -165,6 +165,7 @@ The miss in detail ([eval report](docs/evidence/eval-report.md), [JSON](docs/evi
 - **The sandbox outcome.** A sandbox dispute resolves as "PayPal covered the case": the seller keeps the money, which is not the same as a decision in the seller's favour.
 - **Visual citation is not built.** Quotes are checked in text (pasted chat, PDF text layers). Support that exists only in a screenshot or photo is marked *can't verify* (`unverifiable`).
 - **Stored PDFs and images are rewritten for safety.** PDFs are re-saved page by page, which drops links, form fields, bookmarks, attachments and metadata (the visible page and its text layer are kept); images are re-encoded without EXIF, so a photo's capture date and place are not kept.
+- **PDFs print English and Hindi text only.** The scope snapshot and the compiled evidence PDF embed one font, Hind (Latin and Devanagari). Other scripts and emoji in a scope print as empty boxes.
 - **Recording a service as Completed** sends PayPal status `COMPLETED` with no carrier and no tracking number (PayPal refuses a carrier without one). Its effect on a hold's release is not confirmed, and the screen says so.
 - **Carrier route advice** uses PayPal's two carrier lists for the tiers. Many carriers are listed by PayPal as `GLOBAL`, so Cleared derives a carrier's country from its code; this mapping is Cleared's, not PayPal's, and only orders the advice.
 - **Goods tracking automation is PayPal's own product.** Cleared files tracking as one approved action, not as a sync.

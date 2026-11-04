@@ -97,6 +97,51 @@ describe("EstimatedDate", () => {
     expect(none).toContain("The payer paid by an eCheck that has not yet cleared.");
   });
 
+  // sweep M5 (BL-01 6601579774 item 1): the full form's several sources each carry their title visibly
+  it("full form with two sources: each Source button names its source (EN and HI)", () => {
+    const names = (l: "en" | "hi") =>
+      [...html(<EstimatedDate e={REVIEW} timeZone="UTC" full />, l).matchAll(
+        /data-testid="source-toggle"[^>]*>([^]*?)<\/button>/g,
+      )].map((m) => text(m[1] ?? "").trim());
+    expect(names("en")).toEqual([
+      "Source: PayPal transaction event codes: T2105 Payment review hold",
+      "Source: PayPal seller account, Holds panel (sandbox)",
+    ]);
+    expect(names("hi")[0]).toBe("स्रोत: PayPal transaction event codes: T2105 Payment review hold");
+    // the compact form keeps one short "Source"
+    expect(html(<EstimatedDate e={REVIEW} timeZone="UTC" />)).toMatch(
+      /data-testid="source-toggle"[^>]*>Source<span class="sr-only">/,
+    );
+  });
+
+  // sweep M5 (BL-01 6569296578 (d)): every "·" closes the nowrap span of the text before it, so a wrap
+  // never leaves one dangling at a line start
+  it("separators end their item (EN and HI, compact and full)", () => {
+    for (const l of ["en", "hi"] as const)
+      for (const full of [false, true]) {
+        const out = html(<EstimatedDate e={REVIEW} timeZone="UTC" full={full} />, l);
+        const dot = '<span aria-hidden="true" class="whitespace-nowrap text-text-muted"> · </span>';
+        const dots = out.split(dot).length - 1;
+        expect(dots).toBeGreaterThan(0);
+        expect(out.split(`${dot}</span>`).length - 1, `${l} full=${String(full)}`).toBe(dots);
+      }
+  });
+
+  // sweep M5 (BL-01 6604837005 item 3): a row past the latest estimate says it is still held
+  it("compact form past the estimate: 'Still held after the estimate' (EN and HI); not before, not full", () => {
+    const future: PaymentHold = {
+      ...REVIEW,
+      estimatedReleaseAt: "2999-01-01T10:00:00.000Z",
+      estimateUpperBoundAt: "2999-01-03T10:00:00.000Z",
+    };
+    expect(text(html(<EstimatedDate e={REVIEW} timeZone="UTC" />))).toContain(
+      "Still held after the estimate. PayPal hasn't released it yet.",
+    );
+    expect(text(html(<EstimatedDate e={REVIEW} timeZone="UTC" />, "hi"))).toContain("अनुमान के बाद भी रुका है");
+    expect(html(<EstimatedDate e={future} timeZone="UTC" />)).not.toContain("past-estimate");
+    expect(html(<EstimatedDate e={REVIEW} timeZone="UTC" full />)).not.toContain("past-estimate");
+  });
+
   it("HI keeps 'अनुमानित' and the source", () => {
     const out = text(html(<EstimatedDate e={REVIEW} timeZone="UTC" />, "hi"));
     expect(out).toContain("अनुमानित");

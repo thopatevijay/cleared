@@ -186,6 +186,8 @@ describe("dashboard pack sub-line (AC 10) and Add proof", () => {
       "Proof pack: scope partly met · delivery missing · client sign-off pending · 2 sources",
     );
     expect(line("hi")).toContain("डिलीवरी नहीं मिला");
+    // sweep M5 (BL-01 6601823124 item 5): the glossary term for scope, as in the glossary and the PDF
+    expect(line("hi")).toContain("सबूत पैक: तय दायरा");
   });
 
   it("an empty pack asks for proof with one action to the intake panel", () => {

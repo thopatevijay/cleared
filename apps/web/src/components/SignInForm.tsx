@@ -50,7 +50,8 @@ function CheckEmail({
         {t("checkTitle")}
       </h2>
       <p>{t("checkBody", { email })}</p>
-      <div className="flex flex-col gap-2 md:flex-row">
+      {/* BL-01 6531216924 item 1 (sweep M5): a button that does not fit moves to the next line whole */}
+      <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:*:shrink-0">
         <button type="button" className={btn} onClick={onReset}>
           {t("differentEmail")}
         </button>
@@ -134,7 +135,7 @@ export function SignInForm() {
         onChange={(e) => {
           setEmail(e.target.value);
         }}
-        className="min-h-12 w-full rounded-md border border-border-strong bg-surface px-3 text-base text-text disabled:bg-surface-sunken disabled:text-text-muted"
+        className="min-h-12 w-full rounded-md border border-border-strong bg-surface px-3 text-base text-text aria-invalid:border-2 aria-invalid:border-danger disabled:bg-surface-sunken disabled:text-text-muted"
       />
       {fieldError ? (
         <p id={errorId} role="alert" className="flex items-center gap-2 text-sm text-danger">

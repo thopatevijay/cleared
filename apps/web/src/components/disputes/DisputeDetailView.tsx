@@ -3,7 +3,7 @@
 // outcome, the judge scenario (M2-10) and the audit trail. SWR polls every 5 s while the dispute is open or a
 // filing is in flight, and pauses while a confirm dialog is open. "#approval" (the dashboard's "Review and
 // approve") moves focus to the ApprovalCard.
-import { FileClock, Loader2 } from "lucide-react";
+import { AlarmClock, FileClock, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
@@ -13,6 +13,7 @@ import type { DisputeDetail, Draft } from "../../lib/dispute-view.ts";
 import { countdown, formatAmount } from "../../lib/format.ts";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 import { AuditTrail } from "./AuditTrail.tsx";
+import { shownDeadlineState } from "./DeadlineBadge.tsx";
 import { DisputeScenario } from "./DisputeScenario.tsx";
 import { EvidenceItems } from "./DraftParts.tsx";
 import { DraftReview } from "./DraftReview.tsx";
@@ -84,16 +85,22 @@ function DueBand({ d, now }: { d: DisputeDetail["dispute"]; now: number }) {
   const t = useTranslations("disputes");
   if (d.dueDate === null || d.status === "RESOLVED") return null;
   const c = countdown(now, d.dueDate);
+  const state = shownDeadlineState(d.deadlineState, d.dueDate, now);
   const label =
-    d.deadlineState === "closed_for_action"
+    state === "closed_for_action"
       ? t("deadline.closed")
       : t(c.unit === "hours" ? "band.hours" : "band.days", { n: c.n });
+  // t24 (dispute-review.md; BL-01 6604837005 item 2): status-error colours and the alarm clock, as on the
+  // list's deadline badge
+  const urgent = state === "t24";
   return (
     <p
-      className="sticky top-14 z-10 -mx-4 border-b border-border bg-bg px-4 py-2 text-sm font-medium xl:static xl:mx-0 xl:border-0 xl:p-0"
+      className={`sticky top-14 z-10 -mx-4 flex items-center gap-2 border-b border-border px-4 py-2 text-sm font-medium xl:static xl:mx-0 xl:border-0 ${urgent ? "bg-status-error-bg text-status-error-fg xl:rounded-md xl:px-3" : "bg-bg xl:p-0"}`}
       data-testid="due-band"
+      data-state={state}
       data-sticky-band
     >
+      {urgent ? <AlarmClock aria-hidden="true" size={16} strokeWidth={1.75} /> : null}
       {label}
     </p>
   );

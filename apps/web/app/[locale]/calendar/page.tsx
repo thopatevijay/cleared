@@ -55,7 +55,7 @@ export default async function Calendar({
     .join(" · ");
   return (
     <>
-      <SiteHeader skipTo="main" skipLabel="skipMain" />
+      <SiteHeader skipTo="main" skipLabel="skipMain" signedIn />
       <main id="main" tabIndex={-1} className="mx-auto flex w-full max-w-[1480px] flex-col gap-6 px-4 py-6">
         <Link
           href="/holds"

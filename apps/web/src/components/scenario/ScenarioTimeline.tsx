@@ -17,7 +17,8 @@ const ICON: Readonly<Record<Step["status"], { icon: LucideIcon; tone: string }>>
 };
 
 /** Steps whose wait PayPal (or the seller) controls; the copy states the measured expectation. */
-const WAITS = new Set<Step["key"]>(["evidence_step", "evidence_filed", "decision", "outcome"]);
+// capture (BL-01 6604837005 item 6, sweep M5): step 1's spinner says what it waits for
+const WAITS = new Set<Step["key"]>(["capture", "evidence_step", "evidence_filed", "decision", "outcome"]);
 
 /** What each id is: the capture step carries the order then the capture; the outcome the capture. */
 function idLabel(key: Step["key"], n: number): "order" | "capture" | "dispute" {
