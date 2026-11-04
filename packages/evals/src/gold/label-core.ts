@@ -158,7 +158,12 @@ export async function reconcileItem(
     const d = await decide(item, h, first, m, review.model);
     if (d.final !== first && d.final !== m.label) throw new Error(`${item.id}/${h.h_id}: final ${d.final} is neither ${first} nor ${m.label}`);
     rows.push({ set: item.set, item_id: item.id, h_id: h.h_id, labeller_label: first, model_label: m.label, model: review.model, final: d.final, reason: d.reason, decided_by: by });
-    hypotheses.push(d.final === h.label ? h : { ...h, label: d.final, spans: finalSpans(`${item.id}/${h.h_id}`, d, m.spans) });
+    if (d.final === h.label) {
+      hypotheses.push(h);
+      continue;
+    }
+    const note = `${h.note === "" ? "" : `${h.note} `}Reconciled to ${d.final}: ${d.reason}`;
+    hypotheses.push({ ...h, label: d.final, spans: finalSpans(`${item.id}/${h.h_id}`, d, m.spans), note });
   }
   return { item: { ...item, hypotheses, review }, rows };
 }

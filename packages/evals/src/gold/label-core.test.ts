@@ -133,7 +133,11 @@ describe("eval:label --from (written answers, e.g. Claude's labels)", () => {
     await expect(reconcileItem(gold, review, [], flipNoQuote, CLAUDE)).rejects.toThrow(/partial needs at least one quote/);
     const flip = fileDecider([{ id: "scope-001", h_id: "H1", final: "partial", reason: "some files sent", quotes: [{ doc_id: "D2", quote: "SVG files" }] }]);
     const flipped = await reconcileItem(gold, review, [], flip, CLAUDE);
-    expect(flipped.item.hypotheses[0]).toMatchObject({ label: "partial", spans: [{ doc_id: "D2", start: 9, end: 18, quote: "SVG files" }] });
+    expect(flipped.item.hypotheses[0]).toMatchObject({
+      label: "partial",
+      spans: [{ doc_id: "D2", start: 9, end: 18, quote: "SVG files" }],
+      note: "handover sends the SVG files Reconciled to partial: some files sent",
+    });
     const odd = fileDecider([{ id: "scope-001", h_id: "H1", final: "met", reason: "x" }]);
     await expect(reconcileItem(gold, review, [], odd, CLAUDE)).rejects.toThrow(/final met is neither missing nor partial/);
     await expect(reconcileItem(gold, review, [], fileDecider([]), CLAUDE)).rejects.toThrow(/no written decision/);
