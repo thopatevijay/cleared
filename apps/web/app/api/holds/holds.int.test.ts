@@ -172,7 +172,7 @@ describe.skipIf(!dbAvailable)("holds API (integration)", () => {
     const d = HoldDetailSchema.parse((await one(a.cookie, id)).body);
     expect(d.explanations).toHaveLength(1);
     expect(d.explanations[0]).toMatchObject({ locale: "hi", origin: "standard", ruleId: "payment_review" });
-    expect(d.explanations[0]?.summary).toContain("64.00 USD");
+    expect(d.explanations[0]?.summary).toContain("USD\u00a064.00");
     expect(await (await ask(a.cookie, id)).json()).toEqual({ status: "ready" });
     // another workspace's hold, a bad locale, a released hold
     expect((await ask(b.cookie, id)).status).toBe(404);
