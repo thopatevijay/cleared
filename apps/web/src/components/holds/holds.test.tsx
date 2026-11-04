@@ -114,6 +114,19 @@ describe("EstimatedDate", () => {
     );
   });
 
+  // sweep M5 (BL-01 6569296578 (d)): every "·" closes the nowrap span of the text before it, so a wrap
+  // never leaves one dangling at a line start
+  it("separators end their item (EN and HI, compact and full)", () => {
+    for (const l of ["en", "hi"] as const)
+      for (const full of [false, true]) {
+        const out = html(<EstimatedDate e={REVIEW} timeZone="UTC" full={full} />, l);
+        const dot = '<span aria-hidden="true" class="text-text-muted">\u00a0· </span>';
+        const dots = out.split(dot).length - 1;
+        expect(dots).toBeGreaterThan(0);
+        expect(out.split(`${dot}</span>`).length - 1, `${l} full=${String(full)}`).toBe(dots);
+      }
+  });
+
   // sweep M5 (BL-01 6604837005 item 3): a row past the latest estimate says it is still held
   it("compact form past the estimate: 'Still held after the estimate' (EN and HI); not before, not full", () => {
     const future: PaymentHold = {

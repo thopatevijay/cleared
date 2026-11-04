@@ -20,9 +20,10 @@ export interface EstimateInput {
   readonly disputeDueAt?: string | null;
 }
 
+// a no-break space before the "·" keeps it on the line of the word it follows
 const Dot = () => (
   <span aria-hidden="true" className="text-text-muted">
-    {" · "}
+    {" · "}
   </span>
 );
 
@@ -108,42 +109,39 @@ export function EstimatedDate({
       data-rule={rule?.id}
     >
       {full || at === null ? (
-        <span className="flex flex-wrap items-center gap-x-2">
-          <span data-testid="estimate-sentence">{t(`est.${key}`)}</span>
+        <span className="flex flex-wrap items-center gap-x-1">
+          <span>
+            <span data-testid="estimate-sentence">{t(`est.${key}`)}</span>
+            {(key === "dispute" && due !== null) || at !== null || pendingEvent ? <Dot /> : null}
+          </span>
           {key === "dispute" && due !== null ? (
-            <>
-              <Dot />
-              <span>{t("disputeDue", { date: date(due) })}</span>
-            </>
+            <span className="whitespace-nowrap">
+              {t("disputeDue", { date: date(due) })}
+              {at !== null || pendingEvent ? <Dot /> : null}
+            </span>
           ) : null}
-          {at !== null || pendingEvent ? (
-            <>
-              <Dot />
-              <span className="font-medium">{t("estimated")}</span>
-            </>
-          ) : null}
+          {at !== null || pendingEvent ? <span className="font-medium">{t("estimated")}</span> : null}
         </span>
       ) : null}
       {at !== null ? (
-        <span className="flex flex-wrap items-center gap-x-2">
+        // separators end a line, never start one (BL-01 6569296578 (d), sweep M5: HI wrapped at 360 px
+        // with a dangling "·"): each "·" rides, unbreakable, with the text before it
+        <span className="flex flex-wrap items-center gap-x-1">
           <CalendarClock aria-hidden="true" size={16} strokeWidth={1.75} className="text-text-muted" />
-          <span data-testid="free-by">{t("freeBy", { date: date(at) })}</span>
+          <span className="whitespace-nowrap">
+            <span data-testid="free-by">{t("freeBy", { date: date(at) })}</span>
+            {!full || e.estimateUpperBoundAt !== null ? <Dot /> : null}
+          </span>
           {full && e.estimateUpperBoundAt !== null ? (
-            <>
-              <Dot />
-              <span>{t("upTo", { date: date(e.estimateUpperBoundAt) })}</span>
-            </>
+            <span className="whitespace-nowrap">{t("upTo", { date: date(e.estimateUpperBoundAt) })}</span>
           ) : null}
           {full ? null : (
             <>
-              <Dot />
-              <span className="font-medium">{t("estimated")}</span>
-              {source === null ? null : (
-                <>
-                  <Dot />
-                  <RuleSource source={source} />
-                </>
-              )}
+              <span className="font-medium whitespace-nowrap">
+                {t("estimated")}
+                {source === null ? null : <Dot />}
+              </span>
+              {source === null ? null : <RuleSource source={source} />}
             </>
           )}
         </span>
