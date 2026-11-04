@@ -50,7 +50,8 @@ function CheckEmail({
         {t("checkTitle")}
       </h2>
       <p>{t("checkBody", { email })}</p>
-      <div className="flex flex-col gap-2 md:flex-row">
+      {/* BL-01 6531216924 item 1 (sweep M5): a button that does not fit moves to the next line whole */}
+      <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:*:shrink-0">
         <button type="button" className={btn} onClick={onReset}>
           {t("differentEmail")}
         </button>
