@@ -68,7 +68,7 @@ test("the card lists what Cleared added and why an item was left out (EN)", asyn
   await expect(ackBox).toBeChecked();
   const left = page.getByTestId("evidence-auto-left-out");
   await expect(left).toHaveText(
-    "Not added: with this item (10 MB) the PDF would reach PayPal's 10 MB limit.",
+    "Not added: with this item (9.99 MB) the PDF would reach PayPal's 10 MB limit.",
   );
   await expect(page.getByRole("checkbox", { name: /scope snapshot.*Not added/ })).not.toBeChecked();
   await expect(
