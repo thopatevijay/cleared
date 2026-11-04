@@ -1,7 +1,7 @@
 # Performance report (M4-04): Core Web Vitals budget, measured
 
 Ticket: M4-04 (#48). Budget (engineering standards §3.5, architecture §1): on Lighthouse's mobile preset
-(simulated **Slow 4G**: 150 ms RTT, 1.6 Mbps; **4× CPU** slowdown), LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms
+(simulated **Slow 4G**: 150 ms RTT, 1.6 Mbps; **4× CPU** slowdown), LCP ≤ 3.2 s (revised from 2.5 s by the owner, issue #142, 2026-11-04; claim wording: "LCP ≤ 3.2 s, Lighthouse mobile simulation, localhost"), CLS ≤ 0.1, TBT ≤ 200 ms
 (the lab proxy for INP ≤ 200 ms), and first-load JS ≤ 200 KB gzip on the dashboard. The Bryntum
 `CashCalendar` is client-only, loaded at runtime from `/vendor`, and outside the dashboard budget.
 
@@ -159,3 +159,14 @@ Meeting LCP ≤ 2.5 s needs one of these, each beyond this ticket:
 - Measure LCP with DevTools throttling against a deployed origin, where the trace is real (M4-04 measured
   the server-rendered pages at 1.5 s that way).
 - An owner decision on the budget's method.
+
+## M4-08 follow-up: budget revised, and the signed-in runs fixed (2026-11-04)
+- **LCP budget:** ≤ 3.2 s, owner decision on issue #142, 2026-11-04. Claim wording: "LCP ≤ 3.2 s, Lighthouse
+  mobile simulation, localhost". CLS, TBT, throttling and runs are unchanged.
+- **Why `/hi/payments` landed on `/hi?ended=1` (BL-01 6609549510):** the wrapper passed the session as an
+  `extraHeaders` Cookie. That reaches the document request only; Chrome builds the Cookie header of the page's
+  own `fetch` calls from its cookie jar, so every `/api/*` call returned 401 and the client sent the page to
+  `/<locale>?ended=1`. The signed-in rows above were measured with the first view server-rendered and the client
+  data calls failing. It is not specific to Hindi. Now `apps/web/scripts/lhci-session.cjs` (an lhci
+  `puppeteerScript`) puts the cookie in the jar, with `disableStorageReset`, one browser per URL.
+  Every signed-in run now ends on its own URL.

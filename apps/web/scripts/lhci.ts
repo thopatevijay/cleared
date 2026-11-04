@@ -3,9 +3,9 @@
 //   1. starts `next start` and the worker on the msw PayPal stub (as playwright.config.ts does; no network),
 //   2. creates a demo seller (POST /api/demo) and seeds the judge path (e2e/support/journey.ts),
 //   3. runs `lhci collect` twice into one result set: the public pages without a cookie, then the
-//      signed-in pages with the session cookie as an extra header (a cookie on the landing page would
-//      redirect it to the dashboard),
-//   4. runs `lhci assert` (lighthouserc.json: LCP ≤ 2500 ms, CLS ≤ 0.1, TBT ≤ 200 ms, median of 3 runs on
+//      signed-in pages with the session cookie in the browser's jar (lhci-session.cjs; a cookie on the
+//      landing page would redirect it to the dashboard),
+//   4. runs `lhci assert` (lighthouserc.json: LCP ≤ 3200 ms, CLS ≤ 0.1, TBT ≤ 200 ms, median of 3 runs on
 //      Lighthouse's mobile preset: simulated Slow 4G and 4× CPU) and `lhci upload`.
 // Any other lhci command passes straight through. `--upload.*`, `--collect.*` and `--assert.*` options are
 // handed to the matching step. Needs `pnpm --filter @cleared/web build` and a migrated database
@@ -124,14 +124,14 @@ async function servers(): Promise<ChildProcess[]> {
 }
 
 /** A demo seller with the judge path seeded; returns the cookie header and the signed-in URLs. */
-async function seedSeller(): Promise<{ cookie: string; urls: string[] }> {
+async function seedSeller(): Promise<{ cookies: { name: string; value: string }[]; urls: string[] }> {
   const api = await request.newContext({ baseURL: origin });
   const res = await api.post("/api/demo", {
     headers: { origin, "idempotency-key": randomUUID() },
     data: { locale: "en" },
   });
   if (res.status() !== 201) throw new Error(`POST /api/demo → ${String(res.status())}`);
-  const cookie = (await api.storageState()).cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+  const cookies = (await api.storageState()).cookies.map(({ name, value }) => ({ name, value }));
   // the journey helpers drive a Playwright page; a headless one on our origin carries the same session
   const browser = await chromium.launch();
   try {
@@ -142,7 +142,7 @@ async function seedSeller(): Promise<{ cookie: string; urls: string[] }> {
     const ws = ((await (await page.request.get("/api/workspace")).json()) as { workspace: { id: string } })
       .workspace.id;
     const j = await seedWorkspace(page, ws);
-    return { cookie, urls: signedInPaths(j).map((p) => origin + p) };
+    return { cookies, urls: signedInPaths(j).map((p) => origin + p) };
   } finally {
     await browser.close();
     await api.dispose();
@@ -179,20 +179,32 @@ async function autorun(args: readonly string[]): Promise<void> {
   const a = splitArgs(args);
   const procs = await servers();
   try {
-    const { cookie, urls } = await seedSeller();
+    const { cookies, urls } = await seedSeller();
+    process.env["LHCI_SESSION_COOKIES"] = JSON.stringify(cookies);
     lhci([
       "collect",
       `--config=${rcWith({ url: PUBLIC_PATHS.map((p) => origin + p) })}`,
       ...a.collect,
       ...a.all,
     ]);
-    lhci([
-      "collect",
-      "--additive",
-      `--config=${rcWith({ url: urls, settings: { extraHeaders: JSON.stringify({ Cookie: cookie }) } })}`,
-      ...a.collect,
-      ...a.all,
-    ]);
+    // one lhci process (and so one fresh browser, with only the session cookie) per URL, so no page
+    // starts from the cache or state another URL left behind
+    for (const url of urls) {
+      lhci([
+        "collect",
+        "--additive",
+        `--config=${rcWith({
+          url: [url],
+          // lhci resolves the script against its cwd (the repo root)
+          puppeteerScript: "apps/web/scripts/lhci-session.cjs",
+          puppeteerLaunchOptions: { args: ["--no-sandbox"] },
+          // Lighthouse clears the origin's cookies before each run unless told not to
+          settings: { disableStorageReset: true },
+        })}`,
+        ...a.collect,
+        ...a.all,
+      ]);
+    }
   } finally {
     for (const p of procs) if (p.pid !== undefined) process.kill(-p.pid, "SIGTERM");
   }
