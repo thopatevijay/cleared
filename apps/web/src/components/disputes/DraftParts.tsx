@@ -1,13 +1,13 @@
 "use client";
 // The ApprovalCard's parts (components.md): the notes with their live count, the evidence items with their
 // checkboxes and file links, and the draft fingerprint. Model output and seller text are plain text only.
-import { Quote } from "lucide-react";
+import { FilePlus, Info, Quote } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "../../i18n/navigation.ts";
 import { useEffect, useId, useRef, useState } from "react";
 import { codePointCount, fingerprint, NOTES_MAX, NOTES_WARN_AT } from "../../lib/dispute-helpers.ts";
 import type { DraftItem } from "../../lib/dispute-view.ts";
-import { formatTime } from "../../lib/format.ts";
+import { formatBytes, formatTime } from "../../lib/format.ts";
 import { useUiLocale } from "./text.ts";
 
 /** The notes' character count ("1,500"): Latin digits in both locales. */
@@ -107,6 +107,30 @@ function ItemLinks({ i }: { i: DraftItem }) {
   );
 }
 
+/**
+ * BL-01 6595501766: "Added by Cleared" on the client sign-off / scope snapshot code added to the agent's draft,
+ * or why it is not in the reply (PayPal's limits). Plain text; never only colour.
+ */
+function AutoNote({ i }: { i: DraftItem }) {
+  const t = useTranslations("disputes.draft");
+  const locale = useUiLocale();
+  if (i.auto === null) return null;
+  if (i.auto.state === "added")
+    return (
+      <span className="flex items-center gap-1 text-sm text-text-muted" data-testid="evidence-auto-added">
+        <FilePlus aria-hidden="true" size={14} strokeWidth={1.75} />
+        {t("autoAdded")}
+      </span>
+    );
+  const size = formatBytes(locale, i.auto.bytes ?? 0);
+  return (
+    <span className="flex items-start gap-1 text-sm text-text-muted" data-testid="evidence-auto-left-out">
+      <Info aria-hidden="true" size={14} strokeWidth={1.75} className="mt-1 shrink-0" />
+      {t(`autoLeftOut.${i.auto.code ?? "unreadable"}`, { size })}
+    </span>
+  );
+}
+
 function useItemLabel(timeZone: string) {
   const t = useTranslations("disputes.draft");
   const locale = useUiLocale();
@@ -159,6 +183,11 @@ export function EvidenceItems({
     <fieldset className="flex flex-col gap-1">
       <legend className="font-medium">{t("items")}</legend>
       {readOnly ? null : <p className="text-sm text-text-muted">{t("itemsHint")}</p>}
+      {items.some((i) => i.auto !== null) ? (
+        <p className="text-sm text-text-muted" data-testid="evidence-auto-hint">
+          {t("autoHint")}
+        </p>
+      ) : null}
       <ul className="flex flex-col" data-testid="evidence-items">
         {items.map((i) => (
           <li
@@ -176,7 +205,10 @@ export function EvidenceItems({
                 className="h-6 w-6 shrink-0 accent-[var(--color-accent)]"
                 data-testid="evidence-toggle"
               />
-              <span>{label(i)}</span>
+              <span className="flex flex-col">
+                <span>{label(i)}</span>
+                <AutoNote i={i} />
+              </span>
             </label>
             <span className="pl-9 md:pl-0">
               <ItemLinks i={i} />

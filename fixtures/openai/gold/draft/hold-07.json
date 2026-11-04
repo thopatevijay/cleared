@@ -1,0 +1,249 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:16:53.277Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that explains to a small seller why PayPal is holding a payment.\nEverything is fictional. Never use a real person, business, email, phone number or PayPal id.\nYou are given the capture (PayPal's data) and PayPal's own rule text for this hold. Write the seller's short question about the held payment, once in English and once in Hindi (Devanagari; when the spec says hinglish, write the Hindi version in Roman-script Hinglish instead).\nThen write four facts, each once in English and once in Hindi with the same meaning: three facts a correct explanation must contain, each supported word for word by the capture or the rule text; and a fourth, tempting claim that the capture and rule text do NOT support (for example an exact release date, a guaranteed release, or a promise about the outcome).\nfact_code: a short snake_case name for the fact, the same for both languages. The fourth fact's code starts with not_.\nNever describe the seller as the winner of a case.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"persona\": {\n    \"country\": \"KE\",\n    \"trade\": \"woven sisal baskets\",\n    \"offering\": \"goods\",\n    \"currency\": \"JPY\"\n  },\n  \"situation\": \"no reason given by PayPal\",\n  \"hinglish\": true\n}\n\nPayPal data and rule text:\nPayPal capture:\n{\n  \"id\": \"SYNTH-CAPTURE-0007\",\n  \"status\": \"PENDING\",\n  \"status_details\": {\n    \"reason\": \"OTHER\"\n  },\n  \"amount\": {\n    \"currency_code\": \"JPY\",\n    \"value\": \"19.99\"\n  }\n}\n\nPayPal Orders API v2: capture_status_details.reason OTHER:\nNo additional specific reason can be provided. For more information about this captured payment, visit your account online or contact PayPal."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_hold_pair",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "question_en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "question_hi": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fact_code": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z_]+$"
+                    },
+                    "text_en": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "text_hi": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "fact_code",
+                    "text_en",
+                    "text_hi"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "question_en",
+              "question_hi",
+              "facts"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_0909d40c68b3b70c016ae9b49222ac87d290adedfa46619d57",
+      "object": "response",
+      "created_at": 1793701010,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793701013,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that explains to a small seller why PayPal is holding a payment.\nEverything is fictional. Never use a real person, business, email, phone number or PayPal id.\nYou are given the capture (PayPal's data) and PayPal's own rule text for this hold. Write the seller's short question about the held payment, once in English and once in Hindi (Devanagari; when the spec says hinglish, write the Hindi version in Roman-script Hinglish instead).\nThen write four facts, each once in English and once in Hindi with the same meaning: three facts a correct explanation must contain, each supported word for word by the capture or the rule text; and a fourth, tempting claim that the capture and rule text do NOT support (for example an exact release date, a guaranteed release, or a promise about the outcome).\nfact_code: a short snake_case name for the fact, the same for both languages. The fourth fact's code starts with not_.\nNever describe the seller as the winner of a case.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_0909d40c68b3b70c016ae9b492ef5c87d2a01ab7b9ae1c238c",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"question_en\":\"Why is my payment for woven sisal baskets being held?\",\"question_hi\":\"Meri woven sisal baskets ki payment hold par kyun hai?\",\"facts\":[{\"fact_code\":\"capture_pending\",\"text_en\":\"The captured payment has PENDING status.\",\"text_hi\":\"Captured payment ka status PENDING hai.\"},{\"fact_code\":\"no_specific_reason\",\"text_en\":\"No additional specific reason can be provided.\",\"text_hi\":\"Koi aur specific reason nahi diya ja sakta.\"},{\"fact_code\":\"more_information\",\"text_en\":\"For more information about this captured payment, visit your account online or contact PayPal.\",\"text_hi\":\"Is captured payment ke baare mein aur jaankari ke liye apna account online dekhein ya PayPal se sampark karein.\"},{\"fact_code\":\"not_guaranteed_release\",\"text_en\":\"PayPal guarantees that the payment will be released.\",\"text_hi\":\"PayPal guarantee deta hai ki payment release ho jayegi.\"}]}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_hold_pair",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "question_en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "question_hi": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fact_code": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z_]+$"
+                    },
+                    "text_en": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "text_hi": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "fact_code",
+                    "text_en",
+                    "text_hi"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "question_en",
+              "question_hi",
+              "facts"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 479,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 207,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 686
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}

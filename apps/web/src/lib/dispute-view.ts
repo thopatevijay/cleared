@@ -67,6 +67,24 @@ export const ActionViewSchema = z.object({
 });
 export type ActionViewData = z.infer<typeof ActionViewSchema>;
 
+/**
+ * BL-01 6595501766: code always adds the client's sign-off and the scope snapshot to the agent's draft.
+ * `added`: in the selection because code added it. `left_out`: code would have added it, but PayPal's limits
+ * (`code`) kept it out; `bytes` is the item's own size.
+ */
+export const AUTO_LEFT_OUT_CODES = [
+  "unsupported_type",
+  "file_too_large",
+  "pdf_too_large",
+  "unreadable",
+] as const;
+export const DraftItemAutoSchema = z.object({
+  state: z.enum(["added", "left_out"]),
+  code: z.enum(AUTO_LEFT_OUT_CODES).nullable(),
+  bytes: z.number().nullable(),
+});
+export type DraftItemAuto = z.infer<typeof DraftItemAutoSchema>;
+
 export const DraftItemSchema = z.object({
   id: z.uuid(),
   /** E1, E2… in the pack's order (oldest first), as the compiled PDF labels them */
@@ -80,6 +98,7 @@ export const DraftItemSchema = z.object({
   fileUrl: z.string().nullable(),
   /** the item in its proof pack (M2-05's pack page), the citation link */
   packUrl: z.string().nullable(),
+  auto: DraftItemAutoSchema.nullable(),
 });
 export type DraftItem = z.infer<typeof DraftItemSchema>;
 

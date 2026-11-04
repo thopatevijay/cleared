@@ -59,6 +59,7 @@ function detail(notes: string, patch: Partial<DisputeDetail> = {}): DisputeDetai
         selected: true,
         fileUrl: "/api/evidence/00000000-0000-4000-8000-000000000003/file",
         packUrl: "/payments/p/pack#evidence-00000000-0000-4000-8000-000000000003",
+        auto: null,
       },
     ],
     pdf: { url: "/api/disputes/x/draft/pdf?draft=y", bytes: 129_619 },
@@ -281,5 +282,50 @@ describe("Outcome wording", () => {
 
   it("renders nothing until PayPal reports RESOLVED", () => {
     expect(html(<Outcome d={detail("x").dispute} />)).toBe("");
+  });
+});
+
+describe("auto-added evidence on the approval card (BL-01 6595501766)", () => {
+  const withAuto = (): DisputeDetail & { draft: Draft } => {
+    const d = detail("ok");
+    const base = d.draft.items[0];
+    if (base === undefined) throw new Error("no base item");
+    const ack = {
+      ...base,
+      id: "00000000-0000-4000-8000-000000000004",
+      ref: "E2",
+      kind: "client_ack",
+      mime: null,
+      size: null,
+      fileUrl: null,
+      auto: { state: "added" as const, code: null, bytes: null },
+    };
+    const snap = {
+      ...base,
+      id: "00000000-0000-4000-8000-000000000005",
+      ref: "E3",
+      kind: "scope_snapshot",
+      selected: false,
+      auto: { state: "left_out" as const, code: "pdf_too_large" as const, bytes: 9_990_000 },
+    };
+    return { ...d, draft: { ...d.draft, items: [base, ack, snap] } };
+  };
+
+  it("lists what code added and says why an item was left out (EN)", () => {
+    const out = decode(review(withAuto()));
+    expect(out).toContain(en.disputes.draft.autoHint);
+    expect(out).toMatch(/data-testid="evidence-auto-added"[^>]*>.*Added by Cleared/);
+    expect(out).toContain("Not added: with this item (10 MB) the PDF would reach PayPal's 10 MB limit.");
+    expect(out.match(/data-testid="evidence-auto-(added|left-out)"/g)).toHaveLength(2);
+  });
+
+  it("renders the same in HI", () => {
+    const out = review(withAuto(), "hi");
+    expect(out).toContain(hi.disputes.draft.autoAdded);
+    expect(out).toContain("नहीं जोड़ा: इसे (10 MB) जोड़ने पर PDF");
+  });
+
+  it("shows no auto lines when code added nothing", () => {
+    expect(review(detail("ok"))).not.toContain("evidence-auto");
   });
 });

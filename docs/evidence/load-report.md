@@ -6,7 +6,7 @@ These are the measured numbers behind architecture §1's load and latency target
 
 | Target (architecture §1) | Measured | Where | Result |
 |---|---|---|---|
-| Dashboard and read routes p95 < 800 ms, launch load (20 concurrent sessions) | **pending**: the production run follows the merge (see [Production launch load](#production-launch-load)). Local reference: worst route p95 **38.9 ms**, 0 errors in 679 requests | production / local | pending |
+| Dashboard and read routes p95 < 800 ms, launch load (20 concurrent sessions) | **FAIL** on production: overall p95 **949.4 ms** (p50 432.6, p99 1,724.7), 0 errors in 2,985 requests; 7 of 13 routes over 800 ms (worst `GET /api/payments` p95 1,413.5 ms). Client-side from Pune, network floor p95 337.3 ms. Local reference: worst route p95 38.9 ms, 0 errors in 679 requests | production / local | **FAIL** (p95; errors PASS) |
 | Webhook ack p95 < 500 ms, production | server-side p95 **1 ms** (p99 4 ms, n = 1,500). Client-side from Pune, India, p95 **344.1 ms**, network floor alone p95 320.9 ms. 0 × 5xx | Render, Oregon | PASS |
 | Forged signature refused fast | **401**, server-side p95 1 ms (client-side p95 337.3 ms, n = 300) | Render, Oregon | PASS (status 401, not 400; see [Deviations](#deviations-from-the-ticket-text)) |
 | 100× burst ack p95 < 500 ms | **15.7 ms** (n = 2,100 unique events plus 105 redeliveries) | local, production build | PASS |
@@ -71,13 +71,38 @@ Run 1 (11:59:56Z): server-side p95 9 ms, p99 14 ms, max 68 ms (the first cert fe
 
 ## Production launch load
 
-**Pending.** It needs the seed CLI (`seed.ts --loadtest`) on the Render worker, which ships with this ticket's merge. Deploying a branch commit to production isn't allowed. After the auto-deploy from main (check `render deploys list` shows the merge commit live on web and worker), run:
+- **Run:** 2026-11-03 14:13:52Z → 14:23:56Z, commit `379d4e4` (main, live on web and worker), `pnpm load:launch --target https://cleared-web-gd1b.onrender.com --sessions 20 --minutes 10`, from Pune, India.
+- **Result:** `pnpm load:assert --p95 800 --err 0.005` → **FAIL (7)**. The error rate passes (0.000%, 0 × 5xx in 2,985 requests). The p95 target fails on 7 of 13 routes. Overall p95 949.4 ms, p50 432.6 ms, p99 1,724.7 ms. The thresholds were not changed.
+- **Caveat on the client figures:** the network floor (`/healthz` from the load machine) is p50 260.4 ms and p95 337.3 ms, so client-side numbers include about 260 to 340 ms of round trip. The server-side table covers only the routes Render's log sample returned (three of them).
 
-```bash
-pnpm load:launch --target "$PROD_URL" --sessions 20 --minutes 10 --out "$TMPDIR/launch.json"
-pnpm load:assert "$TMPDIR/launch.json" --p95 800 --err 0.005
-pnpm db:count --tag loadtest --target production
-```
+| Route | n | p50 ms | p95 ms | p99 ms | max ms | statuses | errors |
+|---|---:|---:|---:|---:|---:|---|---:|
+| GET /api/disputes | 230 | 380.1 | 732.9 | 1318.4 | 2962.1 | 200×230 | 0 |
+| GET /api/disputes/[id] | 230 | 600.7 | 1170 | 1456.3 | 3359.6 | 200×230 | 0 |
+| GET /api/holds | 229 | 512.3 | 940 | 1982.5 | 3442.8 | 200×229 | 0 |
+| GET /api/holds/[id] | 231 | 497.2 | 817.7 | 1241.9 | 4743.3 | 200×231 | 0 |
+| GET /api/notifications | 229 | 372.6 | 644 | 842.5 | 1518 | 200×229 | 0 |
+| GET /api/packs/[id] | 229 | 527.8 | 968.4 | 2395 | 2819.5 | 200×229 | 0 |
+| GET /api/payments | 229 | 690.5 | 1413.5 | 2168.2 | 4796.8 | 200×229 | 0 |
+| page /en/disputes | 231 | 351 | 704.3 | 1331.5 | 2197.1 | 200×231 | 0 |
+| page /en/disputes/[id] | 230 | 347.5 | 663.5 | 1059.2 | 3202.9 | 200×230 | 0 |
+| page /en/holds | 229 | 347.5 | 690.5 | 1724.7 | 3971.6 | 200×229 | 0 |
+| page /en/holds/[id] | 231 | 361.6 | 885.5 | 1292.4 | 3261.5 | 200×231 | 0 |
+| page /en/payments (dashboard) | 227 | 354.5 | 785.8 | 1576.9 | 2562.9 | 200×227 | 0 |
+| page /en/payments/[id]/pack | 230 | 383.9 | 825.9 | 1867.6 | 3283.9 | 200×230 | 0 |
+| healthz (network floor) | 20 | 260.4 | 337.3 | 417.7 | 417.7 | 200×20 | 0 |
+| **all** | 2985 | 432.6 | 949.4 | 1724.7 | 4796.8 | 5xx×0 | 0.00% |
+
+Server-side (render logs srv-dbheesg473hc739p3g0g, `durationMs` per request line):
+
+| Route | n | p50 ms | p95 ms | p99 ms | max ms | statuses |
+|---|---:|---:|---:|---:|---:|---|
+| /api/disputes | 230 | 104.3 | 372.6 | 492.3 | 1997 | 200×230 |
+| /api/notifications | 229 | 90.7 | 293.4 | 600.7 | 886 | 200×229 |
+| /api/disputes/[id] | 230 | 302.3 | 850.9 | 1193.5 | 2787 | 200×230 |
+
+- **Cleanup:** the launch purged its 20 workspaces; `pnpm db:count --tag loadtest --target production` prints 0. The purge now keeps the emptied workspace rows with `purged_at` set (it deletes their data rows, not the workspace rows).
+- **Follow-up:** the failing routes are the DB-reading API routes, with server-side p95 up to 850.9 ms for `/api/disputes/[id]`. Not fixed in this PR.
 
 What it does:
 - 20 sessions, each in its own `loadtest` workspace, made server-side by `render ssh <worker> -- node packages/db/src/seed.ts --loadtest 20`.

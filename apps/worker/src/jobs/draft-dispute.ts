@@ -9,6 +9,9 @@
 // - idempotent per (dispute, pack scope check version, filing action): a re-delivery finds the draft.
 // - a run without a valid answer, or a selection whose PDF is ≥ 10 MB, writes no draft and no proposal: an
 //   `audit_log` entry `dispute_draft.unavailable` records why (`notes_too_long`, `pdf_too_large` with item sizes…).
+// - BL-01 6595501766: code adds the pack's client sign-off and scope snapshot to the model's selection before
+//   the compile (`draft-auto-evidence.ts`), within PayPal's limits; `dispute_draft.evidence_added` records
+//   what it added and what it left out (and why), in the draft's transaction, for the approval card.
 import { randomUUID } from "node:crypto";
 import { allowedActions, type Dispute, type PayPalDisputesClient } from "@cleared/adapters";
 import {
@@ -16,6 +19,8 @@ import {
   createPostgresBlobStore,
   type CompileError,
   type CompileItem,
+  type CompiledEvidence,
+  type EvidenceCover,
 } from "@cleared/adapters/files";
 import {
   buildDraftInput,
@@ -48,6 +53,7 @@ import {
   createRunStore,
   disputeDraftsRepo,
   DRAFT_AUDIT_ACTIONS,
+  DRAFT_EVIDENCE_ADDED_AUDIT,
   evidenceRepo,
   extractedFactsRepo,
   forWorkspace,
@@ -58,8 +64,10 @@ import {
   type ScopeCheckRow,
   type StoredFactRef,
   type Tx,
+  type AutoEvidence,
 } from "@cleared/db";
 import type { ConsumeContext, Handler } from "../consume.ts";
+import { itemBytes, planAutoEvidence } from "./draft-auto-evidence.ts";
 
 export interface DraftDisputeDeps {
   readonly db: Db;
@@ -293,9 +301,13 @@ interface Compiled {
   readonly bytes: Uint8Array;
   readonly sha256: string;
   readonly itemIds: readonly string[];
+  /** BL-01 6595501766: what code added to the model's selection, and what it left out */
+  readonly auto: AutoEvidence;
 }
 
-/** The model's selection (deduplicated, in its order) compiled into one PDF. */
+type CompileResult = { ok: true; value: Compiled } | { ok: false; error: CompileError };
+
+/** The model's selection (deduplicated, in its order), plus the auto-added items, compiled into one PDF. */
 async function compileSelection(
   deps: DraftDisputeDeps,
   t: Target,
@@ -304,40 +316,89 @@ async function compileSelection(
   refs: DraftRefs,
   items: readonly PackItem[],
   tx: Tx,
-): Promise<{ ok: true; value: Compiled } | { ok: false; error: CompileError }> {
+): Promise<CompileResult> {
   const blobs = createPostgresBlobStore(deps.db);
-  const selected: CompileItem[] = [];
-  for (const ref of [...new Set(output.selected_evidence_item_ids)]) {
-    const item = items.find((i) => i.id === refs.itemIdOf.get(ref));
-    if (!item) continue; // the validator guarantees every ref is a pack item
+  const toCompile = async (item: PackItem): Promise<CompileItem> => {
     const blob = item.blobId === null ? null : await blobs.get(t.ws, item.blobId, tx);
-    selected.push({
+    return {
       id: item.id,
-      ref,
+      ref: `E${String(items.indexOf(item) + 1)}`,
       kind: item.kind,
       sha256: item.sha256,
       addedAt: item.createdAt.toISOString(),
       mime: blob?.mime ?? null,
       bytes: blob ? new Uint8Array(blob.bytes) : null,
       text: item.text,
-    });
-  }
-  const r = await compileEvidencePdf(
-    {
-      disputeId: input.dispute.dispute_id,
-      captureId: input.dispute.capture_id,
-      amount: input.dispute.amount,
-      reason: input.dispute.reason,
-      evidenceType: input.dispute.evidence_type,
-      compiledAt: deps.now().toISOString(),
-    },
-    selected,
-  );
-  if (!r.ok) return r;
-  return {
-    ok: true,
-    value: { bytes: r.value.bytes, sha256: r.value.sha256, itemIds: selected.map((s) => s.id) },
+    };
   };
+  const selected: CompileItem[] = [];
+  for (const ref of [...new Set(output.selected_evidence_item_ids)]) {
+    const item = items.find((i) => i.id === refs.itemIdOf.get(ref));
+    if (item) selected.push(await toCompile(item)); // the validator guarantees every ref is a pack item
+  }
+  const plan = planAutoEvidence(items, new Set(selected.map((i) => i.id)));
+  const autos: AutoItem[] = [];
+  for (const c of plan.candidates) {
+    const item = items.find((i) => i.id === c.id);
+    if (item) autos.push({ kind: c.kind, bytes: itemBytes(c), item: await toCompile(item) });
+  }
+  const cover: EvidenceCover = {
+    disputeId: input.dispute.dispute_id,
+    captureId: input.dispute.capture_id,
+    amount: input.dispute.amount,
+    reason: input.dispute.reason,
+    evidenceType: input.dispute.evidence_type,
+    compiledAt: deps.now().toISOString(),
+  };
+  return compileWithAuto(cover, selected, autos, plan.leftOut);
+}
+
+interface AutoItem {
+  readonly kind: AutoEvidence["added"][number]["kind"];
+  readonly bytes: number;
+  readonly item: CompileItem;
+}
+
+/**
+ * The selection with every auto item; when that fails on PayPal's size limit (or an auto item cannot be
+ * read), the selection alone, then each auto item in turn: one that does not fit is left out, with its code.
+ * A selection that fails on its own fails as before (`pdf_too_large` / `item_unreadable`).
+ */
+async function compileWithAuto(
+  cover: EvidenceCover,
+  selected: readonly CompileItem[],
+  autos: readonly AutoItem[],
+  leftOut: AutoEvidence["leftOut"],
+): Promise<CompileResult> {
+  const done = (r: CompiledEvidence, kept: readonly AutoItem[], out: AutoEvidence["leftOut"]) => ({
+    ok: true as const,
+    value: {
+      bytes: r.bytes,
+      sha256: r.sha256,
+      itemIds: [...selected, ...kept.map((a) => a.item)].map((i) => i.id),
+      auto: { added: kept.map((a) => ({ id: a.item.id, kind: a.kind })), leftOut: out },
+    },
+  });
+  const isAuto = (e: CompileError): boolean =>
+    e.code === "pdf_too_large" || (e.code === "item_unreadable" && autos.some((a) => a.item.id === e.itemId));
+  const all = await compileEvidencePdf(cover, [...selected, ...autos.map((a) => a.item)]);
+  if (all.ok) return done(all.value, autos, leftOut);
+  if (autos.length === 0 || !isAuto(all.error)) return all;
+  let last = await compileEvidencePdf(cover, selected);
+  if (!last.ok) return last;
+  const kept: AutoItem[] = [];
+  const out = [...leftOut];
+  for (const a of autos) {
+    const r = await compileEvidencePdf(cover, [...selected, ...kept.map((k) => k.item), a.item]);
+    if (r.ok) {
+      kept.push(a);
+      last = r;
+    } else {
+      const code = r.error.code === "pdf_too_large" ? "pdf_too_large" : "unreadable";
+      out.push({ id: a.item.id, kind: a.kind, code, bytes: a.bytes });
+    }
+  }
+  return done(last.value, kept, out);
 }
 
 /** The filing payload M2-08 executes (core `actions/policy.ts`). */
@@ -427,6 +488,7 @@ async function persist(
     },
     ctx.tx,
   );
+  await recordAutoEvidence(deps, t, ctx.tx, { draftId, payloadSha256: checked.proposal.payloadSha256 }, d);
   ctx.log.info({ disputeId: t.row.disputeId, draftId, actionId, kind: t.kind }, "dispute draft written");
   return {
     status: "written",
@@ -438,6 +500,35 @@ async function persist(
     payloadSha256: checked.proposal.payloadSha256,
     compiledSha256: d.compiled.sha256,
   };
+}
+
+/** BL-01 6595501766: what code added to (or left out of) the selection, beside the draft it belongs to. */
+async function recordAutoEvidence(
+  deps: DraftDisputeDeps,
+  t: Target,
+  tx: Tx,
+  ids: { draftId: string; payloadSha256: string },
+  d: Drafted,
+): Promise<void> {
+  const { added, leftOut } = d.compiled.auto;
+  if (added.length === 0 && leftOut.length === 0) return;
+  await forWorkspace(deps.db, t.ws).auditLog.insert(
+    {
+      actor: "system",
+      action: DRAFT_EVIDENCE_ADDED_AUDIT,
+      detail: {
+        disputeId: t.row.id,
+        paypalDisputeId: t.row.disputeId,
+        checkVersion: t.checkVersion,
+        actionKind: t.kind,
+        draftId: ids.draftId,
+        payloadSha256: ids.payloadSha256,
+        added: added.map((a) => ({ ...a })),
+        leftOut: leftOut.map((l) => ({ ...l })),
+      },
+    },
+    tx,
+  );
 }
 
 async function recordUnavailable(

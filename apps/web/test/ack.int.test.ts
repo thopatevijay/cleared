@@ -13,7 +13,13 @@ import {
 import { evidenceSha256 } from "@cleared/adapters/files";
 import { createPublisher, createQueue, forWorkspace, type Publisher } from "@cleared/db";
 import { afterAll, describe, expect, it } from "vitest";
-import { ACK_NEUTRAL_BODY, ACK_NEUTRAL_STATUS, loadPublicAck, postAck } from "../src/server/handlers/ack.ts";
+import {
+  ACK_NEUTRAL_BODY,
+  ACK_NEUTRAL_STATUS,
+  DEMO_SELLER_NAME,
+  loadPublicAck,
+  postAck,
+} from "../src/server/handlers/ack.ts";
 import { getAckLinks, postAckLink, postAckRevoke } from "../src/server/handlers/ack-links.ts";
 import { postDemo } from "../src/server/handlers/demo.ts";
 import { getWorkspace } from "../src/server/handlers/session-routes.ts";
@@ -236,13 +242,29 @@ describe.skipIf(!dbAvailable)("client acknowledgement link (integration)", () =>
     const s = await seller();
     const { token } = await link(s);
     expect(await loadPublicAck(testDeps(), token)).toEqual({
-      sellerName: null,
+      sellerName: DEMO_SELLER_NAME, // BL-01 6569232529: a demo workspace has no users row
       amount: "120.00",
       currency: "USD",
       scopeText: SCOPE,
     });
     expect((await accept(token)).status).toBe(200);
     expect(await loadPublicAck(testDeps(), token)).toBeNull();
+  });
+
+  it("BL-01 6569232529: a stored display name wins; a seller workspace without one gets no name (the page's fallback)", async () => {
+    const named = await seller();
+    const { token: namedToken } = await link(named);
+    await q("insert into users (workspace_id, email, display_name) values ($1, $2, $3)", [
+      named.wsId,
+      `ravi-${randomUUID()}@example.test`,
+      "Ravi Prints",
+    ]);
+    expect((await loadPublicAck(testDeps(), namedToken))?.sellerName).toBe("Ravi Prints");
+
+    const unnamed = await seller();
+    const { token } = await link(unnamed);
+    await q("update workspaces set kind = 'seller', expires_at = null where id = $1", [unnamed.wsId]);
+    expect((await loadPublicAck(testDeps(), token))?.sellerName).toBeNull();
   });
 
   it("AC4: the accept route returns 429 after N attempts per IP", async () => {

@@ -1,0 +1,249 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:16:54.027Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that explains to a small seller why PayPal is holding a payment.\nEverything is fictional. Never use a real person, business, email, phone number or PayPal id.\nYou are given the capture (PayPal's data) and PayPal's own rule text for this hold. Write the seller's short question about the held payment, once in English and once in Hindi (Devanagari; when the spec says hinglish, write the Hindi version in Roman-script Hinglish instead).\nThen write four facts, each once in English and once in Hindi with the same meaning: three facts a correct explanation must contain, each supported word for word by the capture or the rule text; and a fourth, tempting claim that the capture and rule text do NOT support (for example an exact release date, a guaranteed release, or a promise about the outcome).\nfact_code: a short snake_case name for the fact, the same for both languages. The fourth fact's code starts with not_.\nNever describe the seller as the winner of a case.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"persona\": {\n    \"country\": \"NG\",\n    \"trade\": \"children's book illustration\",\n    \"offering\": \"services\",\n    \"currency\": \"JPY\"\n  },\n  \"situation\": \"new account, first payments\",\n  \"hinglish\": false\n}\n\nPayPal data and rule text:\nPayPal capture:\n{\n  \"id\": \"SYNTH-CAPTURE-0008\",\n  \"status\": \"PENDING\",\n  \"status_details\": {\n    \"reason\": \"OTHER\"\n  },\n  \"amount\": {\n    \"currency_code\": \"JPY\",\n    \"value\": \"120.00\"\n  }\n}\n\nPayPal Help Center: New PayPal account, payments on hold:\nAs you begin your selling journey, or start selling after a while, we hold the initial payments you receive for up to 21 days."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_hold_pair",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "question_en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "question_hi": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fact_code": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z_]+$"
+                    },
+                    "text_en": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "text_hi": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "fact_code",
+                    "text_en",
+                    "text_hi"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "question_en",
+              "question_hi",
+              "facts"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_0caa0cfd722d3d79016ae9b492790c87d2b9bdfd4cd0acb076",
+      "object": "response",
+      "created_at": 1793701010,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793701013,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that explains to a small seller why PayPal is holding a payment.\nEverything is fictional. Never use a real person, business, email, phone number or PayPal id.\nYou are given the capture (PayPal's data) and PayPal's own rule text for this hold. Write the seller's short question about the held payment, once in English and once in Hindi (Devanagari; when the spec says hinglish, write the Hindi version in Roman-script Hinglish instead).\nThen write four facts, each once in English and once in Hindi with the same meaning: three facts a correct explanation must contain, each supported word for word by the capture or the rule text; and a fourth, tempting claim that the capture and rule text do NOT support (for example an exact release date, a guaranteed release, or a promise about the outcome).\nfact_code: a short snake_case name for the fact, the same for both languages. The fourth fact's code starts with not_.\nNever describe the seller as the winner of a case.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_0caa0cfd722d3d79016ae9b4931ab487d2a6da4d70f17dbaf9",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"question_en\":\"Why is my first ¥120 payment for children's book illustration services on hold?\",\"question_hi\":\"बच्चों की किताबों के चित्रण की सेवाओं के लिए मेरा पहला ¥120 का भुगतान होल्ड पर क्यों है?\",\"facts\":[{\"fact_code\":\"payment_pending\",\"text_en\":\"The ¥120.00 payment is pending.\",\"text_hi\":\"¥120.00 का भुगतान लंबित है।\"},{\"fact_code\":\"reason_other\",\"text_en\":\"The capture lists the reason as OTHER.\",\"text_hi\":\"कैप्चर में कारण OTHER दर्ज है।\"},{\"fact_code\":\"initial_payment_hold\",\"text_en\":\"PayPal holds initial payments for up to 21 days when you begin selling or start selling after a while.\",\"text_hi\":\"जब आप बिक्री शुरू करते हैं या कुछ समय बाद फिर से बिक्री शुरू करते हैं, तो PayPal शुरुआती भुगतानों को अधिकतम 21 दिनों तक होल्ड पर रखता है।\"},{\"fact_code\":\"not_guaranteed_release\",\"text_en\":\"The payment is guaranteed to be released after exactly 21 days.\",\"text_hi\":\"भुगतान ठीक 21 दिनों के बाद जारी होने की गारंटी है।\"}]}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_hold_pair",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "question_en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "question_hi": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fact_code": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z_]+$"
+                    },
+                    "text_en": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "text_hi": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "fact_code",
+                    "text_en",
+                    "text_hi"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "question_en",
+              "question_hi",
+              "facts"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 482,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 248,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 730
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}

@@ -1,0 +1,249 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:16:48.400Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that explains to a small seller why PayPal is holding a payment.\nEverything is fictional. Never use a real person, business, email, phone number or PayPal id.\nYou are given the capture (PayPal's data) and PayPal's own rule text for this hold. Write the seller's short question about the held payment, once in English and once in Hindi (Devanagari; when the spec says hinglish, write the Hindi version in Roman-script Hinglish instead).\nThen write four facts, each once in English and once in Hindi with the same meaning: three facts a correct explanation must contain, each supported word for word by the capture or the rule text; and a fourth, tempting claim that the capture and rule text do NOT support (for example an exact release date, a guaranteed release, or a promise about the outcome).\nfact_code: a short snake_case name for the fact, the same for both languages. The fourth fact's code starts with not_.\nNever describe the seller as the winner of a case.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"persona\": {\n    \"country\": \"IN\",\n    \"trade\": \"handloom cotton scarves\",\n    \"offering\": \"goods\",\n    \"currency\": \"USD\"\n  },\n  \"situation\": \"first big order, seller asks if they can ship\",\n  \"hinglish\": true\n}\n\nPayPal data and rule text:\nPayPal capture:\n{\n  \"id\": \"SYNTH-CAPTURE-0001\",\n  \"status\": \"PENDING\",\n  \"status_details\": {\n    \"reason\": \"PENDING_REVIEW\"\n  },\n  \"amount\": {\n    \"currency_code\": \"USD\",\n    \"value\": \"240.00\"\n  }\n}\n\nPayPal transaction event codes: T2105 Payment review hold:\nA payment review hold protects against unauthorized fraud loss and for seller protection. PayPal reviews the transaction for up to 24 hours.\n\nPayPal seller account, Holds panel (sandbox):\nWe're taking a closer look at this payment. It's required for some payments and normally takes up to 3 business days. Don't ship until we tell you it's ok."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_hold_pair",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "question_en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "question_hi": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fact_code": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z_]+$"
+                    },
+                    "text_en": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "text_hi": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "fact_code",
+                    "text_en",
+                    "text_hi"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "question_en",
+              "question_hi",
+              "facts"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_0996dd5fb99f413c016ae9b48c0c1087d2b9ed7862ebfb31fd",
+      "object": "response",
+      "created_at": 1793701004,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793701008,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that explains to a small seller why PayPal is holding a payment.\nEverything is fictional. Never use a real person, business, email, phone number or PayPal id.\nYou are given the capture (PayPal's data) and PayPal's own rule text for this hold. Write the seller's short question about the held payment, once in English and once in Hindi (Devanagari; when the spec says hinglish, write the Hindi version in Roman-script Hinglish instead).\nThen write four facts, each once in English and once in Hindi with the same meaning: three facts a correct explanation must contain, each supported word for word by the capture or the rule text; and a fourth, tempting claim that the capture and rule text do NOT support (for example an exact release date, a guaranteed release, or a promise about the outcome).\nfact_code: a short snake_case name for the fact, the same for both languages. The fourth fact's code starts with not_.\nNever describe the seller as the winner of a case.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_0996dd5fb99f413c016ae9b48cd90887d2baf06e73fcffa2d6",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\n  \"question_en\": \"My first big order for handloom cotton scarves is pending. Why is the $240 payment held, and can I ship it?\",\n  \"question_hi\": \"Handloom cotton scarves ka mera pehla bada order pending hai. $240 payment hold kyun hai, aur kya main ise ship kar sakta hoon?\",\n  \"facts\": [\n    {\n      \"fact_code\": \"pending_review\",\n      \"text_en\": \"The USD 240.00 payment is pending review.\",\n      \"text_hi\": \"USD 240.00 ka payment review ke liye pending hai.\"\n    },\n    {\n      \"fact_code\": \"review_time\",\n      \"text_en\": \"The Holds panel says the closer look normally takes up to 3 business days.\",\n      \"text_hi\": \"Holds panel ke mutabik, payment ki jaanch mein aam taur par 3 business days tak lagte hain.\"\n    },\n    {\n      \"fact_code\": \"do_not_ship\",\n      \"text_en\": \"Don't ship until PayPal tells you it's ok.\",\n      \"text_hi\": \"Jab tak PayPal ship karne ke liye theek na kahe, ship mat karo.\"\n    },\n    {\n      \"fact_code\": \"not_guaranteed_release\",\n      \"text_en\": \"PayPal guarantees that the payment will be released.\",\n      \"text_hi\": \"PayPal guarantee deta hai ki payment release ho jayega.\"\n    }\n  ]\n}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_hold_pair",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "question_en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "question_hi": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fact_code": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z_]+$"
+                    },
+                    "text_en": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "text_hi": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "fact_code",
+                    "text_en",
+                    "text_hi"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "question_en",
+              "question_hi",
+              "facts"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 530,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 310,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 840
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}
