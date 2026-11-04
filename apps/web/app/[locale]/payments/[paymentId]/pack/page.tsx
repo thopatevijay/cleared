@@ -5,13 +5,15 @@
 import type { WorkspaceId } from "@cleared/core";
 import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
+import { FirstView } from "../../../../../src/components/FirstView.tsx";
 import { PackScreen } from "../../../../../src/components/pack/PackScreen.tsx";
 import { SiteHeader } from "../../../../../src/components/SiteHeader.tsx";
 import { DashboardFooter } from "../../../../../src/components/SiteFooter.tsx";
 import { Link } from "../../../../../src/i18n/navigation.ts";
 import { pageTitle } from "../../../../../src/lib/site.ts";
 import { getDeps } from "../../../../../src/server/deps.ts";
-import { packIdForPayment } from "../../../../../src/server/handlers/packs.ts";
+import { firstView } from "../../../../../src/server/first-view.ts";
+import { getPack, packIdForPayment } from "../../../../../src/server/handlers/packs.ts";
 import { pageSession } from "../../../../../src/server/page-session.ts";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +39,8 @@ export default async function PackPage({
   if (packId === null) notFound();
   const focusIntake = (await searchParams)["intake"] === "1";
   const t = await getTranslations("pack");
+  // M4-08: the pack's first view comes with the HTML (GET /api/packs/:packId's own handler)
+  const fallback = await firstView([[`/api/packs/${packId}`, (req, d) => getPack(req, d, packId)]]);
   return (
     <>
       <SiteHeader skipTo="main" skipLabel="skipMain" signedIn />
@@ -51,7 +55,9 @@ export default async function PackPage({
         >
           {t("back")}
         </Link>
-        <PackScreen packId={packId} focusIntake={focusIntake} />
+        <FirstView fallback={fallback}>
+          <PackScreen packId={packId} focusIntake={focusIntake} />
+        </FirstView>
       </main>
       <DashboardFooter />
     </>

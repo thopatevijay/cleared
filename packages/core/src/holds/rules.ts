@@ -3,7 +3,7 @@
 // estimate computed from a row (`estimate(from)`), shown with the label "estimated" and its source, never
 // as PayPal's promise. A row whose source gives no timeline has `estimate = () => null`.
 // Sample rows (`sample: true`) explain holds the sandbox can't produce; `deriveHold` never returns one.
-import { addMinutes, toEpochMs, fromEpochMs, type Instant } from "../time.ts";
+import { addMinutes, toEpochMs, fromEpochMs, type Instant } from "../instant.ts";
 
 /** Bump when a row's words, source or estimate change (M3-02 caches explanations per rule version). */
 export const HOLD_RULES_VERSION = 2;

@@ -1,7 +1,7 @@
 # Performance report (M4-04): Core Web Vitals budget, measured
 
 Ticket: M4-04 (#48). Budget (engineering standards §3.5, architecture §1): on Lighthouse's mobile preset
-(simulated **Slow 4G**: 150 ms RTT, 1.6 Mbps; **4× CPU** slowdown), LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms
+(simulated **Slow 4G**: 150 ms RTT, 1.6 Mbps; **4× CPU** slowdown), LCP ≤ 3.2 s (revised from 2.5 s by the owner, issue #142, 2026-11-04; claim wording: "LCP ≤ 3.2 s, Lighthouse mobile simulation, localhost"), CLS ≤ 0.1, TBT ≤ 200 ms
 (the lab proxy for INP ≤ 200 ms), and first-load JS ≤ 200 KB gzip on the dashboard. The Bryntum
 `CashCalendar` is client-only, loaded at runtime from `/vendor`, and outside the dashboard budget.
 
@@ -83,3 +83,110 @@ once it is up.
 Even with BL-01 6601208506 fixed, the dashboard would be ≈ 257 KB: the budget also needs zod out of the
 client's first load (a client-side schema subset, or `zod/mini`), which changes how every screen parses
 API responses. That is a decision for the owner/manager, not a fix inside this ticket.
+
+## M4-08 follow-up (2026-11-03): zod out of the first load, data screens rendered on the server
+
+Ticket M4-08 (#142), stacked on this branch with `main` merged in (that brings #138's removal of the crypto
+polyfill). The thresholds are unchanged.
+
+### What changed
+
+- **zod and the response schemas left every first load.** Client fetchers parse through
+  `apps/web/src/lib/schemas.ts`, which loads on demand (`getParsed` / `loadSchemas` in `lib/api.ts`) the
+  first time a screen refreshes or posts. `@cleared/core` declares `sideEffects` (only the three prompt
+  registrations keep theirs). The helpers that the browser uses moved into modules without zod, and the
+  original modules re-export them, so `index.ts` didn't change:
+  - `currency.ts`, `instant.ts`
+  - `holds/kinds.ts`, `holds/completed-quotes.ts`
+  - `scenarios/states.ts`, `cash/days.ts`
+  - `lib/dispute-helpers.ts`
+- **The first view comes with the HTML.** The dashboard, the proof pack, the hold detail and the dispute
+  review call their API route's own handler on the server (`src/server/first-view.ts`). The body goes to
+  the client as SWR's `fallback`, under the route's own key, so the queries and the authZ aren't
+  duplicated. Nothing changed in the client components; SWR still refreshes on mount and on its poll. A
+  non-200 gives no fallback, and the client then shows its loading and error states as before. The local
+  e2e run turns the first view off for one load with a cookie that only `E2E_FIRST_VIEW_SWITCH=1`
+  (playwright.config.ts) honours, so the a11y matrix still checks loading and error.
+
+### Bundle (`pnpm --filter @cleared/web analyze --json`, gzip)
+
+| Route | M4-04 branch + main (before) | M4-08 |
+|---|---:|---:|
+| **dashboard `/[locale]/payments`** (budget 200) | 256.2 KB | **185.0 KB** |
+| `/[locale]/payments/[paymentId]/pack` | 264.3 | 192.4 |
+| `/[locale]/holds/[holdId]` | 262.5 | 191.0 |
+| `/[locale]/disputes/[disputeId]` | 255.8 | 181.7 |
+| `/[locale]/holds` | 251.5 | 179.2 |
+| `/[locale]/calendar` | 249.6 | 175.5 |
+| `/[locale]` | 243.7 | 170.9 |
+
+The dashboard's budget is met. The browser source map shows no zod module in any first-load chunk.
+
+### Lab (`pnpm lhci autorun`, median of 3; the machine idle during the run)
+
+| URL | LCP before (M4-04 table) | LCP M4-08 | FCP | TBT | CLS |
+|---|---:|---:|---:|---:|---:|
+| `/en` | 2799 | 2708 | 1058 | 56 | 0.000 |
+| `/en/payments` | 5707 | 3101 | 1362 | 104 | 0.000 |
+| `/hi/payments` | 8365 | 10096 | 2114 | 80 | **0.201** |
+| `/en/payments/:id/pack` | 5738 | 3105 | 1354 | 99 | 0.000 |
+| `/en/holds` | 3613 | 2980 | 1061 | 129 | 0.075 |
+| `/en/holds/:id` | 5564 | 3087 | 1361 | 72 | 0.000 |
+| `/en/disputes/:id` | 5715 | 3115 | 1356 | 108 | 0.000 |
+| `/en/calendar` | 2704 | 2795 | 1057 | 35 | 0.000 |
+
+**TBT passes everywhere. LCP still misses on every route (budget 2500 ms), and `pnpm lhci autorun` exits 1.**
+An earlier run with builds running on the same machine measured TBT at 335–794 ms. Lighthouse's
+simulation scales the observed main-thread tasks, so a lab run needs an idle machine.
+
+What is left, measured from the LHRs:
+- **The data screens:** their LCP element is now in the HTML, at 3.1 s instead of 5.1–5.7 s. The rest is
+  "render delay": on `/en`, TTFB is 452 ms and the render delay 2,345 ms. On localhost every early request
+  is in LCP's simulated dependency graph: the document, two preloaded woff2 fonts (53 KB), the CSS, and
+  ≈ 179 KB of first-load JS, of which the Next 16 + React 19 runtime alone is 133 KB. The server-rendered
+  data also makes the document heavier (FCP 1.36 s against 1.06 s on `/en`).
+- **`/en` and `/en/calendar`** already had a server-rendered LCP element, and they stay at 2.7–2.8 s with
+  171–176 KB of JS. So with Lighthouse's localhost simulation, this stack's floor is above 2.5 s, whatever
+  the data screens do.
+- **`/hi/payments`** ends on `/hi?ended=1` in the Lighthouse run: a session check redirected it to the
+  landing page. With `curl`, the same kind of cookie gets a 200 on `/hi/payments`. The cause isn't found
+  yet. On the landing page, the Devanagari text waits for its web font: LCP 10.1 s, CLS 0.20.
+  The M4-04 run had 8.4 s on the same URL. This is logged on BL-01. It is not a data-route issue.
+
+Meeting LCP ≤ 2.5 s needs one of these, each beyond this ticket:
+- Cut the runtime's share: no client components on first paint, or a lighter framework build.
+- Stop preloading the Latin fonts.
+- Measure LCP with DevTools throttling against a deployed origin, where the trace is real (M4-04 measured
+  the server-rendered pages at 1.5 s that way).
+- An owner decision on the budget's method.
+
+## M4-08 follow-up: budget revised, and the signed-in runs fixed (2026-11-04)
+- **LCP budget:** ≤ 3.2 s, owner decision on issue #142, 2026-11-04. Claim wording: "LCP ≤ 3.2 s, Lighthouse
+  mobile simulation, localhost". CLS, TBT, throttling and runs are unchanged.
+- **Why `/hi/payments` landed on `/hi?ended=1` (BL-01 6609549510):** the wrapper passed the session as an
+  `extraHeaders` Cookie. That reaches the document request only; Chrome builds the Cookie header of the page's
+  own `fetch` calls from its cookie jar, so every `/api/*` call returned 401 and the client sent the page to
+  `/<locale>?ended=1`. The signed-in rows above were measured with the first view server-rendered and the client
+  data calls failing. It is not specific to Hindi. Now `apps/web/scripts/lhci-session.cjs` (an lhci
+  `puppeteerScript`) puts the cookie in the jar, with `disableStorageReset`, one browser per URL.
+  Every signed-in run now ends on its own URL.
+
+## Final result (owner decision 2026-11-04)
+Owner decision on #142: stop Lighthouse work here; the two remaining misses are accepted and documented, and features take priority. Final cold run (1d6b83e, 3 runs per URL, median run):
+
+| URL | LCP s (median run) | TBT ms | CLS |
+|---|---:|---:|---:|
+| /en | 2.71 | 82 | 0 |
+| /en/payments | 3.15 | 133 | 0 |
+| /hi/payments | 3.77 ✘ | 133 | 0 |
+| pack | 3.15 | 181 | 0 |
+| /en/holds | 3.00 | 123 | 0.075 |
+| hold | 3.17 | 146 | 0 |
+| dispute | 3.15 | 140 | 0 |
+| /en/calendar | 2.89 | 252 ✘ | 0 |
+
+- **Accepted miss:** `/hi/payments` LCP 3.77 s against 3.2 s. Cause: the Devanagari fonts (121 + 26 KB). The fix is known (subset the font for hi only) and not done.
+- **Accepted miss:** `/en/calendar` TBT 252 ms (range 252-283, one run 166) against 200 ms. Not investigated.
+- **Withdrawn:** the earlier "LCP 0.82 s" figures were warm-cache runs and are withdrawn.
+- **CI:** the `lighthouse ci` job is report-only (`continue-on-error: true`); budgets in `lighthouserc.json` are unchanged.
+- **Claim wording:** "6 of 8 audited routes within LCP ≤ 3.2 s / TBT ≤ 200 ms (Lighthouse mobile simulation, localhost)". Dashboard first-load JS is 185 KB against 200 (pass).

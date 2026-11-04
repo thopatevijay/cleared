@@ -7,14 +7,14 @@
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
-import { getJson, NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
-import { DisputeDetailSchema, fingerprint } from "../../lib/dispute-view.ts";
+import { getParsed, NETWORK_ERROR, newKey, postJson } from "../../lib/api.ts";
+import { fingerprint } from "../../lib/dispute-helpers.ts";
 import { refusalOf } from "./text.ts";
 
 /** The action to approve now: the dispute's current proposal, else the one the seller reviewed. */
 async function currentActionId(disputeId: string, reviewed: string): Promise<string> {
   try {
-    const d = DisputeDetailSchema.parse(await getJson(`/api/disputes/${disputeId}`));
+    const d = await getParsed(`/api/disputes/${disputeId}`, (s) => s.DisputeDetailSchema);
     return d.draft?.action?.state === "proposed" ? d.draft.action.id : reviewed;
   } catch {
     return reviewed;

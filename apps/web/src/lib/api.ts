@@ -110,6 +110,22 @@ export async function getJson(path: string): Promise<unknown> {
   return out.body;
 }
 
+export type Schemas = typeof import("./schemas.ts");
+
+/** The response schemas, loaded on first use (M4-08): zod stays out of the first-load JavaScript. */
+export function loadSchemas(): Promise<Schemas> {
+  return import("./schemas.ts");
+}
+
+/** GET + parse with one of the response schemas (`(s) => s.PaymentsResponseSchema`). */
+export async function getParsed<T>(
+  path: string,
+  pick: (s: Schemas) => { parse: (raw: unknown) => T },
+): Promise<T> {
+  const [body, schemas] = await Promise.all([getJson(path), loadSchemas()]);
+  return pick(schemas).parse(body);
+}
+
 export function minutesFrom(seconds: number | null): number {
   return Math.max(1, Math.ceil((seconds ?? 60) / 60));
 }

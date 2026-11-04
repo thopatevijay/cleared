@@ -1,7 +1,12 @@
 // Evidence intake, client side (M2-05): the same type and size caps as the server (M2-01), checked before
 // an upload so an 11 MB file never leaves the browser. The server stays authoritative: its typed codes
 // (snake_case on the wire, BL-01 6536606275) map to the same localised messages.
-import { EVIDENCE_MAX_BYTES, EVIDENCE_MIMES } from "@cleared/core";
+// The dispute module's caps (EVIDENCE_MAX_BYTES / EVIDENCE_MIMES are aliases of these): proof/evidence.ts
+// holds zod schemas, which would put zod in the pack page's first load (M4-08).
+import {
+  EVIDENCE_FILE_MAX_BYTES as EVIDENCE_MAX_BYTES,
+  EVIDENCE_FILE_MIMES as EVIDENCE_MIMES,
+} from "@cleared/core";
 
 /** Codes the intake shows as messages (`pack.errors.<code>`). */
 export const INTAKE_ERROR_CODES = [

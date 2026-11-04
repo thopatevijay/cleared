@@ -48,10 +48,6 @@ const DropdownSchema = z.object({
   codes: z.array(z.string().regex(/^[A-Z0-9_]+$/)).min(1),
 });
 
-/** Parsed once at load: a malformed data file fails every import, never a silent empty map. */
-export const API_CARRIERS = ApiCarriersSchema.parse(apiData);
-export const SHIPPED_BY_DROPDOWN = DropdownSchema.parse(dropdownData);
-
 export interface Carrier {
   readonly code: string;
   /** PayPal's name for it (API list) */
@@ -69,37 +65,77 @@ export interface TierSource {
   readonly note?: string;
 }
 
-const CARRIERS: ReadonlyMap<string, Carrier> = new Map(
-  API_CARRIERS.carriers.map((c) => [
-    c.code,
-    { code: c.code, name: c.name, country: carrierCountry(c.code, c.country) },
-  ]),
-);
-const DROPDOWN: ReadonlySet<string> = new Set(SHIPPED_BY_DROPDOWN.codes);
+interface CarrierData {
+  readonly api: z.infer<typeof ApiCarriersSchema>;
+  readonly dropdown: z.infer<typeof DropdownSchema>;
+  readonly carriers: ReadonlyMap<string, Carrier>;
+  readonly dropdownCodes: ReadonlySet<string>;
+  readonly sources: Readonly<Record<CarrierTier, TierSource>>;
+}
 
-const API_SOURCE: TierSource = {
-  title: "PayPal tracking API: carriers",
-  url: API_CARRIERS.source,
-  date: API_CARRIERS.retrieved_at,
-};
+let parsed: CarrierData | undefined;
+
+/**
+ * The two lists, parsed once on first use (M4-08). In the browser this module arrives with the lazily
+ * loaded response schemas, and parsing 1,200 carriers at import was a ≈ 125 ms long task on every data
+ * screen, though no schema reads the lists. On the server they are still parsed at import (below), so a
+ * malformed data file fails every import there, never a silent empty map.
+ */
+function carrierData(): CarrierData {
+  if (parsed !== undefined) return parsed;
+  const api = ApiCarriersSchema.parse(apiData);
+  const dropdown = DropdownSchema.parse(dropdownData);
+  const apiSource: TierSource = { title: "PayPal tracking API: carriers", url: api.source, date: api.retrieved_at };
+  parsed = {
+    api,
+    dropdown,
+    carriers: new Map(
+      api.carriers.map((c) => [c.code, { code: c.code, name: c.name, country: carrierCountry(c.code, c.country) }]),
+    ),
+    dropdownCodes: new Set(dropdown.codes),
+    sources: {
+      approved: {
+        title: `PayPal "Shipped by" list in Add tracking info (${dropdown.account})`,
+        url: null,
+        date: dropdown.captured_at,
+      },
+      accepted: apiSource,
+      other: apiSource,
+    },
+  };
+  return parsed;
+}
+if (!("document" in globalThis)) carrierData();
+
+/** PayPal's tracking API carrier list, as recorded. */
+export function apiCarriers(): CarrierData["api"] {
+  return carrierData().api;
+}
+
+/** The "Shipped by" dropdown, as captured. */
+export function shippedByDropdown(): CarrierData["dropdown"] {
+  return carrierData().dropdown;
+}
 
 export const TIER_SOURCES: Readonly<Record<CarrierTier, TierSource>> = {
-  approved: {
-    title: `PayPal "Shipped by" list in Add tracking info (${SHIPPED_BY_DROPDOWN.account})`,
-    url: null,
-    date: SHIPPED_BY_DROPDOWN.captured_at,
+  get approved() {
+    return carrierData().sources.approved;
   },
-  accepted: API_SOURCE,
-  other: API_SOURCE,
+  get accepted() {
+    return carrierData().sources.accepted;
+  },
+  get other() {
+    return carrierData().sources.other;
+  },
 };
 
 export function carrierByCode(code: string): Carrier | null {
-  return CARRIERS.get(code) ?? null;
+  return carrierData().carriers.get(code) ?? null;
 }
 
 /** Every carrier in the dropdown (approved), in PayPal's API-list order. */
 export function approvedCarriers(): Carrier[] {
-  return [...CARRIERS.values()].filter((c) => c.code !== OTHER_CARRIER && DROPDOWN.has(c.code));
+  return [...carrierData().carriers.values()].filter((c) => c.code !== OTHER_CARRIER && carrierData().dropdownCodes.has(c.code));
 }
 
 export interface ClassifiedCarrier {
@@ -122,9 +158,9 @@ export function classifyCarrier(code: string, nameOther?: string): ClassifiedCar
     if (name.length === 0 || name.length > CARRIER_NAME_OTHER_MAX) return null;
     return { tier: "other", code, name, country: null, source: TIER_SOURCES.other };
   }
-  const c = CARRIERS.get(code);
+  const c = carrierData().carriers.get(code);
   if (c === undefined) return null;
-  const tier: CarrierTier = DROPDOWN.has(code) ? "approved" : "accepted";
+  const tier: CarrierTier = carrierData().dropdownCodes.has(code) ? "approved" : "accepted";
   return { tier, code, name: c.name, country: c.country, source: TIER_SOURCES[tier] };
 }
 
@@ -148,11 +184,11 @@ const squash = (s: string): string => norm(s).replace(/ /g, "");
 export function matchCarrier(written: string): { code: string; nameOther?: string } {
   const text = written.trim();
   const upper = text.toUpperCase();
-  if (upper !== OTHER_CARRIER && CARRIERS.has(upper)) return { code: upper };
+  if (upper !== OTHER_CARRIER && carrierData().carriers.has(upper)) return { code: upper };
   const n = norm(text);
   const s = squash(text);
   if (n.length > 0) {
-    const all = [...CARRIERS.values()].filter((c) => c.code !== OTHER_CARRIER);
+    const all = [...carrierData().carriers.values()].filter((c) => c.code !== OTHER_CARRIER);
     const exact = all.find((c) => norm(c.name) === n || squash(c.name) === s);
     if (exact !== undefined) return { code: exact.code };
     const starts = all

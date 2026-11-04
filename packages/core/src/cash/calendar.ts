@@ -5,6 +5,10 @@
 import { z } from "zod";
 import { AmountSchema, type Amount } from "../contracts/payments.ts";
 import { holdRule, type RuleSource } from "../holds/rules.ts";
+import { addDays, daysBetween, localDay } from "./days.ts";
+
+// The day arithmetic lives in days.ts (no zod) for the browser (M4-08).
+export { addDays, daysBetween, localDay } from "./days.ts";
 
 /** The API caps a range at 92 days (inclusive), about one quarter. */
 export const CASH_RANGE_MAX_DAYS = 92;
@@ -17,19 +21,8 @@ export const CASH_EVENT_KINDS = [
 ] as const;
 export type CashEventKind = (typeof CASH_EVENT_KINDS)[number];
 
-const DAY_MS = 86_400_000;
 const day = z.iso.date();
 const when = z.iso.datetime({ offset: true });
-
-/** Whole days from `from` to `to` (both `YYYY-MM-DD`). */
-export function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
-}
-
-/** `YYYY-MM-DD` plus `n` days. */
-export function addDays(date: string, n: number): string {
-  return new Date(Date.parse(`${date}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10);
-}
 
 /** `?from=YYYY-MM-DD&to=YYYY-MM-DD`: offset-free days in the workspace zone, `to` included, ≤ 92 days. */
 export const CashRangeSchema = z
@@ -41,17 +34,6 @@ export const CashRangeSchema = z
     path: ["to"],
   });
 export type CashRange = z.infer<typeof CashRangeSchema>;
-
-/** The calendar day of `iso` in `timeZone` (`YYYY-MM-DD`); an unknown zone falls back to UTC. */
-export function localDay(iso: string, timeZone: string): string {
-  const fmt = (tz: string) =>
-    new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" });
-  try {
-    return fmt(timeZone).format(new Date(iso));
-  } catch {
-    return fmt("UTC").format(new Date(iso));
-  }
-}
 
 /** The default range: the first of the current month in the workspace zone, then 92 days. */
 export function defaultCashRange(nowIso: string, timeZone: string): CashRange {

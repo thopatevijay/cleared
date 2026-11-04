@@ -2,17 +2,17 @@
 // "Run the dispute scenario" on the dashboard (dashboard.md, M2-10): demo and owner workspaces, sandbox
 // only. One active run per workspace: while one runs, the control is a link to it. When today's global LLM
 // cap is reached the button is disabled and says why. Hidden for anyone the scenario isn't for.
-import { ScenarioIndexSchema, SCENARIO_ACTIVE_STATES, type ScenarioIndex } from "@cleared/core";
+import { SCENARIO_ACTIVE_STATES, type ScenarioIndex } from "@cleared/core";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useRef, useState } from "react";
 import useSWR from "swr";
 import { Link, useRouter } from "../../i18n/navigation.ts";
-import { getJson, newKey, postJson } from "../../lib/api.ts";
+import { getParsed, newKey, postJson } from "../../lib/api.ts";
 import { SandboxBadge } from "../SandboxBadge.tsx";
 
 async function fetchIndex(path: string): Promise<ScenarioIndex> {
-  return ScenarioIndexSchema.parse(await getJson(path));
+  return getParsed(path, (s) => s.ScenarioIndexSchema);
 }
 
 const isActive = (state: string): boolean => (SCENARIO_ACTIVE_STATES as readonly string[]).includes(state);

@@ -4,9 +4,14 @@
 import { AmountSchema, DEADLINE_STATES } from "@cleared/core";
 import { z } from "zod";
 
-export const NOTES_MAX = 2000;
-/** The count is announced at this many characters and above the limit, never on every keystroke. */
-export const NOTES_WARN_AT = 1900;
+// The plain helpers live in dispute-helpers.ts (no zod) for components that render (M4-08).
+export {
+  codePointCount,
+  fingerprint,
+  isPaypalCoveredPayout,
+  NOTES_MAX,
+  NOTES_WARN_AT,
+} from "./dispute-helpers.ts";
 
 const Iso = z.string();
 
@@ -138,16 +143,3 @@ export const DisputeDetailSchema = z.object({
   workspace: z.object({ timezone: z.string() }),
 });
 export type DisputeDetail = z.infer<typeof DisputeDetailSchema>;
-
-/** The draft fingerprint: the first 8 hex characters of `payload_sha256`. */
-export const fingerprint = (sha: string): string => sha.slice(0, 8);
-
-/** Unicode code points, as PayPal counts the 2000-character notes limit. */
-export function codePointCount(s: string): number {
-  return Array.from(s).length;
-}
-
-/** RESOLVED_WITH_PAYOUT + REPRESENTED_BY_PAYPAL: "you keep the money (PayPal covered the case)". */
-export function isPaypalCoveredPayout(o: Outcome | null): boolean {
-  return o?.outcome_code === "RESOLVED_WITH_PAYOUT" && o.outcome_reason === "REPRESENTED_BY_PAYPAL";
-}

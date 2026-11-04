@@ -87,6 +87,8 @@ export const SCOPE_SNAPSHOT_RENDER_QUEUE = "scope_snapshot.render";
 export const OPS_RECONCILE_QUEUE = "ops.reconcile";
 /** M3-09: the daily synthetic judge path (≤ 30 min, core `SYNTHETIC_CRON`); the next day's run is its retry. */
 export const OPS_SYNTHETIC_QUEUE = "ops.synthetic";
+/** M4-07: the daily demo retention purge (core `RETENTION_PURGE_CRON`); idempotent, so the next day retries. */
+export const OPS_RETENTION_PURGE_QUEUE = "retention.purge";
 
 export const COMMAND_QUEUES: readonly QueueSpec[] = [
   // Resend dedupes on the notification id (Idempotency-Key), so a retry never sends twice. 5 retries with

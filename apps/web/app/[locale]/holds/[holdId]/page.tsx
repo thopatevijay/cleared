@@ -2,11 +2,14 @@
 // The hold is read client-side (polled); this page checks the session.
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import { FirstView } from "../../../../src/components/FirstView.tsx";
 import { HoldDetailView } from "../../../../src/components/holds/HoldDetailView.tsx";
 import { SiteHeader } from "../../../../src/components/SiteHeader.tsx";
 import { DashboardFooter } from "../../../../src/components/SiteFooter.tsx";
 import { Link } from "../../../../src/i18n/navigation.ts";
 import { pageTitle } from "../../../../src/lib/site.ts";
+import { firstView } from "../../../../src/server/first-view.ts";
+import { getHold } from "../../../../src/server/handlers/holds.ts";
 import { pageSession } from "../../../../src/server/page-session.ts";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +23,8 @@ export default async function Hold({ params }: { params: Promise<{ locale: strin
   const { locale, holdId } = await params;
   if ((await pageSession()) === null) redirect(`/${locale}?ended=1`);
   const t = await getTranslations("holds");
+  // M4-08: the hold's first view comes with the HTML (GET /api/holds/:id's own handler)
+  const fallback = await firstView([[`/api/holds/${holdId}`, (req, d) => getHold(req, d, holdId)]]);
   return (
     <>
       <SiteHeader skipTo="main" skipLabel="skipMain" />
@@ -30,7 +35,9 @@ export default async function Hold({ params }: { params: Promise<{ locale: strin
         >
           {t("backToInbox")}
         </Link>
-        <HoldDetailView id={holdId} />
+        <FirstView fallback={fallback}>
+          <HoldDetailView id={holdId} />
+        </FirstView>
       </main>
       <DashboardFooter />
     </>

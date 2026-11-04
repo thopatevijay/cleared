@@ -5,13 +5,8 @@ import { Quote } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "../../i18n/navigation.ts";
 import { useEffect, useId, useRef, useState } from "react";
-import {
-  codePointCount,
-  fingerprint,
-  NOTES_MAX,
-  NOTES_WARN_AT,
-  type DraftItem,
-} from "../../lib/dispute-view.ts";
+import { codePointCount, fingerprint, NOTES_MAX, NOTES_WARN_AT } from "../../lib/dispute-helpers.ts";
+import type { DraftItem } from "../../lib/dispute-view.ts";
 import { formatTime } from "../../lib/format.ts";
 import { useUiLocale } from "./text.ts";
 

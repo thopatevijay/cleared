@@ -9,6 +9,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import en from "../messages/en.json" with { type: "json" };
 import hi from "../messages/hi.json" with { type: "json" };
+import { firstViewOff, firstViewOn } from "./support/journey.ts";
 
 const deployed = process.env["E2E_BASE_URL"] !== undefined;
 const REVIEW = fileURLToPath(new URL("../../../.review/M1-07/", import.meta.url));
@@ -94,6 +95,8 @@ for (const locale of LOCALES) {
     await page.waitForURL(`**/${locale}/payments`);
     await expect(page.getByTestId("empty-state")).toBeVisible();
     await expect(page.getByRole("button", { name: m.empty.ctaName })).toBeVisible();
+    // M4-07: the demo retention note
+    await expect(page.getByTestId("demo-retention-note")).toHaveText(m.dashboard.demoRetention);
     await axe(page, `flow-empty-${locale}`);
 
     const clicked = Date.now();
@@ -160,6 +163,9 @@ const HELD_ROW = {
   statusReason: "PENDING_REVIEW",
   source: "webhook",
   updatedAt: "2026-10-30T08:32:00.000Z",
+  // BL-01 6604186121: PaymentItemSchema requires both since M2-05 / M3-01
+  pack: null,
+  hold: null,
 };
 
 type Fulfil = Parameters<Parameters<Page["route"]>[1]>[0];
@@ -270,6 +276,7 @@ test("screens and states for ui-reviewer (local)", async ({ browser }) => {
     await expect(page.getByTestId("empty-state")).toBeVisible();
     await capture(page, `dashboard-empty-${locale}`);
 
+    await firstViewOff(page); // M4-08: the first view is server-rendered; render without it here
     await page.route("**/api/payments", () => new Promise<void>(() => undefined));
     await page.reload();
     await expect(page.getByTestId("loading")).toBeVisible();
@@ -292,6 +299,7 @@ test("screens and states for ui-reviewer (local)", async ({ browser }) => {
     await expect(page.getByTestId("correlation-id")).toHaveText("9b2d4f6a-1c3e-4a5b-8d7f-0e1a2b3c4d5f");
     await capture(page, `dashboard-error-${locale}`);
     await page.unroute("**/api/payments");
+    await firstViewOn(page);
 
     await page.route("**/api/payments", async (r) => {
       const res = await r.fetch();

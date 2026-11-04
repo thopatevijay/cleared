@@ -3,13 +3,13 @@
 // is visible. States: loading (skeleton; a line after 3 s), error (ErrorPanel with the reference), success
 // (outcome, timeline, sandbox decision), timed out and failed. The outcome sentence and "hold released"
 // come only from PayPal's mirrored dispute and capture.
-import { ScenarioViewSchema, type ScenarioView as View } from "@cleared/core";
+import type { ScenarioView as View } from "@cleared/core";
 import { TriangleAlert } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { intlLocale, isAppLocale } from "../../i18n/routing.ts";
-import { ApiError, getJson } from "../../lib/api.ts";
+import { ApiError, getJson, loadSchemas } from "../../lib/api.ts";
 import { formatTime } from "../../lib/format.ts";
 import { ErrorPanel } from "../ErrorPanel.tsx";
 import { SandboxDecision } from "./SandboxDecision.tsx";
@@ -20,7 +20,9 @@ import { ScenarioTimeline } from "./ScenarioTimeline.tsx";
 export const SCENARIO_POLL_MS = 5_000;
 
 async function fetchScenario(path: string): Promise<View> {
-  return ScenarioViewSchema.parse(((await getJson(path)) as { scenario: unknown }).scenario);
+  return (await loadSchemas()).ScenarioViewSchema.parse(
+    ((await getJson(path)) as { scenario: unknown }).scenario,
+  );
 }
 
 function Loading() {

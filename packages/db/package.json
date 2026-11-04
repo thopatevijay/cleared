@@ -10,6 +10,7 @@
     "migrate": "node src/migrate.ts",
     "generate": "drizzle-kit generate",
     "seed": "node src/seed.ts",
+    "count": "node src/count.ts",
     "typecheck": "tsc --noEmit -p .",
     "lint": "eslint .",
     "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest",

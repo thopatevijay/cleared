@@ -132,15 +132,15 @@ export function holdExplanation(row: ExplanationRow): HoldExplanation | null {
 export async function holdDetail(deps: Deps, ws: WorkspaceId, rawId: string): Promise<HoldDetail | null> {
   if (!z.uuid().safeParse(rawId).success) return null;
   const repo = holdsRepo(deps.db, ws);
-  const v = await repo.view(rawId);
+  // M4-08: the hold, the zone and the explanations (workspace-scoped by hold id) in one round trip
+  const [v, tz, rows] = await Promise.all([repo.view(rawId), timezone(deps, ws), repo.explanations(rawId)]);
   if (v === null) return null;
-  const tz = await timezone(deps, ws);
   const [tracking, completed, guidance] = await Promise.all([
     trackingSummaries(deps.db, ws, [v], tz),
     completedSummaries(deps.db, ws, [v]),
     holdGuidance(deps.db, ws, [v]),
   ]);
-  const explanations = (await repo.explanations(v.hold.id)).flatMap((r) => holdExplanation(r) ?? []);
+  const explanations = rows.flatMap((r) => holdExplanation(r) ?? []);
   return HoldDetailSchema.parse({
     hold: holdItem(
       v,

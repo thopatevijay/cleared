@@ -59,6 +59,8 @@ jobs:
   # the msw PayPal stub (apps/web/scripts/lhci.ts), and the dashboard's first-load JS budget.
   lhci:
     name: lighthouse ci
+    # report-only by owner decision 2026-11-04 (#142); budgets in lighthouserc.json unchanged
+    continue-on-error: true
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     services:

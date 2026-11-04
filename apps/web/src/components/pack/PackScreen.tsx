@@ -4,19 +4,13 @@
 // stale) and stops once settled. A new check is announced once ("Verdicts updated: …"). 375/768: one
 // column, verdicts before evidence; 1440: 8/12 left (header, banner, verdicts, facts) and 4/12 sticky right
 // (intake and evidence). All model output and evidence render as plain text.
-import {
-  packViewSettled,
-  PackViewSchema,
-  type PackView,
-  type PackViewState,
-  type Verdict,
-} from "@cleared/core";
+import { packViewSettled, type PackView, type PackViewState, type Verdict } from "@cleared/core";
 import { FilePlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "../../i18n/navigation.ts";
-import { ApiError, getJson } from "../../lib/api.ts";
+import { ApiError, getParsed } from "../../lib/api.ts";
 import { useOnline } from "../../lib/use-online.ts";
 import { AckLinkPanel } from "./AckLink.tsx";
 import { PackLoading } from "./PackLoading.tsx";
@@ -34,7 +28,7 @@ export const PACK_POLL_MS = 5_000;
 const UNAVAILABLE: readonly PackViewState[] = ["check_unavailable", "budget_exceeded"];
 
 async function fetchPack(path: string): Promise<PackView> {
-  return PackViewSchema.parse(await getJson(path));
+  return getParsed(path, (s) => s.PackViewSchema);
 }
 
 function countsOf(view: PackView): Record<Verdict, number> {

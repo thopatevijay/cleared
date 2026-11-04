@@ -4,10 +4,13 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { DisputeDetailView } from "../../../../src/components/disputes/DisputeDetailView.tsx";
+import { FirstView } from "../../../../src/components/FirstView.tsx";
 import { SiteHeader } from "../../../../src/components/SiteHeader.tsx";
 import { DashboardFooter } from "../../../../src/components/SiteFooter.tsx";
 import { Link } from "../../../../src/i18n/navigation.ts";
 import { pageTitle } from "../../../../src/lib/site.ts";
+import { firstView } from "../../../../src/server/first-view.ts";
+import { getDispute } from "../../../../src/server/handlers/disputes.ts";
 import { pageSession } from "../../../../src/server/page-session.ts";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +28,10 @@ export default async function Dispute({
   const { locale, disputeId } = await params;
   if ((await pageSession()) === null) redirect(`/${locale}?ended=1`);
   const t = await getTranslations("disputes");
+  // M4-08: the dispute's first view comes with the HTML (GET /api/disputes/:id's own handler)
+  const fallback = await firstView([
+    [`/api/disputes/${disputeId}`, (req, d) => getDispute(req, d, disputeId)],
+  ]);
   return (
     <>
       <SiteHeader skipTo="main" skipLabel="skipMain" signedIn />
@@ -39,7 +46,9 @@ export default async function Dispute({
         >
           {t("backToList")}
         </Link>
-        <DisputeDetailView id={disputeId} />
+        <FirstView fallback={fallback}>
+          <DisputeDetailView id={disputeId} />
+        </FirstView>
       </main>
       <DashboardFooter />
     </>
