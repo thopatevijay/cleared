@@ -21,6 +21,11 @@ Production Postgres (`cleared-db`, basic-256mb, **0.1 CPU**) sits at about 95–
 - **Keep every SLO and behaviour test green:** hold visibility, dispute mirror, the reconcile catching a missed webhook, the outbox and idempotency.
 - **No Render plan change, no `render.yaml` plan edits.**
 
+## Out of scope
+
+- A Render plan change or any `render.yaml` edit (the Postgres upgrade is the owner's fallback)
+- Narrowing the reconcile's 72 h window (BL-01 6603617791) unless it is option (a) and small
+
 ## Acceptance Criteria
 
 - [ ] Local idle DB load measured before and after (queries/min and the top queries), with at least a 5× reduction in idle query rate, or the honest measured number if less
