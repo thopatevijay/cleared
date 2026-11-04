@@ -16,6 +16,7 @@ import {
   seedChecked,
   seedPayment,
 } from "./support/pack-seed.ts";
+import { firstViewOff, firstViewOn } from "./support/journey.ts";
 import { capture, local, REVIEW } from "./support/review.ts";
 
 const XSS = "<img src=x onerror=alert(1)>";
@@ -295,7 +296,10 @@ test("AC 7: every state axe-clean at 360–1440 px light/dark; keyboard-only int
   await expect(page.getByTestId("pack-banner")).toHaveAttribute("data-state", "collecting");
   await capture(page, "en-refresh-error");
 
-  // the first load fails: the full-page error with Retry and Reference
+  // the first load fails: the full-page error with Retry and Reference. M4-08: the page's first view comes
+  // with the HTML, so the browser's read decides the first-load state only when the server-side read is off
+  // too (as when it fails); `firstViewOff` asks the local server for that (src/server/first-view.ts)
+  await firstViewOff(page);
   await page.goto(packUrl("en", stale.paymentId));
   await expect(page.getByTestId("error-panel")).toContainText("Couldn't load this payment");
   await capture(page, "en-error");
@@ -308,6 +312,7 @@ test("AC 7: every state axe-clean at 360–1440 px light/dark; keyboard-only int
   await expect(page.getByTestId("loading")).toContainText("Loading the proof pack…", { timeout: 6_000 });
   await capture(page, "en-loading");
   await page.unroute("**/api/packs/**");
+  await firstViewOn(page);
 
   // offline: the last data stays, the intake is disabled and says why
   await gotoPack(page, packUrl("en", stale.paymentId));

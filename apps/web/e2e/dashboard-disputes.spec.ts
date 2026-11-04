@@ -30,6 +30,17 @@ test("dispute total, dispute row, Review and approve, filter, partial state", as
   await expect(row.getByTestId("dispute-reason")).toHaveText("Item not as described");
   await expect(row.getByTestId("dispute-due")).toContainText("due");
   await expect(row).toContainText("Reply ready");
+  // BL-01 6601823124 item 1: the disputed capture (PENDING / BUYER_COMPLAINT) is a derived dispute hold, as
+  // the dispute review says: `held` badge with the reason, the hold's lines (no date), counted in held
+  await expect(row).toHaveAttribute("data-hold", s.holdId);
+  await expect(row).toContainText("Held");
+  await expect(row).not.toContainText("Info");
+  await expect(row).toContainText("BUYER_COMPLAINT");
+  await expect(row.getByTestId("held-lines").getByTestId("estimated-date")).toHaveAttribute(
+    "data-rule",
+    "dispute_hold",
+  );
+  await expect(summary.getByTestId("summary-held")).toHaveText("$120.00 USD held");
   await capture(page, "en-dashboard-dispute");
 
   // the "in dispute" fact filters the list to dispute rows; the chip clears it

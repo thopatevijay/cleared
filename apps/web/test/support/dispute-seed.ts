@@ -7,7 +7,14 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { compileEvidencePdf, createPostgresBlobStore } from "@cleared/adapters/files";
-import { canonicalHash, checkProposal, WorkspaceIdSchema, type JsonValue } from "@cleared/core";
+import {
+  canonicalHash,
+  checkProposal,
+  deriveHold,
+  fromEpochMs,
+  WorkspaceIdSchema,
+  type JsonValue,
+} from "@cleared/core";
 import {
   disputeDraftsRepo,
   evidenceRepo,
@@ -20,6 +27,10 @@ import {
 } from "@cleared/db";
 
 const FIXTURE = new URL("../../../../fixtures/openai/draft-v1/logo.json", import.meta.url);
+const DISPUTED_CAPTURE = new URL(
+  "../../../../fixtures/paypal/disputes/full/capture-2-pending.json",
+  import.meta.url,
+);
 
 /** The recorded draft's notes (M2-07 live run). */
 export function recordedNotes(): string {
@@ -59,6 +70,8 @@ export interface SeededDispute {
   readonly paypalDisputeId: string;
   readonly captureId: string;
   readonly paymentId: string;
+  /** the dispute hold the holds consumer derives for the payment (M3-01) */
+  readonly holdId: string;
   readonly draftId: string;
   readonly actionId: string;
   readonly payloadSha256: string;
@@ -72,21 +85,58 @@ export interface SeedOptions {
   readonly draft?: boolean;
 }
 
+/** The recorded M0-05 capture under dispute (`PENDING / BUYER_COMPLAINT`): the state the seed mirrors. */
+function recordedDisputedCapture(): { status: string; reason: string } {
+  const f = JSON.parse(readFileSync(DISPUTED_CAPTURE, "utf8")) as {
+    response: { body: { status: string; status_details: { reason: string } } };
+  };
+  return { status: f.response.body.status, reason: f.response.body.status_details.reason };
+}
+
+/**
+ * The hold the M3-01 holds consumer derives for this payment (`reconcileHold`: core `deriveHold` over the
+ * mirrored capture, opened at its PayPal update time). Without it the seed showed a state the product never
+ * stores, a PENDING / BUYER_COMPLAINT payment with no hold (BL-01 6601823124 item 1, 6609551440 item 3).
+ */
+async function seedDerivedHold(
+  r: ReturnType<typeof forWorkspace>,
+  payment: { id: string; status: string; statusReason: string | null; paypalUpdatedAt: Date | null },
+): Promise<string> {
+  const d = deriveHold({
+    status: payment.status,
+    reason: payment.statusReason,
+    updateTime: fromEpochMs((payment.paypalUpdatedAt ?? new Date()).getTime()),
+  });
+  if (d === null) throw new Error("the recorded disputed capture derives no hold");
+  const h = await r.holds.insert({
+    paymentId: payment.id,
+    state: "open",
+    type: d.type,
+    reason: d.reason,
+    openedAt: new Date(d.openedAt),
+    estimatedReleaseAt: d.estimatedReleaseAt === null ? null : new Date(d.estimatedReleaseAt),
+    estimateSource: d.estimateRuleId,
+  });
+  return h.id;
+}
+
 async function seedMirror(db: Db, ws: string, o: SeedOptions) {
   const r = forWorkspace(db, WorkspaceIdSchema.parse(ws));
   const ids = o.ids ?? e2eDisputeIds();
   const owners = platform(db).resourceOwners;
   await owners.claim({ resourceType: "capture", resourceId: ids.captureId, workspaceId: ws });
   await owners.claim({ resourceType: "dispute", resourceId: ids.disputeId, workspaceId: ws });
+  const recorded = recordedDisputedCapture();
   const payment = await r.payments.insert({
     captureId: ids.captureId,
     amount: "120.00",
     currency: "USD",
-    status: "PENDING",
-    statusReason: "BUYER_COMPLAINT",
+    status: recorded.status,
+    statusReason: recorded.reason,
     source: "webhook",
     paypalUpdatedAt: new Date("2026-10-20T05:00:00.000Z"),
   });
+  const holdId = await seedDerivedHold(r, payment);
   const dispute = await r.disputes.insert({
     disputeId: ids.disputeId,
     paymentId: payment.id,
@@ -99,11 +149,11 @@ async function seedMirror(db: Db, ws: string, o: SeedOptions) {
     allowedActions: [...(o.allowed ?? ["accept_claim", "provide_evidence"])],
     paypalUpdatedAt: new Date("2026-10-20T05:00:00.000Z"),
   });
-  return { r, ids, payment, dispute };
+  return { r, ids, payment, dispute, holdId };
 }
 
 export async function seedDispute(db: Db, ws: string, o: SeedOptions = {}): Promise<SeededDispute> {
-  const { r, ids, payment, dispute } = await seedMirror(db, ws, o);
+  const { r, ids, payment, dispute, holdId } = await seedMirror(db, ws, o);
   return withTransaction(db, async (tx) => {
     const pack = await r.proofPacks.insert({ paymentId: payment.id, state: "checked" }, tx);
     for (const i of ITEMS) {
@@ -118,6 +168,7 @@ export async function seedDispute(db: Db, ws: string, o: SeedOptions = {}): Prom
       paypalDisputeId: ids.disputeId,
       captureId: ids.captureId,
       paymentId: payment.id,
+      holdId,
     };
     if (o.draft === false)
       return { ...base, draftId: "", actionId: "", payloadSha256: "", itemIds: items.map((i) => i.id) };
