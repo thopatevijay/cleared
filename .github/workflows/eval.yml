@@ -11,8 +11,7 @@ on:
     # `labeled` covers the `eval` label; the paths check is the `changes` job below (one trigger cannot
     # be both "labelled" and "touches these paths")
     types: [opened, synchronize, reopened, labeled]
-  schedule:
-    - cron: "17 3 * * *" # nightly, 03:17 UTC
+  # nightly removed: budget (BL-01 6624696324); run on label or manually
   workflow_dispatch:
 
 concurrency:
@@ -50,7 +49,7 @@ jobs:
   live:
     name: live eval
     needs: [changes]
-    # always() lets schedule/dispatch run although `changes` is skipped for them
+    # always() lets dispatch run although `changes` is skipped for them
     if: >-
       always() && (
         github.event_name != 'pull_request' ||

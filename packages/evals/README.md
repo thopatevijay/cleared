@@ -38,7 +38,7 @@ node --env-file=<main checkout>/.env -e 'require("node:child_process").execFileS
 
 A PR that changes a **prompt, an output schema, the harness or the model config** merges only with a
 green **live** eval (CLAUDE.md). `.github/workflows/eval.yml` runs it on such PRs (paths check), on PRs
-labelled `eval`, nightly and on demand, and uploads the report and recordings as an artefact; it commits
+labelled `eval` and on demand (`workflow_dispatch`; no nightly run: budget, BL-01 6624696324), and uploads the report and recordings as an artefact; it commits
 nothing. Commit the new recordings and the regenerated report with the change, so PR CI's replay is green.
 
 ## Scoring (code first)
@@ -52,7 +52,7 @@ nothing. Commit the new recordings and the regenerated report with the change, s
   met/partial line without a citation must not exist). Visual (screenshot-only) citations are counted
   separately and never as verbatim; the gold sets are text only, so the count is 0 there.
 - **Holds:** per explanation, all of: the expected rule row, output language = locale, no forbidden claim
-  (guaranteed release, exact release date, "seller won"), the model's own answer (not the fallback), and
+  (guaranteed release, exact release date, `seller_won`), the model's own answer (not the fallback), and
   every gold fact conveyed as labelled. Only "fact conveyed" uses an LLM judge (`eval_judge@v1` on the LARGE
   model, through the same harness); its prompt and model are in the report. EN/HI fact parity is reported
   per pair (BL-01 6570430484).

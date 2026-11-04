@@ -359,7 +359,7 @@ export interface HoldScore {
 const DEVANAGARI = /[ऀ-ॿ]/;
 const SELLER_WON = /\b(won|wins|win the (case|dispute))\b|जीत/i;
 
-/** Maps the explain_hold guardrail codes to the gold set's forbidden-claim codes, plus "seller won". */
+/** Maps the explain_hold guardrail codes to the gold set's forbidden-claim codes, plus `seller_won`. */
 export function forbiddenClaims(problems: readonly string[], text: string): string[] {
   const out = new Set<string>();
   for (const p of problems) {

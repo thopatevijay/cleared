@@ -46,7 +46,7 @@ function recorded(name: string): unknown {
 }
 
 const fromFixture = (name: string, locale: "en" | "hi"): HoldExplanation => ({
-  ...renderExplanation(ExplainHoldOutputSchema.parse(recorded(name)), FACTS, locale, "ai", "explain_hold@v1"),
+  ...renderExplanation(ExplainHoldOutputSchema.parse(recorded(name)), FACTS, locale, "ai", "explain_hold@v2"),
   ...META,
 });
 

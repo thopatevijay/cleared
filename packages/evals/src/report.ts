@@ -190,7 +190,7 @@ export function reportMarkdown(r: EvalReport): string {
   if (s.extraction) out.push(...setLines("Extraction (`extract@v1`)", s.extraction));
   if (s.holds)
     out.push(
-      ...setLines("Hold explanations (`explain_hold@v1`)", s.holds),
+      ...setLines(`Hold explanations (\`${r.prompt_versions.find((p) => p.startsWith("explain_hold@")) ?? "explain_hold"}\`)`, s.holds),
       `- facts conveyed as labelled (judge): ${ci(s.holds.fact_accuracy)}`,
       `- correct rule row: ${ci(s.holds.rule_ok)}; language = locale: ${ci(s.holds.language_ok)}; forbidden claims: ${String(s.holds.forbidden_claims)}; standard-text fallbacks: ${String(s.holds.fallbacks)}`,
       `- EN/HI fact parity (same fact codes conveyed in both languages): ${ci(s.holds.pair_parity)}`,
