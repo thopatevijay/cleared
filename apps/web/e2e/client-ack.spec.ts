@@ -255,7 +255,12 @@ test("seller states: loading, no scope, pending after reload, revoke, expired, c
   await page.unrouteAll({ behavior: "wait" });
   const releaseRevoke = await hold(page, revokeUrl, "POST");
   await panel(page).getByRole("button", { name: "Revoke", exact: true }).click();
-  await expect(panel(page).getByRole("button", { name: "Revoking…" })).toBeVisible();
+  const revoking = panel(page).getByRole("button", { name: "Revoking…" });
+  await expect(revoking).toBeVisible();
+  // sweep M5 (BL-01 6569408949 item 9): a spinner and the full-strength fill, not the faded disabled one
+  await expect(revoking.locator("svg.animate-spin")).toHaveCount(1);
+  await expect(revoking).toHaveAttribute("aria-busy", "true");
+  await expect(revoking).toHaveCSS("opacity", "1");
   await capture(page, "seller-revoking", DIR);
   releaseRevoke();
   await expect(panel(page)).toContainText("Revoked");
