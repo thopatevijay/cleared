@@ -3,7 +3,7 @@
 // the superseded one is rejected (audit `superseded`), and approving the old hash afterwards is refused
 // APPROVAL_HASH_MISMATCH when sent to the dispute's current proposal; a failed filing can be re-proposed;
 // the compiled PDF downloads; over-limit notes are refused. No PayPal or model call.
-import { WorkspaceIdSchema } from "@cleared/core";
+import { HoldDetailSchema, PaymentsResponseSchema, WorkspaceIdSchema } from "@cleared/core";
 import {
   actionAuditTrail,
   createPublisher,
@@ -19,6 +19,8 @@ import { afterAll, describe, expect, it } from "vitest";
 import { postApprove } from "../../../src/server/handlers/actions.ts";
 import { postDemo } from "../../../src/server/handlers/demo.ts";
 import { getDispute, getDisputes, getDraftPdf, postRevise } from "../../../src/server/handlers/disputes.ts";
+import { getHold } from "../../../src/server/handlers/holds.ts";
+import { getPayments } from "../../../src/server/handlers/payments.ts";
 import { getWorkspace } from "../../../src/server/handlers/session-routes.ts";
 import type { DisputeDetail, DisputeList } from "../../../src/lib/dispute-view.ts";
 import { cookieFrom, freshIp, req, testDb, testDeps } from "../../../test/support/db.ts";
@@ -89,6 +91,33 @@ describe.skipIf(!dbAvailable)("dispute API (integration)", () => {
     const other = await list(b.cookie);
     expect(other.items).toEqual([]);
     expect(other.summary.inDispute).toEqual([]);
+  });
+
+  // BL-01 6601823124 item 1 / 6609551440 item 3: the disputed capture (recorded M0-05 `PENDING /
+  // BUYER_COMPLAINT`) is a hold, as the holds consumer derives it; the dashboard row, the hold detail and the
+  // dispute review describe the same money: a dispute hold (no date; the reply deadline), counted held.
+  it("the disputed payment carries its derived dispute hold: dashboard, hold detail and dispute review agree", async () => {
+    const a = await demo();
+    const s = await seedDispute(testDb(), a.ws);
+    const res = await getPayments(req("/api/payments", { method: "GET", cookie: a.cookie }), testDeps());
+    const p = PaymentsResponseSchema.parse(await res.json());
+    const row = p.items.find((i) => i.id === s.paymentId);
+    expect(row).toMatchObject({ status: "PENDING", statusReason: "BUYER_COMPLAINT" });
+    expect(row?.hold).toMatchObject({
+      type: "dispute",
+      reason: "BUYER_COMPLAINT",
+      ruleId: "dispute_hold",
+      estimatedReleaseAt: null,
+    });
+    expect(p.summary.held).toEqual([{ value: "120.00", currency: "USD" }]);
+    const holdId = row?.hold?.id ?? "";
+    const hold = await getHold(req(`/api/holds/${holdId}`, { method: "GET", cookie: a.cookie }), testDeps(), holdId);
+    const h = HoldDetailSchema.parse(await hold.json()).hold;
+    expect(h).toMatchObject({ paymentId: s.paymentId, reason: "BUYER_COMPLAINT", state: "open" });
+    expect(h.dispute).toMatchObject({ id: s.disputeRowId, disputeId: s.paypalDisputeId });
+    const d = await detail(a.cookie, s.disputeRowId);
+    // the review's "Held: PENDING / BUYER_COMPLAINT" line reads the same mirror
+    expect(d.body.dispute.payment).toMatchObject({ id: s.paymentId, status: "PENDING", statusReason: "BUYER_COMPLAINT" });
   });
 
   it("GET /api/disputes/:id: facts, draft (notes, items, PDF, proposal), audit; 404 across workspaces; PayPal id works", async () => {

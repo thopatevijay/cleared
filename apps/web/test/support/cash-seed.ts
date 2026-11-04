@@ -7,7 +7,7 @@
 // - released:  a review hold PayPal released ($420.00), an hour before `base`
 // - service:   the M3-04 service hold, Completed confirmed: `filed`, `service_completed`, confirmed + 7 d
 // Instants sit at 12:00 UTC, so each lands on the same day in every zone from UTC−11 to UTC+11.
-import { deriveHold, fromEpochMs, WorkspaceIdSchema } from "@cleared/core";
+import { WorkspaceIdSchema } from "@cleared/core";
 import { forWorkspace, type Db } from "@cleared/db";
 import { seedServiceHold } from "./completed-seed.ts";
 import { seedDispute } from "./dispute-seed.ts";
@@ -35,21 +35,8 @@ export async function seedCash(db: Db, ws: string, base: Date): Promise<SeededCa
   const eur = await seedHeldPayment(db, ws, { amount: "15.50", currency: "EUR", seenAt: noonUtc(base, 0) });
 
   const due = noonUtc(base, 4);
+  // the dispute seed writes the payment's derived `dispute_hold` (as the holds consumer does)
   const d = await seedDispute(db, ws, { dueDate: due, draft: false });
-  const dh = deriveHold({
-    status: "PENDING",
-    reason: "BUYER_COMPLAINT",
-    updateTime: fromEpochMs(base.getTime()),
-  });
-  if (dh === null) throw new Error("no dispute hold derived");
-  const complaint = await repos.holds.insert({
-    paymentId: d.paymentId,
-    type: dh.type,
-    reason: dh.reason,
-    openedAt: new Date(dh.openedAt),
-    estimatedReleaseAt: null,
-    estimateSource: dh.estimateRuleId,
-  });
 
   // PayPal released it an hour before `base` (a release is never in the future)
   const at = new Date(base.getTime() - 3_600_000);
@@ -67,7 +54,7 @@ export async function seedCash(db: Db, ws: string, base: Date): Promise<SeededCa
   return {
     review: { holdId: review.holdId ?? "", estimate: noonUtc(base, 1) },
     reviewEur: { holdId: eur.holdId ?? "" },
-    complaint: { holdId: complaint.id, disputeRowId: d.disputeRowId, due },
+    complaint: { holdId: d.holdId, disputeRowId: d.disputeRowId, due },
     released: { holdId: gone.holdId ?? "", at },
     service: { holdId: svc.holdId, estimate },
   };
