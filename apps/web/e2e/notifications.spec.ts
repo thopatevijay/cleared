@@ -15,6 +15,7 @@ import {
 import { closeDb, createDb, databaseUrl, forWorkspace } from "@cleared/db";
 import { expect, test, type Page } from "@playwright/test";
 import { capture, demoWorkspace, local, seed, shots } from "./support/disputes.ts";
+import { seedJourney } from "./support/journey.ts";
 
 test.describe.configure({ mode: "serial" });
 test.skip(!local, "local only: seeds rows in the local database");
@@ -233,4 +234,38 @@ test("empty, error and loading states", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     await page.screenshot({ path: `${REVIEW}en-loading-375-light.png`, fullPage: true });
   }
+});
+
+/** The single numeric column `n` of `sql` (`$1` = the workspace) in the local database. */
+async function count(sql: string, ws: string): Promise<number> {
+  const db = createDb(databaseUrl());
+  try {
+    const r = await db.$client.query<{ n: string }>(sql, [ws]);
+    return Number(r.rows[0]?.n ?? 0);
+  } finally {
+    await closeDb(db);
+  }
+}
+
+// BL-01 6604837005 item 5: the journey seed wrote the hold's notification under the payment id while the
+// worker wrote its own under the hold id, so one hold showed twice. Both now share the dedupe key.
+test("one hold, one notification: the journey seed and the worker's hold.opened share the dedupe key", async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  const j = await seedJourney(page, "en");
+  await expect
+    .poll(
+      () =>
+        count(
+          "select count(*) as n from pgboss.job where name = 'hold.opened' and data->>'workspaceId' = $1 and state = 'completed'",
+          j.ws,
+        ),
+      { timeout: 90_000, message: "the worker completes hold.opened (its notification consumer ran)" },
+    )
+    .toBeGreaterThan(0);
+  const holdRows = "select count(*) as n from notifications where workspace_id = $1 and kind = 'hold_opened'";
+  expect(await count(holdRows, j.ws)).toBe(1);
+  await page.goto("/en/notifications");
+  await expect(page.getByTestId("notification").filter({ hasText: "PayPal is holding" })).toHaveCount(1);
 });
