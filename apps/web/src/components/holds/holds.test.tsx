@@ -120,7 +120,7 @@ describe("EstimatedDate", () => {
     for (const l of ["en", "hi"] as const)
       for (const full of [false, true]) {
         const out = html(<EstimatedDate e={REVIEW} timeZone="UTC" full={full} />, l);
-        const dot = '<span aria-hidden="true" class="text-text-muted">\u00a0· </span>';
+        const dot = '<span aria-hidden="true" class="whitespace-nowrap text-text-muted"> · </span>';
         const dots = out.split(dot).length - 1;
         expect(dots).toBeGreaterThan(0);
         expect(out.split(`${dot}</span>`).length - 1, `${l} full=${String(full)}`).toBe(dots);

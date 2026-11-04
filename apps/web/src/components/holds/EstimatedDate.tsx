@@ -20,10 +20,10 @@ export interface EstimateInput {
   readonly disputeDueAt?: string | null;
 }
 
-// a no-break space before the "·" keeps it on the line of the word it follows
+// nowrap: the spaces around the "·" are no wrap opportunity, so it stays on the line of the word before it
 const Dot = () => (
-  <span aria-hidden="true" className="text-text-muted">
-    {" · "}
+  <span aria-hidden="true" className="whitespace-nowrap text-text-muted">
+    {" · "}
   </span>
 );
 
