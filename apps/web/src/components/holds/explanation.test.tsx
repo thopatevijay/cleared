@@ -53,7 +53,7 @@ const fromFixture = (name: string, locale: "en" | "hi"): HoldExplanation => ({
 describe("hold explanation (M3-02)", () => {
   it("AC 6: markup in the model's answer renders escaped, as plain text", () => {
     const out = html(<ExplanationBody e={fromFixture("derived-html", "en")} />);
-    expect(out).toContain("&lt;b&gt;PayPal&lt;/b&gt; is reviewing your payment of 64.00 USD.");
+    expect(out).toContain("&lt;b&gt;PayPal&lt;/b&gt; is reviewing your payment of USD\u00a064.00.");
     expect(out).toContain("&lt;img src=x onerror=alert(&#x27;x&#x27;)&gt;");
     expect(out).not.toMatch(/<b>|<img/);
   });
@@ -81,7 +81,8 @@ describe("hold explanation (M3-02)", () => {
     const out = html(<ExplanationBody e={fromFixture("payment-review-hi", "hi")} />, "hi");
     expect(out).toContain('lang="hi"');
     expect(out).toContain("AI व्याख्या");
-    expect(out).toContain("64.00 USD");
+    expect(out).toContain("USD\u00a064.00");
+    expect(out).not.toMatch(/\d (am|pm)\b/i); // 24-hour clock inside Devanagari (BL-01 6601578724)
   });
 
   it("pending: the toggle (UI language pressed) and the 'usually under 30 seconds' status", () => {
