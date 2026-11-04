@@ -211,7 +211,7 @@ function GoodsAction({ d, onChanged }: { d: HoldDetail; onChanged: () => void })
 }
 
 /** The action slot's content: PayPal's type picks the action, else the seller's declaration. */
-function ActionSlot({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) {
+export function ActionSlot({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) {
   const t = useTranslations("holds.detail");
   const h = d.hold;
   const action = h.guidedAction ?? guidedAction(h.type, null);
@@ -222,8 +222,12 @@ function ActionSlot({ d, onChanged }: { d: HoldDetail; onChanged: () => void }) 
         <GoodsAction d={d} onChanged={onChanged} />
       ) : action === "completed" && h.completed != null ? (
         <GuidedCompleted d={d} onChanged={onChanged} />
+      ) : h.declaration?.declarable === true && h.declaration.kind === null ? (
+        // the question is open (answering is optional): never "nothing to do" under it (hold.md action slot)
+        <p className="mt-2" data-testid="declare-first">
+          {t("declareFirst")}
+        </p>
       ) : (
-        // answering is optional: until the seller does, nothing is needed from them
         <p className={h.declaration?.declarable === true ? "mt-2" : undefined}>{t("nothingToDo")}</p>
       )}
     </>

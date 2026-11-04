@@ -17,6 +17,8 @@ Tell the seller, without them checking, when money is held, a dispute opens, or 
 | `deadline_t24` | `alarm-clock` | dispute | "Reply to the $120.00 USD dispute is due in 18 hours (2 Nov, 23:59 IST)." (a late run states the true remaining time) |
 | `completed_reminder` | `calendar-check` | info | "7 days since you marked the order Completed. The estimated release for $350.00 USD is today." |
 
+**One notification per event.** Each item is written once, keyed `kind:ref_id:threshold` (unique per workspace), where `ref_id` is Cleared's own hold or dispute id, never the payment or PayPal id. One hold gives one `hold_opened` item however many webhooks, retries or re-fetches arrive; a deadline's threshold names the due date, so a new due date gets its own T-72/T-24.
+
 Unread items have a 4 px `accent` left rail **and** the bold word "New" (not colour alone). Read items have no rail.
 
 **375 px:** the bell opens the full page `/notifications` (not a popover). h1 "Notifications", then "Mark all as read" (secondary, 44 px), then the items as a list. Each item is a full-width link (≥ 64 px) with a separate "Mark as read" icon button (44 px, labelled "Mark as read: {sentence}"). Sentences wrap. Nothing truncates.

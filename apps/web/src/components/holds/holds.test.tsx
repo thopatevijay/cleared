@@ -11,6 +11,7 @@ import hi from "../../../messages/hi.json" with { type: "json" };
 import { PaymentRow } from "../PaymentRow.tsx";
 import { EstimatedDate } from "./EstimatedDate.tsx";
 import { AdviceLine } from "./HeldLines.tsx";
+import { showPoolNote } from "./HoldsView.tsx";
 import { ReviewPoolNote } from "./ReviewPoolNote.tsx";
 import { SampleScenarios } from "./SampleScenarios.tsx";
 
@@ -100,9 +101,11 @@ describe("EstimatedDate", () => {
   // sweep M5 (BL-01 6601579774 item 1): the full form's several sources each carry their title visibly
   it("full form with two sources: each Source button names its source (EN and HI)", () => {
     const names = (l: "en" | "hi") =>
-      [...html(<EstimatedDate e={REVIEW} timeZone="UTC" full />, l).matchAll(
-        /data-testid="source-toggle"[^>]*>([^]*?)<\/button>/g,
-      )].map((m) => text(m[1] ?? "").trim());
+      [
+        ...html(<EstimatedDate e={REVIEW} timeZone="UTC" full />, l).matchAll(
+          /data-testid="source-toggle"[^>]*>([^]*?)<\/button>/g,
+        ),
+      ].map((m) => text(m[1] ?? "").trim());
     expect(names("en")).toEqual([
       "Source: PayPal transaction event codes: T2105 Payment review hold",
       "Source: PayPal seller account, Holds panel (sandbox)",
@@ -137,7 +140,9 @@ describe("EstimatedDate", () => {
     expect(text(html(<EstimatedDate e={REVIEW} timeZone="UTC" />))).toContain(
       "Still held after the estimate. PayPal hasn't released it yet.",
     );
-    expect(text(html(<EstimatedDate e={REVIEW} timeZone="UTC" />, "hi"))).toContain("अनुमान के बाद भी रुका है");
+    expect(text(html(<EstimatedDate e={REVIEW} timeZone="UTC" />, "hi"))).toContain(
+      "अनुमान के बाद भी रुका है",
+    );
     expect(html(<EstimatedDate e={future} timeZone="UTC" />)).not.toContain("past-estimate");
     expect(html(<EstimatedDate e={REVIEW} timeZone="UTC" full />)).not.toContain("past-estimate");
   });
@@ -223,8 +228,27 @@ describe("sample scenarios", () => {
 describe("review-hold pool explainer (M3-10)", () => {
   it("badged, with the ticket's words in EN and a HI translation", () => {
     const out = html(<ReviewPoolNote />);
-    expect(text(out)).toContain("Sandbox Review holds need a buyer approval; see README for timing");
+    expect(text(out)).toContain("Sandbox This demo has no payment-review hold");
+    expect(out).toContain('<code lang="en" class="font-mono text-sm">PENDING_REVIEW</code>');
+    expect(out).toContain('<code lang="en"');
     expect(out).toContain('data-testid="review-pool-note"');
-    expect(text(html(<ReviewPoolNote />, "hi"))).toContain("README");
+    // plain-language and self-contained: no pointer to the README (sweep M5 decision 5)
+    expect(text(out)).not.toContain("README");
+    const hi = text(html(<ReviewPoolNote />, "hi"));
+    expect(hi).toContain("सैंडबॉक्स");
+    expect(hi).not.toContain("README");
+  });
+});
+
+describe("review-hold note visibility (hold.md States)", () => {
+  const ws = (reviewPool: string | null) => ({ reviewPool });
+  it("demo workspace without a pool hold: shown, unless a PENDING_REVIEW hold is listed (no contradiction)", () => {
+    expect(showPoolNote({ workspace: ws("none"), items: [] })).toBe(true);
+    expect(showPoolNote({ workspace: ws("none"), items: [{ reason: "ECHECK" }] })).toBe(true);
+    expect(showPoolNote({ workspace: ws("none"), items: [{ reason: "PENDING_REVIEW" }] })).toBe(false);
+  });
+  it("pool hold assigned, or a seller workspace: never shown", () => {
+    expect(showPoolNote({ workspace: ws("assigned"), items: [] })).toBe(false);
+    expect(showPoolNote({ workspace: ws(null), items: [] })).toBe(false);
   });
 });

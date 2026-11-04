@@ -20,8 +20,9 @@ pre-stages a small pool:
 - **Judges get a row only while it is under 20 h old**, so a judge sees at least a few hours of hold.
   An older row, or one PayPal released (`COMPLETED`), is never assigned again; released rows stay in
   `pool:status` as released examples.
-- With no assignable row, the demo workspace's held-money inbox shows the badged explainer "Review holds
-  need a buyer approval; see README for timing".
+- With no assignable row, the demo workspace's held-money inbox shows the badged explainer "This demo has
+  no payment-review hold (PENDING_REVIEW). In the sandbox, one needs a buyer to approve a PayPal payment in
+  a browser, and none was available for this demo."
 
 ## Steps
 

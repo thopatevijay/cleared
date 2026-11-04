@@ -34,9 +34,14 @@ export interface Journey {
 
 const usd = (amount: string) => ({ amount, currency: "USD" as const });
 
+/**
+ * The journey's three notifications. The hold's uses the worker-derived hold id, the same dedupe key the
+ * worker's own `hold.opened` notification gets, so the bell shows it once whichever writes first (the
+ * payment id here gave the one hold two rows: BL-01 6604837005 item 5).
+ */
 async function seedNotifications(
   ws: string,
-  holdPaymentId: string,
+  hold: { readonly holdId: string; readonly paymentId: string },
   disputeRowId: string,
   dueDate: Date,
 ): Promise<void> {
@@ -47,8 +52,8 @@ async function seedNotifications(
     const reason = "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED";
     await repo.insertOnce(
       holdOpenedNotification({
-        holdId: holdPaymentId,
-        paymentId: holdPaymentId,
+        holdId: hold.holdId,
+        paymentId: hold.paymentId,
         amount: usd("64.00"),
         reason: "PENDING_REVIEW",
       }),
@@ -104,7 +109,7 @@ export async function seedWorkspace(page: Page, ws: string): Promise<Journey> {
   // one due date for the dispute and its deadline notification (the alert is computed from it)
   const dueDate = new Date(Date.now() + 18 * 3_600_000 + 600_000);
   const dispute = await seedDispute(ws, { dueDate });
-  await seedNotifications(ws, hold.paymentId, dispute.disputeRowId, dueDate);
+  await seedNotifications(ws, hold, dispute.disputeRowId, dueDate);
   const res = await page.request.post(`/api/packs/${pack.packId}/ack-links`, {
     headers: { origin: new URL(page.url()).origin, "idempotency-key": randomUUID() },
     data: {},

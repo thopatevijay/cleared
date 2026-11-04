@@ -24,6 +24,19 @@ export function formatAmount(locale: string, a: Amount): FormattedAmount {
   };
 }
 
+/**
+ * Per-currency totals as one phrase (components.md "Summary bar"): "$120.00 USD and ₹5,000.00 INR",
+ * HI "… और …". Each figure is joined to its code by a no-break space; lines break only between items. `Intl.ListFormat` conjunction, never "+" (reads as a sum; amounts are never summed
+ * across currencies). The one builder for every multi-currency total.
+ */
+export function formatAmountList(locale: string, amounts: readonly Amount[]): string {
+  const parts = amounts.map((a) => {
+    const f = formatAmount(locale, a);
+    return `${f.text}\u00a0${f.code}`; // no-break: a figure never wraps away from its code
+  });
+  return new Intl.ListFormat(locale, { style: "long", type: "conjunction" }).format(parts);
+}
+
 /** "30 Oct 2026, 6:12 pm IST" (HI: 24 h) in the workspace time zone: core `formatDateTime`. */
 export function formatTime(locale: string, iso: string, timeZone: string): string {
   return formatDateTime(iso, timeZone, locale);

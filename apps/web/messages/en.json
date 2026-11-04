@@ -42,7 +42,7 @@
     "checkBody": "If {email} can sign in, a link is on its way. It works once and expires in 15 minutes.",
     "differentEmail": "Use a different email",
     "sendAgain": "Didn't get it? Send again",
-    "sendAgainIn": "Didn't get it? Send again in {seconds}\u00a0s",
+    "sendAgainIn": "Didn't get it? Send again in {seconds} s",
     "capBusy": "The demo is busy right now. Try again in {minutes} minutes.",
     "capIp": "This network has made 3 demo workspaces today. Try again tomorrow, or <video>watch the video</video>.",
     "tooMany": "Too many sign-in requests. Try again in {minutes} minutes.",
@@ -62,7 +62,7 @@
     "held": "{amount} held",
     "nothingHeld": "Nothing held",
     "inDisputeNone": "— in dispute",
-    "proofReadyNone": "— proof-ready",
+    "proofReadyNone": "— proof packs ready",
     "pendingDispute": "Arrives with dispute support",
     "pendingProof": "Arrives with proof packs",
     "listHeading": "Payments",
@@ -87,13 +87,14 @@
       "error": "Couldn't save the time zone. Nothing changed. Try again."
     },
     "summary": {
-      "proofReady": "{count, plural, one {# payment proof-ready} other {# payments proof-ready}}",
-      "proofReadyName": "{count, plural, one {# payment proof-ready} other {# payments proof-ready}}: show only these"
+      "proofReady": "{count, plural, one {# proof pack ready} other {# proof packs ready}}",
+      "proofReadyName": "{count, plural, one {# proof pack ready} other {# proof packs ready}}: show only these payments",
+      "proofReadyZero": "No proof packs ready"
     },
     "filter": {
-      "proofReady": "Showing proof-ready payments",
+      "proofReady": "Showing payments with a ready proof pack",
       "clear": "Show all payments",
-      "none": "No payment is proof-ready yet."
+      "none": "No proof pack is ready yet."
     }
   },
   "row": {
@@ -182,7 +183,7 @@
     "samplesLink": "Sample scenarios: limitation, reserve, new-seller hold",
     "reviewPool": {
       "badge": "Sandbox",
-      "body": "Review holds need a buyer approval; see README for timing"
+      "body": "This demo has no payment-review hold (<code>PENDING_REVIEW</code>). In the sandbox, one needs a buyer to approve a PayPal payment in a browser, and none was available for this demo."
     },
     "samples": {
       "title": "Sample scenarios",
@@ -220,14 +221,15 @@
       "ruleText": "Rule text from PayPal",
       "estimateTitle": "Estimated release",
       "actionTitle": "What you can do",
-      "nothingToDo": "Nothing to do. PayPal will update this payment; we'll tell you when it changes.",
+      "nothingToDo": "No action needed in Cleared. PayPal will update this payment, and we'll tell you when it changes.",
       "timelineTitle": "Timeline",
       "released": "Released {time}",
       "stillHeld": "Still held after the estimate. PayPal hasn't released it yet.",
       "h1Released": "Released: {amount}",
       "whyTitleReleased": "Why it was held",
       "wasHeld": "Was held for",
-      "stillHeldCheck": "Check this payment in your PayPal account. PayPal decides when it is released; we'll show the release as soon as PayPal reports it."
+      "stillHeldCheck": "Check this payment in your PayPal account. PayPal decides when it is released; we'll show the release as soon as PayPal reports it.",
+      "declareFirst": "Answering is optional. It shows the step that fits this payment. Either way, PayPal will update this payment, and we'll tell you when it changes."
     },
     "timeline": {
       "open": "Held",

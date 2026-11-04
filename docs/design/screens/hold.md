@@ -16,7 +16,19 @@ Explain, in the seller's language, why PayPal is holding a payment, what PayPal 
    - goods (M3-03): **Route advice**: the chosen carrier and its tier badge (`approved`: `completed` colours, `truck` icon, "Faster release expected"; `accepted`: `held` colours, `triangle-alert`, "PayPal accepts it; it may not speed up the release"; `other`: neutral, `circle-help`, "Unconfirmed carrier"), the approved alternatives for the country, and the caveat "Sandbox US account list; live and other-country accounts may differ" + Source. Then **"File tracking"** → `ApprovalCard` (`add_tracking`: carrier code, tracking number, `notify_payer: false`).
    - service (M3-04): the **guided Completed step** (primary) and, below it, the subordinate "Also record it with PayPal's API" card. Shown on `service` holds that are not released. See [M3-04 guided Completed step](#m3-04-guided-completed-step).
    - declaration (BL-01 6570499264): on holds PayPal didn't type goods/service, the "What did you sell?" block comes first; the seller's answer then picks the goods or service content above. See [Seller's declaration](#sellers-declaration-what-did-you-sell-bl-01-6570499264-adr-0017-addendum-3).
-   - none: "Nothing to do. PayPal will update this payment; we'll tell you when it changes."
+   - question open (declarable and not yet answered): under the "What did you sell?" card, `holds.detail.declareFirst` "Answering is optional. It shows the step that fits this payment. Either way, PayPal will update this payment, and we'll tell you when it changes."
+   - none (not declarable and PayPal typed no goods/service action, or declared with no action to offer): `holds.detail.nothingToDo` "No action needed in Cleared. PayPal will update this payment, and we'll tell you when it changes." It says "in Cleared" so it never contradicts the explanation's "Steps you can take", which may list steps outside Cleared.
+
+   **Which line shows** (one at most, in the slot's last position):
+
+   | Hold | Slot shows |
+   |---|---|
+   | PayPal typed goods, or declared goods | route advice + "File tracking" (no line) |
+   | PayPal typed service, or declared service, unreleased | guided Completed step (no line) |
+   | Declarable, no saved answer (the radios are open) | `declareFirst` |
+   | Declared, the "Change" editor open | the saved answer's content stays below until a new answer is saved (no `declareFirst`) |
+   | Not declarable (PayPal typed it, or locked) with no action, or declared with no action to offer | `nothingToDo` |
+   | Released or sample | no slot |
 5. **Timeline:** opened → explained → action proposed → approved → filed → released (or still held), mirroring the hold state machine. "Released" appears only when the capture reads `COMPLETED`.
 
 **375 px:** a single column. The explanation comes first, and the `EstimatedDate` wraps to two lines without dropping "estimated". Route advice lists alternatives as a vertical list (each a 44 px row with name and code), and "File tracking" is full width at the end of the action slot. Sample scenario cards are full width. No horizontal scroll in HI (Devanagari lines run longer: the layout never relies on single-line text).
@@ -68,7 +80,7 @@ PayPal never says whether a held payment was goods or a service. The seller says
 
 **Anatomy** (card: `surface`, 1 px `border`, `radius-lg`, 16 px padding, 12 px gaps):
 - h3 "What did you sell?" (`text-lg`, semibold; `tabindex="-1"`, focus target after saving).
-- **Undeclared:** a `<fieldset>` with `<legend>` "This payment was for" and two radio cards side by side from 768 px, stacked below: each a `<label>` ≥ 48 px high, 1 px `border-strong`, `radius-md`; the checked card gets a 2 px `accent` border. Title (`font-medium`) "Goods" / "A service", hint (`text-sm`, `text-muted`) "Items you ship" / "Work you deliver, no parcel". Under it the hint (`text-sm`, `text-muted`, linked to the fieldset by `aria-describedby`): "PayPal doesn't say. Your answer only picks what you can do below. It doesn't change why PayPal is holding this payment or its estimate." Then the **primary** "Save" (48 px; full width ≤ 375 px). Answering is optional: below the card the "none" line ("Nothing to do. PayPal will update this payment…") still shows until the seller answers.
+- **Undeclared:** a `<fieldset>` with `<legend>` "This payment was for" and two radio cards side by side from 768 px, stacked below: each a `<label>` ≥ 48 px high, 1 px `border-strong`, `radius-md`; the checked card gets a 2 px `accent` border. Title (`font-medium`) "Goods" / "A service", hint (`text-sm`, `text-muted`) "Items you ship" / "Work you deliver, no parcel". Under it the hint (`text-sm`, `text-muted`, linked to the fieldset by `aria-describedby`): "PayPal doesn't say. Your answer only picks what you can do below. It doesn't change why PayPal is holding this payment or its estimate." Then the **primary** "Save" (48 px; full width ≤ 375 px). Answering is optional: below the card, `holds.detail.declareFirst` ("Answering is optional…") shows until the seller saves an answer; it replaces the "none" line there, so the slot never says "nothing to do" under a question.
 - **Declared:** the line "You marked this as goods" / "You marked this as a service" (`user-round` icon, `font-medium`), then the note (`text-sm`, `text-muted`): "This is your answer, not PayPal's. The estimate above is still PayPal's for this hold; filing tracking doesn't change it." (service: "…; marking it Completed doesn't change it."). Then a text button "Change" (44 px, `accent`, underlined; accessible name "Change what you sold") that reopens the radios with "Cancel".
 - **Locked** (an action was approved, or Completed confirmed): no Change; a `lock` icon + "Locked: you approved an action on this payment." (`text-sm`, `text-muted`). After the Completed confirmation it reads "Locked: you marked it Completed."
 - **Ship first** (declared goods on a hold whose rule carries PayPal's "Don't ship until we tell you it's ok", i.e. a payment review): above route advice, an `info` icon + `text-sm` line "PayPal asks you not to ship until it clears this review. Once PayPal clears it and you ship, file the tracking here." It reconciles PayPal's don't-ship advice with the tracking form; hidden once tracking is filed.
@@ -103,6 +115,7 @@ PayPal never says whether a held payment was goods or a service. The seller says
 | Loading | Total skeleton + 2 row skeletons; after 3 s "Loading held money…" |
 | Empty | Icon `circle-check`: "No held money. Every payment is with you or on its way." The Sample scenarios section still shows |
 | Success | Rows + detail as above |
+| Review hold note (demo only) | `ReviewPoolNote`, above the hold rows on a demo workspace that got no judge-pool payment-review hold (none available, or all over 20 h old: ADR 0019): the Sandbox badge (flask icon) + `holds.reviewPool.body`. `PENDING_REVIEW` is `<code lang="en">` (rich text tag `<code>`). No link: the note explains itself, with no README reference. Not shown on non-demo workspaces, when a pool hold was assigned, or while any `PENDING_REVIEW` hold is listed (it would contradict that row) |
 | Explanation pending | "Writing a plain-language explanation… usually under 30 seconds." The rule description shows meanwhile |
 | Explanation unavailable (partial) | AI down or budget reached: the rule description + source are shown, labelled "Rule text from PayPal (no AI summary right now)" |
 | Tracking filing | `ApprovalCard` states; success toast "Tracking filed", and the estimate switches to "After the courier confirms delivery · estimated" (no invented date) |
@@ -148,6 +161,10 @@ PayPal never says whether a held payment was goods or a service. The seller says
 | sample.badge | Sample scenario: sandbox can't produce this | नमूना स्थिति: सैंडबॉक्स इसे नहीं बना सकता |
 | sample.limitation.body | PayPal has limited the account. Cleared can't lift a limitation or promise a release; PayPal decides. This explains what PayPal usually asks for. | PayPal ने खाते पर रोक लगाई है। Cleared रोक नहीं हटा सकता और रिलीज़ का वादा नहीं कर सकता; फ़ैसला PayPal का है। यहाँ बताया गया है कि PayPal आम तौर पर क्या माँगता है। |
 | empty | No held money. Every payment is with you or on its way. | कोई पैसा रुका नहीं है। हर भुगतान आपके पास है या आ रहा है। |
+| holds.reviewPool.badge | Sandbox | सैंडबॉक्स |
+| holds.reviewPool.body | This demo has no payment-review hold (<code>PENDING_REVIEW</code>). In the sandbox, one needs a buyer to approve a PayPal payment in a browser, and none was available for this demo. | इस डेमो में भुगतान की जाँच वाली रोक (<code>PENDING_REVIEW</code>) नहीं है। सैंडबॉक्स में ऐसी रोक के लिए किसी खरीदार को ब्राउज़र में PayPal भुगतान मंज़ूर करना होता है, और इस डेमो के लिए ऐसा कोई भुगतान उपलब्ध नहीं था। |
+| holds.detail.declareFirst (new) | Answering is optional. It shows the step that fits this payment. Either way, PayPal will update this payment, and we'll tell you when it changes. | जवाब देना ज़रूरी नहीं है। इससे इस भुगतान के लिए सही कदम दिखेगा। दोनों ही हालत में PayPal इस भुगतान को अपडेट करेगा, और बदलाव होने पर हम आपको बताएँगे। |
+| holds.detail.nothingToDo | No action needed in Cleared. PayPal will update this payment, and we'll tell you when it changes. | Cleared में कुछ करने की ज़रूरत नहीं। PayPal इस भुगतान को अपडेट करेगा, और बदलाव होने पर हम आपको बताएँगे। |
 
 M3-04 keys live under `holds.completed`. "Completed" is the label the seller sees in PayPal's UI, so it stays Latin in HI (`<span lang="en">`). The enum `COMPLETED` stays in `<code lang="en">`. Verbatim PayPal quotes are not translated.
 

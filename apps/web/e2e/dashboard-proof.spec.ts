@@ -28,7 +28,7 @@ test("AC 9: the summary counts packs checked with no missing verdict; clicking a
   await seedChecked(db, ws, LOGO_LINES); // has a `missing` line: not proof-ready
   await page.goto("/en/payments");
   const fact = page.getByTestId("summary-proof-ready");
-  await expect(fact).toHaveText("1 payment proof-ready");
+  await expect(fact).toHaveText("1 proof pack ready");
   await expect(page.getByTestId("payment-row")).toHaveCount(2);
   await capture(page, "en-dashboard-packs");
 

@@ -89,7 +89,9 @@ test("inbox and detail with a derived PENDING_REVIEW hold; PayPal's release", as
   // the recorded capture's estimate (Oct 2026) has passed: still held, with what to check
   await expect(detail.getByTestId("still-held")).toContainText("Still held after the estimate.");
   await expect(detail.getByTestId("advice-line")).toContainText("Don't ship yet");
-  await expect(detail.getByTestId("action-slot")).toContainText("Nothing to do.");
+  // the goods/service question is open: the slot says answering is optional, never "nothing to do" under it
+  await expect(detail.getByTestId("declare-first")).toContainText("Answering is optional.");
+  await expect(detail.getByTestId("action-slot")).not.toContainText("No action needed");
   // M3-02: the worker explains the hold on `hold.opened` (open → explained)
   await expect(detail.getByTestId("explanation")).toBeVisible({ timeout: 60_000 });
   await expect(detail.locator('[aria-current="step"] [data-testid="step-label"]')).toHaveText("Explained");
@@ -149,7 +151,7 @@ test("inbox variants: dispute-linked, no-timeline and review holds; held total p
   const dispute = await seedHeld(ws, { amount: "120.00", reason: "BUYER_COMPLAINT" });
   const echeck = await seedHeld(ws, { amount: "15.00", currency: "EUR", reason: "ECHECK" });
   await page.goto("/en/holds");
-  await expect(page.getByTestId("holds-total")).toHaveText("€15.00 EUR + $184.00 USD held in 3 payments");
+  await expect(page.getByTestId("holds-total")).toHaveText("€15.00 EUR and $184.00 USD held in 3 payments");
   const row = (id: string) => page.locator(`[data-testid="hold-row"][data-hold="${id}"]`);
   await expect(row(dispute.holdId)).toContainText("Held because the buyer opened a dispute");
   await expect(row(dispute.holdId).getByTestId("estimated-date")).toContainText(

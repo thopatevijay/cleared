@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { Link, useRouter } from "../../i18n/navigation.ts";
 import { ApiError, getParsed } from "../../lib/api.ts";
-import { formatAmount, formatTime } from "../../lib/format.ts";
+import { formatAmount, formatAmountList, formatTime } from "../../lib/format.ts";
 import { useUiLocale } from "../disputes/text.ts";
 import { EmptyState } from "../EmptyState.tsx";
 import { ErrorPanel } from "../ErrorPanel.tsx";
@@ -115,6 +115,17 @@ function useReleases(items: readonly HoldItem[] | undefined): string {
   return msg;
 }
 
+/**
+ * hold.md "Review hold note": above the rows, only on a demo workspace that got no judge-pool review hold,
+ * and never while a `PENDING_REVIEW` hold is listed (the note would contradict the row beneath it).
+ */
+export function showPoolNote(data: {
+  workspace: { reviewPool?: string | null | undefined };
+  items: readonly { reason: string }[];
+}) {
+  return data.workspace.reviewPool === "none" && !data.items.some((h) => h.reason === "PENDING_REVIEW");
+}
+
 export function HoldsView() {
   const t = useTranslations("holds");
   const locale = useUiLocale();
@@ -145,12 +156,7 @@ export function HoldsView() {
   else if (data.items.length === 0)
     body = <EmptyState icon={CircleCheck} title={t("emptyTitle")} body={t("empty")} />;
   else {
-    const total = data.summary.held
-      .map((a) => {
-        const f = formatAmount(locale, a);
-        return `${f.text} ${f.code}`;
-      })
-      .join(" + ");
+    const total = formatAmountList(locale, data.summary.held);
     body = (
       <section aria-labelledby="holds-heading" className="flex flex-col gap-3">
         <p className="tabular text-2xl font-bold md:text-money" data-testid="holds-total">
@@ -173,8 +179,8 @@ export function HoldsView() {
   return (
     <div className="flex flex-col gap-8">
       {data === undefined ? null : <OfflineBanner loadedAt={loadedAt} timeZone={data.workspace.timezone} />}
+      {data !== undefined && showPoolNote(data) ? <ReviewPoolNote /> : null}
       {body}
-      {data?.workspace.reviewPool === "none" ? <ReviewPoolNote /> : null}
       <SampleScenarios />
       <p aria-live="polite" className="sr-only" data-testid="live-region">
         {announcement}

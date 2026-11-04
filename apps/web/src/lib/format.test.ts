@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { attentionRank, captureStatusKey, formatAmount, formatBytes, formatTime } from "./format.ts";
+import {
+  attentionRank,
+  captureStatusKey,
+  formatAmount,
+  formatAmountList,
+  formatBytes,
+  formatTime,
+} from "./format.ts";
 
 describe("formatBytes", () => {
   it("one decimal in MB, whole KB, and never rounds a file under the 10 MB limit up to 10 MB", () => {
@@ -30,6 +37,37 @@ describe("formatAmount", () => {
       code: "ZZ1",
       spoken: "1.00 ZZ1",
     });
+  });
+});
+
+describe("formatAmountList", () => {
+  const usd = { value: "120", currency: "USD" };
+  const inr = { value: "5000", currency: "INR" };
+  const eur = { value: "15", currency: "EUR" };
+
+  it("EN: one amount alone, two with 'and', three with commas and 'and'; never '+'", () => {
+    expect(formatAmountList("en-IN", [usd])).toBe("$120.00\u00a0USD");
+    expect(formatAmountList("en-IN", [usd, inr])).toBe("$120.00\u00a0USD and ₹5,000.00\u00a0INR");
+    expect(formatAmountList("en-IN", [eur, usd, inr])).toBe(
+      "€15.00\u00a0EUR, $120.00\u00a0USD and ₹5,000.00\u00a0INR",
+    );
+  });
+
+  it("HI: the Hindi conjunction 'और', Latin digits", () => {
+    const hi = "hi-IN-u-nu-latn";
+    expect(formatAmountList(hi, [usd])).toBe("$120.00\u00a0USD");
+    expect(formatAmountList(hi, [usd, inr])).toBe("$120.00\u00a0USD और ₹5,000.00\u00a0INR");
+    expect(formatAmountList(hi, [eur, usd, inr])).toBe(
+      "€15.00\u00a0EUR, $120.00\u00a0USD, और ₹5,000.00\u00a0INR",
+    );
+  });
+
+  it("each figure keeps its code on the same line (no-break space)", () => {
+    expect(formatAmountList("en-IN", [usd])).not.toMatch(/\$120\.00 USD/);
+  });
+
+  it("no amounts: an empty string (callers show their own zero copy)", () => {
+    expect(formatAmountList("en-IN", [])).toBe("");
   });
 });
 
