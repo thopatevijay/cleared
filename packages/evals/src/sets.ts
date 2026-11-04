@@ -10,6 +10,7 @@ import {
   explainHoldInput,
   extractInputFor,
   extractWorkflow,
+  holdRule,
   ruleOfHold,
   runWorkflow,
   withEvidenceIds,
@@ -176,7 +177,12 @@ export async function scopeItem(deps: EvalDeps, item: GoldItem, docs = item.docu
 export const HOLD_OPENED_AT = "2026-10-26T11:24:00.000Z";
 export const HOLD_TIME_ZONE = "Asia/Kolkata";
 
-/** The hold as the worker builds it from the capture: a badged sample carries its rule id, others derive it. */
+/**
+ * The hold as the worker stores it. A rule row that applies to a capture reason is derived from the reason
+ * (so a wrong derivation fails the rule check); a badged sample, and a row that applies after a seller
+ * action (tracking added: `goods_delivered`; marked completed: `service_completed`), is the hold's stored
+ * `estimate_source`, as M3-03 / M3-04 write it.
+ */
 export function holdFactsOf(item: GoldItem): HoldFacts {
   const hold = item.hold;
   if (!hold) throw new Error(`${item.id}: not a hold item`);
@@ -184,7 +190,8 @@ export function holdFactsOf(item: GoldItem): HoldFacts {
   const amount = capture
     ? (JSON.parse(capture.text) as { amount?: { value?: string; currency_code?: string } }).amount
     : undefined;
-  const base = { ruleId: hold.sample ? hold.expected_rule_id : "", reason: hold.capture_reason };
+  const stored = hold.sample || holdRule(hold.expected_rule_id)?.appliesTo.kind === "action";
+  const base = { ruleId: stored ? hold.expected_rule_id : "", reason: hold.capture_reason };
   const rule = ruleOfHold(base);
   return {
     ...base,

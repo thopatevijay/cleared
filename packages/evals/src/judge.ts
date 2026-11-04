@@ -7,12 +7,18 @@
 import { definePrompt, type JsonValue, type WorkflowDef } from "@cleared/core";
 import { z } from "zod";
 
+// v2 (2026-11-04, after the first live run on the test split): judge the fact, not who a statement credits
+// it to ("the Holds panel says …"), and read PayPal's codes as the plain words the explainer is told to use.
+// The v1 judge marked "normally takes up to 3 business days" as not conveyed for lacking "the Holds panel".
+// Both runs are in the PR; the v1 numbers are not hidden.
 export const JUDGE_PROMPT = definePrompt(
-  "eval_judge@v1",
+  "eval_judge@v2",
   [
     "You grade one explanation that a seller app showed to a seller about a PayPal payment hold.",
     "For each numbered statement in the statements block, decide whether the explanation conveys it: the explanation says it, or says something with the same meaning, in any language (the explanation may be in Hindi while the statement is in English).",
     "conveyed = true when a reader of the explanation alone would learn the statement's meaning. Plain words for a technical term count: a payment PayPal is holding (on hold, held, not yet available) is a pending payment; naming the payment's amount conveys what the amount is.",
+    "PayPal's status codes count when the explanation gives their meaning in plain words: PENDING = the payment is held or pending; OTHER = PayPal gives no specific reason; BUYER_COMPLAINT = the buyer opened a complaint or dispute; PENDING_REVIEW = PayPal is reviewing the payment.",
+    "Judge the fact, not its attribution: a statement that credits a fact to a source (\"the Holds panel says\", \"the rule says\", \"the capture lists\") is conveyed when the explanation states the fact itself.",
     "conveyed = false when the statement's point is absent, when only a weaker or different claim is made (\"may be released\" does not convey \"is guaranteed to be released\"), or when the explanation contradicts it.",
     "Judge only the explanation text. Do not use your own knowledge of PayPal, and do not judge whether the statement is true.",
     "note: one short sentence quoting or paraphrasing the part of the explanation you relied on, or saying it is absent.",
