@@ -98,7 +98,9 @@ export function checkFields(md: string, final: boolean): string[] {
   const tagline = stripComments(fields.get("Tagline") ?? "");
   if (tagline.includes("\n")) problems.push("field: the tagline is more than one line");
   if ([...tagline].length > TAGLINE_MAX) {
-    problems.push(`field: the tagline is ${String([...tagline].length)} characters (max ${String(TAGLINE_MAX)})`);
+    problems.push(
+      `field: the tagline is ${String([...tagline].length)} characters (max ${String(TAGLINE_MAX)})`,
+    );
   }
   return problems;
 }
@@ -159,7 +161,8 @@ export function checkWording(md: string): string[] {
 
 /** Width and height of a PNG (IHDR) or a baseline/progressive JPEG (first SOFn marker). */
 export function imageSize(buf: Buffer): { w: number; h: number } | null {
-  if (buf.subarray(1, 4).toString("latin1") === "PNG") return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+  if (buf.subarray(1, 4).toString("latin1") === "PNG")
+    return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
   if (buf[0] !== 0xff || buf[1] !== 0xd8) return null;
   let i = 2;
   while (i + 9 < buf.length) {
@@ -176,7 +179,8 @@ export function imageSize(buf: Buffer): { w: number; h: number } | null {
 export function checkGallery(md: string): string[] {
   const problems: string[] = [];
   const files = readdirSync(join(ROOT, GALLERY)).filter((f) => /\.(png|jpe?g)$/i.test(f));
-  if (files.length < 6 || files.length > 8) problems.push(`gallery: ${String(files.length)} images (need 6–8)`);
+  if (files.length < 6 || files.length > 8)
+    problems.push(`gallery: ${String(files.length)} images (need 6–8)`);
   const captions = new Map<string, string>();
   for (const line of (sections(md, 2).get("Image gallery") ?? "").split("\n")) {
     const m = /^\d+\. `([^`]+)`: (.+)$/.exec(line.trim());
@@ -205,7 +209,10 @@ async function status(url: string): Promise<string> {
   }
 }
 
-export async function checkLinks(md: string, final: boolean): Promise<{ problems: string[]; notes: string[] }> {
+export async function checkLinks(
+  md: string,
+  final: boolean,
+): Promise<{ problems: string[]; notes: string[] }> {
   const fields = sections(md, 2);
   const urls = (f: string): string[] => (fields.get(f) ?? "").match(/https?:\/\/[^\s)>]+/g) ?? [];
   const problems: string[] = [];
