@@ -56,3 +56,6 @@ next-env.d.ts
 
 # M4-04 Lighthouse CI results (local runs)
 .lighthouseci/
+
+# Demo video working files (owner decision 2026-11-04): kept local, never committed
+docs/video/
