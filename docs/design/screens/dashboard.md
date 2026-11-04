@@ -105,7 +105,7 @@ Rows are full width with the status rail on the left. The single row action wrap
 | summary.pending.proof | Arrives with proof packs | सबूत पैक के साथ आएगा |
 | row.replyReady | Reply ready | जवाब तैयार है |
 | row.reviewApprove | Review and approve | देखें और मंज़ूरी दें |
-| row.pack | Proof pack: scope {s} · delivery {d} · client sign-off {c} · {n} sources | सबूत पैक: काम का दायरा {s} · डिलीवरी {d} · क्लाइंट की मंज़ूरी {c} · {n} स्रोत |
+| row.pack | Proof pack: scope {s} · delivery {d} · client sign-off {c} · {n} sources | सबूत पैक: तय दायरा {s} · डिलीवरी {d} · क्लाइंट की मंज़ूरी {c} · {n} स्रोत |
 | row.freeBy | Free by {date} | {date} तक मिल सकता है |
 | estimated | estimated | अनुमानित |
 | source | Source | स्रोत |
