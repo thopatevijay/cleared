@@ -98,9 +98,8 @@ Goods and services alternate. Hold scenarios: `PENDING_REVIEW` ×2 (`payment_rev
    `disagreements.jsonl` (`decided_by: "claude:claude-opus-5-5"`). A label was flipped only when the
    documents supported the reviewer, never to raise agreement. Agreement is Cohen's kappa per set:
    the labeller's first label against the reviewer's, over the `test` hypotheses only.
-7. **Owner spot-check** (`spotcheck.md`): 5 Claude-labelled `test` items picked by a seeded hash
-   (`cleared-spotcheck-v1`), with every label, quote and rationale in plain English, and an
-   agree/disagree line per hypothesis for the owner.
+7. **Owner spot-check** (`spotcheck.md`): not performed (owner decision 2026-11-04, #45). The file
+   stays so the check can still be done later; no claim relies on it.
 8. **Validate** (`pnpm eval:validate`): schema, counts (30/40/20), ≥ 8 scope items per label, ≥ 5
    injection items, 10 EN/10 HI with matching fact codes and known rule rows, every span verbatim, the
    seeded split, `owner` or `claude:<id>` on every `test` item and `model:<its reviewer>` (matching its
@@ -127,8 +126,7 @@ sources contradict it: an open fraud review, a hold "to cover possible chargebac
 delivered, but whether they do what the line promised is unknown.
 
 **Claims wording** (M4-02, README, video, Devpost): "gold set labelled by Claude (independent of the
-OpenAI models under test), cross-checked by a second model (kappa = …) and spot-checked by the owner
-(n = 5)". Never say "owner-labelled" or "human-labelled".
+OpenAI models under test), cross-checked by a second model (kappa = …)". Never say "owner-labelled" or "human-labelled". The disagreements were settled by Claude itself (26 kept, 2 flipped), so the kappa measures Claude vs the reviewer, not accuracy against a human.
 
 Before labelling, the reviewer agreed with the generator's *target* label on 156/165 extraction,
 137/160 scope and 76/80 hold hypotheses. That is a sanity check on the drafts, not an accuracy claim.

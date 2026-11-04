@@ -24,7 +24,7 @@ Accuracy claims are only credible against labelled ground truth (B6 #10; CLAUDE.
 - **Split:** about 25% `dev` (for prompt work) and 75% `test` (reported). The split is fixed by a seeded hash of `id`
 - **Process:**
   1. `pnpm eval:draft` drafts **unlabelled** synthetic cases with `OPENAI_MODEL_LARGE`. The generator prompt and model ID are stored next to the data
-  2. **Claude labels** every `test` item, and any `dev` item the review cannot label, marked `claude:<model id>` (owner decision 2026-11-04, #45; `ext-004`, labelled earlier by the owner, stays `owner`). The other `dev` items take the second model's labels via `pnpm eval:adopt-dev` and are marked `model:<id>` (owner decision 2026-11-03). Labels go through `pnpm eval:label` (terminal, or `--from <answers> --by claude:<id>`), which records the label, spans (selected by quote, offsets computed) and a one-line rationale. The owner spot-checks 5 seeded-random `test` items (`gold/spotcheck.md`)
+  2. **Claude labels** every `test` item, and any `dev` item the review cannot label, marked `claude:<model id>` (owner decision 2026-11-04, #45; `ext-004`, labelled earlier by the owner, stays `owner`). The other `dev` items take the second model's labels via `pnpm eval:adopt-dev` and are marked `model:<id>` (owner decision 2026-11-03). Labels go through `pnpm eval:label` (terminal, or `--from <answers> --by claude:<id>`), which records the label, spans (selected by quote, offsets computed) and a one-line rationale.
   3. A **second model** labels independently with `pnpm eval:review`. Its model differs from the one the workflow under test uses for that task
   4. Disagreements are written to `disagreements.jsonl`: both labels, the final decision, the reason and `decided_by` (`owner` | `claude:<id>`). Labeller vs second-model agreement is reported as Cohen's kappa per set
 - `pnpm eval:validate` checks every span (verbatim at its offsets), the counts, the per-label minimums, the split ratio and the schema
@@ -68,6 +68,6 @@ diff -r "$out" packages/evals/gold/drafts
 
 ## Handoff
 
-- **M4-02** reads the schema and the three `.jsonl` sets (test split for the report, dev split for prompt work) and the injection items. It reports metrics on `test` only, and any claim says "gold set labelled by Claude (independent of the OpenAI models under test), cross-checked by a second model (kappa = …) and spot-checked by the owner (n = 5)"; never "owner-labelled" or "human-labelled"
-- **M5-01 / M5-03** cite the method from `packages/evals/gold/README.md` (synthetic, labelled by Claude, second-model reviewed with kappa, owner spot-check n = 5)
+- **M4-02** reads the schema and the three `.jsonl` sets (test split for the report, dev split for prompt work) and the injection items. It reports metrics on `test` only, and any claim says "gold set labelled by Claude (independent of the OpenAI models under test), cross-checked by a second model (kappa = …)"; never "owner-labelled" or "human-labelled"
+- **M5-01 / M5-03** cite the method from `packages/evals/gold/README.md` (synthetic, labelled by Claude, second-model reviewed with kappa)
 - Comment on the issue with the counts, kappa per set, the number of disagreements and the total spend

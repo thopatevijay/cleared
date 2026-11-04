@@ -1,5 +1,7 @@
 # Owner spot-check (M4-01)
 
+**Not performed (owner decision 2026-11-04, #45).** The owner didn't do this check; the labels are unreviewed by a human apart from ext-004.
+
 Claude (`claude-opus-5-5`) labelled the gold sets (owner decision 2026-11-04, #45). This file is the
 owner's check on those labels: 5 test items, picked at random, with every label Claude gave.
 
