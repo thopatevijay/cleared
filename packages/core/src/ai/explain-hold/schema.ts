@@ -60,7 +60,7 @@ export const StoredExplanationSchema = z.object({
   /** inserted by code from the rule row, never by the model */
   estimate: z.object({ at: when, label: z.literal("estimated") }).nullable(),
   source: z.object({ url: z.url(), title: z.string().min(1) }),
-  /** `explain_hold@v1`, or `fallback@v1` for the standard text */
+  /** `explain_hold@v2` (`@v1` on older rows), or `fallback@v1` for the standard text */
   promptVersion: z.string().min(1),
 });
 export type StoredExplanation = z.infer<typeof StoredExplanationSchema>;

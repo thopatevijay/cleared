@@ -89,8 +89,9 @@ if [ -f docs/security/threat-model.md ]; then
 fi
 
 # Fixtures never carry credentials (recorded in M0 spikes). Guarded: fixtures/ is created in M0-04.
+# OpenAI's `encrypted_content` (an opaque reasoning blob, base64) is skipped: random bytes can spell "sk-…".
 if [ -d fixtures ]; then
-  if grep -rniE "(access_token\"?\s*:\s*\"A21|client_secret|Bearer [A-Za-z0-9._-]{20,}|sk-[A-Za-z0-9]{20,})" fixtures; then
+  if grep -rniE "(access_token\"?\s*:\s*\"A21|client_secret|Bearer [A-Za-z0-9._-]{20,}|sk-[A-Za-z0-9]{20,})" fixtures | grep -v '"encrypted_content": "'; then
     echo "landing-checks: credential-shaped text in fixtures/" >&2
     exit 1
   fi

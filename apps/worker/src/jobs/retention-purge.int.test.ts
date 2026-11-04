@@ -44,7 +44,12 @@ async function auditRows(workspaceId: string) {
   return r.rows;
 }
 
-afterAll(() => closeDb(db));
+afterAll(async () => {
+  // its pool row names a test workspace that isn't a real pool (no AI budget, no PayPal ids): never leave it
+  // for the review-hold pool CLI tests (BL-01 6606577927)
+  if (ws.pool !== "") await db.$client.query("delete from review_hold_pool where pool_workspace_id = $1", [ws.pool]);
+  await closeDb(db);
+});
 
 const allCounts = async () =>
   Object.fromEntries(await Promise.all(ids().map(async (id) => [id, await rowCounts(db, id)] as const)));

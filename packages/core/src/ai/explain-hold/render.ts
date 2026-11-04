@@ -3,6 +3,8 @@
 // model never writes a value of its own. Plain text in, plain text out (the UI renders it as text).
 import type { Locale } from "../../accounts/workspace.ts";
 import { holdRule, ruleForReason, ESTIMATE_LABEL, type HoldRule } from "../../holds/rules.ts";
+import { formatDateTime } from "../../format/datetime.ts";
+import { formatMoney } from "../../format/money.ts";
 import type { Instant } from "../../time.ts";
 import {
   type ExplainHoldInput,
@@ -45,23 +47,20 @@ export function explainHoldInput(f: HoldFacts, locale: Locale): ExplainHoldInput
   };
 }
 
-const INTL_LOCALE: Readonly<Record<Locale, string>> = { en: "en-US", hi: "hi-IN" };
+/** The UI's Intl locales (apps/web `intlLocale`): Hindi keeps Latin digits. */
+const INTL_LOCALE: Readonly<Record<Locale, string>> = { en: "en-IN", hi: "hi-IN-u-nu-latn" };
 
-function formatDate(at: Instant, locale: Locale, timeZone: string): string {
-  return new Intl.DateTimeFormat(INTL_LOCALE[locale], {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone,
-  }).format(new Date(at));
-}
-
-/** The slot values for this hold (amount as "64.00 USD": the currency code is never guessed into a symbol). */
+/**
+ * The slot values for this hold, with the UI's own formatters (BL-01 6601578724, M4-02): the date in the
+ * seller's zone with its name (Hindi on the 24-hour clock, never a Latin "pm" inside Devanagari) and the
+ * amount with its ISO code ("USD 64.00": the currency is never guessed into a symbol).
+ */
 export function slotValues(f: HoldFacts, locale: Locale): Readonly<Record<ExplainSlot, string>> {
+  const intl = INTL_LOCALE[locale];
   return {
-    amount: `${f.amount.value} ${f.amount.currency}`,
-    opened_at: formatDate(f.openedAt, locale, f.timeZone),
-    estimated_release:
-      f.estimatedReleaseAt === null ? "" : formatDate(f.estimatedReleaseAt, locale, f.timeZone),
+    amount: formatMoney(f.amount.value, f.amount.currency, intl, "code"),
+    opened_at: formatDateTime(f.openedAt, f.timeZone, intl),
+    estimated_release: f.estimatedReleaseAt === null ? "" : formatDateTime(f.estimatedReleaseAt, f.timeZone, intl),
   };
 }
 

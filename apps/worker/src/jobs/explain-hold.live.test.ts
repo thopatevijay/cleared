@@ -69,7 +69,7 @@ describe.skipIf(KEY === "" || !dbAvailable)("explain-hold LIVE (M3-02, OPENAI bu
         call += 1;
         recorder.label(
           call === 1 ? `explain_hold/${name}` : `explain_hold/${name}.${String(call)}`,
-          `M3-02: explain_hold@v1, ${reason} hold (synthetic 64.00 USD), locale ${locale}`,
+          `M4-02: explain_hold@v2, ${reason} hold (synthetic 64.00 USD), locale ${locale}`,
         );
         return live().complete(req);
       },

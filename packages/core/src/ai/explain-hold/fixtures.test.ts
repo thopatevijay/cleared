@@ -20,7 +20,7 @@ const facts = (ruleId: string, reason: string, estimated: string | null): HoldFa
 const review = facts("payment_review", "PENDING_REVIEW", "2026-10-27T11:24:21Z");
 const dispute = facts("dispute_hold", "BUYER_COMPLAINT", null);
 
-describe("recorded explain_hold@v1 answers (fixture replay)", () => {
+describe("recorded explain_hold@v2 answers (fixture replay)", () => {
   it.each([
     ["payment-review-en", review, "en"],
     ["payment-review-hi", review, "hi"],

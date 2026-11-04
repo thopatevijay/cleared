@@ -1,7 +1,7 @@
 // M3-02 ACs end to end: the job, runWorkflow, the OpenAI provider replaying `fixtures/openai/explain_hold/*`
 // (the live recordings + the derived failures) over msw, and explanations / holds / outbox / agent_runs on the
 // compose Postgres. Every answer goes through the code guardrails; anything else ends in the standard text.
-import { createHttpClient, createOpenAiCompletionProvider, EXPLAIN_HOLD_V1_ID } from "@cleared/adapters";
+import { createHttpClient, createOpenAiCompletionProvider, EXPLAIN_HOLD_V2_ID } from "@cleared/adapters";
 import { startReplay, type Replay } from "@cleared/adapters/testing/replay";
 import {
   explainHoldInput,
@@ -144,8 +144,8 @@ describe.skipIf(!dbAvailable)("explain_hold workflow (msw replay + compose Postg
       expect(raw.ruleId).toBe(ruleId);
       const [row] = await stored(holdId);
       expect(row?.source_ref).toBe(ruleId);
-      expect(row?.doc).toMatchObject({ origin: "ai", locale, ruleId, promptVersion: EXPLAIN_HOLD_V1_ID });
-      expect(row?.doc.summary).toContain("64.00 USD"); // code filled {amount}
+      expect(row?.doc).toMatchObject({ origin: "ai", locale, ruleId, promptVersion: EXPLAIN_HOLD_V2_ID });
+      expect(row?.doc.summary).toContain("USD\u00a064.00"); // code filled {amount}
       expect(row?.doc.summary).not.toMatch(/\{[a-z_]+\}/);
       // the state move and its outbox row, one transaction
       expect(await holdState(holdId)).toBe("explained");
@@ -217,7 +217,7 @@ describe.skipIf(!dbAvailable)("explain_hold workflow (msw replay + compose Postg
     expect(runs[1]).toMatchObject({ tokens_in: 0, tokens_out: 0 });
     expect(Number(runs[1]?.cost_usd)).toBe(0);
     // the cached answer carries no other hold's numbers: code filled this hold's amount
-    expect((await stored(second.holdId))[0]?.doc.summary).toContain("120.50 USD");
+    expect((await stored(second.holdId))[0]?.doc.summary).toContain("USD\u00a0120.50");
     // owner decision 2026-11-02: the cache is per workspace
     const other = await explainWorkspace(db);
     const third = await heldPayment(db, other);
@@ -258,7 +258,7 @@ describe.skipIf(!dbAvailable)("explain_hold workflow (msw replay + compose Postg
     const { holdId } = await heldPayment(db, ws);
     expect(await explain(ws, holdId)).toMatchObject({ origin: "ai" });
     expect((await stored(holdId))[0]?.doc.summary).toBe(
-      "<b>PayPal</b> is reviewing your payment of 64.00 USD. <img src=x onerror=alert('x')>",
+      "<b>PayPal</b> is reviewing your payment of USD\u00a064.00. <img src=x onerror=alert('x')>",
     );
   });
 });

@@ -6,6 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./ai/openai": "./src/ai/openai.ts",
+    "./ai/openai-provider": "./src/ai/openai-provider.ts",
+    "./ai/workflows/explain-hold": "./src/ai/workflows/explain-hold.ts",
     "./ai/pricing": "./src/ai/pricing.ts",
     "./http/client": "./src/http/client.ts",
     "./files": "./src/files/index.ts",

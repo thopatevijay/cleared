@@ -307,7 +307,7 @@ Model IDs are verified on the day (M0-07).
 
 **Evals:** three gold sets (extraction 30, scope 40, hold explanations 20) plus adversarial injection cases.
 - PR CI replays recorded responses through deterministic checks.
-- A labelled `eval` workflow runs live evals on prompt or model changes, and nightly.
+- A labelled `eval` workflow runs live evals on prompt or model changes, and on demand (no nightly run: budget, BL-01 6624696324).
 - Results are published as measured numbers with *n*.
 
 ## 11. On-chain

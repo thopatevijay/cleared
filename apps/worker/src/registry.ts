@@ -85,7 +85,7 @@ export function defaultRegistry(
   const holds = holdsHandler({ db: rt.db, publisher, now: () => new Date() });
   // M3-07: the scope snapshot PDF (seller request, or a client's acknowledgement arriving)
   const snapshot = { db: rt.db, publisher, now: () => new Date() };
-  // M3-02: explain a hold (explain_hold@v1, or the standard text) in the workspace's or the asked locale
+  // M3-02: explain a hold (explain_hold@v2, or the standard text) in the workspace's or the asked locale
   const explain = explainHoldHandler({ db: rt.db, publisher, ...ai, now: () => new Date() });
   return [
     {
