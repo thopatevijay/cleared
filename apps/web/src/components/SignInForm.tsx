@@ -134,7 +134,7 @@ export function SignInForm() {
         onChange={(e) => {
           setEmail(e.target.value);
         }}
-        className="min-h-12 w-full rounded-md border border-border-strong bg-surface px-3 text-base text-text disabled:bg-surface-sunken disabled:text-text-muted"
+        className="min-h-12 w-full rounded-md border border-border-strong bg-surface px-3 text-base text-text aria-invalid:border-2 aria-invalid:border-danger disabled:bg-surface-sunken disabled:text-text-muted"
       />
       {fieldError ? (
         <p id={errorId} role="alert" className="flex items-center gap-2 text-sm text-danger">

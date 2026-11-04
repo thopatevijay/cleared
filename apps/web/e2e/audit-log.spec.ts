@@ -17,6 +17,10 @@ test("the audit log after an approved, filed and resolved dispute reply", async 
 
   await page.goto("/en/audit");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Audit log");
+  // sweep M5 (BL-01 6531216924 item 9): the footer link marks the current page visibly, not only in aria
+  const current = page.locator('footer a[aria-current="page"]');
+  await expect(current).toHaveText("Audit log");
+  await expect(current).toHaveCSS("font-weight", "700");
   await expect(page.getByText("Every action on your workspace, oldest entries kept.")).toBeVisible();
   const rows = page.getByTestId("audit-row");
   await expect(page.locator('[data-testid="audit-row"][data-action="dispute.status_changed"]')).toHaveCount(

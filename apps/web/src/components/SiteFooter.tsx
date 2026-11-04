@@ -24,7 +24,7 @@ export function DashboardFooter({ current = false }: { current?: boolean }) {
           <Link
             href="/audit"
             aria-current={current ? "page" : undefined}
-            className="inline-flex min-h-11 items-center text-accent underline underline-offset-2"
+            className="inline-flex min-h-11 items-center text-accent underline underline-offset-2 aria-[current=page]:font-bold aria-[current=page]:text-text aria-[current=page]:no-underline"
           >
             {t("footerAudit")}
           </Link>
