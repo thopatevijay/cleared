@@ -151,6 +151,34 @@ Every one of the seven is far under the 400 ms server-side budget on this machin
 
 If the server-side p95 is still above 400 ms while the database stays sub-millisecond, the limit is the plan's CPU. Read the Render Metrics tab for the run window (CPU near 100 % on `web`) and write that up for the owner's plan decision. Don't change the threshold.
 
+## M5-PERF: idle database load (2026-11-04)
+
+Production Postgres (`cleared-db`, basic-256mb, 0.1 CPU) sat at about 95–100 % CPU for days, idle or not (BL-01 6629874892), while `web` peaked at about 28 % of its CPU. M5-PERF (#149) measured where an idle stack's queries come from and cut them.
+
+**How it was measured.** Local compose Postgres 18 with `pg_stat_statements` (`track = all`), `make reset`, `pnpm db:seed` plus 20 `loadtest` workspaces (60 payments, 20 disputes, 40 holds), `next dev` and the worker running with no traffic and no PayPal or OpenAI credentials. Counters were reset, then read after 5 minutes. The "after" window started 70 s after the worker booted.
+
+| Idle, 5 min | Before (`24bb49c`) | After (this PR) |
+|---|---:|---:|
+| Statements per minute | **9,226** | **512** (18× fewer) |
+| pg-boss job fetches per minute (the top statement) | 8,700 | 344 |
+| Statement execution time, 5 min | 355 ms | 145 ms |
+
+Top statements before: the pg-boss fetch (`WITH next AS (SELECT j.id FROM pgboss.job_common …)`) 8,700/min, the singleton-queue fetch 120/min, then `BEGIN`/`COMMIT`/`SET LOCAL` for the job transactions (≈ 45/min each). After: the fetch 344/min, the queue foreign-key check 18/min, the second fetch shape 14/min, the queue cache read 14/min and the pg-boss flow/supervise updates 12/min each. Part of the "after" traffic is real work: the seeded events' jobs ran (and retried without credentials) during the window.
+
+**Why it was 9,000 a minute.** pg-boss starts `localConcurrency` independent pollers per `work()` call. The worker had 30 queues and their 30 `.dlq`s, each with 5 pollers on the 2 s default poll: about 150 fetches a second with nothing to fetch. The reconcile (one query every 15 minutes), the deadline watcher and the SLO checks were negligible at idle.
+
+**What changed:**
+- **LISTEN/NOTIFY wakes the consumers.** Every known queue now has pg-boss's `notify` flag (set by `migrate` through `ensureQueue`), and the worker's pg-boss starts with `useListenNotify`. A job insert emits `pg_notify` in its own transaction, so the consumers wake when it commits, including jobs the web enqueues through the outbox. While the listener is up, an idle consumer polls only every **30 s** as a backstop, for jobs that become due later (`startAfter`, retry backoff) and for a notification lost while the listener reconnects. pg-boss also forces one fetch after a reconnect. If the listener is down, the 2 s poll comes back. Burst mode (`burstWhenReadyExceeds: 1`, M4-06) is unchanged: a consumer with a backlog still fetches without sleeping.
+- **`scenario.poll` has a 10 s backstop.** Its jobs are delayed (30 s–2 min), so with a 30 s backstop the judge timeline could drift by a whole backstop.
+- **Dead-letter consumers** run 1 slot polling every 60 s; they only log and raise one Sentry event.
+- **Cron consumers** (outbox relay, deadline watcher, reconcile, synthetic, retention purge) poll every 30 s. Their ticks are a minute or more apart.
+- **The judge scenario's poll backs off.** It used to re-sync the dispute and capture every 30 s for up to 60 minutes (the "dispute synced, outcome unchanged" lines in the production log). It now waits 30 s, then 60 s, then 2 min while nothing changes. It drops back to 30 s when its own sync changes the mirror, or when anything else synced either resource since the last poll (a webhook re-fetch). The 2 min cap keeps a timeline milestone at most 2 min late; M0-05's steps came about 3.5 min apart. Webhooks still trigger a re-fetch every time.
+- **Not changed:** the reconcile's 72 h window (BL-01 6603617791). It costs nothing at idle, and narrowing it changes what it catches.
+
+**Tests:** `apps/worker/test/work-options.test.ts` (intervals per consumer kind, backstop ≥ fallback), `apps/worker/test/listen-notify.int.test.ts` (every known queue has `notify` and its `.dlq` doesn't; a send from a second pg-boss instance wakes a consumer whose fallback and backstop polls are both 30 s, in under 5 s), `scenario.int.test.ts` "M5-PERF" (back-off 30 → 60 → 120 → 120 s; a webhook sync resets it to 30 s; a state change resets it to 30 s), and core `judge-dispute.test.ts` (`nextPollDelayMs`).
+
+**Production:** to be read by the manager after deploy. Record Render `cleared-db` CPU and the route latencies here.
+
 ## Deviations from the ticket text
 
 - **Forged signature → 401, not 400.** 401 is the M1-04 contract (`apps/web/test/webhooks/paypal-webhook.int.test.ts`, "tampering → 401"). A 400 comes back only for a verified body that isn't an event envelope. `load:assert` checks that every forged delivery gets a 4xx and reports the real status (BL-01 6603616566).
