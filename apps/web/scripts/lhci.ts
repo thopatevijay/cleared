@@ -58,6 +58,55 @@ function splitArgs(args: readonly string[]): Record<"collect" | "assert" | "uplo
   return out;
 }
 
+/** Every server this run started (each the leader of its own process group), until it is stopped. */
+const running = new Set<ChildProcess>();
+
+function signalGroup(p: ChildProcess, sig: NodeJS.Signals): void {
+  if (p.pid === undefined) return;
+  try {
+    process.kill(-p.pid, sig);
+  } catch {
+    // ESRCH: the group is already gone
+  }
+}
+
+/**
+ * SIGTERM the server's whole group, wait up to 10 s, then SIGKILL the group. `next start` closes gracefully
+ * on SIGTERM and waits for open keep-alive connections, so a SIGTERM alone let it outlive this script and
+ * keep the port (BL-01 6629802243).
+ */
+async function stop(p: ChildProcess): Promise<void> {
+  running.delete(p);
+  if (p.exitCode === null && p.signalCode === null) {
+    const exited = new Promise<void>((resolve) => {
+      p.once("exit", () => {
+        resolve();
+      });
+    });
+    signalGroup(p, "SIGTERM");
+    await Promise.race([exited, new Promise<void>((resolve) => setTimeout(resolve, 10_000).unref())]);
+  }
+  // the leader may be gone while a child it forked still holds the group (and the port)
+  signalGroup(p, "SIGKILL");
+}
+
+const stopAll = async (): Promise<void> => {
+  await Promise.all([...running].map(stop));
+};
+
+// Ctrl-C doesn't reach a detached group, and a crash skips `finally`: stop the servers on the way out.
+const SIGNAL_EXIT = { SIGINT: 130, SIGTERM: 143, SIGHUP: 129 } as const;
+function stopOnExit(): void {
+  for (const sig of Object.keys(SIGNAL_EXIT) as (keyof typeof SIGNAL_EXIT)[]) {
+    process.once(sig, () => {
+      void stopAll().finally(() => process.exit(SIGNAL_EXIT[sig]));
+    });
+  }
+  process.on("exit", () => {
+    for (const p of running) signalGroup(p, "SIGKILL");
+  });
+}
+
 function start(
   cmd: string,
   args: string[],
@@ -68,9 +117,10 @@ function start(
     cwd: web,
     env: { ...process.env, ...env },
     stdio: ["ignore", "pipe", "pipe"],
-    // its own process group: `next start` forks `next-server`, and stopping the group stops both
+    // its own process group, so `stop` signals the server and anything it forked
     detached: true,
   });
+  running.add(child);
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error(`${cmd} not ready in 120 s`));
@@ -185,8 +235,9 @@ async function autorun(args: readonly string[]): Promise<void> {
   if (process.env["CHROME_PATH"] === undefined && existsSync(chromium.executablePath()))
     process.env["CHROME_PATH"] = chromium.executablePath();
   const a = splitArgs(args);
-  const procs = await servers();
+  stopOnExit();
   try {
+    await servers();
     const { cookies, urls } = await seedSeller();
     process.env["LHCI_SESSION_COOKIES"] = JSON.stringify(cookies);
     lhci([
@@ -219,7 +270,8 @@ async function autorun(args: readonly string[]): Promise<void> {
       }
     }
   } finally {
-    for (const p of procs) if (p.pid !== undefined) process.kill(-p.pid, "SIGTERM");
+    // also when a server failed to start: the one already up is stopped too
+    await stopAll();
   }
   const rc = `--config=${join(root, "lighthouserc.json")}`;
   // upload first: the reports are kept even when an assertion fails

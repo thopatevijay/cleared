@@ -133,6 +133,10 @@ export function countdown(nowMs: number, iso: string): { unit: "days" | "hours";
 export function formatBytes(locale: string, bytes: number): string {
   const nf = (n: number, d: number) =>
     new Intl.NumberFormat(locale, { maximumFractionDigits: d, numberingSystem: "latn" }).format(n);
-  if (bytes >= 1_000_000) return `${nf(bytes / 1_000_000, 1)} MB`;
+  const mb = bytes / 1_000_000;
+  // just under PayPal's 10 MB per-file limit, "10 MB" would read as the limit case: "9.99 MB" instead
+  // (truncated, never rounded up; BL-01 6606578452)
+  if (mb >= 9.95 && mb < 10) return `${nf(Math.floor(mb * 100) / 100, 2)} MB`;
+  if (bytes >= 1_000_000) return `${nf(mb, 1)} MB`;
   return `${nf(Math.max(1, Math.round(bytes / 1_000)), 0)} KB`;
 }

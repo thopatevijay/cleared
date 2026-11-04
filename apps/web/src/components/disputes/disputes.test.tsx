@@ -315,14 +315,14 @@ describe("auto-added evidence on the approval card (BL-01 6595501766)", () => {
     const out = decode(review(withAuto()));
     expect(out).toContain(en.disputes.draft.autoHint);
     expect(out).toMatch(/data-testid="evidence-auto-added"[^>]*>.*Added by Cleared/);
-    expect(out).toContain("Not added: with this item (10 MB) the PDF would reach PayPal's 10 MB limit.");
+    expect(out).toContain("Not added: with this item (9.99 MB) the PDF would reach PayPal's 10 MB limit.");
     expect(out.match(/data-testid="evidence-auto-(added|left-out)"/g)).toHaveLength(2);
   });
 
   it("renders the same in HI", () => {
     const out = review(withAuto(), "hi");
     expect(out).toContain(hi.disputes.draft.autoAdded);
-    expect(out).toContain("नहीं जोड़ा: इसे (10 MB) जोड़ने पर PDF");
+    expect(out).toContain("नहीं जोड़ा: इसे (9.99 MB) जोड़ने पर PDF");
   });
 
   it("shows no auto lines when code added nothing", () => {

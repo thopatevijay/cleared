@@ -185,6 +185,9 @@ Red after a merge: fix on `main` or revert the offending merge and re-open its t
 gh issue comment <n> --body "<handoff, from the PR body>"
 gh issue edit <n> --remove-label "status:in-progress" --add-label "status:done"
 gh issue close <n> --reason completed
+# the worker's compose Postgres is named after its worktree folder and keeps its host port after the
+# folder is gone (BL-01 6570278114): stop it and drop its volume first
+docker compose -f <path>/compose.yaml -p "$(basename <path>)" down -v --remove-orphans
 git worktree remove <path> && git worktree prune     # only now
 ```
 

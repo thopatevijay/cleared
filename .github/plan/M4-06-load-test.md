@@ -20,8 +20,8 @@ Architecture §1 sets assumed load figures (launch: ≤ 20 concurrent judge sess
   - no AI or PayPal writes are triggered
   - measured: p50/p95/p99 per route, error rate, and Render CPU and memory for web and Postgres
 - **Webhook burst, production:** 5/s for 5 min against `/api/webhooks/paypal`
-  - (a) recorded real deliveries from `fixtures/paypal/webhooks/` replayed with their original headers. This exercises verify + dedupe; no re-fetch is enqueued
-  - (b) forged signatures: expect a fast 400
+  - (a) recorded real deliveries from `fixtures/paypal/webhooks/` replayed with their original headers. This exercises verify: they are scrubbed and dated outside the 5-minute skew window, so each is refused as stale (dedupe is exercised by the local burst); no re-fetch is enqueued (BL-01 6603616566)
+  - (b) forged signatures: expect a fast 401 (the M1-04 contract: tampering → 401; 400 is only a verified body that is not an event envelope)
   - measured: ack p95 (< 500 ms), and no 5xx
 - **100× burst, local production-like stack** (fresh `make up`, production build, worker concurrency as in `render.yaml`): 1,500 unique events at 5/s, plus a 30 s spike at 20/s
   - signatures come from the M1-04 test signing harness, which is accepted only when `NODE_ENV=test`; a test asserts production refuses it at boot
@@ -40,7 +40,7 @@ Architecture §1 sets assumed load figures (launch: ≤ 20 concurrent judge sess
 ## Acceptance Criteria
 
 - [ ] On production, launch load: dashboard and read routes p95 < 800 ms, error rate < 0.5%, from `pnpm load:launch` output
-- [ ] On production, webhook replay burst: ack p95 < 500 ms, 0 5xx. Forged signatures return 400 with p95 < 200 ms
+- [ ] On production, webhook replay burst: ack p95 < 500 ms, 0 5xx. Forged signatures return 401 with p95 < 200 ms
 - [ ] Locally, the 100× burst: ack p95 < 500 ms; queue drains within 10 min of the burst end; duplicates 0; DLQ 0; every event has exactly one `webhook_events` row
 - [ ] A test proves the test signing harness is rejected when `NODE_ENV=production`
 - [ ] The `loadtest` workspaces are purged after the run (`pnpm db:count --tag loadtest` prints 0 on production)

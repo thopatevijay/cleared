@@ -1,7 +1,8 @@
 // Footers: the landing's sandbox disclaimer, and the dashboard's "you hold the keys" + audit-log link and
-// (M4-03) the time-zone control.
+// (M4-03) the time-zone control, and (sweep M4) "Sign out".
 import { useTranslations } from "next-intl";
 import { Link } from "../i18n/navigation.ts";
+import { SignOutButton } from "./SignOutButton.tsx";
 import { TimeZoneControl } from "./TimeZoneControl.tsx";
 
 export function LandingFooter() {
@@ -27,6 +28,7 @@ export function DashboardFooter({ current = false }: { current?: boolean }) {
           >
             {t("footerAudit")}
           </Link>
+          <SignOutButton />
         </p>
         <TimeZoneControl />
       </div>

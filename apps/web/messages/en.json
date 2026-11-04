@@ -73,6 +73,8 @@
     "errorBody": "Check your connection and retry.",
     "footer": "The agent does the work. You hold the keys.",
     "footerAudit": "Audit log",
+    "signOut": "Sign out",
+    "signOutError": "Couldn't sign out. Check your connection and try again.",
     "timeZone": {
       "current": "Times shown in <tz>{zone}</tz>",
       "change": "Change time zone",
