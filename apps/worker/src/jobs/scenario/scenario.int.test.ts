@@ -25,6 +25,7 @@ import { installSandbox, sandboxClients, type Phase, type Sandbox } from "../../
 import { runCaptureStep } from "./capture.ts";
 import { runChargebackStep } from "./chargeback.ts";
 import { runDecideStep } from "./decide.ts";
+import { syncDispute } from "../dispute-sync.ts";
 import { runPollStep } from "./poll.ts";
 import { runSeedPackStep } from "./seed-pack.ts";
 import type { ScenarioDeps, ScenarioJob } from "./shared.ts";
@@ -101,6 +102,18 @@ async function jobs(queue: string, scenarioId: string): Promise<number> {
     [queue, scenarioId],
   );
   return Number(r.rows[0]?.n ?? 0);
+}
+
+/** M5-PERF: the delay the last poll scheduled its successor with (start_after - last_polled_at). */
+async function nextPollDelay(job: ScenarioJob): Promise<number> {
+  const r = await db.$client.query<{ at: Date }>(
+    "select start_after as at from pgboss.job where name = 'scenario.poll' and data->'data'->>'scenarioId' = $1 order by start_after desc limit 1",
+    [job.scenarioId],
+  );
+  const run = await runRow(job);
+  const at = r.rows[0]?.at;
+  if (at === undefined || run.lastPolledAt === null) throw new Error("no scheduled poll");
+  return at.getTime() - run.lastPolledAt.getTime();
 }
 
 /** A provide_evidence that M2-08 executed (`succeeded` + its audit row), as the approve path leaves it. */
@@ -252,6 +265,39 @@ describe.skipIf(!dbAvailable)("judge scenario (fixture replay)", () => {
     expect(pp.calls).toEqual(calls);
     expect(await runRow(job)).toMatchObject({ state: "timed_out", failure: "poll_limit" });
     expect(await jobs("scenario.poll", job.scenarioId)).toBe(polls);
+  });
+
+  it("M5-PERF: the poll backs off while nothing changes, and resets on a webhook sync or a change", async () => {
+    clock = new Date("2026-10-31T14:30:00Z");
+    const { job, ws } = await toPolling();
+    const pp = sandbox.byWorkspace(ws);
+    setPhase(ws, "waiting");
+    const poll = async (): Promise<number> => {
+      expect(await deliver(runPollStep, job)).toBe("continue");
+      const delay = await nextPollDelay(job);
+      clock = new Date(clock.getTime() + delay);
+      return delay;
+    };
+    expect(await poll()).toBe(30_000); // the first poll sees the dispute move
+    expect([await poll(), await poll(), await poll(), await poll()]).toEqual([
+      60_000, 120_000, 120_000, 120_000,
+    ]);
+    expect((await runRow(job)).steps).toMatchObject({ poll: { unchanged: 4 } });
+
+    // a webhook re-fetch between polls (same state): the next poll drops back to 30 s
+    clock = new Date(clock.getTime() - 60_000);
+    await deliver((d, _job, ctx) => syncDispute(d, { disputeId: pp.disputeId, source: "webhook" }, ctx), job);
+    clock = new Date(clock.getTime() + 60_000);
+    expect(await poll()).toBe(30_000);
+    expect(await poll()).toBe(60_000);
+
+    // PayPal's state moves (the adjudicate link appears): back to 30 s
+    setPhase(ws, "adjudicable");
+    expect(await poll()).toBe(30_000);
+    expect((await runRow(job)).steps).toMatchObject({
+      poll: { unchanged: 0 },
+      seen: { decision_offered: {} },
+    });
   });
 
   it("AC2: two workspaces running at once never see each other's payments or disputes", async () => {

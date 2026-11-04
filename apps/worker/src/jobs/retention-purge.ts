@@ -24,6 +24,7 @@ import {
   type Queue,
   type RetentionCandidate,
 } from "@cleared/db";
+import { cronWorkOptions } from "../poll-intervals.ts";
 
 export interface RetentionPurgeDeps {
   readonly db: Db;
@@ -112,13 +113,9 @@ export async function scheduleRetentionPurge(
     });
   }
   await deps.boss.schedule(OPS_RETENTION_PURGE_QUEUE, RETENTION_PURGE_CRON);
-  await deps.boss.work(
-    OPS_RETENTION_PURGE_QUEUE,
-    deps.pollingIntervalSeconds === undefined ? {} : { pollingIntervalSeconds: deps.pollingIntervalSeconds },
-    async () => {
-      await runRetentionPurge({ db: deps.db, now: deps.now, log: deps.log });
-    },
-  );
+  await deps.boss.work(OPS_RETENTION_PURGE_QUEUE, cronWorkOptions(deps), async () => {
+    await runRetentionPurge({ db: deps.db, now: deps.now, log: deps.log });
+  });
 }
 
 /** The printed report: one line per workspace with its non-zero counts, then the totals. */

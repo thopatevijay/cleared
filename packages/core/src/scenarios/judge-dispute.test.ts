@@ -6,10 +6,13 @@ import {
   decisionAvailability,
   isStaleRun,
   isTerminal,
+  nextPollDelayMs,
   pollExpired,
   pollVerdict,
   recordMilestones,
+  SCENARIO_POLL_INTERVAL_MS,
   SCENARIO_POLL_LIMIT_MS,
+  SCENARIO_POLL_MAX_INTERVAL_MS,
   SCENARIO_STALE_MS,
   SCENARIO_STATES,
   SCENARIO_STEPS,
@@ -82,6 +85,28 @@ describe("poll verdict", () => {
     expect(isStaleRun("polling", t0, t0 + SCENARIO_STALE_MS)).toBe(true);
     expect(isStaleRun("polling", t0, t0 + SCENARIO_STALE_MS - 1)).toBe(false);
     expect(isStaleRun("resolved", t0, t0 + SCENARIO_STALE_MS * 2)).toBe(false);
+  });
+});
+
+describe("poll back-off (M5-PERF)", () => {
+  it("doubles from 30 s per unchanged poll and caps at 2 min", () => {
+    expect(SCENARIO_POLL_INTERVAL_MS).toBe(30_000);
+    expect(SCENARIO_POLL_MAX_INTERVAL_MS).toBe(120_000);
+    expect([0, 1, 2, 3, 10, 1_000].map(nextPollDelayMs)).toEqual([
+      30_000, 60_000, 120_000, 120_000, 120_000, 120_000,
+    ]);
+  });
+
+  it("a change (streak 0) is the base 30 s; nonsense streaks never go below it", () => {
+    expect(nextPollDelayMs(0)).toBe(SCENARIO_POLL_INTERVAL_MS);
+    expect(nextPollDelayMs(-3)).toBe(SCENARIO_POLL_INTERVAL_MS);
+    expect(nextPollDelayMs(Number.NaN)).toBe(SCENARIO_POLL_INTERVAL_MS);
+  });
+
+  it("parses runs stored before the back-off (no `unchanged`) and with it", () => {
+    const poll = { at: "x", count: 1, disputeStatus: null, captureStatus: null, captureReason: null };
+    expect(ScenarioStepsSchema.parse({ poll }).poll?.unchanged).toBeUndefined();
+    expect(ScenarioStepsSchema.parse({ poll: { ...poll, unchanged: 2 } }).poll?.unchanged).toBe(2);
   });
 });
 

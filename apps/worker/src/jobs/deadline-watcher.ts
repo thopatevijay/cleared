@@ -30,6 +30,7 @@ import {
 } from "@cleared/db";
 import type { NotifyDeps } from "../consumers/notifications.ts";
 import { alertDeadline, type AlertTarget } from "./deadline-alerts.ts";
+import { cronWorkOptions } from "../poll-intervals.ts";
 
 export interface DeadlineTarget extends AlertTarget {
   readonly status: string;
@@ -107,12 +108,8 @@ export async function scheduleDeadlineWatch(deps: {
   const spec = queueSpec(DISPUTE_DEADLINE_WATCH_QUEUE);
   await ensureQueue(deps.boss, spec);
   await deps.boss.schedule(spec.name, DISPUTE_DEADLINE_WATCH_CRON);
-  await deps.boss.work(
-    spec.name,
-    deps.pollingIntervalSeconds === undefined ? {} : { pollingIntervalSeconds: deps.pollingIntervalSeconds },
-    async () => {
-      const result = await runDeadlineWatch(deps);
-      deps.log.info(result, "deadline watcher tick");
-    },
-  );
+  await deps.boss.work(spec.name, cronWorkOptions(deps), async () => {
+    const result = await runDeadlineWatch(deps);
+    deps.log.info(result, "deadline watcher tick");
+  });
 }
