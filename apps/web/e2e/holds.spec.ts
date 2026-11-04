@@ -174,17 +174,17 @@ test("M3-02 explanation: AI in EN, the HI toggle, the standard text and the pend
   const s = await seedHeld(ws);
   await page.goto(`/en/holds/${s.holdId}`);
   const detail = page.getByTestId("hold-detail");
-  // the worker explained the hold on `hold.opened` (explain_hold@v1: the recorded live answer)
+  // the worker explained the hold on `hold.opened` (explain_hold@v2: the recorded live answer)
   const explanation = detail.getByTestId("explanation");
   await expect(explanation).toHaveAttribute("data-origin", "ai", { timeout: 60_000 });
   await expect(explanation).toContainText("AI explanation");
-  await expect(detail.getByTestId("explanation-summary")).toContainText("64.00 USD");
+  await expect(detail.getByTestId("explanation-summary")).toContainText(/USD\s64\.00/);
   await axeClean(page, "hold-explanation-en");
   await capture(page, "en-hold-explanation", REVIEW_EXPLAIN);
   // the toggle asks for Hindi: POST /api/holds/:id/explanation → hold.explain_requested → the worker
   await detail.getByTestId("explanation-locale").getByRole("button", { name: "हिन्दी" }).click();
   await expect(detail.getByTestId("explanation-summary")).toHaveAttribute("lang", "hi", { timeout: 60_000 });
-  await expect(detail.getByTestId("explanation-summary")).toContainText("64.00 USD");
+  await expect(detail.getByTestId("explanation-summary")).toContainText(/USD\s64\.00/);
   await axeClean(page, "hold-explanation-hi-toggle");
   await capture(page, "en-hold-explanation-hi-toggle", REVIEW_EXPLAIN);
   // the Hindi UI shows the Hindi explanation by default

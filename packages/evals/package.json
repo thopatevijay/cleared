@@ -14,11 +14,17 @@
     "eval:review": "node src/gold/review.ts",
     "eval:label": "node src/gold/label.ts",
     "eval:adopt-dev": "node src/gold/adopt.ts",
-    "eval:validate": "node src/gold/validate.ts"
+    "eval:validate": "node src/gold/validate.ts",
+    "eval": "node src/runner.ts",
+    "eval:report": "node src/runner.ts --report",
+    "eval:check-readme": "node src/check-readme.ts"
   },
   "dependencies": {
     "@cleared/adapters": "workspace:*",
     "@cleared/core": "workspace:*",
     "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "msw": "3.0.3"
   }
 }

@@ -1,0 +1,84 @@
+# Live eval (M4-02): the gold sets through the real workflows on OpenAI, with a per-run spend cap
+# (EVAL_MAX_USD). Runs only on PRs labelled `eval` and on demand (never automatically on push; the paths
+# check below only reminds authors to add the label). It records fresh responses and writes the report, uploads both as an artefact, and
+# commits nothing: a person commits the recordings when a prompt, model or schema change is meant to land.
+# PR CI (ci.yml, job `eval-replay`) replays the committed recordings offline instead.
+# Actions are pinned to commit SHAs (tag in the trailing comment).
+name: eval
+
+on:
+  pull_request:
+    # `labeled` covers the `eval` label; the paths check is the `changes` job below (one trigger cannot
+    # be both "labelled" and "touches these paths")
+    types: [opened, synchronize, reopened, labeled]
+  # nightly removed: budget (BL-01 6624696324); run on label or manually
+  workflow_dispatch:
+
+concurrency:
+  group: eval-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: prompt, schema or model change?
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    outputs:
+      ai: ${{ steps.paths.outputs.ai }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: paths filter
+        id: paths
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # prompts, output schemas, the harness, model config and pricing, and the eval itself
+          pattern='^(packages/core/src/(agent|proof|disputes|ai)/|packages/core/src/holds/rules\.ts|packages/adapters/src/ai/|packages/evals/(src|gold)/|render\.yaml|\.env\.example)'
+          if git diff --name-only "$BASE" HEAD | grep -qE "$pattern"; then
+            echo "::notice::prompt, schema or model change: add the \`eval\` label to run the live eval (about \$0.31) before merging"
+            echo "ai=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ai=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # live eval on label/manual only: owner 2026-11-04 (#46), ≈ $0.31 per run
+  live:
+    name: live eval
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'eval')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL_SMALL: ${{ vars.OPENAI_MODEL_SMALL }}
+      OPENAI_MODEL_LARGE: ${{ vars.OPENAI_MODEL_LARGE }}
+      EVAL_MAX_USD: ${{ vars.EVAL_MAX_USD || '1' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0 (reads packageManager)
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - name: live eval (fails on a missed threshold)
+        run: pnpm eval --mode live --set all --split test
+      - name: upload report and recordings
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: eval-report-${{ github.run_id }}
+          path: |
+            docs/evidence/eval-report.json
+            docs/evidence/eval-report.md
+            fixtures/openai/eval/
+          if-no-files-found: warn
+          retention-days: 30

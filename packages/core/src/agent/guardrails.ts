@@ -64,6 +64,11 @@ const RULES: readonly (readonly [InjectionPattern, RegExp])[] = [
     "instruction_verb",
     /\b(ai|assistant|model|llm|chatgpt|gpt|reviewer|system)\b[^\n]{0,30}?\b(must|should|shall|will)\b[^\n]{0,30}?\b(accept|approve|rule|decide|refund|grant|mark|output|respond|say)\b/i,
   ],
+  // M4-02 (eval, adversarial set): an AI addressed by name, then told what to do ("AI reviewer, ignore …")
+  [
+    "instruction_verb",
+    /\b(ai|assistant|model|llm|chatgpt|gpt|bot|reviewer)\b\s*[,:]\s*(please\s+)?(ignore|disregard|forget|override|mark|rate|approve|accept|decide|treat|rule|say|output|respond|refund)\b/i,
+  ],
   // role tags and chat-template markers
   ["role_tag", /<\s*\/?\s*(system|assistant|user|developer|instructions?|tool)\s*>/i],
   ["role_tag", /^\s*(system|assistant|developer)\s*:/im],
@@ -74,13 +79,26 @@ const RULES: readonly (readonly [InjectionPattern, RegExp])[] = [
   ["base64_blob", /[A-Za-z0-9+/]{160,}={0,2}/],
 ];
 
+/** Zero-width and invisible format characters an attacker can put inside a word to dodge the patterns. */
+const INVISIBLE = /[\u00AD\u180E\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g;
+
+/**
+ * What the patterns read (M4-02 adversarial set): NFKC folds full-width and compatibility letters
+ * ("ｉｇｎｏｒｅ" → "ignore") and invisible characters are removed ("ig\u200Bnore"). The block itself is never
+ * rewritten; only the scan sees this form.
+ */
+export function scanForm(text: string): string {
+  return text.normalize("NFKC").replace(INVISIBLE, "");
+}
+
 /** Every pattern that matches `text` (one flag per pattern kind). */
 export function scanForInjection(evidenceId: string, text: string): InjectionFlag[] {
   const seen = new Set<InjectionPattern>();
   const flags: InjectionFlag[] = [];
+  const form = scanForm(text);
   for (const [pattern, re] of RULES) {
     if (seen.has(pattern)) continue;
-    const m = re.exec(text);
+    const m = re.exec(form);
     if (!m) continue;
     seen.add(pattern);
     flags.push({ evidenceId, pattern, match: m[0].slice(0, 80) });

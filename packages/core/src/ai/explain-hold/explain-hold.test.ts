@@ -6,6 +6,7 @@ import { HOLD_RULES } from "../../holds/rules.ts";
 import { fromEpochMs } from "../../time.ts";
 import { fallbackExplanation, FALLBACK_RULE_IDS } from "./fallback.ts";
 import { dateExpressionIn, explainHoldProblems, explainProblemOf, numbersIn } from "./guardrails.ts";
+import { formatDateTime } from "../../format/datetime.ts";
 import { explainHoldInput, fillSlots, renderExplanation, slotValues, type HoldFacts } from "./render.ts";
 import { ExplainHoldOutputSchema, StoredExplanationSchema, type ExplainHoldOutput } from "./schema.ts";
 
@@ -154,17 +155,20 @@ describe("rendering (code fills the values)", () => {
   it("fills the slots with this hold's amount and dates and adds the estimate and source", () => {
     const s = renderExplanation(ok, review, "en", "ai", "explain_hold@v1");
     expect(StoredExplanationSchema.parse(s)).toEqual(s);
-    expect(s.summary).toBe("PayPal is reviewing your payment of 64.00 USD.");
-    expect(s.whatPayPalIsDoing).toContain("Oct 27, 2026");
+    expect(s.summary).toBe("PayPal is reviewing your payment of USD\u00a064.00.");
+    expect(s.whatPayPalIsDoing).toContain("27 Oct 2026");
     expect(s.estimate).toEqual({ at: review.estimatedReleaseAt, label: "estimated" });
     expect(s.source.url).toMatch(/^https:\/\/developer\.paypal\.com\//);
     expect(renderExplanation(ok, dispute, "en", "standard", "fallback@v1").estimate).toBeNull();
   });
 
-  it("formats Hindi dates in the workspace's zone", () => {
+  it("formats Hindi dates in the workspace's zone, on the 24-hour clock with the zone name (BL-01 6601578724)", () => {
     const v = slotValues(review, "hi");
-    expect(v.amount).toBe("64.00 USD");
-    expect(fillSlots("{estimated_release}", v)).toMatch(/2026/);
+    expect(v.amount).toBe("USD\u00a064.00"); // Intl puts a no-break space after the code
+    const when = fillSlots("{opened_at} {estimated_release}", v);
+    expect(when).toMatch(/2026/);
+    expect(when).not.toMatch(/\b(am|pm)\b/i);
+    expect(v.opened_at).toBe(formatDateTime(review.openedAt, review.timeZone, "hi-IN-u-nu-latn"));
   });
 
   it("keeps markup as plain text (rendering escapes it; nothing is stripped or interpreted here)", () => {
@@ -175,6 +179,6 @@ describe("rendering (code fills the values)", () => {
       "ai",
       "explain_hold@v1",
     );
-    expect(s.summary).toBe("<b>Held</b> 64.00 USD");
+    expect(s.summary).toBe("<b>Held</b> USD\u00a064.00");
   });
 });
