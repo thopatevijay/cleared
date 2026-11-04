@@ -97,6 +97,23 @@ describe("EstimatedDate", () => {
     expect(none).toContain("The payer paid by an eCheck that has not yet cleared.");
   });
 
+  // sweep M5 (BL-01 6601579774 item 1): the full form's several sources each carry their title visibly
+  it("full form with two sources: each Source button names its source (EN and HI)", () => {
+    const names = (l: "en" | "hi") =>
+      [...html(<EstimatedDate e={REVIEW} timeZone="UTC" full />, l).matchAll(
+        /data-testid="source-toggle"[^>]*>([^]*?)<\/button>/g,
+      )].map((m) => text(m[1] ?? "").trim());
+    expect(names("en")).toEqual([
+      "Source: PayPal transaction event codes: T2105 Payment review hold",
+      "Source: PayPal seller account, Holds panel (sandbox)",
+    ]);
+    expect(names("hi")[0]).toBe("स्रोत: PayPal transaction event codes: T2105 Payment review hold");
+    // the compact form keeps one short "Source"
+    expect(html(<EstimatedDate e={REVIEW} timeZone="UTC" />)).toMatch(
+      /data-testid="source-toggle"[^>]*>Source<span class="sr-only">/,
+    );
+  });
+
   // sweep M5 (BL-01 6604837005 item 3): a row past the latest estimate says it is still held
   it("compact form past the estimate: 'Still held after the estimate' (EN and HI); not before, not full", () => {
     const future: PaymentHold = {

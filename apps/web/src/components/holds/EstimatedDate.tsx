@@ -150,7 +150,7 @@ export function EstimatedDate({
       ) : null}
       {/* the full form cites every source behind its bounds (payment review: 24 h and 3 business days) */}
       {full ? (
-        rule?.sources.map((s) => <RuleSource key={s.title} source={s} />)
+        rule?.sources.map((s, _i, all) => <RuleSource key={s.title} source={s} named={all.length > 1} />)
       ) : source === null || at !== null ? null : (
         <RuleSource source={source} />
       )}
