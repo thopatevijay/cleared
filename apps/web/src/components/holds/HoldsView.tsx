@@ -115,6 +115,17 @@ function useReleases(items: readonly HoldItem[] | undefined): string {
   return msg;
 }
 
+/**
+ * hold.md "Review hold note": above the rows, only on a demo workspace that got no judge-pool review hold,
+ * and never while a `PENDING_REVIEW` hold is listed (the note would contradict the row beneath it).
+ */
+export function showPoolNote(data: {
+  workspace: { reviewPool?: string | null | undefined };
+  items: readonly { reason: string }[];
+}) {
+  return data.workspace.reviewPool === "none" && !data.items.some((h) => h.reason === "PENDING_REVIEW");
+}
+
 export function HoldsView() {
   const t = useTranslations("holds");
   const locale = useUiLocale();
@@ -168,8 +179,8 @@ export function HoldsView() {
   return (
     <div className="flex flex-col gap-8">
       {data === undefined ? null : <OfflineBanner loadedAt={loadedAt} timeZone={data.workspace.timezone} />}
+      {data !== undefined && showPoolNote(data) ? <ReviewPoolNote /> : null}
       {body}
-      {data?.workspace.reviewPool === "none" ? <ReviewPoolNote /> : null}
       <SampleScenarios />
       <p aria-live="polite" className="sr-only" data-testid="live-region">
         {announcement}

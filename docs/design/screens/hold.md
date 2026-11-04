@@ -115,7 +115,7 @@ PayPal never says whether a held payment was goods or a service. The seller says
 | Loading | Total skeleton + 2 row skeletons; after 3 s "Loading held money…" |
 | Empty | Icon `circle-check`: "No held money. Every payment is with you or on its way." The Sample scenarios section still shows |
 | Success | Rows + detail as above |
-| Review hold note (demo only) | `ReviewPoolNote`, above the hold rows on a demo workspace that got no judge-pool payment-review hold (none available, or all over 20 h old: ADR 0019): the Sandbox badge (flask icon) + `holds.reviewPool.body`. `PENDING_REVIEW` is `<code lang="en">` (rich text tag `<code>`). No link: the note explains itself, with no README reference. Not shown on non-demo workspaces or when a pool hold was assigned |
+| Review hold note (demo only) | `ReviewPoolNote`, above the hold rows on a demo workspace that got no judge-pool payment-review hold (none available, or all over 20 h old: ADR 0019): the Sandbox badge (flask icon) + `holds.reviewPool.body`. `PENDING_REVIEW` is `<code lang="en">` (rich text tag `<code>`). No link: the note explains itself, with no README reference. Not shown on non-demo workspaces, when a pool hold was assigned, or while any `PENDING_REVIEW` hold is listed (it would contradict that row) |
 | Explanation pending | "Writing a plain-language explanation… usually under 30 seconds." The rule description shows meanwhile |
 | Explanation unavailable (partial) | AI down or budget reached: the rule description + source are shown, labelled "Rule text from PayPal (no AI summary right now)" |
 | Tracking filing | `ApprovalCard` states; success toast "Tracking filed", and the estimate switches to "After the courier confirms delivery · estimated" (no invented date) |
