@@ -471,7 +471,10 @@ function thirdParty(page: Page): string[] {
 
 async function sceneCalendarAudit(page: Page, notes: string[]): Promise<void> {
   await page.goto("/en/audit");
-  const row = (a: string) => page.locator(`[data-testid="audit-row"][data-action="${a}"]`);
+  // the dispute reply's own rows (they carry its dispute id): scene 5's seller-proposed Completed record is
+  // newer, so the newest row of each action is not the reply's
+  const row = (a: string) =>
+    page.locator(`[data-testid="audit-row"][data-action="${a}"]`).filter({ hasText: run.disputeId });
   await expect(row("action.proposed").first()).toContainText("Agent", { timeout: MIN });
   await expect(row("action.approved").first()).toContainText("You");
   await expect(row("action.sent").first()).toContainText(run.debugId);
