@@ -358,6 +358,18 @@ importers:
         specifier: 0.31.11
         version: 0.31.11
 
+  packages/evals:
+    dependencies:
+      '@cleared/adapters':
+        specifier: workspace:*
+        version: link:../adapters
+      '@cleared/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+
 packages:
 
   '@alloc/quick-lru@5.3.0':

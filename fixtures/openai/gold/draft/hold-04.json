@@ -1,0 +1,249 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:16:52.276Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that explains to a small seller why PayPal is holding a payment.\nEverything is fictional. Never use a real person, business, email, phone number or PayPal id.\nYou are given the capture (PayPal's data) and PayPal's own rule text for this hold. Write the seller's short question about the held payment, once in English and once in Hindi (Devanagari; when the spec says hinglish, write the Hindi version in Roman-script Hinglish instead).\nThen write four facts, each once in English and once in Hindi with the same meaning: three facts a correct explanation must contain, each supported word for word by the capture or the rule text; and a fourth, tempting claim that the capture and rule text do NOT support (for example an exact release date, a guaranteed release, or a promise about the outcome).\nfact_code: a short snake_case name for the fact, the same for both languages. The fourth fact's code starts with not_.\nNever describe the seller as the winner of a case.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"persona\": {\n    \"country\": \"ID\",\n    \"trade\": \"mobile app UI design\",\n    \"offering\": \"services\",\n    \"currency\": \"EUR\"\n  },\n  \"situation\": \"client says the work is incomplete\",\n  \"hinglish\": false\n}\n\nPayPal data and rule text:\nPayPal capture:\n{\n  \"id\": \"SYNTH-CAPTURE-0004\",\n  \"status\": \"PENDING\",\n  \"status_details\": {\n    \"reason\": \"BUYER_COMPLAINT\"\n  },\n  \"amount\": {\n    \"currency_code\": \"EUR\",\n    \"value\": \"300.00\"\n  }\n}\n\nPayPal transaction event codes: T1110 / T1111 dispute holds:\nT1110 Hold on balance for dispute investigation: Hold to cover possible chargeback. T1111 Cancellation of hold for dispute resolution: Cancellation of temporary hold to cover possible chargeback."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_hold_pair",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "question_en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "question_hi": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fact_code": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z_]+$"
+                    },
+                    "text_en": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "text_hi": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "fact_code",
+                    "text_en",
+                    "text_hi"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "question_en",
+              "question_hi",
+              "facts"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_0a16012c8d7154b8016ae9b490f23487d2b6c989e2b7329673",
+      "object": "response",
+      "created_at": 1793701008,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793701012,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that explains to a small seller why PayPal is holding a payment.\nEverything is fictional. Never use a real person, business, email, phone number or PayPal id.\nYou are given the capture (PayPal's data) and PayPal's own rule text for this hold. Write the seller's short question about the held payment, once in English and once in Hindi (Devanagari; when the spec says hinglish, write the Hindi version in Roman-script Hinglish instead).\nThen write four facts, each once in English and once in Hindi with the same meaning: three facts a correct explanation must contain, each supported word for word by the capture or the rule text; and a fourth, tempting claim that the capture and rule text do NOT support (for example an exact release date, a guaranteed release, or a promise about the outcome).\nfact_code: a short snake_case name for the fact, the same for both languages. The fourth fact's code starts with not_.\nNever describe the seller as the winner of a case.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_0a16012c8d7154b8016ae9b491919c87d2ad75b3bfc2503c8d",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"question_en\":\"Why is my €300 payment for mobile app UI design pending after my client said the work was incomplete?\",\"question_hi\":\"मेरे क्लाइंट के काम अधूरा होने की बात कहने के बाद मोबाइल ऐप यूआई डिज़ाइन के लिए मेरा €300 का भुगतान लंबित क्यों है?\",\"facts\":[{\"fact_code\":\"payment_pending\",\"text_en\":\"The €300.00 payment is pending.\",\"text_hi\":\"€300.00 का भुगतान लंबित है।\"},{\"fact_code\":\"buyer_complaint\",\"text_en\":\"The pending status reason is buyer complaint.\",\"text_hi\":\"लंबित स्थिति का कारण खरीदार की शिकायत है।\"},{\"fact_code\":\"dispute_hold\",\"text_en\":\"A dispute investigation hold covers a possible chargeback.\",\"text_hi\":\"विवाद की जाँच के लिए होल्ड संभावित चार्जबैक को कवर करता है।\"},{\"fact_code\":\"not_guaranteed_release\",\"text_en\":\"The payment is guaranteed to be released.\",\"text_hi\":\"भुगतान जारी होने की गारंटी है।\"}]}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_hold_pair",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "question_en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "question_hi": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fact_code": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z_]+$"
+                    },
+                    "text_en": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "text_hi": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "fact_code",
+                    "text_en",
+                    "text_hi"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "question_en",
+              "question_hi",
+              "facts"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 498,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 228,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 726
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}

@@ -1,0 +1,249 @@
+{
+  "meta": {
+    "recorded_at": "2026-11-03T10:16:53.547Z",
+    "env": "live",
+    "ticket": "M4-01",
+    "scrubbed": true
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://api.openai.com/v1/responses",
+    "headers": {
+      "accept": "application/json",
+      "content-type": "application/json"
+    },
+    "body": {
+      "model": "gpt-6.1-terra",
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that explains to a small seller why PayPal is holding a payment.\nEverything is fictional. Never use a real person, business, email, phone number or PayPal id.\nYou are given the capture (PayPal's data) and PayPal's own rule text for this hold. Write the seller's short question about the held payment, once in English and once in Hindi (Devanagari; when the spec says hinglish, write the Hindi version in Roman-script Hinglish instead).\nThen write four facts, each once in English and once in Hindi with the same meaning: three facts a correct explanation must contain, each supported word for word by the capture or the rule text; and a fourth, tempting claim that the capture and rule text do NOT support (for example an exact release date, a guaranteed release, or a promise about the outcome).\nfact_code: a short snake_case name for the fact, the same for both languages. The fourth fact's code starts with not_.\nNever describe the seller as the winner of a case.",
+      "input": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "Case spec:\n{\n  \"persona\": {\n    \"country\": \"PH\",\n    \"trade\": \"batik print fabric\",\n    \"offering\": \"goods\",\n    \"currency\": \"INR\"\n  },\n  \"situation\": \"seller added tracking; parcel delivered\",\n  \"hinglish\": true\n}\n\nPayPal data and rule text:\nPayPal capture:\n{\n  \"id\": \"SYNTH-CAPTURE-0005\",\n  \"status\": \"PENDING\",\n  \"status_details\": {\n    \"reason\": \"OTHER\"\n  },\n  \"amount\": {\n    \"currency_code\": \"INR\",\n    \"value\": \"64.00\"\n  }\n}\n\nPayPal Help Center: How can I release my payments on hold?:\nUse one of our approved shipping carriers, and we’ll release the hold approximately 24 hours after the courier confirms delivery to the buyer’s address."
+            }
+          ]
+        }
+      ],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "gold_hold_pair",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "question_en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "question_hi": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fact_code": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z_]+$"
+                    },
+                    "text_en": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "text_hi": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "fact_code",
+                    "text_en",
+                    "text_hi"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "question_en",
+              "question_hi",
+              "facts"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        }
+      },
+      "max_output_tokens": 3000,
+      "store": false,
+      "reasoning": {
+        "effort": "none"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body": {
+      "id": "resp_0ab9bcedf552dd84016ae9b491400487d29cc1cb471df7c4e7",
+      "object": "response",
+      "created_at": 1793701009,
+      "status": "completed",
+      "access_programs": {
+        "cyber": "standard"
+      },
+      "background": false,
+      "billing": {
+        "payer": "developer"
+      },
+      "completed_at": 1793701013,
+      "error": null,
+      "frequency_penalty": 0,
+      "incomplete_details": null,
+      "instructions": "You write synthetic test cases for evaluating an AI assistant that explains to a small seller why PayPal is holding a payment.\nEverything is fictional. Never use a real person, business, email, phone number or PayPal id.\nYou are given the capture (PayPal's data) and PayPal's own rule text for this hold. Write the seller's short question about the held payment, once in English and once in Hindi (Devanagari; when the spec says hinglish, write the Hindi version in Roman-script Hinglish instead).\nThen write four facts, each once in English and once in Hindi with the same meaning: three facts a correct explanation must contain, each supported word for word by the capture or the rule text; and a fourth, tempting claim that the capture and rule text do NOT support (for example an exact release date, a guaranteed release, or a promise about the outcome).\nfact_code: a short snake_case name for the fact, the same for both languages. The fourth fact's code starts with not_.\nNever describe the seller as the winner of a case.",
+      "max_output_tokens": 3000,
+      "max_tool_calls": null,
+      "model": "gpt-6.1-terra",
+      "moderation": null,
+      "output": [
+        {
+          "id": "msg_0ab9bcedf552dd84016ae9b492028887d2ba3617f4b0eb7cf5",
+          "type": "message",
+          "status": "completed",
+          "content": [
+            {
+              "type": "output_text",
+              "annotations": [],
+              "logprobs": [],
+              "text": "{\"question_en\":\"My INR 64.00 payment for batik print fabric is pending. I added tracking and the parcel was delivered. Why is the payment still held?\",\"question_hi\":\"Batik print fabric ka mera INR 64.00 payment pending hai. Maine tracking add ki aur parcel deliver ho gaya. Payment abhi bhi hold par kyun hai?\",\"facts\":[{\"fact_code\":\"payment_pending\",\"text_en\":\"The INR 64.00 payment is pending.\",\"text_hi\":\"INR 64.00 ka payment pending hai.\"},{\"fact_code\":\"reason_other\",\"text_en\":\"The capture lists the status reason as OTHER.\",\"text_hi\":\"Capture mein status reason OTHER diya gaya hai.\"},{\"fact_code\":\"delivery_release_rule\",\"text_en\":\"With an approved shipping carrier, PayPal releases the hold approximately 24 hours after the courier confirms delivery to the buyer’s address.\",\"text_hi\":\"Approved shipping carrier istemal karne par, courier ke buyer ke address par delivery confirm karne ke lagbhag 24 ghante baad PayPal hold release karta hai.\"},{\"fact_code\":\"not_release_guaranteed\",\"text_en\":\"The payment is guaranteed to be released today.\",\"text_hi\":\"Payment aaj release hona guaranteed hai.\"}]}"
+            }
+          ],
+          "phase": "final_answer",
+          "role": "assistant"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "presence_penalty": 0,
+      "previous_response_id": null,
+      "prompt_cache_key": null,
+      "prompt_cache_retention": "24h",
+      "reasoning": {
+        "context": "all_turns",
+        "effort": "none",
+        "mode": "standard",
+        "summary": null
+      },
+      "safety_identifier": null,
+      "service_tier": "default",
+      "store": false,
+      "temperature": 1,
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "description": null,
+          "name": "gold_hold_pair",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "question_en": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "question_hi": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fact_code": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "pattern": "^[a-z_]+$"
+                    },
+                    "text_en": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    },
+                    "text_hi": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 300
+                    }
+                  },
+                  "required": [
+                    "fact_code",
+                    "text_en",
+                    "text_hi"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "question_en",
+              "question_hi",
+              "facts"
+            ],
+            "additionalProperties": false
+          },
+          "strict": true
+        },
+        "verbosity": "medium"
+      },
+      "tool_choice": "auto",
+      "tool_usage": {
+        "image_gen": {
+          "input_tokens": 0,
+          "input_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "output_tokens": 0,
+          "output_tokens_details": {
+            "image_tokens": 0,
+            "text_tokens": 0
+          },
+          "total_tokens": 0
+        },
+        "web_search": {
+          "num_requests": 0
+        }
+      },
+      "tools": [],
+      "top_logprobs": 0,
+      "top_p": 0.98,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 487,
+        "input_tokens_details": {
+          "cache_write_tokens": 0,
+          "cached_tokens": 0
+        },
+        "output_tokens": 262,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 749
+      },
+      "user": null,
+      "metadata": {}
+    }
+  }
+}
