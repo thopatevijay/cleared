@@ -8,6 +8,11 @@ export async function register(): Promise<void> {
     const { assertTestSigningAllowed } = await import("./src/server/test-signing.ts");
     assertTestSigningAllowed(process.env);
     await import("./sentry.server.config.ts");
+    // BL-01 6609550494: load the route chunks before the first real requests (not awaited: it runs once the
+    // server listens)
+    const { warmUp, warmUpUrl } = await import("./src/server/warm-up.ts");
+    const url = warmUpUrl(process.env);
+    if (url !== null) void warmUp(url);
   }
 }
 

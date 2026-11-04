@@ -7,6 +7,9 @@
 // - AC 5: the CLI's output carries no token or credential
 // - a moved capture keeps the pool's custom_id and still syncs into the judge workspace (not quarantined)
 // Each test runs at its own far-future `now`, so its 20 h assignment window only sees the rows it made.
+// The CLI reads the whole review_hold_pool table (one pool per database), so the file owns that table while it
+// runs: beforeAll sets aside the rows already there (other test files', earlier runs') and afterAll removes
+// this file's rows and puts them back (BL-01 6604821284, 6606577927). Worker test files run one at a time.
 import { randomBytes, randomInt, randomUUID } from "node:crypto";
 import {
   createHttpClient,
@@ -43,6 +46,7 @@ const server = setupServer();
 const db = createDb(url);
 let boss: Queue;
 const workspaces: string[] = [];
+let setAside: unknown[] = [];
 const SECRET = `test-secret-${randomUUID()}`;
 const CREDENTIAL = /access_token|client_secret|Bearer |test-secret|A21AA/i;
 
@@ -198,6 +202,10 @@ describe.skipIf(!dbAvailable)("review-hold pool (integration)", () => {
   beforeAll(async () => {
     server.listen({ onUnhandledFrame: "error" });
     boss = await createQueue(db, { background: false, max: 2 });
+    const r = await db.$client.query<{ rows: unknown[] }>(
+      "with gone as (delete from review_hold_pool returning *) select coalesce(json_agg(gone), '[]') as rows from gone",
+    );
+    setAside = r.rows[0]?.rows ?? [];
   });
   afterEach(() => {
     server.resetHandlers();
@@ -221,6 +229,12 @@ describe.skipIf(!dbAvailable)("review-hold pool (integration)", () => {
   });
   afterAll(async () => {
     server.close();
+    // one statement: this file's rows go and the set-aside rows come back together
+    await db.$client.query(
+      `with mine as (delete from review_hold_pool)
+       insert into review_hold_pool select * from json_populate_recordset(null::review_hold_pool, $1::json)`,
+      [JSON.stringify(setAside)],
+    );
     await db.$client.query("delete from pgboss.job where data->>'workspaceId' = any($1)", [workspaces]);
     await db.$client.query(
       "update outbox set published_at = now() where published_at is null and payload->>'workspaceId' = any($1)",
