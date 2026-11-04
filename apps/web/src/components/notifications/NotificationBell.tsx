@@ -127,7 +127,7 @@ function BellButton({
       aria-expanded={expanded}
       aria-label={count > 0 ? t("bell", { count }) : t("bellNone")}
       onClick={onClick}
-      className="relative inline-flex size-11 items-center justify-center rounded-md text-text hover:bg-surface-sunken"
+      className="relative inline-flex size-11 items-center justify-center rounded-md text-text hover:bg-surface-sunken aria-expanded:bg-surface-sunken"
     >
       <Bell aria-hidden="true" size={22} strokeWidth={1.75} />
       {count > 0 ? (
