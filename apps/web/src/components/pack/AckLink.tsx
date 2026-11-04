@@ -367,6 +367,7 @@ export function AckLinkPanel({
           title={t(failure.what === "create" ? "createError" : "revokeError")}
           reference={failure.reference}
           onRetry={failure.what === "create" ? create : revoke}
+          disabled={!online}
         />
       ) : null}
       {!online ? <p className="text-sm text-text-muted">{t("offline")}</p> : null}

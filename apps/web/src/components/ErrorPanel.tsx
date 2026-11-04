@@ -11,12 +11,15 @@ export function ErrorPanel({
   reference,
   onRetry,
   busy = false,
+  disabled = false,
 }: {
   title: string;
   body?: string;
   reference: string | null;
   onRetry?: () => void;
   busy?: boolean;
+  /** Retry unavailable (offline; BL-01 6569408949 item 1, sweep M5) */
+  disabled?: boolean;
 }) {
   const t = useTranslations("common");
   const announced = useRef(false);
@@ -39,7 +42,7 @@ export function ErrorPanel({
           <button
             type="button"
             onClick={onRetry}
-            disabled={busy}
+            disabled={busy || disabled}
             aria-busy={busy || undefined}
             className="min-h-11 rounded-md border border-border-strong bg-surface px-4 font-medium text-accent hover:bg-surface-sunken disabled:text-text-muted"
           >
