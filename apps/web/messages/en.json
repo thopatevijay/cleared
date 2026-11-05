@@ -58,6 +58,12 @@
     "body": "Links work once, for 15 minutes.",
     "orDemo": "Or try Cleared without an account"
   },
+  "notFound": {
+    "metaTitle": "Page not found · Cleared",
+    "title": "This page doesn't exist",
+    "body": "The address may be mistyped, or the page may have moved. Nothing in your workspace has changed.",
+    "home": "Go to the Cleared home page"
+  },
   "dashboard": {
     "title": "Your PayPal money",
     "demoRetention": "Uses sample data. Demo workspaces are deleted on 22 Dec 2026.",

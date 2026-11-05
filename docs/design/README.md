@@ -9,7 +9,7 @@ The `frontend-design` skill was installed and loaded before any visual decision 
 | [tokens.json](tokens.json) | Source of truth for colour (light and dark), status, type, spacing, radius, elevation, motion, breakpoints and z-index. `node scripts/design-tokens.mjs` generates `apps/web/src/styles/tokens.css`, and `--check` verifies WCAG contrast and drift |
 | [components.md](components.md) | Component specs: states, keyboard, focus and target size |
 | [review-checklist.md](review-checklist.md) | What `ui-reviewer` checks on every `frontend` ticket |
-| [screens/](screens/) | Hero screens: landing, dashboard, payment-detail, dispute-review, hold, cash-calendar, audit-log, notifications |
+| [screens/](screens/) | Hero screens: landing, dashboard, payment-detail, dispute-review, hold, cash-calendar, audit-log, notifications, client-ack, not-found |
 
 ## Users
 
