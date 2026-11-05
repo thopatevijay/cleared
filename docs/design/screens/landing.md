@@ -35,7 +35,7 @@ Content order (the same at every width):
 |---|---|---|
 | Default | — | As in Layout |
 | Creating demo | Tap "Try as demo seller" | The button is busy with "Creating your workspace…"; on 201 → redirect to `/payments` (empty state) |
-| Cap reached | `POST /api/demo` → 429 | Inline panel (`held` colours, `hourglass` icon): "The demo is busy right now. Try again in {minutes} minutes." (from `Retry-After`). If it's the per-IP cap: "This network has made 3 demo workspaces today. Try again tomorrow, or watch the video." with a link to the video. The reference ID is shown |
+| Cap reached | `POST /api/demo` → 429 | Inline panel (`held` colours, `hourglass` icon): "The demo is busy right now. Try again in {minutes} minutes." (from `Retry-After`). If it's the per-network cap (3 per network per **rolling** 24 h): `cap.ip`, then `cap.ipNext` with {time} from the response's ISO timestamp (or `cap.ipNoTime` if the response has none), then `cap.ipGuide` linking to the README's "How to judge in 5 minutes". See "Per-network cap" below. The reference ID is shown |
 | Sending link | Submit the form | The button shows "Sending…" |
 | Check email | 200 (always identical, whether or not the email exists) | Replaces the form: icon `mail`, h2 "Check your email", "If {email} can sign in, a link is on its way. It works once and expires in 15 minutes.", the secondary "Use a different email", and "Didn't get it? Send again" (disabled for 60 s with a visible countdown) |
 | Invalid email | Client- or server-side zod failure | A field error under the input: "Enter an email like name@example.com"; `aria-invalid`; focus stays in the field |
@@ -68,11 +68,24 @@ There is no "empty" or "partial" data state on this page: it holds no workspace 
 | check.body | If {email} can sign in, a link is on its way. It works once and expires in 15 minutes. | अगर {email} से साइन-इन हो सकता है, तो लिंक भेजा जा रहा है। यह एक बार चलेगा और 15 मिनट में समाप्त हो जाएगा। |
 | expired.title | This sign-in link has expired or was already used | यह साइन-इन लिंक समाप्त हो गया है या पहले ही इस्तेमाल हो चुका है |
 | cap.busy | The demo is busy right now. Try again in {minutes} minutes. | डेमो अभी व्यस्त है। {minutes} मिनट बाद फिर कोशिश करें। |
-| cap.ip | This network has made 3 demo workspaces today. Try again tomorrow, or watch the video. | इस नेटवर्क से आज 3 डेमो वर्कस्पेस बन चुके हैं। कल फिर कोशिश करें, या वीडियो देखें। |
+| cap.ip | This network has made 3 demo workspaces in the last 24 hours, the most it can make. | इस नेटवर्क से पिछले 24 घंटों में 3 डेमो वर्कस्पेस बन चुके हैं, जो इसकी सीमा है। |
+| cap.ipNext | You can make another from {time}. | आप {time} से एक और बना सकते हैं। |
+| cap.ipNoTime | A new one can be made as each of those workspaces turns 24 hours old. | इनमें से हर वर्कस्पेस के 24 घंटे पूरे होने पर एक नया बनाया जा सकता है। |
+| cap.ipGuide | Meanwhile, <guide>How to judge in 5 minutes</guide> in the README walks through the demo with screenshots. | तब तक, README में <guide>How to judge in 5 minutes</guide> स्क्रीनशॉट के साथ पूरा डेमो दिखाता है। |
 | real | Real: PayPal sandbox APIs and responses, PayPal's published rules. Synthetic: every person, chat and file in the demo. | असली: PayPal सैंडबॉक्स API और उनके जवाब, PayPal के प्रकाशित नियम। काल्पनिक: डेमो के सभी लोग, चैट और फ़ाइलें। |
 | footer | Sandbox only. Cleared is not affiliated with PayPal. | सिर्फ़ सैंडबॉक्स। Cleared का PayPal से कोई संबंध नहीं है। |
 
 The sandbox control name "Simulate PayPal's decision (sandbox only)" stays in English in HI, so it matches the button on the dispute screen.
+
+### Per-network cap (`cap.ip*`)
+
+The API caps demo workspaces at **3 per network per rolling 24 hours** and, on a 429 for this cap, returns the ISO timestamp at which the oldest of the three turns 24 hours old (plus `Retry-After` in seconds).
+
+- **Panel anatomy is unchanged:** the inline panel in `held` colours (`status-held-bg`, `status-held-fg`), the `hourglass` icon (`aria-hidden`), `role="alert"` on first render only, and "Reference: `…`" with Copy. Body order: `cap.ip`, then `cap.ipNext` (or `cap.ipNoTime`), then `cap.ipGuide`, as one paragraph.
+- **{time} is absolute, never relative.** Format it in the browser with `Intl.DateTimeFormat`, the UI locale (`en-IN` / `hi-IN`), the **viewer's** time zone (there is no workspace yet) and `hourCycle: "h23"`, with the short zone name. If the slot frees on the viewer's current local day, show the time only ("14:38 IST"); otherwise show day, month and time ("5 Nov, 09:38 IST"; HI "5 नव॰, 09:38 IST"). Wrap it in `<time datetime="{iso}">`. A relative phrase ("in 3 hours") is not used: it goes stale while the panel is open.
+- **No time available** (the field is missing or unparseable): use `cap.ipNoTime` instead of `cap.ipNext`. Never compute a time from `Retry-After` on its own and never guess one.
+- **The fallback is the README judging guide**, not a video (the video link arrives in M5-02, which will update this row). `<guide>` is a link to the GitHub README anchor `#how-to-judge-in-5-minutes`, taken from config, never hard-coded per locale. The link text is the guide's English heading, so in HI it is wrapped in `<span lang="en">`. Underlined `accent` link, 44 px target on mobile. Until the repo is public (owner decision), the link resolves only for collaborators; the builder notes this in the PR.
+- **Copy rule: never say "tomorrow" or "today" for this cap; the window is rolling.** The same rule applies in HI (never "कल" or "आज").
 
 ## Accessibility
 - One `<h1>`, and `<ol>` for the demo steps. The form has a visible `<label>`, and errors are linked with `aria-describedby` and announced with `role="alert"` once.

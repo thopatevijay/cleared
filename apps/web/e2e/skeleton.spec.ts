@@ -223,7 +223,7 @@ test("screens and states for ui-reviewer (local)", async ({ browser }) => {
 
     await landingState(page, "**/api/demo", errorReply(429, "86400"), async () => {
       await page.getByTestId("demo-cta").click();
-      await expect(page.getByText(m.landing.capIp.replace(/<\/?video>/g, ""))).toBeVisible();
+      await expect(page.getByText(m.landing.capIp.replace("{limit}", "3"))).toBeVisible();
     });
     await capture(page, `landing-cap-ip-${locale}`);
     await landingState(page, "**/api/demo", errorReply(500), async () => {

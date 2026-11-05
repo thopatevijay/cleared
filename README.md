@@ -26,7 +26,7 @@ Everything below runs on the hosted demo against the real PayPal sandbox. You ne
 
 Your clicks take about five minutes; PayPal's sandbox sets the pace in between. Our production dry run took about 15 minutes from payment to released hold ([timings](docs/evidence/m3-storyboard-dry-run.md)); the scenario screen budgets about 25. What each step does is under [Demo](#demo).
 
-**Limits that may affect judging.** Each IP address can create 3 demo workspaces per day (200 in total), so reuse your workspace rather than starting new ones. The AI has a shared daily budget; if it is used up, a new scenario can't start until 00:00 UTC and the screen says so. The database's IP allow list is empty on purpose: it governs only direct database connections, which judging never needs. The web app itself is open to everyone.
+**Limits that may affect judging.** Each network (one public IP address, so everyone behind one office or event NAT) can create 3 demo workspaces in any rolling 24 hours (200 in total), so reuse your workspace rather than starting new ones. If the cap is reached, the page says when the next one frees up. The AI has a shared daily budget; if it is used up, a new scenario can't start until 00:00 UTC and the screen says so. The database's IP allow list is empty on purpose: it governs only direct database connections, which judging never needs. The web app itself is open to everyone.
 
 ## Problem
 

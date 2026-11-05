@@ -45,7 +45,7 @@ Cleared is an AI agent that keeps small cross-border sellers' PayPal money flowi
 
 Also in the product: a cash calendar of estimated releases and reply deadlines, carrier route advice for goods sellers, an in-app notification centre and email deadline alerts.
 
-**Try it:** open the hosted demo and press **Try as demo seller**. You get your own isolated workspace (sample data, no PayPal account and no keys). Every PayPal step is a real sandbox call, and every person, chat and file in it is synthetic.
+**Try it:** open the hosted demo and press **Try as demo seller**. You get your own isolated workspace (sample data, no PayPal account and no keys). Every PayPal step is a real sandbox call, and every person, chat and file in it is synthetic. Each network (one public IP address) can create 3 demo workspaces in any rolling 24 hours, so please reuse yours; if the cap is reached, the page says when the next one frees up.
 
 ### How we built it
 

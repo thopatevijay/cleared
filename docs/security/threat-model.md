@@ -153,7 +153,7 @@ M4-07's runbook uses this list.
 | L-1 | The worst-case reservation estimates images and PDFs (OpenAI's per-image patch cap; one page per 50 KB, at most 30 pages). Text is a true upper bound | A wrong estimate can overshoot a cap by at most that call's input under-estimate. Output, the larger part, is bounded exactly |
 | L-2 | A reservation whose call never answers (process crash, a late answer that never lands) stays counted | It fails closed: the cap is reached earlier, never later |
 | L-3 | Magic-link and acknowledgement-link rate limits count without a lock (BL-01 6528459846, 6569233475) | A concurrent burst can overshoot by a few. Bounded by the recipient allowlist and Resend's own limits |
-| L-4 | The client-IP header Render sets in production is not yet confirmed from logs (BL-01 6530992863) | If Render set neither header, every demo would share one bucket: 3 demos a day in total. That fails closed, not open |
+| L-4 | Confirmed (#168): Render sets `True-Client-IP` in production (10/10 `demo client ip source` log lines, 2026-11-05; BL-01 6530992863). Visitors behind one NAT share one bucket of 3 demos per rolling 24 h | Fails closed, not open; the 429 says when the next slot frees (BL-01 6649565560) |
 | L-5 | `@cleared/core`'s barrel pulls a crypto polyfill (asn1.js) into client chunks. It probes `eval`, which the CSP refuses, and asn1.js then takes its fallback | No script runs. It costs about 0.7 MB of client JavaScript (BL-01 finding) |
 | L-6 | Moderate advisories in the Sentry build plugin | Build time only; see the exceptions above |
 | L-7 | The Bryntum trial's GTM snippet on the Render host | Refused by the CSP (B-9). Whether it fires there is observed at M4-GATE |

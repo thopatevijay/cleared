@@ -104,6 +104,23 @@ export function authRepo(db: Db) {
       return rows[0]?.n ?? 0;
     },
 
+    /** Creation times (oldest first) of one IP hash's demo workspaces since `since` (the per-IP cap). */
+    async demoWorkspaceTimesSince(since: Date, ipHash: string, tx?: Executor): Promise<Date[]> {
+      const rows = await (tx ?? db)
+        .select({ at: workspaces.createdAt })
+        .from(workspaces)
+        .where(
+          and(
+            eq(workspaces.kind, "demo"),
+            eq(workspaces.synthetic, false),
+            gte(workspaces.createdAt, since),
+            eq(workspaces.createdIpHash, ipHash),
+          ),
+        )
+        .orderBy(workspaces.createdAt);
+      return rows.map((r) => r.at);
+    },
+
     /** Demo workspaces not yet expired at `now` (the global cap counts these). */
     async countLiveDemoWorkspaces(now: Date, tx?: Executor): Promise<number> {
       const rows = await (tx ?? db)
