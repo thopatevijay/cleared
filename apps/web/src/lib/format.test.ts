@@ -5,6 +5,7 @@ import {
   formatAmount,
   formatAmountList,
   formatBytes,
+  formatSlotTime,
   formatTime,
 } from "./format.ts";
 
@@ -100,5 +101,15 @@ describe("status mapping", () => {
       "COMPLETED",
       "REFUNDED",
     ]);
+  });
+});
+
+describe("formatSlotTime (BL-01 6649565560)", () => {
+  const now = Date.parse("2026-11-05T04:15:00Z"); // 09:45 IST
+  it("time only on the viewer's current day, day + time otherwise; 24 h, zone shown", () => {
+    const today = formatSlotTime("en", "2026-11-05T09:38:00Z", "Asia/Kolkata", now);
+    expect(today).toMatch(/^15:08 /);
+    expect(today).not.toMatch(/Nov/);
+    expect(formatSlotTime("en", "2026-11-05T09:38:00Z", "America/Los_Angeles", now)).toMatch(/^Nov 5, 01:38 |^5 Nov, 01:38 /);
   });
 });

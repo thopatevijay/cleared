@@ -10,6 +10,17 @@
 // Styles allow 'unsafe-inline': React `style` props and Bryntum's runtime styles need it (a residual
 // risk in the threat model, not a script-execution path).
 
+/**
+ * The public acknowledgement page `/<locale>/ack/<token>` (M3-06). Its CSP keeps `connect-src 'self'` and
+ * the browser Sentry SDK never loads there (BL-01 6649565909): the token is in the path, and an error event
+ * or web-vitals metric would carry the page URL to a third party. Server-side errors still reach Sentry.
+ */
+const ACK_PAGE = /^\/(en|hi)\/ack\/[^/]+\/?$/;
+
+export function isAckPage(pathname: string): boolean {
+  return ACK_PAGE.test(pathname);
+}
+
 /** The CSP of every page except the public acknowledgement page (which keeps its stricter one). */
 export function pageCsp(nonce: string, o: { dev: boolean; reportOrigin: string | null }): string {
   const connect = ["'self'", ...(o.reportOrigin === null ? [] : [o.reportOrigin])];

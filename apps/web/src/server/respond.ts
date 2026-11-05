@@ -25,8 +25,9 @@ export function apiError(
   message: string,
   cid: string,
   headers: Record<string, string> = {},
+  details: Readonly<Record<string, unknown>> | null = null,
 ): Response {
-  return json(errorEnvelope({ code, message, correlationId: cid }), status, {
+  return json(errorEnvelope({ code, message, correlationId: cid, details }), status, {
     [CORRELATION_HEADER]: cid,
     ...headers,
   });

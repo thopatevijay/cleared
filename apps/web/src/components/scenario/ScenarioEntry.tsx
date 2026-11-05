@@ -74,12 +74,13 @@ export function ScenarioEntry({ showOpen = true }: { showOpen?: boolean }) {
         onClick={() => void run()}
         disabled={busy || capped}
         aria-busy={busy || undefined}
-        aria-label={busy ? t("busy") : t("ctaName")}
+        aria-label={busy ? undefined : t("ctaName")}
         aria-describedby={capped ? reasonId : undefined}
         className="inline-flex min-h-12 w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-md border-[1.5px] border-dashed border-border-strong bg-status-sandbox-bg px-4 py-2 font-medium text-status-sandbox-fg disabled:bg-surface-sunken disabled:text-text-muted md:w-auto"
       >
         {busy ? <Loader2 aria-hidden="true" size={16} className="spin" /> : null}
         <span className="text-center">{busy ? t("busy") : t("cta")}</span>
+        {" "}
         <SandboxBadge decorative />
       </button>
       <p className="text-sm text-text-muted">{t("ctaHint")}</p>

@@ -7,11 +7,10 @@ import { DemoButton } from "../../src/components/DemoButton.tsx";
 import { SignInForm } from "../../src/components/SignInForm.tsx";
 import { SiteHeader } from "../../src/components/SiteHeader.tsx";
 import { LandingFooter } from "../../src/components/SiteFooter.tsx";
+import { README_URL } from "../../src/lib/site.ts";
 import { pageSession } from "../../src/server/page-session.ts";
 
 export const dynamic = "force-dynamic";
-
-const README_URL = "https://github.com/thopatevijay/cleared#readme";
 
 export default async function Landing({
   params,

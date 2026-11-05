@@ -29,8 +29,17 @@ describe.skipIf(!dbAvailable)("POST /api/demo (integration)", () => {
       codes.push(last.status);
     }
     expect(codes).toEqual([201, 201, 201, 429]);
-    expect(last?.headers.get("retry-after")).toBe("86400");
-    expect(await last?.json()).toMatchObject({ error: { code: "rate_limited" } });
+    // BL-01 6649565560: the exact wait until the oldest of the 3 leaves the rolling 24 h window
+    const retryAfter = Number(last?.headers.get("retry-after"));
+    expect(retryAfter).toBeGreaterThan(86_400 - 120);
+    expect(retryAfter).toBeLessThanOrEqual(86_400);
+    const body = (await last?.json()) as { error: { code: string; details: Record<string, unknown> } };
+    expect(body.error).toMatchObject({
+      code: "rate_limited",
+      details: { cap: "demo_per_ip", limit: 3, windowHours: 24 },
+    });
+    const retryAt = Date.parse(String(body.error.details["retryAt"]));
+    expect(Math.abs(retryAt - (Date.now() + retryAfter * 1000))).toBeLessThan(120_000);
     expect(await countFor(ip, deps.config.sessionSecret)).toEqual({ workspaces: 3, refusals: 1 });
   });
 

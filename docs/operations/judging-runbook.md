@@ -242,7 +242,7 @@ From **2026-12-01**, `main` takes fixes only. Each fix is a PR with a test that 
 
 - **L-1, L-2:** the AI reservation can overshoot a cap by one call's input under-estimate, and it fails closed.
 - **L-3:** link rate limits can overshoot by a few.
-- **L-4:** the Render client-IP header is not yet confirmed. If it is missing, all demos share one 3-a-day bucket: check `demo client ip source` in the web logs if judges report "3 demo workspaces today" early.
+- **L-4:** confirmed (#168): Render sets `True-Client-IP` (10/10 production `demo client ip source` log lines, 2026-11-05), so the cap is 3 demo workspaces per network per rolling 24 h. Judges behind one office or event NAT share that bucket; the 429 panel shows when the next slot frees and links to the README's "How to judge in 5 minutes". If judges report the cap early, check `demo client ip source` in the web logs.
 - **L-5:** about 0.7 MB of extra client JavaScript.
 - **L-6:** build-time advisories.
 - **L-7:** Bryntum's GTM is refused by the CSP.
