@@ -131,7 +131,7 @@ nextjs, react, typescript, node.js, tailwindcss, next-intl, zod, drizzle, postgr
 
 ## Video demo link
 
-<!-- Filled by M5-02: the YouTube video link -->
+https://youtu.be/H-v2TrXUdso
 
 ## Image gallery
 

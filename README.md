@@ -7,7 +7,7 @@
 > Built for the PayPal AI Hackathon (2026). Runs on the PayPal **sandbox**: every PayPal call in the demo is a real sandbox call, and every person, chat and file in it is synthetic.
 
 - **Hosted demo:** https://cleared-web-gd1b.onrender.com. Press **Try as demo seller**: no PayPal account and no keys needed.
-- **Video (< 3 min):** <!-- Filled by M5-02: the YouTube video link -->
+- **Video (< 3 min):** https://youtu.be/H-v2TrXUdso
 - **How to judge:** [in 5 minutes, on the hosted demo](#how-to-judge-in-5-minutes) · **How to run:** [locally, or Deploy to Render](#how-to-run)
 - **Licence:** [MIT](LICENSE)
 
