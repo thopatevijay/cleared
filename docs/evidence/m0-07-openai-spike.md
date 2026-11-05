@@ -72,7 +72,7 @@ conversation state at OpenAI.
 - Data channel: `instructions` holds only our text. Each evidence item is a `<evidence id kind label>…</evidence>` block
   in the user message (text inline, images as `input_image`, PDFs as `input_file`). A closing delimiter inside an item
   is escaped
-- `packages/adapters/src/ai/prices.ts`: the cited price table. `costUsd` prices uncached input, cached input and output.
+- `packages/adapters/src/ai/pricing.ts` (`prices.ts` at M0-07): the cited price table. `costUsd` prices uncached input, cached input and output.
   An unknown model throws and is never priced at $0
 - `packages/adapters/src/ai/schemas.ts`: `ExtractResult`, `ScopeClaims` (pass 1), `ScopeVerdicts` (pass 2), `ResponseUsage`
 - `packages/core/src/proof/verbatim.ts`: `checkQuote` / `checkQuotes`. The normalisation is NFC plus whitespace

@@ -40,7 +40,7 @@ Blueprint `exs-dbhe9c61egvs73fb9su0`, repo `thopatevijay/cleared`, branch `main`
 4. Pre-deploy (web only): `pnpm --filter @cleared/db run migrate`: the Drizzle migrations, then the pg-boss schema. It runs on a separate instance; if it fails, the whole deploy fails and the previous deploy keeps serving.
 5. Start: web `pnpm --filter @cleared/web start`, health check `GET /healthz` → `200 {"ok":true,"commit":"<RENDER_GIT_COMMIT>"}` (liveness only, no DB call; `/readyz` is M1-08). Worker `pnpm --filter @cleared/worker start` connects to Postgres, starts pg-boss and logs one JSON line `{"service":"worker","msg":"worker ready","commit":"<sha>"}`. On SIGTERM it stops pg-boss gracefully (20 s bound, inside Render's 30 s shutdown delay), ends the pool, and exits 0.
 
-Measured locally (2026-10-29, Postgres 18.6 on port 5632): the built web app answered `/healthz` with `200`, `content-type: application/json`, `cache-control: no-store`, `{"ok":true,"commit":"deadbeef"}`. The worker against the local database logged `worker ready`, `worker stopping` (`signal: SIGTERM`) and `worker stopped`, then exited 0 (`apps/worker/src/process.test.ts`).
+Measured locally (2026-10-29, Postgres 18.6 on port 5632): the built web app answered `/healthz` with `200`, `content-type: application/json`, `cache-control: no-store`, `{"ok":true,"commit":"deadbeef"}`. The worker against the local database logged `worker ready`, `worker stopping` (`signal: SIGTERM`) and `worker stopped`, then exited 0 (`process.test.ts` at the time; M1-03 replaced it with `apps/worker/test/shutdown.test.ts`).
 
 ## Environment
 
