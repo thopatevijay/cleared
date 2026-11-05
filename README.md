@@ -1,14 +1,32 @@
 # Cleared
 
+**Try it now: https://cleared-web-gd1b.onrender.com and press Try as demo seller.** No PayPal account, no API keys, no IP allow listing, nothing to install. Judges: start with [How to judge in 5 minutes](#how-to-judge-in-5-minutes); to run it yourself, see [How to run](#how-to-run).
+
 **Your PayPal money, cleared.** An AI agent that keeps small cross-border sellers' PayPal money flowing. It builds proof for every payment as it arrives, explains and works through holds, and answers disputes from that same proof. *The agent does the work; you hold the keys.*
 
 > Built for the PayPal AI Hackathon (2026). Runs on the PayPal **sandbox**: every PayPal call in the demo is a real sandbox call, and every person, chat and file in it is synthetic.
 
 - **Hosted demo:** https://cleared-web-gd1b.onrender.com. Press **Try as demo seller**: no PayPal account and no keys needed.
 - **Video (< 3 min):** <!-- Filled by M5-02: the YouTube video link -->
+- **How to judge:** [in 5 minutes, on the hosted demo](#how-to-judge-in-5-minutes) · **How to run:** [locally, or Deploy to Render](#how-to-run)
 - **Licence:** [MIT](LICENSE)
 
 ![The Cleared dashboard, "Your PayPal money": $64.00 USD held, $120.00 USD in dispute and 1 payment proof-ready, above a payments list where a $120.00 payment is in dispute with a reply ready to review and a $64.00 payment is held with an estimated free-by date and its source.](docs/screenshots/en-dashboard.png)
+
+## How to judge in 5 minutes
+
+Everything below runs on the hosted demo against the real PayPal sandbox. You need no PayPal account, no API keys and no IP allow listing.
+
+1. Open https://cleared-web-gd1b.onrender.com and press **Try as demo seller**. You get your own isolated workspace; every person, chat and file in it is synthetic.
+2. On the dashboard, press **Run the dispute scenario**. Cleared makes a real sandbox card payment, fills its proof pack and has the buyer's bank open a chargeback. The scenario page ("What PayPal did") follows PayPal's own states by itself; leave it open.
+3. While PayPal works, open the payment's **proof pack**: each scope line is *met*, *partly met*, *missing* or *can't verify*, with the verbatim quotes behind it (the AI scope check). If your dashboard also shows a held $64.00 payment (a real sandbox review hold, assigned when one is free), open it for the AI explanation, the **estimated** release date and the PayPal rule it comes from.
+4. When the dispute opens, open it. You see exactly what PayPal will receive (the agent's notes and one compiled PDF). Press **Approve and send**, then **Send to PayPal**.
+5. When PayPal offers the step, press **Simulate PayPal's decision (sandbox only)**, the one simulated step, labelled as such. The dispute resolves as "Resolved; you keep the money (PayPal covered the case)" and the hold is released (the capture is `COMPLETED` again).
+6. Open the **Audit log** (in the footer, next to "The agent does the work. You hold the keys."): every step in order: the agent's proposal, your approval with the fingerprint of the exact payload, and what was filed with PayPal. Nothing in it can be edited or deleted.
+
+Your clicks take about five minutes; PayPal's sandbox sets the pace in between. Our production dry run took about 15 minutes from payment to released hold ([timings](docs/evidence/m3-storyboard-dry-run.md)); the scenario screen budgets about 25. What each step does is under [Demo](#demo).
+
+**Limits that may affect judging.** Each IP address can create 3 demo workspaces per day (200 in total), so reuse your workspace rather than starting new ones. The AI has a shared daily budget; if it is used up, a new scenario can't start until 00:00 UTC and the screen says so. The database's IP allow list is empty on purpose: it governs only direct database connections, which judging never needs. The web app itself is open to everyone.
 
 ## Problem
 
@@ -109,10 +127,10 @@ Transaction Search is not used, so payments made outside Cleared's own app are n
 
 ## Demo
 
-Open https://cleared-web-gd1b.onrender.com and press **Try as demo seller**. You get your own isolated workspace (sample data, no keys). Every PayPal step below is a real sandbox call.
+Open https://cleared-web-gd1b.onrender.com and press **Try as demo seller**. You get your own isolated workspace (sample data, no keys). Every PayPal step below is a real sandbox call. The buttons to press, in order, are in [How to judge in 5 minutes](#how-to-judge-in-5-minutes); this section says what happens at each step.
 
 1. **Dashboard.** "Your PayPal money": what is held, what is in dispute, and which payments are proof-ready.
-2. **Start the dispute scenario.** Cleared creates a sandbox card payment through Orders v2; the webhook brings it in within seconds.
+2. **Run the dispute scenario** (the button on the dashboard). Cleared creates a sandbox card payment through Orders v2; the webhook brings it in within seconds.
 3. **Proof pack.** Synthetic client files are attached and the AI checks delivery against scope, with verbatim citations (about 30 seconds).
 4. **A real hold.** Cleared raises a sandbox chargeback; PayPal puts the capture on `PENDING / BUYER_COMPLAINT` and opens the dispute. In our production run this took about 3 minutes after the payment.
 5. **Review and approve.** The agent's reply is ready about a minute later. You see exactly what PayPal will receive (the notes and one compiled PDF), approve, and Cleared files the evidence.
@@ -168,6 +186,7 @@ The miss in detail ([eval report](docs/evidence/eval-report.md), [JSON](docs/evi
 - **PDFs print English and Hindi text only.** The scope snapshot and the compiled evidence PDF embed one font, Hind (Latin and Devanagari). Other scripts and emoji in a scope print as empty boxes.
 - **Recording a service as Completed** sends PayPal status `COMPLETED` with no carrier and no tracking number (PayPal refuses a carrier without one). Its effect on a hold's release is not confirmed, and the screen says so.
 - **Carrier route advice** uses PayPal's two carrier lists for the tiers. Many carriers are listed by PayPal as `GLOBAL`, so Cleared derives a carrier's country from its code; this mapping is Cleared's, not PayPal's, and only orders the advice.
+- **No exchange-rate line.** PayPal's sandbox received a test payment in another currency (EUR) without converting it and returned no exchange rate, so Cleared shows no PayPal rate and no converted take-home. Totals in different currencies are listed side by side ("… and …"), never added together.
 - **Goods tracking automation is PayPal's own product.** Cleared files tracking as one approved action, not as a sync.
 - **Measured misses** are reported above, not hidden: hold explanations below their target, one Lighthouse LCP and one TBT miss, and production latency under launch load.
 
@@ -195,48 +214,56 @@ Render asks for these values once, on the web service; the worker reads them fro
 | `RESEND_API_KEY`, `EMAIL_FROM`, `EMAIL_RECIPIENT_ALLOWLIST` | a Resend sending key, the sender, and the only addresses that may receive email |
 | `SENTRY_DSN` | a Sentry project DSN |
 
-`SESSION_SECRET` and `ENCRYPTION_KEY` are generated by Render. The database URL is wired in automatically.
+`SESSION_SECRET` is generated by Render. The database URL is wired in automatically.
 
 ### Run it locally
 
-Needs Node 24, pnpm 12 and Docker.
+Needs Node 24, Docker and pnpm 12 (pinned in `package.json`; `corepack enable` provides it).
 
 ```bash
+git clone https://github.com/thopatevijay/cleared && cd cleared
+corepack enable             # pnpm 12.15.0, as pinned in package.json
 pnpm install
-cp .env.example .env        # then fill in the values (sandbox credentials only)
-make up                     # Postgres in Docker, migrations applied
+cp .env.example .env        # then fill in the values (sandbox credentials only; see below)
+make up                     # Postgres 18 in Docker (compose.yaml), migrations applied
 pnpm db:seed                # a seed workspace
 set -a; . ./.env; set +a    # export the values for the web app and the worker
-pnpm dev                    # web on http://localhost:3000 and the worker
+pnpm dev                    # web on http://localhost:3000, and the worker
 ```
 
-`make reset` starts again from an empty database. `PORT_OFFSET=100 make up` moves Postgres to port 5532 if 5432 is taken.
+What to fill in `.env`:
+
+- **To boot:** only `SESSION_SECRET` (at least 32 characters: `openssl rand -base64 32`). `APP_BASE_URL` and `DATABASE_URL` already point at the local stack.
+- **For the PayPal flow:** `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` and `PAYPAL_WEBHOOK_ID`, plus a public URL for the webhook (see [PayPal sandbox setup](#paypal-sandbox-setup)).
+- **For the AI steps:** `OPENAI_API_KEY`. Without it the app still runs and the AI steps show no verdict (never a made-up one).
+- **Optional:** `RESEND_API_KEY` and `EMAIL_FROM` (email), `SENTRY_DSN` (error tracking).
+
+`make reset` starts again from an empty database. `PORT_OFFSET=100 make up` moves Postgres to port 5532 if 5432 is taken (then set `DATABASE_URL` to match).
 
 ### Environment variables
 
-From [`.env.example`](.env.example) (names only; never commit values):
+From [`.env.example`](.env.example) (names only; never commit values). Needed: **boot** = the app won't start without it; **flow** = the PayPal or AI flow needs it; **default** = `.env.example` already holds a working value; **optional**; **test** = test or eval runs only.
 
-| Variable | What it is for |
-|---|---|
-| `NODE_ENV`, `APP_BASE_URL` | runtime mode; the public base URL used in links and emails |
-| `SESSION_SECRET` | signs session cookies |
-| `ENCRYPTION_KEY` | 32-byte base64 key for AES-256-GCM encryption of stored secrets |
-| `AGENT_KILL_SWITCH` | `true` stops every agent-initiated action |
-| `DATABASE_URL` | Postgres connection string |
-| `PAYPAL_ENV` | `sandbox` (the only supported value) |
-| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | the PayPal sandbox REST app |
-| `PAYPAL_WEBHOOK_ID` | the id of the webhook registered by `scripts/setup.ts`, used to verify deliveries |
-| `OPENAI_API_KEY` | OpenAI API key |
-| `OPENAI_MODEL_SMALL`, `OPENAI_MODEL_LARGE` | the pinned model IDs |
-| `LLM_DAILY_CAP_USD`, `LLM_WORKSPACE_CAP_USD` | model spend caps: per day overall, per demo workspace |
-| `RESEND_API_KEY`, `EMAIL_FROM` | email sending (magic links, alerts) |
-| `EMAIL_RECIPIENT_ALLOWLIST` | when set, email goes only to these addresses |
-| `SENTRY_DSN`, `LOG_LEVEL` | error tracking; log level |
-| `DEMO_WORKSPACES_PER_IP_PER_DAY`, `DEMO_WORKSPACES_GLOBAL_MAX` | limits on "Try as demo seller" |
-| `RENDER_WEB_URL` | the public URL of the deployed web service (setup script default) |
-| `E2E_BASE_URL` | run the Playwright tests against a deployed URL instead of a local build |
-| `EVAL_MAX_USD` | spend cap for one live eval run |
-| `BRYNTUM_NPM_TOKEN` | optional: Bryntum's private registry, only for a licensed calendar build |
+| Variable | What it is for | Needed |
+|---|---|---|
+| `NODE_ENV`, `APP_BASE_URL` | runtime mode; the public base URL used in links and emails | default |
+| `SESSION_SECRET` | signs session cookies (at least 32 characters) | boot |
+| `AGENT_KILL_SWITCH` | `true` stops every agent-initiated action | default |
+| `DATABASE_URL` | Postgres connection string | default |
+| `PAYPAL_ENV` | `sandbox` (the only supported value) | default |
+| `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` | the PayPal sandbox REST app | flow |
+| `PAYPAL_WEBHOOK_ID` | the id of the webhook registered by `scripts/setup.ts`, used to verify deliveries | flow |
+| `OPENAI_API_KEY` | OpenAI API key | flow |
+| `OPENAI_MODEL_SMALL`, `OPENAI_MODEL_LARGE` | the pinned model IDs | default |
+| `LLM_DAILY_CAP_USD`, `LLM_WORKSPACE_CAP_USD` | model spend caps: per day overall, per demo workspace | default |
+| `RESEND_API_KEY`, `EMAIL_FROM` | email sending (magic links, alerts) | optional |
+| `EMAIL_RECIPIENT_ALLOWLIST` | when set, email goes only to these addresses | optional |
+| `SENTRY_DSN`, `LOG_LEVEL` | error tracking; log level | optional; default |
+| `DEMO_WORKSPACES_PER_IP_PER_DAY`, `DEMO_WORKSPACES_GLOBAL_MAX` | limits on "Try as demo seller" | default |
+| `RENDER_WEB_URL` | the public URL of the deployed web service (setup script default) | default |
+| `E2E_BASE_URL` | run the Playwright tests against a deployed URL instead of a local build | test |
+| `EVAL_MAX_USD` | spend cap for one live eval run | test |
+| `BRYNTUM_NPM_TOKEN` | Bryntum's private registry, only for a licensed calendar build (the public trial needs none) | optional |
 
 ### PayPal sandbox setup
 
