@@ -67,29 +67,12 @@ Also in the product: a cash calendar of estimated releases and reply deadlines, 
 
 A modular monolith on Render: a Next.js web service (UI, REST API, webhook endpoint), a background worker (pg-boss queues on Postgres), and Postgres as the system of record. The webhook verifies the signature, stores the raw event and enqueues its job in one transaction, then acknowledges; the worker re-fetches the resource from PayPal and never trusts event order. Every outbound call goes through one HTTP client with timeouts and retries only on timeouts, 5xx and 429.
 
-```mermaid
-flowchart TB
-  user["Seller / judge<br/>(browser)"]
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
+  <img src="docs/architecture.svg" width="960" alt="Cleared architecture. User zone: the seller's browser and the client's browser (public acknowledgement page). Cleared on Render, Oregon: a Next.js web service (UI, REST API, PayPal webhook endpoint, approval endpoint), a pg-boss worker (capture and dispute sync, holds, proof packs, AI workflows, filing, alerts, 15-minute reconcile) and Postgres (PayPal mirrors, outbox and jobs, evidence, approvals, audit log). External services: PayPal sandbox (Orders v2, Payments v2 captures, Disputes, Order Tracking, Tracking trackers-batch, Webhooks), OpenAI behind an adapter, Resend and Sentry. Flow 1 to 4: PayPal sends a signed webhook; web verifies it, inserts the raw event and enqueues a job in one transaction and acknowledges; the worker claims the job and re-fetches the capture from PayPal. Writes: evidence is untrusted data, the model proposes, the seller approves an action bound to sha256 of its payload, a guardrail checks owner, HATEOAS link, deadline and kill switch, then the worker files it with PayPal. Limits: at most 6 model calls per run, token and time caps, $0.10 per workspace and $1 per day.">
+</picture>
 
-  subgraph render["Render · Oregon · secrets only in the Render env"]
-    direction TB
-    web["web: Next.js<br/>UI · REST API · /api/webhooks/paypal"]
-    db[("Postgres<br/>tables · outbox · jobs · blobs")]
-    worker["worker: pg-boss<br/>+ 15-min reconcile · SLO · synthetic check"]
-    web -- "verify → raw insert + enqueue (1 tx)" --> db
-    db <--> worker
-  end
-
-  paypal["PayPal sandbox<br/>Orders · Captures · Disputes · Tracking"]
-  openai["OpenAI<br/>evidence = untrusted data"]
-  resend["Resend<br/>email"]
-
-  user -- HTTPS --> web
-  paypal -- webhooks --> web
-  worker -- approved actions --> paypal
-  worker -- AI workflows --> openai
-  worker -- alerts · magic links --> resend
-```
+The diagram follows your light or dark theme. A text version (Mermaid) is in [system design §4](docs/architecture.md#4-system-diagram).
 
 More: [system design](docs/architecture.md), [the architecture decisions (ADRs)](docs/adr/), [threat model](docs/security/threat-model.md), [design system and screen specs](docs/design/README.md), [judging-window runbook](docs/operations/judging-runbook.md).
 
