@@ -1,6 +1,8 @@
 // The client IP behind Render's proxy (M1-05). Render sets `True-Client-IP`; otherwise the LAST
 // `X-Forwarded-For` hop is the one the proxy appended. The first hop is whatever the client sent, so it
-// is never trusted. The real header is confirmed on Render in M1-07.
+// is never trusted. Confirmed on Render (BL-01 6530992863): production `render logs` on 2026-11-05 show
+// `"ipSource":"true-client-ip"` on all 10 recent `demo client ip source` lines, so Render sets
+// `True-Client-IP`. The X-Forwarded-For fallback stays for any proxy path that omits it.
 import { createHmac } from "node:crypto";
 
 export const UNKNOWN_IP = "unknown";
