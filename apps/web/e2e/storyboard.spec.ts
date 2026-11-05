@@ -1,4 +1,4 @@
-// M3-11 storyboard dry run (PROJECT.md §2) against a deployed Cleared (E2E_BASE_URL, e.g. production on
+// M3-11 storyboard dry run (the demo storyboard) against a deployed Cleared (E2E_BASE_URL, e.g. production on
 // Render). Deployed only: there is no local stack and no stub, every PayPal and OpenAI call is the deployed
 // service's own, on the PayPal sandbox. The spec holds no credential and reads no database.
 //

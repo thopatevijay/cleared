@@ -40,7 +40,7 @@ lines of zod), and the M0-04 sandbox run exercised every endpoint for real.
 **Consequences.** One HTTP path for every PayPal call (recorded, replayed and broken the same way);
 five fewer transitive dependencies (`@apimatic/*`, axios). We own request/response typing for the
 endpoints we call; zod rejects drift at the boundary. Reversal cost: low (the client is behind
-`PayPalOrdersClient`). `@paypal/paypal-server-sdk` stays listed in `PROJECT.md` §4 until the owner
+`PayPalOrdersClient`). `@paypal/paypal-server-sdk` stays listed in the project's stack list until the owner
 decides to drop it; it is not installed.
 
 **Retry details settled in M0-04.** Retries happen only on timeout, network error, 5xx and 429; a

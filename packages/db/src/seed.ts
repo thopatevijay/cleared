@@ -1,4 +1,4 @@
-// Idempotent seed: one synthetic seller workspace and its user, no PayPal data (PROJECT.md §9.1:
+// Idempotent seed: one synthetic seller workspace and its user, no PayPal data (data policy:
 // personal data is synthetic). A second run inserts nothing.
 // Usage: `pnpm --filter @cleared/db run seed` (reads DATABASE_URL; see `databaseUrl`).
 // M4-06 load tests (opt-in; the deploy's plain run never takes these):

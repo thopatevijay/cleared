@@ -1,6 +1,6 @@
 // M3-02 test support: a workspace with one held payment (claimed by the workspace, as the product path does),
 // the hold row written from core's `deriveHold`, and the delivery context the explainer runs in.
-// Amounts and buyers are synthetic (PROJECT.md §9.1); the review reason is the recorded PENDING_REVIEW.
+// Amounts and buyers are synthetic (data policy); the review reason is the recorded PENDING_REVIEW.
 import { randomBytes, randomUUID } from "node:crypto";
 import { deriveHold, fromEpochMs, WorkspaceIdSchema, type Locale, type WorkspaceId } from "@cleared/core";
 import { forWorkspace, platform, type Db } from "@cleared/db";

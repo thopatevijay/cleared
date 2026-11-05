@@ -1,6 +1,6 @@
 # Fixtures: recorded real vendor exchanges
 
-Tests replay these instead of calling vendors (data policy, `PROJECT.md` §9.1: no mocks in the product
+Tests replay these instead of calling vendors (data policy: no mocks in the product
 path; tests replay recorded real responses). Every file here came from a live **sandbox** run through
 the product adapters, and was scrubbed before it touched the disk.
 
@@ -92,7 +92,7 @@ An inbound delivery is not a request/response exchange, so it has its own format
 
 ## Checks
 
-The M0-04 Validation Gate (`.github/plan/M0-04-*.md`) greps this directory for credential-shaped
+The M0-04 Validation Gate (issue #6) greps this directory for credential-shaped
 text, any email outside `@example.test`, any 13–19 digit run, and a fixture without
 `meta.scrubbed == true`; each must find nothing. `scripts/landing-checks.sh` repeats the credential
 grep on every run. (The patterns are not copied here, because this README would then match them.)

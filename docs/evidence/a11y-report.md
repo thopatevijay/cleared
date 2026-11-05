@@ -84,7 +84,7 @@ the pack, not retyped.
 
 ## 5. Screen-reader pass (VoiceOver): owner step P-54
 
-Not yet run: this is the owner's manual step (P-54, `docs/PREREQS.md`). Run it on the hosted demo, in
+Not yet run: this is the owner's manual step (owner prerequisite P-54). Run it on the hosted demo, in
 **macOS Safari** (VoiceOver: Cmd+F5) and **iOS Safari** (Settings → Accessibility → VoiceOver), in
 English, then repeat steps 1, 3 and 6 in Hindi. Mark each line **pass / fail + what was heard**.
 

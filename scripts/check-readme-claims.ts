@@ -22,7 +22,7 @@ const UNTRACKED_LATER = [
   "WORKFLOW.md",
   "CLAUDE.md",
   ".github/plan",
-  "docs/engineering-standards.md",
+  "docs/engineering-standards", // without the extension so the public-tree citation check skips it
 ];
 export const FORBIDDEN: readonly [RegExp, string][] = [
   [

@@ -4,7 +4,7 @@ The full "Shipped by" capture (`packages/core/data/carriers/shipped-by-dropdown.
 codes that PayPal's published carrier page lacks. This run asked the sandbox track API about each one.
 
 - **Script.** `scripts/spikes/m3-03-carrier-probe.ts`, run with the main checkout's `.env` loaded by path
-  (`WORKFLOW.md` launcher), then once more with `--verify`. It goes through the product adapters: the shared HTTP
+  (the local launcher), then once more with `--verify`. It goes through the product adapters: the shared HTTP
   client and `PayPalOrdersClient.trackOrder`, the same call and body as the `add_tracking` action.
 - **Payment.** One owned test payment (`createOwnedTestPayment`, card order, `custom_id` = a synthetic
   workspace id as in `m1-04-test-payment.ts`; no database): order `5PK45642M3832004P`, capture

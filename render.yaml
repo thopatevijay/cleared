@@ -1,7 +1,7 @@
 # Render Blueprint (ADR 0014, M0-08). Spec: https://render.com/docs/blueprint-spec (checked 2026-10-29).
 # Plans: https://render.com/docs/compute-plans. `starter` is the legacy name of `0.5c-512mb` and
 # `basic-256mb` of `0.1c-256mb` (same specs and price; legacy names stay valid in Blueprints).
-# Cost: web $7 + worker $7 + Postgres $6 ≈ $20/month (docs/budget.md).
+# Cost: web $7 + worker $7 + Postgres $6 ≈ $20/month (docs/evidence/m0-08-render.md).
 #
 # Never put a secret value here. Secrets are `sync: false` (the owner types them into the dashboard
 # once, at Blueprint creation) or `generateValue: true`. The worker reads the web service's secrets

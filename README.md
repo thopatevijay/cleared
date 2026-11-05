@@ -185,7 +185,7 @@ The miss in detail ([eval report](docs/evidence/eval-report.md), [JSON](docs/evi
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/thopatevijay/cleared)
 
-The button works once this repository is public. It creates the [`render.yaml`](render.yaml) Blueprint: a web service, a background worker and Postgres 18, in Oregon, on starter plans (about $20/month, see [docs/budget.md](docs/budget.md)). Every deploy runs the database migrations first, and the web service answers `GET /healthz` with the deployed commit.
+The button works once this repository is public. It creates the [`render.yaml`](render.yaml) Blueprint: a web service, a background worker and Postgres 18, in Oregon, on starter plans (about $20/month, see the [Render cost breakdown](docs/evidence/m0-08-render.md)). Every deploy runs the database migrations first, and the web service answers `GET /healthz` with the deployed commit.
 
 Render asks for these values once, on the web service; the worker reads them from there. Use PayPal **sandbox** credentials only.
 

@@ -16,7 +16,7 @@ Sources, checked 2026-10-29:
 | Web | `cleared-web` | web, runtime node | oregon | `starter` (= `0.5c-512mb`: 0.5 CPU, 512 MB) | $7/mo |
 | Worker | `cleared-worker` | worker, runtime node | oregon | `starter` (= `0.5c-512mb`) | $7/mo |
 | Postgres | `cleared-db` | Postgres 18, db `cleared`, user `cleared` | oregon | `basic-256mb` (= `0.1c-256mb`) | $6/mo |
-| **Total** | | | | | **$20/mo**, matching `docs/budget.md` |
+| **Total** | | | | | **$20/mo**, matching the project budget |
 
 Render renamed its plans: `starter` and `basic-256mb` are the legacy names of `0.5c-512mb` and `0.1c-256mb`. The specs and prices are identical, and Render says the legacy names "remain valid across all Render tooling", Blueprints included. The file uses the names the ticket and the budget use.
 
@@ -40,7 +40,7 @@ Blueprint `exs-dbhe9c61egvs73fb9su0`, repo `thopatevijay/cleared`, branch `main`
 4. Pre-deploy (web only): `pnpm --filter @cleared/db run migrate`: the Drizzle migrations, then the pg-boss schema. It runs on a separate instance; if it fails, the whole deploy fails and the previous deploy keeps serving.
 5. Start: web `pnpm --filter @cleared/web start`, health check `GET /healthz` → `200 {"ok":true,"commit":"<RENDER_GIT_COMMIT>"}` (liveness only, no DB call; `/readyz` is M1-08). Worker `pnpm --filter @cleared/worker start` connects to Postgres, starts pg-boss and logs one JSON line `{"service":"worker","msg":"worker ready","commit":"<sha>"}`. On SIGTERM it stops pg-boss gracefully (20 s bound, inside Render's 30 s shutdown delay), ends the pool, and exits 0.
 
-Measured locally (2026-10-29, Postgres 18.6 on port 5632): the built web app answered `/healthz` with `200`, `content-type: application/json`, `cache-control: no-store`, `{"ok":true,"commit":"deadbeef"}`. The worker against the local database logged `worker ready`, `worker stopping` (`signal: SIGTERM`) and `worker stopped`, then exited 0 (`apps/worker/src/process.test.ts`).
+Measured locally (2026-10-29, Postgres 18.6 on port 5632): the built web app answered `/healthz` with `200`, `content-type: application/json`, `cache-control: no-store`, `{"ok":true,"commit":"deadbeef"}`. The worker against the local database logged `worker ready`, `worker stopping` (`signal: SIGTERM`) and `worker stopped`, then exited 0 (`process.test.ts` at the time; M1-03 replaced it with `apps/worker/test/shutdown.test.ts`).
 
 ## Environment
 

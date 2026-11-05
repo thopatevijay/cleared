@@ -37,7 +37,7 @@ Redaction runs on every line and every Sentry event (`packages/adapters/src/obs/
 - **`raw`** (a webhook body) is replaced by `{ size, sha256 }`. The sha256 matches the stored `webhook_events` row.
 - **Free text** (messages, error messages, stack traces) has email addresses replaced by `[email]`, `Bearer …`/`Basic …` credentials by `[credential]` and `__Host-…=` cookie pairs by `[cookie]`.
 
-If a secret ever shows in Render logs, treat it as leaked: rotate it (`docs/PREREQS.md`), then log the gap to BL-01.
+If a secret ever shows in Render logs, treat it as leaked: rotate it at the provider, then log the gap to BL-01.
 
 ## Following a correlation ID
 

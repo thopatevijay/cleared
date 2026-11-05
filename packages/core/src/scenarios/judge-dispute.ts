@@ -2,7 +2,7 @@
 // sandbox path end to end: card capture → seed the proof pack → sandbox chargeback → targeted poll until
 // PayPal reaches a terminal state. Each step is one worker job; a job only acts when the run is in that
 // step's state, so a re-delivered job is a no-op. PayPal states are never invented here: the poll
-// observes them and the outcome is read from the mirror (CLAUDE.md "Domain rules").
+// observes them and the outcome is read from the mirror (domain rules).
 import { z } from "zod";
 import { SCENARIO_ACTIVE_STATES, type ScenarioState } from "./states.ts";
 

@@ -59,3 +59,20 @@ next-env.d.ts
 
 # Demo video working files (owner decision 2026-11-04): kept local, never committed
 docs/video/
+
+# Build workflow files (M5-CLEANUP, owner decision 2026-11-05): untracked, kept local. The GitHub issues
+# hold the ticket content; the public system design is docs/architecture.md and docs/adr/.
+# `[.]` matches a literal dot; it keeps these lines out of the citation check (paths cited must be tracked).
+/PROJECT.md
+/WORKFLOW.md
+/CLAUDE.md
+.github/plan/
+.claude/commands/
+.claude/agents/
+scripts/waves[.]py
+scripts/bootstrap_github[.]py
+scripts/check-prereqs[.]py
+scripts/check-plan[.]py
+docs/engineering-standards[.]md
+docs/PREREQS[.]md
+docs/budget[.]md

@@ -1,4 +1,4 @@
-// Payments mirror the PayPal capture; holds are derived from its status (CLAUDE.md: hold = PENDING +
+// Payments mirror the PayPal capture; holds are derived from its status (domain rule: hold = PENDING +
 // status_details.reason). PayPal values are text so an unknown value is kept verbatim.
 import { sql } from "drizzle-orm";
 import { check, index, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core";

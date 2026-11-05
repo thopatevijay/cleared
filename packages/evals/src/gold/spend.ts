@@ -1,6 +1,6 @@
 // SPEND.md: one row per live run and model, appended at the end of the run from the API responses'
 // usage (tokens × pricing.ts). Replay runs spend nothing and write nothing. `validate` checks every UTC
-// day stays within the OpenAI daily budget (LLM_DAILY_CAP_USD, docs/budget.md).
+// day stays within the OpenAI daily budget (LLM_DAILY_CAP_USD, docs/adr/0010-agent-governance.md).
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { TokenUsage } from "@cleared/adapters/ai/pricing";
 import { SPEND_FILE } from "./io.ts";
@@ -11,7 +11,7 @@ export const SPEND_HEADER = [
   "# Gold-set spend (M4-01)",
   "",
   "One row per live run and model, from the API responses' `usage` (tokens × `packages/adapters/src/ai/pricing.ts`).",
-  `Replay runs spend nothing. Each UTC day must stay ≤ $${DAILY_BUDGET_USD.toFixed(2)} (\`LLM_DAILY_CAP_USD\`, docs/budget.md).`,
+  `Replay runs spend nothing. Each UTC day must stay ≤ $${DAILY_BUDGET_USD.toFixed(2)} (\`LLM_DAILY_CAP_USD\`, docs/adr/0010-agent-governance.md).`,
   "",
   "| date (UTC) | command | model | calls | input tokens | cached | output tokens | reasoning | USD |",
   "|---|---|---|---|---|---|---|---|---|",

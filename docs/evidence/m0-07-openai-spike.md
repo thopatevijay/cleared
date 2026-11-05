@@ -51,7 +51,7 @@ The spike proved it: both chosen models read the delivery PDFs and quoted their 
   on every response. The ticket's "pin dated snapshots where offered" therefore means pinning the exact ID. If OpenAI
   ever changes what an ID serves, the M4-02 evals catch it. `gpt-5.4-mini-2026-03-17` is the dated fallback.
 
-**SDK and API surface.** `openai` **7.45.1** is npm `latest` today and matches `PROJECT.md` §4. We use the **Responses
+**SDK and API surface.** `openai` **7.45.1** is npm `latest` today and matches the project's stack list. We use the **Responses
 API** (`client.responses.create`) because it takes `input_file` PDFs from base64, URL or file id. Chat Completions takes
 PDFs only, with no `detail` control (PDF guide). It also has `text.format: {type: "json_schema", strict: true}` and
 reports `incomplete_details.reason` and refusals as typed output parts. We send `store: false` because we keep no
@@ -72,7 +72,7 @@ conversation state at OpenAI.
 - Data channel: `instructions` holds only our text. Each evidence item is a `<evidence id kind label>…</evidence>` block
   in the user message (text inline, images as `input_image`, PDFs as `input_file`). A closing delimiter inside an item
   is escaped
-- `packages/adapters/src/ai/prices.ts`: the cited price table. `costUsd` prices uncached input, cached input and output.
+- `packages/adapters/src/ai/pricing.ts` (`prices.ts` at M0-07): the cited price table. `costUsd` prices uncached input, cached input and output.
   An unknown model throws and is never priced at $0
 - `packages/adapters/src/ai/schemas.ts`: `ExtractResult`, `ScopeClaims` (pass 1), `ScopeVerdicts` (pass 2), `ResponseUsage`
 - `packages/core/src/proof/verbatim.ts`: `checkQuote` / `checkQuotes`. The normalisation is NFC plus whitespace
@@ -235,7 +235,7 @@ Cost per pack, measured on run 2 (n = 5): **median $0.0073, max $0.0079, mean $0
   or run extract in parallel (≈ 23 s max over both runs). Pass 2 is the slowest call (13.4 s max over both runs),
   well inside the 60 s timeout
 
-**`docs/budget.md`:** the spike cost $0.09 against $0.50 planned. The other OpenAI lines are set by caps and stay
+**Budget:** the spike cost $0.09 against $0.50 planned. The other OpenAI lines are set by caps and stay
 inside them at these per-pack costs: 200 judge workspaces × 3 packs × $0.0106 = $6.36 worst case, against the
 $3 expected and the same $1/day hard bound. The totals move by less than $5, so the file is unchanged, per its own
 rule.

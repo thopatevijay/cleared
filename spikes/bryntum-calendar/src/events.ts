@@ -1,6 +1,6 @@
 import type { ReleaseEvent } from "./cash-calendar";
 
-// Six synthetic expected-release events (CLAUDE.md data policy: all personal data is synthetic).
+// Six synthetic expected-release events (data policy: all personal data is synthetic).
 // Two share a day on purpose, to see how each calendar stacks events in a month cell.
 export const SPIKE_EVENTS: readonly ReleaseEvent[] = [
   {

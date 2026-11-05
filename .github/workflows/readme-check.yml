@@ -5,11 +5,10 @@ name: readme-check
 
 on:
   pull_request:
-    # ci.yml's filter (non-markdown, ticket files), then re-include the inputs of the claims check.
+    # ci.yml's filter (non-markdown), then re-include the inputs of the claims check.
     paths:
       - "**"
       - "!**/*.md"
-      - ".github/plan/**"
       - "README.md"
       - "docs/**"
       - "fixtures/paypal/**"
@@ -20,7 +19,6 @@ on:
     paths:
       - "**"
       - "!**/*.md"
-      - ".github/plan/**"
       - "README.md"
       - "docs/**"
       - "fixtures/paypal/**"

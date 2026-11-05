@@ -3,7 +3,7 @@
 Labelled ground truth for Cleared's three AI steps: evidence **extraction** (30 items), **scope**
 checking (40) and **hold** explanations (20: 10 EN/HI pairs). The README, video and Devpost numbers are
 measured against these sets by the M4-02 eval runner. **All personal data is synthetic**
-(PROJECT.md §9.1): people, businesses, chats, invoices and ids are invented; emails use
+(data policy): people, businesses, chats, invoices and ids are invented; emails use
 `@example.test`, phones `+CC-00000-NNNNN`, PayPal ids `SYNTH-…`. Hold items quote PayPal's published
 rule text verbatim from the rule table (`packages/core/src/holds/rules.ts`, M3-01).
 

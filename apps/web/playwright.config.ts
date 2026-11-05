@@ -5,7 +5,7 @@
 //   deployed (E2E_BASE_URL=<render url>): no local servers; the real sandbox and PayPal's webhook.
 //   live     (E2E_LIVE=1, M2-10): local servers WITHOUT the stub, on the real sandbox. The PayPal
 //            credentials are inherited from the environment (the main checkout's .env loaded by path,
-//            WORKFLOW.md "Live lines"); nothing here names them.
+//            the local live-lines launcher); nothing here names them.
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";

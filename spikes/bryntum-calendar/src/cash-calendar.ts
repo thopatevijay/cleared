@@ -14,7 +14,7 @@ export type ReleaseEvent = {
   currency: string;
   /** Plain-text label (order ref / buyer alias). Rendered as text, never as HTML. */
   label: string;
-  /** Release dates are estimates (CLAUDE.md domain rules); `true` shows the "estimated" badge. */
+  /** Release dates are estimates (domain rules); `true` shows the "estimated" badge. */
   estimated: boolean;
 };
 
