@@ -19,9 +19,6 @@ envVarGroups:
         value: sandbox
       - key: SESSION_SECRET
         generateValue: true
-      # 32-byte key, base64 (AES-256-GCM): generateValue yields a base64-encoded 256-bit value
-      - key: ENCRYPTION_KEY
-        generateValue: true
       - key: AGENT_KILL_SWITCH
         value: "false"
       - key: OPENAI_MODEL_SMALL

@@ -737,15 +737,15 @@
   },
   {
     "id": "P-31",
-    "what": "Local SESSION_SECRET and ENCRYPTION_KEY (32 random bytes, base64)",
+    "what": "Local SESSION_SECRET (32 random bytes, base64)",
     "kind": "credential",
     "needed_by": [
       "M1-05"
     ],
     "who": "owner",
-    "how": "`cp .env.example .env` once, then fill both with the output of `openssl rand -base64 32` (two separate runs). Render generates its own (generateValue, M0-08)",
-    "lands_in": ".env SESSION_SECRET, ENCRYPTION_KEY · Render env generateValue: true",
-    "verify": "test -n \"${SESSION_SECRET:-}\" && [ \"$(printf %s \"${ENCRYPTION_KEY:-}\" | base64 -d 2>/dev/null | wc -c | tr -d ' ')\" = 32 ]",
+    "how": "`cp .env.example .env` once, then fill it with the output of `openssl rand -base64 32`. Render generates its own (generateValue, M0-08). ENCRYPTION_KEY was dropped 2026-11-05: no code reads it",
+    "lands_in": ".env SESSION_SECRET · Render env generateValue: true",
+    "verify": "[ \"$(printf %s \"${SESSION_SECRET:-}\" | wc -c | tr -d ' ')\" -ge 32 ]",
     "required": true
   },
   {
