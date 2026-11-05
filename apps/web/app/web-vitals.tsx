@@ -2,8 +2,10 @@
 // M4-04 field metrics: Next's `useReportWebVitals` hands each page's LCP, INP and CLS to the existing Sentry
 // client (sentry.client.config.ts) as distribution metrics; no new vendor. Without a DSN
 // the Sentry client is disabled and this records nothing. The route is reported as a pattern: ids and the
-// acknowledgement token never leave the browser.
+// acknowledgement token never leave the browser. Nothing is reported from the acknowledgement page, where
+// the Sentry client never loads (BL-01 6649565909).
 import { useReportWebVitals } from "next/web-vitals";
+import { isAckPage } from "../src/lib/security-headers.ts";
 
 type Reported = "LCP" | "INP" | "CLS";
 const REPORTED: ReadonlySet<string> = new Set<Reported>(["LCP", "INP", "CLS"]);
@@ -26,7 +28,7 @@ interface VitalMetric {
 
 export function WebVitals(): null {
   useReportWebVitals((metric: VitalMetric) => {
-    if (!REPORTED.has(metric.name)) return;
+    if (!REPORTED.has(metric.name) || isAckPage(window.location.pathname)) return;
     const route = routePattern(window.location.pathname);
     // the Sentry client loads after the page (instrumentation-client.ts); this resolves to that module
     void import("../sentry.client.config.ts").then(({ Sentry }) => {

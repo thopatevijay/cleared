@@ -8,6 +8,7 @@ import nextConfig from "../../next.config.ts";
 import proxy from "../../proxy.ts";
 import {
   API_CSP,
+  isAckPage,
   newNonce,
   pageCsp,
   reportOriginFromDsn,
@@ -70,6 +71,14 @@ describe("proxy (pages)", () => {
     expect(res.headers.get("content-security-policy")).toContain("default-src 'none'");
     expect(res.headers.get("referrer-policy")).toBe("no-referrer");
     expect(res.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+  });
+
+  it("isAckPage matches only /<locale>/ack/<token> (no browser Sentry there, BL-01 6649565909)", () => {
+    expect(isAckPage("/en/ack/abc")).toBe(true);
+    expect(isAckPage("/hi/ack/abc/")).toBe(true);
+    expect(isAckPage("/en/ack")).toBe(false);
+    expect(isAckPage("/en/payments")).toBe(false);
+    expect(isAckPage("/en/ack/abc/more")).toBe(false);
   });
 });
 

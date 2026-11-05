@@ -2,6 +2,10 @@
 // (sentry.client.config.ts, M1-08) is no longer in the first-load bundle: it loads once the page has
 // loaded, off the critical path (about 55 KB gzip less on every page). Errors thrown before then are kept
 // and sent once Sentry is up, so none are lost.
+// BL-01 6649565909: not on the public acknowledgement page, whose CSP allows no third-party connection
+// (the token is in its URL); see isAckPage in src/lib/security-headers.ts.
+import { isAckPage } from "./src/lib/security-headers.ts";
+
 const early: unknown[] = [];
 const onError = (e: ErrorEvent): void => {
   early.push(e.error ?? e.message);
@@ -9,8 +13,6 @@ const onError = (e: ErrorEvent): void => {
 const onRejection = (e: PromiseRejectionEvent): void => {
   early.push(e.reason);
 };
-addEventListener("error", onError);
-addEventListener("unhandledrejection", onRejection);
 
 function loadSentry(): void {
   void import("./sentry.client.config.ts").then(({ Sentry }) => {
@@ -20,5 +22,9 @@ function loadSentry(): void {
   });
 }
 
-if (document.readyState === "complete") loadSentry();
-else addEventListener("load", loadSentry, { once: true });
+if (!isAckPage(location.pathname)) {
+  addEventListener("error", onError);
+  addEventListener("unhandledrejection", onRejection);
+  if (document.readyState === "complete") loadSentry();
+  else addEventListener("load", loadSentry, { once: true });
+}

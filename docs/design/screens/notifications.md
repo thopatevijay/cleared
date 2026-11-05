@@ -70,6 +70,6 @@ Email subject lines follow the same sentences (M3-08 templates). Emails carry th
 ## Accessibility
 - The bell is a `<button aria-haspopup="dialog" aria-expanded>`; the panel is `role="dialog"` (non-modal) with the heading "Notifications".
 - The count is in the bell's accessible name, not only in the visual pill.
-- Unread is shown by rail + "New" word + `aria-label` prefix "New:".
+- Unread is shown by rail + the visible "New" word. The link has no `aria-label`: its name is its visible text (kind, "New", sentence, time), so it contains everything shown (WCAG 2.5.3, BL-01 6649566516).
 - 375 px: every target ≥ 44 px; the page replaces the popover so nothing overflows the viewport.
 - Announcements are polite, at most one per poll, and never repeated for the same item.

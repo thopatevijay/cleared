@@ -10,6 +10,7 @@ import { expect, test, type Browser, type Page } from "@playwright/test";
 import en from "../messages/en.json" with { type: "json" };
 import hi from "../messages/hi.json" with { type: "json" };
 import { firstViewOff, firstViewOn } from "./support/journey.ts";
+import { WCAG_A_AA } from "./support/wcag.ts";
 
 const deployed = process.env["E2E_BASE_URL"] !== undefined;
 const REVIEW = fileURLToPath(new URL("../../../.review/M1-07/", import.meta.url));
@@ -23,7 +24,7 @@ mkdirSync(`${REVIEW}axe`, { recursive: true });
 
 async function axe(page: Page, name: string): Promise<void> {
   const result = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .withTags(WCAG_A_AA)
     .analyze();
   writeFileSync(`${REVIEW}axe/${name}.json`, JSON.stringify(result.violations, null, 2));
   const blocking = result.violations
@@ -222,7 +223,7 @@ test("screens and states for ui-reviewer (local)", async ({ browser }) => {
 
     await landingState(page, "**/api/demo", errorReply(429, "86400"), async () => {
       await page.getByTestId("demo-cta").click();
-      await expect(page.getByText(m.landing.capIp.replace(/<\/?video>/g, ""))).toBeVisible();
+      await expect(page.getByText(m.landing.capIp.replace("{limit}", "3"))).toBeVisible();
     });
     await capture(page, `landing-cap-ip-${locale}`);
     await landingState(page, "**/api/demo", errorReply(500), async () => {

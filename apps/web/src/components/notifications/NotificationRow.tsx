@@ -1,7 +1,9 @@
 "use client";
 // One notification (notifications.md "Notification item"): icon + kind word, the sentence (plain text), the
 // time, the link to its hold or dispute (≥ 64 px), and a separate 44 px "Mark as read" button. Unread items
-// carry a 4 px accent rail AND the bold word "New" (never colour alone), and an "New:" accessible prefix.
+// carry a 4 px accent rail AND the bold word "New" (never colour alone). The link's name is its visible
+// text (kind, "New", sentence, time) with no aria-label, so it contains everything shown (WCAG 2.5.3,
+// BL-01 6649566516).
 import {
   AlarmClock,
   CalendarCheck,
@@ -52,7 +54,6 @@ export function NotificationRow({ item, timeZone, failed, offline, onMarkRead }:
           onClick={() => {
             if (unread) onMarkRead(item.id);
           }}
-          aria-label={unread ? `${t("newPrefix")} ${item.sentence}` : item.sentence}
           className="group flex min-h-16 min-w-0 flex-1 items-center gap-2 px-3 py-3 text-text hover:bg-surface-sunken"
         >
           <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -60,12 +61,12 @@ export function NotificationRow({ item, timeZone, failed, offline, onMarkRead }:
               <span className={`inline-flex h-6 items-center gap-1 rounded-pill px-2 font-medium ${tone}`}>
                 <Icon aria-hidden="true" size={16} strokeWidth={1.75} />
                 {t(`kind.${item.kind}`)}
-              </span>
+              </span>{" "}
               {unread ? <strong className="font-bold">{t("new")}</strong> : null}
-            </span>
+            </span>{" "}
             <span className="break-words group-hover:underline group-focus-visible:underline">
               {item.sentence}
-            </span>
+            </span>{" "}
             <span className="text-sm text-text-muted">{formatTime(locale, item.createdAt, timeZone)}</span>
             {item.emailNotSent ? <span className="text-sm text-text-muted">{t("emailNotSent")}</span> : null}
           </span>

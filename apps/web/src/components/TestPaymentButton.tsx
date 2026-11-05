@@ -41,12 +41,13 @@ export function TestPaymentButton({ capped, onQueued }: { capped: boolean; onQue
         onClick={() => void create()}
         disabled={disabled}
         aria-busy={busy || undefined}
-        aria-label={busy ? t("empty.busy") : t("empty.ctaName")}
+        aria-label={busy ? undefined : t("empty.ctaName")}
         aria-describedby={capped || limit ? reasonId : undefined}
         className="inline-flex min-h-12 w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-md border-[1.5px] py-2 border-dashed border-border-strong bg-status-sandbox-bg px-4 font-medium text-status-sandbox-fg disabled:bg-surface-sunken disabled:text-text-muted md:w-auto"
       >
         {busy ? <Loader2 aria-hidden="true" size={16} className="spin" /> : null}
         <span className="text-center">{busy ? t("empty.busy") : t("empty.cta")}</span>
+        {" "}
         <SandboxBadge decorative />
       </button>
       {capped || limit ? (

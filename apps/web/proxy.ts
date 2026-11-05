@@ -10,12 +10,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "./src/i18n/routing.ts";
-import { newNonce, pageCsp, reportOriginFromDsn } from "./src/lib/security-headers.ts";
+import { isAckPage, newNonce, pageCsp, reportOriginFromDsn } from "./src/lib/security-headers.ts";
 import { SESSION_COOKIE } from "./src/lib/session-cookie.ts";
 
 const intl = createMiddleware(routing);
 const PROTECTED = /^\/(en|hi)\/(payments|audit|disputes|notifications)(\/|$)/;
-const ACK_PAGE = /^\/(en|hi)\/ack\/[^/]+\/?$/;
 
 export function ackCsp(nonce: string): string {
   return [
@@ -59,7 +58,7 @@ export default function proxy(req: NextRequest): Response {
     to.search = "";
     return NextResponse.redirect(to, 307);
   }
-  if (ACK_PAGE.test(req.nextUrl.pathname)) return ackPage(req);
+  if (isAckPage(req.nextUrl.pathname)) return ackPage(req);
   const csp = pageCsp(newNonce(), {
     dev: process.env.NODE_ENV === "development",
     reportOrigin: reportOriginFromDsn(process.env["SENTRY_DSN"]),

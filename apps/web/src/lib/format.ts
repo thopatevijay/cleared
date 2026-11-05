@@ -105,6 +105,27 @@ export function dayKey(iso: string, timeZone: string): string {
   }
 }
 
+/**
+ * When the next demo slot frees (landing.md "Per-network cap"), in the viewer's zone: "14:38 IST" on the
+ * viewer's current day, otherwise "5 Nov, 09:38 IST". Absolute, never relative (it would go stale).
+ */
+export function formatSlotTime(locale: string, iso: string, timeZone: string, nowMs: number): string {
+  const sameDay = dayKey(iso, timeZone) === dayKey(new Date(nowMs).toISOString(), timeZone);
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      ...(sameDay ? {} : { day: "numeric" as const, month: "short" as const }),
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+      timeZone,
+      timeZoneName: "short",
+      numberingSystem: "latn",
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
 /** "29 Oct" in the workspace time zone (M3-01 estimated dates); `long` → "29 October 2026" (names). */
 export function formatDate(locale: string, iso: string, timeZone: string, long = false): string {
   try {

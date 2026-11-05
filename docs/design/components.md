@@ -132,7 +132,7 @@ The only path to a PayPal write. It shows **exactly what goes to PayPal**.
 **Anatomy.** The `sandbox` status pill (`flask-conical` + "Sandbox"), placed **inside** every sandbox-only control and on every sandbox-generated card. The controls are "Create a sandbox test payment", "Run the dispute scenario" and **"Simulate PayPal's decision (sandbox only)"**. Sample scenarios use the same pill with the label "Sample scenario: sandbox can't produce this" (HI "नमूना स्थिति: सैंडबॉक्स इसे नहीं बना सकता").
 
 - Sandbox controls use the Sandbox button variant (dashed boundary), so they never look like the primary product path.
-- **Accessible name:** the control's name ends with "(sandbox only)". The pill itself is `aria-hidden` when inside a button whose name already includes it.
+- **Accessible name:** the control's visible label, then the badge text and "only": "Try as demo seller, Sandbox only" (HI "डेमो विक्रेता के रूप में आज़माएँ, सैंडबॉक्स मात्र"), so the name contains all the visible text in order (WCAG 2.5.3 Label in Name; BL-01 6649566516). While busy there is no `aria-label`: the name is the visible busy text. The decision control keeps its verbatim visible label. The pill itself is `aria-hidden` when inside a button whose name already includes it.
 - **States:** inherits the button's states. When hidden (`PAYPAL_ENV` ≠ `sandbox`), the control is absent, not disabled.
 
 ## Empty, loading and error panels (`EmptyState`, `LoadingState`, `ErrorPanel`)
