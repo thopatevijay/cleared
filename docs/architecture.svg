@@ -1,0 +1,257 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 1460" role="img" aria-labelledby="arch-title arch-desc">
+  <title id="arch-title">Cleared system architecture</title>
+  <desc id="arch-desc">Three zones. User: the seller's browser and the client's browser, which opens the public acknowledgement page. Cleared on Render (Oregon): a Next.js web service with the UI, the REST API, the PayPal webhook endpoint and the approval endpoint; a pg-boss worker that syncs captures and disputes, derives holds, builds proof packs, runs the AI workflows, files approved actions and sends alerts; and Postgres, the system of record, holding PayPal mirrors, the outbox and jobs, evidence blobs, approvals and the audit log. External services: the PayPal sandbox (Orders v2, Payments v2 captures, Disputes, Order Tracking, Tracking trackers-batch, Webhooks), OpenAI behind an adapter for four workflows, Resend for email and Sentry for errors. Webhook flow: PayPal sends a signed webhook, the web service verifies it, inserts the raw event and enqueues a job in one transaction and acknowledges; the worker then re-fetches the capture or dispute from PayPal, so state mirrors PayPal. Write flow: evidence is untrusted data; the model proposes an action; the seller approves it, bound to the sha256 of the payload; the worker checks ownership, the dispute's HATEOAS link, the deadline and the kill switch, then files it with PayPal. Limits: at most 6 model calls per run, token and time caps, and spend caps of 0.10 US dollars per workspace and 1 US dollar per day.</desc>
+  <style>
+    .bg{fill:#f4f6f8}
+    .lane{fill:#e9edf1;stroke:#d3d9e0;stroke-width:1.5}
+    .box{fill:#ffffff;stroke:#d3d9e0;stroke-width:1.5}
+    .box-acc{fill:#ffffff;stroke:#0a5c66;stroke-width:2}
+    .chip{fill:#e9edf1}
+    .pill{fill:#f4f6f8;stroke:#d3d9e0;stroke-width:1}
+    .warn{fill:#fdedd3;stroke:#7a4300;stroke-width:1.2}
+    .ok{fill:#dff3ea;stroke:#0c5a3f;stroke-width:1.2}
+    .info{fill:#e2ecfb;stroke:#1c4589;stroke-width:1.2}
+    .badge{fill:#0a5c66}
+    .ln{fill:none;stroke:#4a5565;stroke-width:2}
+    .ln-acc{fill:none;stroke:#0a5c66;stroke-width:2.5}
+    .ln-dash{fill:none;stroke:#4a5565;stroke-width:2;stroke-dasharray:6 5}
+    .head{fill:#4a5565}
+    .head-acc{fill:#0a5c66}
+    text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;fill:#18202b}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:13px}
+    .h1{font-size:26px;font-weight:700}
+    .h2{font-size:18px;font-weight:700}
+    .h3{font-size:15px;font-weight:700}
+    .b{font-size:14px}
+    .s{font-size:13px}
+    .m{fill:#4a5565}
+    .zone{font-size:13px;font-weight:700;letter-spacing:1.5px;fill:#0a5c66}
+    .lbl{font-size:13px;font-weight:600;fill:#18202b}
+    .on-badge{font-size:12px;font-weight:700;fill:#ffffff}
+    .warn-t{fill:#7a4300}
+    .ok-t{fill:#0c5a3f}
+    .info-t{fill:#1c4589}
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" class="head"/>
+    </marker>
+    <marker id="ah-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" class="head-acc"/>
+    </marker>
+  </defs>
+
+  <rect class="bg" width="960" height="1460"/>
+
+  <!-- Header: logo mark (demo-video/brand/logo-mark.svg) + title -->
+  <g transform="translate(40 26) scale(0.09375)">
+    <rect width="512" height="512" rx="112" style="fill:#0a5c66"/>
+    <path d="M371 160 A150 150 0 1 0 371 352" style="fill:none;stroke:#ffffff;stroke-width:46;stroke-linecap:round"/>
+    <path d="M196 262 L242 306 L338 206" style="fill:none;stroke:#5fc2cc;stroke-width:46;stroke-linecap:round;stroke-linejoin:round"/>
+  </g>
+  <text x="102" y="52" class="h1">Cleared · system architecture</text>
+  <text x="102" y="78" class="b m">A modular monolith that mirrors PayPal sandbox state. The agent proposes; the seller approves every write.</text>
+
+  <!-- ============ Zone 1: User ============ -->
+  <rect x="16" y="104" width="928" height="156" rx="16" class="lane"/>
+  <text x="36" y="130" class="zone">USER</text>
+
+  <rect x="40" y="144" width="410" height="96" rx="12" class="box"/>
+  <text x="60" y="174" class="h2">Seller's browser</text>
+  <text x="60" y="198" class="b m">Dashboard · holds · disputes · approvals</text>
+  <text x="60" y="220" class="b m">English / Hindi · signs in by magic link</text>
+
+  <rect x="510" y="144" width="410" height="96" rx="12" class="box"/>
+  <text x="530" y="174" class="h2">Client's browser (the buyer)</text>
+  <text x="530" y="198" class="b m">Opens the acknowledgement link</text>
+  <text x="530" y="220" class="b m">Public page, no account; accepts the scope</text>
+
+  <!-- ============ Zone 2: Cleared on Render ============ -->
+  <rect x="16" y="284" width="928" height="554" rx="16" class="lane"/>
+  <text x="36" y="310" class="zone">CLEARED ON RENDER · OREGON</text>
+  <text x="924" y="310" class="s m" text-anchor="end">secrets live only in the Render env</text>
+
+  <!-- web -->
+  <rect x="40" y="332" width="410" height="290" rx="12" class="box-acc"/>
+  <text x="60" y="362" class="h2">web · Next.js 16 (App Router)</text>
+  <text x="60" y="386" class="b m">UI · REST API, zod at every boundary,</text>
+  <text x="60" y="405" class="b m">every query scoped by workspace</text>
+
+  <rect x="56" y="420" width="378" height="56" rx="8" class="chip"/>
+  <text x="70" y="442" class="mono">POST /api/webhooks/paypal</text>
+  <text x="70" y="464" class="s m">verify → raw insert + enqueue (1 tx) → 200 ack</text>
+
+  <rect x="56" y="484" width="378" height="56" rx="8" class="chip"/>
+  <text x="70" y="506" class="mono">POST /api/actions/:id/approve</text>
+  <text x="70" y="528" class="s m">binds the approval to sha256(payload)</text>
+
+  <rect x="56" y="548" width="378" height="56" rx="8" class="chip"/>
+  <text x="70" y="570" class="mono">/ack/[token]</text>
+  <text x="70" y="592" class="s m">client acknowledgement page (no session)</text>
+
+  <!-- worker -->
+  <rect x="510" y="332" width="410" height="388" rx="12" class="box-acc"/>
+  <text x="530" y="362" class="h2">worker · pg-boss jobs</text>
+  <text x="530" y="386" class="b m">Idempotent consumers · backoff · dead-letter queue</text>
+
+  <g>
+    <rect x="526" y="400" width="378" height="36" rx="8" class="chip"/>
+    <text x="540" y="423" class="h3">Sync</text>
+    <text x="626" y="423" class="mono">capture · dispute re-fetch</text>
+
+    <rect x="526" y="442" width="378" height="36" rx="8" class="chip"/>
+    <text x="540" y="465" class="h3">Holds</text>
+    <text x="626" y="465" class="s">PENDING + reason → hold, est. release</text>
+
+    <rect x="526" y="484" width="378" height="36" rx="8" class="chip"/>
+    <text x="540" y="507" class="h3">Proof</text>
+    <text x="626" y="507" class="mono">extract · check_scope</text>
+
+    <rect x="526" y="526" width="378" height="36" rx="8" class="chip"/>
+    <text x="540" y="549" class="h3">Agent</text>
+    <text x="626" y="549" class="mono">explain_hold · draft_dispute</text>
+
+    <rect x="526" y="568" width="378" height="36" rx="8" class="chip"/>
+    <text x="540" y="591" class="h3">Filing</text>
+    <text x="626" y="591" class="mono">action.execute · reconcile</text>
+
+    <rect x="526" y="610" width="378" height="36" rx="8" class="chip"/>
+    <text x="540" y="633" class="h3">Alerts</text>
+    <text x="626" y="633" class="s">dispute deadline watch → email</text>
+
+    <rect x="526" y="652" width="378" height="52" rx="8" class="chip"/>
+    <text x="540" y="675" class="h3">Every</text>
+    <text x="540" y="694" class="h3">15 min</text>
+    <text x="626" y="675" class="s">reconcile poll (lost or late webhooks)</text>
+    <text x="626" y="694" class="s">SLO checks · synthetic judge path</text>
+  </g>
+
+  <!-- Postgres (cylinder) -->
+  <path d="M130 676 v120 a160 16 0 0 0 320 0 v-120" class="box-acc"/>
+  <ellipse cx="290" cy="676" rx="160" ry="16" class="box-acc"/>
+  <text x="290" y="718" class="h2" text-anchor="middle">Postgres</text>
+  <text x="290" y="740" class="s m" text-anchor="middle">system of record · one primary</text>
+  <text x="290" y="764" class="s" text-anchor="middle">PayPal mirrors · outbox + jobs</text>
+  <text x="290" y="784" class="s" text-anchor="middle">evidence (sha256) · approvals · audit log</text>
+
+  <!-- web -> Postgres -->
+  <path d="M290 622 V652" class="ln" marker-end="url(#ah)"/>
+  <text x="310" y="642" class="lbl">raw insert + outbox, 1 tx</text>
+
+  <!-- Postgres <-> worker -->
+  <path d="M452 748 H 650 V 722" class="ln-dash" marker-start="url(#ah)" marker-end="url(#ah)"/>
+  <circle cx="474" cy="748" r="11" class="badge"/>
+  <text x="474" y="752" class="on-badge" text-anchor="middle">3</text>
+  <text x="480" y="778" class="lbl">claim job</text>
+
+  <!-- ============ Zone 3: External services ============ -->
+  <rect x="16" y="862" width="928" height="270" rx="16" class="lane"/>
+  <text x="128" y="888" class="zone">EXTERNAL SERVICES</text>
+
+  <!-- PayPal -->
+  <rect x="40" y="904" width="560" height="208" rx="12" class="box-acc"/>
+  <text x="60" y="934" class="h2">PayPal sandbox</text>
+  <text x="60" y="956" class="s m">Our typed client · timeouts · retries only on timeout, 5xx, 429</text>
+  <rect x="56" y="970" width="260" height="36" rx="8" class="info"/>
+  <text x="70" y="993" class="mono info-t">Orders v2</text>
+  <rect x="326" y="970" width="260" height="36" rx="8" class="info"/>
+  <text x="340" y="993" class="mono info-t">Payments v2 · captures</text>
+  <rect x="56" y="1014" width="260" height="36" rx="8" class="info"/>
+  <text x="70" y="1037" class="mono info-t">Disputes · evidence</text>
+  <rect x="326" y="1014" width="260" height="36" rx="8" class="info"/>
+  <text x="340" y="1037" class="mono info-t">Order Tracking · /track</text>
+  <rect x="56" y="1058" width="260" height="36" rx="8" class="info"/>
+  <text x="70" y="1081" class="mono info-t">Tracking · trackers-batch</text>
+  <rect x="326" y="1058" width="260" height="36" rx="8" class="info"/>
+  <text x="340" y="1081" class="mono info-t">Webhooks · verify</text>
+
+  <!-- OpenAI -->
+  <rect x="630" y="904" width="290" height="124" rx="12" class="box"/>
+  <text x="650" y="934" class="h2">OpenAI · via adapter</text>
+  <text x="650" y="958" class="mono">extract · check_scope</text>
+  <text x="650" y="980" class="mono">explain_hold · draft_dispute</text>
+  <text x="650" y="1008" class="s m">strict JSON schema, re-checked by zod</text>
+
+  <!-- Resend, Sentry -->
+  <rect x="630" y="1040" width="140" height="72" rx="12" class="box"/>
+  <text x="646" y="1068" class="h3">Resend</text>
+  <text x="646" y="1092" class="s m">magic links, alerts</text>
+  <rect x="780" y="1040" width="140" height="72" rx="12" class="box"/>
+  <text x="796" y="1068" class="h3">Sentry</text>
+  <text x="796" y="1092" class="s m">web + worker errors</text>
+
+  <!-- ============ Cross-zone arrows ============ -->
+  <!-- Seller -> web -->
+  <path d="M330 240 V330" class="ln" marker-end="url(#ah)"/>
+  <rect x="198" y="262" width="122" height="24" rx="12" class="pill"/>
+  <text x="259" y="279" class="lbl" text-anchor="middle">HTTPS · approve</text>
+
+  <!-- Client -> web (/ack) -->
+  <path d="M715 240 V 262 H 420 V 330" class="ln" marker-end="url(#ah)"/>
+  <rect x="520" y="250" width="134" height="24" rx="12" class="pill"/>
+  <text x="587" y="267" class="lbl" text-anchor="middle">opens · accepts</text>
+
+  <!-- PayPal webhook -> web -->
+  <path d="M90 904 V624" class="ln-acc" marker-end="url(#ah-acc)"/>
+  <circle cx="90" cy="842" r="11" class="badge"/>
+  <text x="90" y="846" class="on-badge" text-anchor="middle">1</text>
+  <text transform="translate(108 822) rotate(-90)" class="lbl">webhook (signed)</text>
+  <circle cx="290" cy="637" r="11" class="badge"/>
+  <text x="290" y="641" class="on-badge" text-anchor="middle">2</text>
+
+  <!-- worker -> PayPal -->
+  <path d="M560 720 V 904" class="ln-acc" marker-end="url(#ah-acc)"/>
+  <rect x="470" y="810" width="180" height="44" rx="12" class="pill"/>
+  <circle cx="486" cy="832" r="11" class="badge"/>
+  <text x="486" y="836" class="on-badge" text-anchor="middle">4</text>
+  <text x="504" y="828" class="lbl">re-fetch capture</text>
+  <text x="504" y="846" class="lbl">file approved action</text>
+
+  <!-- worker -> OpenAI -->
+  <path d="M775 720 V 904" class="ln" marker-end="url(#ah)"/>
+  <rect x="712" y="820" width="126" height="24" rx="12" class="pill"/>
+  <text x="775" y="837" class="lbl" text-anchor="middle">run workflow</text>
+
+  <!-- ============ Zone 4: how a write happens ============ -->
+  <rect x="16" y="1156" width="928" height="288" rx="16" class="lane"/>
+  <text x="36" y="1182" class="zone">HOW A WRITE HAPPENS · THE AGENT ONLY PROPOSES</text>
+
+  <rect x="40" y="1198" width="272" height="88" rx="12" class="warn"/>
+  <text x="56" y="1224" class="h3 warn-t">Evidence = untrusted data</text>
+  <text x="56" y="1246" class="s warn-t">delimited, injection-scanned;</text>
+  <text x="56" y="1266" class="s warn-t">never read as instructions</text>
+
+  <rect x="344" y="1198" width="272" height="88" rx="12" class="box"/>
+  <text x="360" y="1224" class="h3">Model proposes</text>
+  <text x="360" y="1246" class="s m">schema-checked; every quote</text>
+  <text x="360" y="1266" class="s m">verified verbatim in code</text>
+
+  <rect x="648" y="1198" width="272" height="88" rx="12" class="box"/>
+  <text x="664" y="1224" class="h3">ProposedAction</text>
+  <text x="664" y="1246" class="s m">a row, never a PayPal call;</text>
+  <text x="664" y="1266" class="s m">shown to the seller as plain text</text>
+
+  <rect x="40" y="1318" width="272" height="88" rx="12" class="ok"/>
+  <text x="56" y="1344" class="h3 ok-t">Seller approves</text>
+  <text x="56" y="1366" class="s ok-t">approval bound to</text>
+  <text x="56" y="1386" class="mono ok-t">sha256(payload)</text>
+
+  <rect x="344" y="1318" width="272" height="88" rx="12" class="box"/>
+  <text x="360" y="1344" class="h3">Action guardrail</text>
+  <text x="360" y="1366" class="s m">owner · HATEOAS link · due − 1 h</text>
+  <text x="360" y="1386" class="s m">hash unchanged · kill switch</text>
+
+  <rect x="648" y="1318" width="272" height="88" rx="12" class="box-acc"/>
+  <text x="664" y="1344" class="h3">Filed with PayPal</text>
+  <text x="664" y="1366" class="s m">evidence, tracking or accept-claim;</text>
+  <text x="664" y="1386" class="s m">re-read, logged in audit_log</text>
+
+  <path d="M312 1242 H342" class="ln-acc" marker-end="url(#ah-acc)"/>
+  <path d="M616 1242 H646" class="ln-acc" marker-end="url(#ah-acc)"/>
+  <path d="M784 1286 V1302 H176 V1316" class="ln-acc" marker-end="url(#ah-acc)"/>
+  <path d="M312 1362 H342" class="ln-acc" marker-end="url(#ah-acc)"/>
+  <path d="M616 1362 H646" class="ln-acc" marker-end="url(#ah-acc)"/>
+
+  <rect x="40" y="1414" width="880" height="22" rx="11" class="warn"/>
+  <text x="480" y="1430" class="s warn-t" text-anchor="middle">Limits per run: ≤ 6 model calls · token and time caps · spend caps $0.10 per workspace, $1 per day</text>
+</svg>
