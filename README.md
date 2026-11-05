@@ -201,27 +201,63 @@ Render asks for these values once, on the web service; the worker reads them fro
 
 ### Run it locally
 
-Needs Node 24, Docker and pnpm 12 (pinned in `package.json`; `corepack enable` provides it).
+For judging, the [hosted demo](#how-to-judge-in-5-minutes) is the recommended path: it is the full flow on the real PayPal sandbox, with no keys to set up. Running locally is for reading the code at work. With no keys it boots, serves every page and creates demo workspaces, but anything that calls PayPal or OpenAI needs your own sandbox keys (see [What works without keys](#what-works-without-keys)).
+
+**Prerequisites** (macOS or Linux):
+
+| Tool | Version | Check |
+|---|---|---|
+| Node.js | 24 (`.nvmrc`; `engines` asks for `>=24`) | `node -v` prints `v24.x` |
+| Corepack | ships with Node 24 | `corepack --version` |
+| pnpm | 12.15.0, installed by Corepack from `packageManager` in `package.json` | after step 2: `pnpm -v` prints `12.15.0` |
+| Docker, with Compose v2 | Docker Desktop or any engine, **running** | `docker compose version` and `docker info` both succeed |
+| make, openssl, git | any | `make -v`, `openssl version`, `git --version` |
+
+Free ports: **5432** (Postgres) and **3000** (web). If either is taken, see [Port 5432 or 3000 is in use](#port-5432-or-3000-is-in-use).
+
+**Steps.** Copy them in order, in one terminal, from the repository root:
 
 ```bash
+# 1. Get the code
 git clone https://github.com/thopatevijay/cleared && cd cleared
-corepack enable             # pnpm 12.15.0, as pinned in package.json
+
+# 2. pnpm 12.15.0 via Corepack, then the dependencies
+corepack enable
 pnpm install
-cp .env.example .env        # then fill in the values (sandbox credentials only; see below)
-make up                     # Postgres 18 in Docker (compose.yaml), migrations applied
-pnpm db:seed                # a seed workspace
-set -a; . ./.env; set +a    # export the values for the web app and the worker
-pnpm dev                    # web on http://localhost:3000, and the worker
+
+# 3. A local .env with a fresh session secret (the PayPal and OpenAI keys stay empty for now)
+cp .env.example .env
+sed -i.bak "s|^SESSION_SECRET=.*|SESSION_SECRET=$(openssl rand -hex 32)|" .env && rm .env.bak
+
+# 4. Postgres 18 in Docker (compose.yaml), wait until healthy, apply the migrations
+make up
+
+# 5. A seed workspace, then the web app and the worker (Ctrl-C stops both)
+(set -a; . ./.env; set +a; pnpm db:seed)
+(set -a; . ./.env; set +a; pnpm dev)
 ```
 
-What to fill in `.env`:
+Then open **http://localhost:3000/en** (Hindi: `/hi`) and press **Try as demo seller**. `http://localhost:3000/healthz` answers `200` when the web app is up. Step 5 loads `.env` inside a subshell on purpose: exported into your own shell, its `NODE_ENV=development` makes a [test](#tests) fail later.
 
-- **To boot:** only `SESSION_SECRET` (at least 32 characters: `openssl rand -base64 32`). `APP_BASE_URL` and `DATABASE_URL` already point at the local stack.
-- **For the PayPal flow:** `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET` and `PAYPAL_WEBHOOK_ID`, plus a public URL for the webhook (see [PayPal sandbox setup](#paypal-sandbox-setup)).
-- **For the AI steps:** `OPENAI_API_KEY`. Without it the app still runs and the AI steps show no verdict (never a made-up one).
-- **Optional:** `RESEND_API_KEY` and `EMAIL_FROM` (email), `SENTRY_DSN` (error tracking).
+`make reset` drops the database and starts again from an empty one (then repeat step 5). `make down` stops Postgres and keeps its data.
 
-`make reset` starts again from an empty database. `PORT_OFFSET=100 make up` moves Postgres to port 5532 if 5432 is taken (then set `DATABASE_URL` to match).
+#### What works without keys
+
+| | No keys (only `SESSION_SECRET`) | With sandbox keys |
+|---|---|---|
+| Landing page in English and Hindi, sign-in page, `/healthz` | works | works |
+| **Try as demo seller**: your own demo workspace, the dashboard, held money, disputes, audit log | works; the dashboard starts empty, plus the sample hold scenarios built from PayPal's published rules | works |
+| **Create a sandbox test payment**, **Run the dispute scenario** | the button is accepted, then the worker job fails with `PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET are not set` in the `pnpm dev` log, so nothing arrives | needs `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, and `PAYPAL_WEBHOOK_ID` with a public URL |
+| AI steps (proof-pack scope check, hold explanation, dispute draft) | every run ends `degraded` ("OPENAI_API_KEY is not set"); the screen shows no verdict, never a made-up one | needs `OPENAI_API_KEY` |
+| Sign-in by email link | no email is sent | needs `RESEND_API_KEY` and `EMAIL_FROM` |
+| Tests, end-to-end tests, evals | all run (recorded PayPal and OpenAI exchanges) | the same |
+
+**Adding keys for the full flow** (sandbox only; never live credentials). Put them in `.env`, then stop and repeat the `pnpm dev` line of step 5:
+
+- `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`: developer.paypal.com → Apps & Credentials → **Sandbox** → Create App.
+- `PAYPAL_WEBHOOK_ID`: PayPal must reach your web app, so expose it with a tunnel (`cloudflared tunnel --url http://localhost:3000`), set `APP_BASE_URL` to the tunnel URL, and register the webhook (see [PayPal sandbox setup](#paypal-sandbox-setup)).
+- `OPENAI_API_KEY`: platform.openai.com → API keys. `LLM_DAILY_CAP_USD` (default 1) caps the spend per day.
+- Optional: `RESEND_API_KEY` and `EMAIL_FROM` (email), `SENTRY_DSN` (error tracking).
 
 ### Environment variables
 
@@ -260,15 +296,67 @@ From [`.env.example`](.env.example) (names only; never commit values). Needed: *
 
 ### Tests
 
+Stop `pnpm dev` first: the integration and end-to-end tests use the same local Postgres and its job queue, and a running worker takes their jobs. Run them in a shell where `.env` is **not** exported. No keys are needed.
+
 ```bash
-pnpm typecheck && pnpm lint && pnpm test      # unit and integration tests (replay recorded PayPal and OpenAI exchanges)
+make reset                                       # an empty database with the migrations applied
+pnpm typecheck && pnpm lint && pnpm test         # unit and integration tests (replay recorded PayPal and OpenAI exchanges)
+pnpm eval:validate && pnpm eval                  # evals, replayed from recordings (no model spend)
+pnpm readme:check && pnpm eval:check-readme      # this README's claims against the fixtures and reports
+
+# End-to-end (Playwright): a production build, then `next start` on port 3100 and the worker, PayPal answered from the recorded fixtures
+pnpm --filter @cleared/web exec playwright install chromium   # once per machine
 pnpm --filter @cleared/web build
-pnpm --filter @cleared/web exec playwright test # end-to-end, local build, PayPal answered from the recorded fixtures
-pnpm eval:validate && pnpm eval                 # evals, replayed from recordings (no model spend)
-pnpm readme:check && pnpm eval:check-readme     # this README's claims against the fixtures and reports
+DATABASE_URL=postgres://cleared:cleared@localhost:5432/cleared pnpm --filter @cleared/web exec playwright test
 ```
 
-The tests use recorded real sandbox responses; the running product calls the real PayPal sandbox and the real OpenAI API.
+The end-to-end config defaults to port 5532 (the maintainers' `PORT_OFFSET=100` stack), so always pass `DATABASE_URL` for your own Postgres. The tests use recorded real sandbox responses; the running product calls the real PayPal sandbox and the real OpenAI API.
+
+### Troubleshooting
+
+#### Docker is not running
+
+`make up` fails with `Cannot connect to the Docker daemon`. Start Docker Desktop (or your engine), wait until `docker info` succeeds, then run `make up` again. `docker: 'compose' is not a docker command` means Compose v2 is missing: update Docker Desktop.
+
+#### Port 5432 or 3000 is in use
+
+`make up` fails with `port is already allocated` or `address already in use` when another Postgres holds 5432; `pnpm dev` says `Port 3000 is in use` and picks another port. Move both, and point `.env` at them:
+
+```bash
+PORT_OFFSET=500 make up      # Postgres on 5432 + 500 = 5932
+# in .env: DATABASE_URL=postgres://cleared:cleared@localhost:5932/cleared and APP_BASE_URL=http://localhost:3500
+(set -a; . ./.env; set +a; PORT=3500 pnpm dev)
+```
+
+Every later `make` command needs the same `PORT_OFFSET=500` (`PORT_OFFSET=500 make reset`, `PORT_OFFSET=500 make down`), and the tests need `DATABASE_URL=postgres://cleared:cleared@localhost:5932/cleared` in front of `pnpm test` and `playwright test`. Without them, the seed and the tests fall back to port 5432.
+
+#### Wrong Node or pnpm version
+
+`node -v` must print `v24.x`: with nvm, `nvm install && nvm use` reads `.nvmrc`. If `pnpm -v` doesn't print `12.15.0`, a global pnpm is shadowing Corepack's: run `corepack enable` again, or call `corepack pnpm install`. `corepack: command not found` means a Node without Corepack: `npm install -g corepack`, then `corepack enable`.
+
+#### Migrations failed
+
+`make up` applies the migrations after Postgres is healthy. If they fail (`ECONNREFUSED`, a half-applied database, or a `DATABASE_URL` pointing at another Postgres), run `make reset`: it drops the local volume and applies every migration from an empty database. Use `PORT_OFFSET` if you moved the port.
+
+#### `SESSION_SECRET` is too short
+
+The web log says `SESSION_SECRET must be at least 32 characters` and **Try as demo seller** fails. Repeat step 3 of [Run it locally](#run-it-locally) (`openssl rand -hex 32` gives 64 characters), then restart `pnpm dev`.
+
+#### No PayPal or OpenAI keys
+
+Expected, not a bug: see [What works without keys](#what-works-without-keys). Without PayPal keys, test payments and scenarios never arrive and the `pnpm dev` log repeats `PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET are not set`; without an OpenAI key, the AI steps show no verdict. The hosted demo has both.
+
+#### "Try as demo seller" says the limit is reached
+
+`DEMO_WORKSPACES_PER_IP_PER_DAY=3` applies locally too, counted in your database. Raise it in `.env` and restart `pnpm dev`, or `make reset`.
+
+#### Tests fail in the shell that ran `pnpm dev`
+
+If `.env` was exported into your shell (`set -a; . ./.env` outside a subshell), `NODE_ENV=development` leaks into the tests and the CSP test in `apps/web` sees the dev-only `'unsafe-eval'`. Open a new terminal. Failures such as `action … is no longer executing` or a foreign-key error in `capture-sync.test.ts` mean a running worker took the tests' jobs: stop `pnpm dev`, `make reset`, and run them again.
+
+#### Playwright can't find a browser
+
+`Executable doesn't exist at …/ms-playwright/…` means the browsers aren't installed: `pnpm --filter @cleared/web exec playwright install chromium`. `Could not find a production build` means you skipped `pnpm --filter @cleared/web build`.
 
 ## Retention
 
