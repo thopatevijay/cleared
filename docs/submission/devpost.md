@@ -131,7 +131,7 @@ nextjs, react, typescript, node.js, tailwindcss, next-intl, zod, drizzle, postgr
 
 ## Video demo link
 
-https://youtu.be/H-v2TrXUdso
+https://youtu.be/3-kibxZ-DjM
 
 ## Image gallery
 
