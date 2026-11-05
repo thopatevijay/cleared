@@ -12,6 +12,10 @@ import { axeClean, seedHeld } from "./support/holds.ts";
 
 test.describe.configure({ mode: "serial" });
 test.skip(!local, "local only");
+// The seller is in India (the demo workspace takes the browser's zone; the filing below uses Delhivery). With
+// no carrier chosen yet, the approved-carrier list comes from the seller's country: a UTC browser (the CI
+// runner) has none, so the zone is pinned rather than inherited from the host.
+test.use({ timezoneId: "Asia/Kolkata" });
 
 const REVIEW = fileURLToPath(new URL("../../../.review/BL-6570499264/", import.meta.url));
 const REVIEW_EST = "Within 24 hours; up to 3 business days";
