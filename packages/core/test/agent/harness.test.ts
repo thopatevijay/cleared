@@ -91,7 +91,11 @@ describe("runWorkflow: limits", () => {
 
   it("a call abandoned at the wall clock still has its billed usage recorded when it lands (BL-01)", async () => {
     const slow = () =>
-      new Promise<ReturnType<typeof okResult>>((r) => setTimeout(() => { r(okResult(ANSWER, 0.004)); }, 80));
+      new Promise<ReturnType<typeof okResult>>((r) =>
+        setTimeout(() => {
+          r(okResult(ANSWER, 0.004));
+        }, 80),
+      );
     const store = fakeStore();
     const cfg = config();
     const out = await runWorkflow(testWorkflow, INPUT, {
@@ -164,7 +168,7 @@ describe("runWorkflow: budgets", () => {
 
 describe("runWorkflow: kill switch", () => {
   it("kill switch: AGENT_KILL_SWITCH=true refuses the run before any call or run row", async () => {
-    const env = { ...process.env, AGENT_KILL_SWITCH: process.env["AGENT_KILL_SWITCH"] ?? "true" };
+    const env = { ...process.env, AGENT_KILL_SWITCH: "true" };
     const cfg = parseAgentConfig(env);
     expect(cfg.killSwitchEnv).toBe(true);
     const provider = fakeProvider([() => okResult(ANSWER)]);
