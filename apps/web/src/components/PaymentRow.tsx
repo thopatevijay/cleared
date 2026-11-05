@@ -142,7 +142,13 @@ export function PaymentRow({
         {p.hold === null ? null : (
           <div className="order-2 md:order-none md:col-span-2">
             {/* a dispute row's single action is the dispute's own ("Review and approve") */}
-            <HeldLines hold={p.hold} amount={amount} timeZone={timeZone} action={dispute === null} />
+            <HeldLines
+              hold={p.hold}
+              disputeDueAt={dispute?.dueDate ?? null}
+              amount={amount}
+              timeZone={timeZone}
+              action={dispute === null}
+            />
           </div>
         )}
         {dispute === null ? null : (

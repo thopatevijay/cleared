@@ -2,7 +2,7 @@
 // The "Source" disclosure (components.md `EstimatedDate` / `Citation`): a button that opens the rule's
 // verbatim quote, its link and `retrieved_at`. Quotes are PayPal's published words, rendered as text.
 import type { RuleSource as Source } from "@cleared/core";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Quote } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useId, useRef, useState } from "react";
 
@@ -10,15 +10,19 @@ import { useId, useRef, useState } from "react";
  * `named`: the visible label carries the source's title ("Source: PayPal transaction event codes: …"),
  * for places that list several sources together, so no two read as the same "Source" link (BL-01
  * 6601579774 item 1 / 6570430240 item 2, sweep M5). Titles are PayPal's English page names.
+ * `chip`: the collapsed `Citation` chip (components.md: `radius-sm`, `quote` icon, `text-sm`), as
+ * `EstimatedDate` prescribes for its Source.
  */
 export function RuleSource({
   source,
   label,
   named = false,
+  chip = false,
 }: {
   source: Source;
   label?: string;
   named?: boolean;
+  chip?: boolean;
 }) {
   const t = useTranslations("holds");
   const [open, setOpen] = useState(false);
@@ -36,14 +40,20 @@ export function RuleSource({
       <button
         ref={button}
         type="button"
-        className="inline-flex min-h-11 min-w-11 items-center self-start text-accent underline underline-offset-2"
+        className={
+          chip
+            ? "inline-flex min-h-11 min-w-11 items-center gap-1 self-start rounded-sm border border-border bg-surface px-2 text-sm text-accent underline underline-offset-2"
+            : "inline-flex min-h-11 min-w-11 items-center self-start text-accent underline underline-offset-2"
+        }
         aria-expanded={open}
         aria-controls={id}
         data-testid="source-toggle"
+        data-chip={chip ? "" : undefined}
         onClick={() => {
           setOpen(!open);
         }}
       >
+        {chip ? <Quote aria-hidden="true" size={14} strokeWidth={1.75} className="shrink-0" /> : null}
         {named ? (
           <span>
             {label ?? t("source")}

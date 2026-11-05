@@ -68,7 +68,10 @@ export function EstimatedDate({
       : pendingEvent
         ? t("estimateName", { date: t(`est.${key}`), source: source?.title ?? "" })
         : t("noTimelineName", { source: source?.title ?? "" });
-  const due = e.disputeDueAt ?? null;
+  const due = key === "dispute" ? (e.disputeDueAt ?? null) : null;
+  const showEstimated = at !== null || pendingEvent;
+  // undated compact forms carry the Source chip at the end of their one line, as the dated form does
+  const inlineSource = !full && at === null ? source : null;
   // M3-04: a dated service estimate reads "About {date} · estimated · Source" (never "Free by", which reads
   // as PayPal's promise); separators end a line, never start one. The full form adds the rule's sentence.
   if (key === "service" && at !== null)
@@ -90,7 +93,7 @@ export function EstimatedDate({
             {t("estimated")}
             {source === null ? null : <Dot />}
           </span>
-          {source === null ? null : <RuleSource source={source} />}
+          {source === null ? null : <RuleSource source={source} chip />}
         </span>
         {full ? (
           <span className="text-text-muted" data-testid="estimate-sentence">
@@ -112,15 +115,27 @@ export function EstimatedDate({
         <span className="flex flex-wrap items-center gap-x-1">
           <span>
             <span data-testid="estimate-sentence">{t(`est.${key}`)}</span>
-            {(key === "dispute" && due !== null) || at !== null || pendingEvent ? <Dot /> : null}
+            {due !== null || showEstimated || inlineSource !== null ? <Dot /> : null}
           </span>
-          {key === "dispute" && due !== null ? (
-            <span className="whitespace-nowrap">
+          {due === null ? null : (
+            <span className="whitespace-nowrap" data-testid="estimate-dispute-due">
+              <CalendarClock
+                aria-hidden="true"
+                size={16}
+                strokeWidth={1.75}
+                className="mr-1 inline-block align-[-3px] text-text-muted"
+              />
               {t("disputeDue", { date: date(due) })}
-              {at !== null || pendingEvent ? <Dot /> : null}
+              {showEstimated || inlineSource !== null ? <Dot /> : null}
+            </span>
+          )}
+          {showEstimated ? (
+            <span className="font-medium">
+              {t("estimated")}
+              {inlineSource === null ? null : <Dot />}
             </span>
           ) : null}
-          {at !== null || pendingEvent ? <span className="font-medium">{t("estimated")}</span> : null}
+          {inlineSource === null ? null : <RuleSource source={inlineSource} chip />}
         </span>
       ) : null}
       {at !== null ? (
@@ -141,17 +156,17 @@ export function EstimatedDate({
                 {t("estimated")}
                 {source === null ? null : <Dot />}
               </span>
-              {source === null ? null : <RuleSource source={source} />}
+              {source === null ? null : <RuleSource source={source} chip />}
             </>
           )}
         </span>
       ) : null}
       {/* the full form cites every source behind its bounds (payment review: 24 h and 3 business days) */}
-      {full ? (
-        rule?.sources.map((s, _i, all) => <RuleSource key={s.title} source={s} named={all.length > 1} />)
-      ) : source === null || at !== null ? null : (
-        <RuleSource source={source} />
-      )}
+      {full
+        ? rule?.sources.map((s, _i, all) => (
+            <RuleSource key={s.title} source={s} named={all.length > 1} chip />
+          ))
+        : null}
       <PastEstimate e={e} full={full} />
     </div>
   );

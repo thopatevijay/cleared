@@ -40,6 +40,10 @@ test("dispute total, dispute row, Review and approve, filter, partial state", as
     "data-rule",
     "dispute_hold",
   );
+  // BL-01 6634658835: the hold box carries the reply deadline (EstimatedDate's dispute-linked variant)
+  await expect(row.getByTestId("held-lines").getByTestId("estimate-dispute-due")).toContainText(
+    /^Dispute reply due \d{1,2} \w{3}/,
+  );
   await expect(summary.getByTestId("summary-held")).toHaveText("$120.00 USD held");
   await capture(page, "en-dashboard-dispute");
 
