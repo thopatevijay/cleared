@@ -8,6 +8,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { WorkspaceIdSchema } from "@cleared/core";
 import { closeDb, createDb, databaseUrl, forWorkspace, platform, type Db } from "@cleared/db";
 import { expect, test, type Page } from "@playwright/test";
+import { WCAG_A_AA } from "./support/wcag.ts";
 
 const local = process.env["E2E_BASE_URL"] === undefined && process.env["E2E_LIVE"] !== "1";
 const shots = local && process.env["E2E_SCREENSHOTS"] !== "0";
@@ -15,7 +16,7 @@ const REVIEW = fileURLToPath(new URL("../../../.review/M2-10/", import.meta.url)
 
 async function axe(page: Page, name: string): Promise<void> {
   const result = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .withTags(WCAG_A_AA)
     .analyze();
   mkdirSync(`${REVIEW}axe`, { recursive: true });
   writeFileSync(`${REVIEW}axe/${name}.json`, JSON.stringify(result.violations, null, 2));

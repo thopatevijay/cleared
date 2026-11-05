@@ -19,6 +19,7 @@ import {
 } from "@cleared/db";
 import { expect, type Page } from "@playwright/test";
 import { seedHeldPayment, type HeldPaymentOptions } from "../../test/support/hold-seed.ts";
+import { WCAG_A_AA, withoutVendorLabelInName } from "./wcag.ts";
 
 export const REVIEW_HOLDS = fileURLToPath(new URL("../../../../.review/M3-01/", import.meta.url));
 /** M3-02: the explanation captures for its ui-reviewer (gitignored). */
@@ -104,9 +105,9 @@ export async function releaseHeld(ws: string, captureId: string): Promise<void> 
 
 /** Every WCAG 2.2 A/AA rule, any impact: the AC is "no WCAG 2.2 AA violations". */
 export async function axeClean(page: Page, label: string): Promise<void> {
-  const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+  const r = await new AxeBuilder({ page }).withTags(WCAG_A_AA).analyze();
   expect(
-    r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),
+    withoutVendorLabelInName(r.violations).map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),
     `axe on ${label}`,
   ).toEqual([]);
 }

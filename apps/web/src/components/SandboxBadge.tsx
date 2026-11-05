@@ -1,5 +1,7 @@
 // The Sandbox pill (components.md "Sandbox badge"): inside every sandbox-only control. Hidden from
-// assistive tech when the control's own name already ends with "(sandbox only)".
+// assistive tech when the control's own name already says it. That name is the visible label, then the
+// badge text ("Try as demo seller, Sandbox only"), so it contains everything shown (WCAG 2.5.3, BL-01
+// 6649566516). While busy the control has no aria-label: its name is the visible busy text.
 import { FlaskConical } from "lucide-react";
 import { useTranslations } from "next-intl";
 

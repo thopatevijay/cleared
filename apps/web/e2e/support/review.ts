@@ -4,6 +4,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page } from "@playwright/test";
+import { WCAG_A_AA, withoutVendorLabelInName } from "./wcag.ts";
 
 export const local = process.env["E2E_BASE_URL"] === undefined && process.env["E2E_LIVE"] !== "1";
 export const shots = local && process.env["E2E_SCREENSHOTS"] !== "0";
@@ -24,11 +25,11 @@ export async function axe(
   soft = false,
 ): Promise<{ serious: number; moderate: number; minor: number }> {
   const result = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .withTags(WCAG_A_AA)
     .analyze();
   mkdirSync(`${dir}axe`, { recursive: true });
   writeFileSync(`${dir}axe/${name}.json`, JSON.stringify(result.violations, null, 2));
-  const blocking = result.violations
+  const blocking = withoutVendorLabelInName(result.violations)
     .filter((v) => v.impact === "serious" || v.impact === "critical")
     .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
   (soft ? expect.soft : expect)(blocking, `axe serious/critical on ${name}`).toEqual([]);

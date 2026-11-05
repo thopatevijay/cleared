@@ -107,7 +107,7 @@ test("bell count, panel list, mark read, open an item (EN, ≥ 768 px)", async (
 
   // selecting an item opens its dispute and marks it read
   await bell(page).click();
-  await page.getByRole("link", { name: /^New: A buyer opened a dispute/ }).click();
+  await page.getByRole("link", { name: /New A buyer opened a dispute/ }).click();
   await page.waitForURL(`**/en/disputes/${s.disputeRowId}`);
   await expect(bell(page)).toHaveAccessibleName("Notifications, 1 unread");
 

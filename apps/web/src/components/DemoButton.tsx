@@ -73,7 +73,7 @@ export function DemoButton() {
           onClick={() => void start()}
           disabled={busy || !online}
           aria-busy={busy || undefined}
-          aria-label={busy ? t("demoBusy") : t("demoCtaName")}
+          aria-label={busy ? undefined : t("demoCtaName")}
           className="inline-flex min-h-12 w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-md bg-accent px-5 py-2 text-lg font-semibold text-on-accent hover:bg-accent-hover disabled:bg-surface-sunken disabled:text-text-muted md:w-auto md:self-start"
           data-testid="demo-cta"
         >
@@ -81,6 +81,7 @@ export function DemoButton() {
             {busy ? <Loader2 aria-hidden="true" size={18} className="spin shrink-0" /> : null}
             {busy ? t("demoBusy") : t("demoCta")}
           </span>
+          {" "}
           <SandboxBadge decorative />
         </button>
         <p className="text-sm text-text-muted">{online ? t("demoNote") : t("offline")}</p>
