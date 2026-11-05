@@ -38,7 +38,7 @@ The separate `@fullcalendar/daygrid` and `@fullcalendar/list` packages stop at 6
 checked 2026-10-29). The package README says: "The separate `@fullcalendar/core`,
 `@fullcalendar/daygrid`, `@fullcalendar/interaction` (etc.) packages are FullCalendar v6. Don't
 install them with v7". **Pinned major: 7 throughout** (`@fullcalendar/react@7.1.3` only; core comes
-transitively at 7.1.3). `PROJECT.md` §4 is updated.
+transitively at 7.1.3). The project's stack list is updated.
 
 **Bryntum install scripts.** `@bryntum/calendar-trial`'s `postinstall.js` runs
 `@bryntum/calendar-trial-lib/build.js`. That lib's own `postinstall` writes a random UUID into
@@ -212,7 +212,7 @@ Decision rule, tied to M0-01 (decision date **2026-11-04**):
   `allowBuilds` entries. Accept +1.5 MiB gzip on the calendar route only (dynamic import).
 - **FullCalendar** in every other case (no answer, a no, an answer without "public" or without the
   date, or terms that end before 2026-12-15). The only loss is the Bryntum sponsor prize
-  (`PROJECT.md` §10).
+  (the project's risk list).
 
 ## Handoff
 

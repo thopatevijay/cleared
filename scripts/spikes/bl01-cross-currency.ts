@@ -3,7 +3,7 @@
 // card → capture → capture GET). The order is in EUR, a currency the sandbox merchant does not hold,
 // so PayPal converts and reports `seller_receivable_breakdown.exchange_rate`.
 //
-//   pnpm tsx scripts/spikes/bl01-cross-currency.ts   (run under the WORKFLOW.md live-lines launcher)
+//   pnpm tsx scripts/spikes/bl01-cross-currency.ts   (run under the local live-lines launcher)
 //
 // One flow, never retried with other credentials. Synthetic workspace id (no database). Reads
 // PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET from the environment and never prints them.

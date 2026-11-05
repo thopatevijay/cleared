@@ -1,7 +1,7 @@
 # Gold-set spend (M4-01)
 
 One row per live run and model, from the API responses' `usage` (tokens × `packages/adapters/src/ai/pricing.ts`).
-Replay runs spend nothing. Each UTC day must stay ≤ $1.00 (`LLM_DAILY_CAP_USD`, docs/budget.md).
+Replay runs spend nothing. Each UTC day must stay ≤ $1.00 (`LLM_DAILY_CAP_USD`, docs/adr/0010-agent-governance.md).
 
 | date (UTC) | command | model | calls | input tokens | cached | output tokens | reasoning | USD |
 |---|---|---|---|---|---|---|---|---|

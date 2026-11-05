@@ -1,7 +1,7 @@
 // Typed PayPal Customer Disputes v1 client (the SDK has no Disputes; ADR 0011 addendum). Every call
 // runs through the shared HTTP client and the one token provider.
 //
-// Rules this module enforces (CLAUDE.md, domain rules):
+// Rules this module enforces (domain rules):
 // - allowed actions come ONLY from the dispute's HATEOAS `links[].rel`, never from a status map;
 // - every write re-fetches the dispute and refuses, before any write call, if its link is absent;
 // - every write carries a `PayPal-Request-Id`; writes are not retried automatically (see

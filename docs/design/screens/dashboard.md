@@ -7,7 +7,7 @@ This screen answers the seller's question in one glance: how much money is held,
 
 ## Layout
 
-**Wireframe elements and who delivers them.** Every element of the RESEARCH §9 hero wireframe, in order. **M1** = built in M1-07; the rest arrive later. "Adjusted" means the element ships, but changed so that it follows the rules in `CLAUDE.md` and the README copy rules.
+**Wireframe elements and who delivers them.** Every element of the RESEARCH §9 hero wireframe, in order. **M1** = built in M1-07; the rest arrive later. "Adjusted" means the element ships, but changed so that it follows the project's domain rules and the README copy rules.
 
 | # | Wireframe element | Spec here | Delivered by | Milestone | Note |
 |---|---|---|---|---|---|

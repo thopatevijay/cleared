@@ -3,7 +3,7 @@
 # client (the worker's capture re-fetch is answered by apps/worker/test/load/paypal-replay.ts, msw replaying the
 # recorded sandbox response; nothing reaches PayPal or OpenAI), and the webhook test signing harness, which
 # the web server accepts only under NODE_ENV=test (src/server/test-signing.ts).
-# It never reads or writes a .env. Keep DATABASE_URL / PORT_OFFSET exported first (WORKFLOW.md).
+# It never reads or writes a .env. Keep DATABASE_URL / PORT_OFFSET exported first.
 _root="$(git rev-parse --show-toplevel)"
 _dir="${TMPDIR:-/tmp}/cleared-load"
 mkdir -p "$_dir"

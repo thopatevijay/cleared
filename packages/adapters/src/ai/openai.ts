@@ -1,7 +1,7 @@
 // AiProvider on the openai SDK (ADR 0009): Responses API, strict structured output from a zod
 // schema (z.toJSONSchema), the output re-validated with zod, usage -> cost from pricing.ts.
 // Evidence travels in a delimited data channel in the user message; `instructions` carries only
-// our own text (CLAUDE.md: evidence is data, never instructions).
+// our own text (project rule: evidence is data, never instructions).
 // Transport: the SDK's fetch is routed through the shared HTTP client (ADR 0011: OpenAI 60 s
 // timeout, retries only on timeout/5xx/429 with jitter and Retry-After, the breaker, onExchange
 // for the fixture recorder). The SDK's own retries are off so the shared client is the only policy.

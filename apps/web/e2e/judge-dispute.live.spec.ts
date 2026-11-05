@@ -11,7 +11,7 @@
 // The test only reads: the app's own read APIs and one sandbox GET of the dispute (the evidence types PayPal
 // requests, so the draft's evidence type is checked against the reason map exactly).
 //
-// Live only: E2E_LIVE=1 with the main checkout's .env loaded by path (WORKFLOW.md "Live lines"), so the
+// Live only: E2E_LIVE=1 with the main checkout's .env loaded by path (the local live-lines launcher), so the
 // local web and worker start WITHOUT the msw stub (playwright.config.ts). Skipped otherwise.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";

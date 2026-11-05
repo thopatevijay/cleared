@@ -13,7 +13,7 @@ export const README = `${REPO_ROOT}README.md`;
 export const README_START = "<!-- eval:start -->";
 export const README_END = "<!-- eval:end -->";
 
-/** PROJECT.md §2 */
+/** Pass thresholds per workflow, fixed before the first run. */
 export const THRESHOLDS = { scope: 0.9, extraction: 0.9, explanations: 0.95, verbatim: 1, adversarial: 1 } as const;
 
 export const CLAIMS_WORDING =

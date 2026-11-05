@@ -1,4 +1,4 @@
-// Per-run limits and spend budgets (ADR 0010, docs/budget.md). Every AI run has step, token, time and
+// Per-run limits and spend budgets (ADR 0010). Every AI run has step, token, time and
 // spend limits: ≤ 6 model calls, a per-step output-token cap, a 120 s wall clock, a per-workspace cap
 // (demo: LLM_WORKSPACE_CAP_USD, or the workspace's own llm_budget_usd) and a global UTC-day cap
 // (LLM_DAILY_CAP_USD). Budgets are checked before every call from recorded spend.

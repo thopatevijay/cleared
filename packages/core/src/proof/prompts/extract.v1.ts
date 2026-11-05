@@ -1,6 +1,6 @@
 // `extract@v1` (M2-03, ADR 0009): SMALL model, reasoning `none`. Our own text only: evidence never appears
 // here, it travels in the harness's <evidence> data blocks (DATA_CHANNEL_RULES is appended by the harness).
-// Changing this text means a new version (`extract@v2`) and green evals (CLAUDE.md).
+// Changing this text means a new version (`extract@v2`) and green evals (ADR 0010).
 
 export const EXTRACT_V1_ID = "extract@v1";
 

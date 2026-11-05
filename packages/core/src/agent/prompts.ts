@@ -1,6 +1,6 @@
 // Prompt registry: prompts are versioned in code as `<task>@v<n>`. The id is part of the content hash,
 // so a prompt change never serves a cached answer from the old prompt. Changing a prompt's text means a
-// new version (and green evals, CLAUDE.md); `definePrompt` refuses an id that does not match the task.
+// new version (and green evals, ADR 0010); `definePrompt` refuses an id that does not match the task.
 
 export interface PromptDef {
   /** `<task>@v<n>`, e.g. `check_scope@v1` */

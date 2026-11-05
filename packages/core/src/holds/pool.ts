@@ -56,7 +56,7 @@ export function poolAssignableSince(now: Instant): Instant {
   return addMinutes(now, -REVIEW_POOL_MAX_AGE_HOURS * 60);
 }
 
-/** Synthetic catalogue (CLAUDE.md data policy: no real personal data). Amounts in USD, the sandbox buyer's currency. */
+/** Synthetic catalogue (data policy: no real personal data). Amounts in USD, the sandbox buyer's currency. */
 export const REVIEW_POOL_CATALOGUE = [
   { description: "Logo design, 3 concepts", value: "64.00" },
   { description: "Website copy edit, 2 pages", value: "48.00" },

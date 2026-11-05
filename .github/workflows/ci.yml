@@ -4,8 +4,8 @@ name: ci
 
 on:
   pull_request:
-    # Markdown-only PRs skip CI (Actions minutes on a private repo, BL-01); ticket files stay checked.
-    paths: ["**", "!**/*.md", ".github/plan/**"]
+    # Markdown-only PRs skip CI (Actions minutes, BL-01).
+    paths: ["**", "!**/*.md"]
   push:
     branches: [main]
 

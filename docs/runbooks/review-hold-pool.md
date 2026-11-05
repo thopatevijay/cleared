@@ -27,7 +27,7 @@ pre-stages a small pool:
 ## Steps
 
 Run every command from the repo root against the target database (`DATABASE_URL`), with the PayPal
-sandbox credentials in the environment (local: the WORKFLOW.md launcher; never copy `.env`). The CLI
+sandbox credentials in the environment (local: the local launcher; never copy `.env`). The CLI
 prints ids, states and approval URLs only, never a token or secret.
 
 1. **Create** (`--count` is 1 to 5):

@@ -16,7 +16,7 @@ Sources, checked 2026-10-29:
 | Web | `cleared-web` | web, runtime node | oregon | `starter` (= `0.5c-512mb`: 0.5 CPU, 512 MB) | $7/mo |
 | Worker | `cleared-worker` | worker, runtime node | oregon | `starter` (= `0.5c-512mb`) | $7/mo |
 | Postgres | `cleared-db` | Postgres 18, db `cleared`, user `cleared` | oregon | `basic-256mb` (= `0.1c-256mb`) | $6/mo |
-| **Total** | | | | | **$20/mo**, matching `docs/budget.md` |
+| **Total** | | | | | **$20/mo**, matching the project budget |
 
 Render renamed its plans: `starter` and `basic-256mb` are the legacy names of `0.5c-512mb` and `0.1c-256mb`. The specs and prices are identical, and Render says the legacy names "remain valid across all Render tooling", Blueprints included. The file uses the names the ticket and the budget use.
 

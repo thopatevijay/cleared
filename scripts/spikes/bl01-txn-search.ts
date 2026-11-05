@@ -1,7 +1,7 @@
 // BL-01 (6488341912): one live PayPal SANDBOX Transaction Search call, recorded to
 // fixtures/paypal/reporting/transactions-search.json through the shared HTTP client and token provider.
 //
-//   pnpm tsx scripts/spikes/bl01-txn-search.ts   (run under the WORKFLOW.md live-lines launcher)
+//   pnpm tsx scripts/spikes/bl01-txn-search.ts   (run under the local live-lines launcher)
 //
 // Read-only (GET), one search call, never retried with other credentials. Reads PAYPAL_CLIENT_ID /
 // PAYPAL_CLIENT_SECRET from the environment and never prints them.

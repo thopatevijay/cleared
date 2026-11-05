@@ -80,7 +80,7 @@ export function mapPaymentState(status: string, reason: string | null): PaymentS
   };
 }
 
-/** A hold is a capture in PENDING with a reason (CLAUDE.md domain rules). M3-01 extends the rule table. */
+/** A hold is a capture in PENDING with a reason (domain rules). M3-01 extends the rule table. */
 export function isHold(state: PaymentState): boolean {
   return state.status.kind === "known" && state.status.value === "PENDING" && state.reason !== null;
 }

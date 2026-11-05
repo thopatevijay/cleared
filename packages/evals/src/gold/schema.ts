@@ -1,6 +1,6 @@
 // M4-01 gold sets (ContractNLI-style): one item = documents + hypotheses, each hypothesis labelled
 // met | partial | missing | unverifiable with verbatim spans. One scheme for all three sets; M4-02 reads
-// these schemas to score the workflows. All personal data is synthetic (PROJECT.md §9.1).
+// these schemas to score the workflows. All personal data is synthetic (data policy).
 import { EVIDENCE_KINDS, LOCALES, parseAgentConfig } from "@cleared/core";
 import { z } from "zod";
 

@@ -16,7 +16,7 @@ Drafted 2026-10-29 on the M0-01 branch. The drafts are private from day one: the
 | Fact | Source |
 |---|---|
 | Old sandbox app: feature ticked and saved; the scope `https://uri.paypal.com/services/reporting/search/read` never appeared in 19 token polls over 3 h; `GET /v1/reporting/balances` → 403 `NOT_AUTHORIZED` (debug_id `f738253865995`) | research spike, 2026-10-26 |
-| Fresh sandbox app from M0-00 (P-21): the token **carries** the scope | `python3 scripts/check-prereqs.py --only P-22`, 2026-10-29 |
+| Fresh sandbox app from M0-00 (P-21): the token **carries** the scope | `check-prereqs.py --only P-22` (local workflow script), 2026-10-29 |
 | Not yet measured: a 200 from `/v1/reporting/balances` or `/v1/reporting/transactions` on the fresh app | no PayPal call in M0-01; M0-04 / M3-09 measure it |
 
 The ticket's ask ("expected propagation time, or a known fix") is answered on our side by the fresh app, so that draft became a confirmation question the owner may skip.
@@ -42,4 +42,4 @@ check-no-secrets: ok
 ## Owner actions still open (P-50)
 
 - Send the messages; comment on #3 with the date/time and channel of each
-- Record each answer (or "no answer by <date>") on #3, tick the matching box in `PROJECT.md` §1, and record the Bryntum decision on M3-05 by 2026-11-04
+- Record each answer (or "no answer by <date>") on #3, tick the matching box in the project spec, and record the Bryntum decision on M3-05 by 2026-11-04

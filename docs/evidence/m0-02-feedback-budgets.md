@@ -34,4 +34,4 @@ Both probe files were removed after the run. The planted value was random, never
   - **landing checks**: `pnpm install --frozen-lockfile`, then `./scripts/landing-checks.sh` (full)
   - **gitleaks + audit**: `gitleaks detect --log-opts=--all` over the full history (`fetch-depth: 0`), then `pnpm audit --prod --audit-level high`
 - No repository secrets and no live vendor calls
-- Actions minutes (BL-01): superseded PR runs are cancelled, and markdown-only PRs skip CI (ticket files under `.github/plan/` still run). Pushes to `main` always run in full
+- Actions minutes (BL-01): superseded PR runs are cancelled, and markdown-only PRs skip CI (the ticket files still ran while they were tracked). Pushes to `main` always run in full

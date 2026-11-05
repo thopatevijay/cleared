@@ -45,7 +45,7 @@ docs/runbooks/review-hold-pool.md.
 
 ## Scenes (run 3)
 
-The storyboard column is PROJECT.md §2. "Wall time" is what the scene took in this run. "Source" is what
+The storyboard column is the demo storyboard. "Wall time" is what the scene took in this run. "Source" is what
 moved the state Cleared shows: a verified PayPal webhook, or Cleared's own poll / re-fetch. Each source is
 the payment's `source` as the app's `/api/payments` returned it during the run.
 

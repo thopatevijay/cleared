@@ -1,6 +1,6 @@
 # Runbook: judging, 2026-12-01 to 2026-12-15
 
-Judging runs from **2026-12-01 14:00 PT** to **2026-12-15 08:00 PT**. The hosted demo must work the whole time: a demo that doesn't work disqualifies the project (PROJECT.md §1). This page gives the owner a daily routine of about 10 minutes and a playbook per failure. Tracing a single error (correlation id → job → PayPal `debug_id`) is in [`docs/runbook/observability.md`](../runbook/observability.md). The review-hold pool refills are in [`docs/runbooks/review-hold-pool.md`](../runbooks/review-hold-pool.md).
+Judging runs from **2026-12-01 14:00 PT** to **2026-12-15 08:00 PT**. The hosted demo must work the whole time: a demo that doesn't work disqualifies the project (hackathon rules). This page gives the owner a daily routine of about 10 minutes and a playbook per failure. Tracing a single error (correlation id → job → PayPal `debug_id`) is in [`docs/runbook/observability.md`](../runbook/observability.md). The review-hold pool refills are in [`docs/runbooks/review-hold-pool.md`](../runbooks/review-hold-pool.md).
 
 **Where things are**
 
@@ -62,7 +62,7 @@ select round(coalesce(sum(cost_usd), 0)::numeric, 4) as usd_today
 from agent_runs where created_at >= date_trunc('day', now() at time zone 'utc') at time zone 'utc';
 ```
 
-**OK:** under 80 % of `LLM_DAILY_CAP_USD`. The total stays within the $80 ceiling in `docs/budget.md`. At the cap, follow *OpenAI outage or cap reached*.
+**OK:** under 80 % of `LLM_DAILY_CAP_USD`. The total stays within the $80 project ceiling. At the cap, follow *OpenAI outage or cap reached*.
 
 ### 6. Demo workspaces vs `DEMO_WORKSPACES_GLOBAL_MAX`
 
@@ -102,7 +102,7 @@ group by name order by 2 desc;
 gh run list -R thopatevijay/cleared --workflow eval.yml --limit 3
 ```
 
-**OK:** the newest scheduled run is under 26 h old and `completed success`. The nightly eval (M4-02) uses live OpenAI with the recorded gold sets. A red run means a model or prompt regressed: no prompt, model or schema change merges until it is green again (CLAUDE.md).
+**OK:** the newest scheduled run is under 26 h old and `completed success`. The nightly eval (M4-02) uses live OpenAI with the recorded gold sets. A red run means a model or prompt regressed: no prompt, model or schema change merges until it is green again (ADR 0010).
 
 ### 10. PayPal sandbox status
 
@@ -112,13 +112,13 @@ gh run list -R thopatevijay/cleared --workflow eval.yml --limit 3
 
 ## Playbooks
 
-Each playbook gives the symptom, the check, the action and the rollback. An action marked **owner** is never taken by an agent (CLAUDE.md, *Still the owner's*).
+Each playbook gives the symptom, the check, the action and the rollback. An action marked **owner** is never taken by an agent.
 
 ### OpenAI outage or cap reached
 
 - **Symptom:** explanations, extractions or drafts show the degraded state ("AI is unavailable: facts shown without a verdict", or the budget banner). Sentry has OpenAI `outbound call failed` lines, or the scenario refuses with the daily-cap message.
 - **Check:** <https://status.openai.com/>. Daily check 5 for the spend. Worker logs for `vendor: openai` with `status` 429/5xx or `failure: timeout`.
-- **Action:** nothing to switch: the degraded mode is already built (M2), and evidence, facts and PayPal actions keep working. For an outage, wait, and note it in the daily log. Raising the cap is an **owner** decision, every time: edit `LLM_DAILY_CAP_USD` in the Render env group, within the $80 ceiling in `docs/budget.md`.
+- **Action:** nothing to switch: the degraded mode is already built (M2), and evidence, facts and PayPal actions keep working. For an outage, wait, and note it in the daily log. Raising the cap is an **owner** decision, every time: edit `LLM_DAILY_CAP_USD` in the Render env group, within the $80 project ceiling.
 - **Rollback:** set `LLM_DAILY_CAP_USD` back to its previous value. The cap counts again from the next 00:00 UTC.
 
 ### PayPal sandbox down or changed behaviour
@@ -131,7 +131,7 @@ Each playbook gives the symptom, the check, the action and the rollback. An acti
 ### Webhook registration lost
 
 - **Symptom:** daily check 7 shows no webhook after sandbox activity. Payments made in the demo stay on "Waiting for PayPal…" until the reconcile poll picks them up, up to 15 min later. Or Sentry shows `webhook verification failures above 5 per 10 min`.
-- **Check:** `pnpm tsx scripts/setup.ts --list-webhooks` (local, with the sandbox credentials loaded through the WORKFLOW.md launcher; never copy `.env`) lists the app's webhooks. The Render URL must be there with every event type.
+- **Check:** `pnpm tsx scripts/setup.ts --list-webhooks` (local, with the sandbox credentials loaded through the local launcher; never copy `.env`) lists the app's webhooks. The Render URL must be there with every event type.
 - **Action:** re-run the idempotent setup script: `pnpm tsx scripts/setup.ts --url https://cleared-web-gd1b.onrender.com`. If it prints a **new** webhook id, the **owner** puts it in Render → `cleared-web` → Environment → `PAYPAL_WEBHOOK_ID`, and the web service redeploys. The reconcile poll has already covered the gap. No replay is needed: a re-fetch on every webhook means order doesn't matter.
 - **Rollback:** none needed: the script is idempotent. A webhook it created for a wrong URL is removed with `pnpm tsx scripts/setup.ts --delete-url <base>` (that command refuses the Render URL).
 
@@ -173,7 +173,7 @@ Each playbook gives the symptom, the check, the action and the rollback. An acti
 - **Action:** in order:
   1. If `pgboss.job` is on top, check that the worker is up (`/readyz`): pg-boss's own maintenance, which runs in the worker, removes old completed jobs.
   2. `blobs` from abandoned demo workspaces: expire them as in *Global demo workspace cap reached*. Their purge then frees the space after 6 days.
-  3. Adding storage is a purchase, an **owner** decision ($0.30 per GB, `docs/budget.md`).
+  3. Adding storage is a purchase, an **owner** decision ($0.30 per GB).
 - **Rollback:** none: the purge removes only synthetic data, and storage can grow but never shrink on Render.
 
 ### Bryntum trial expires or stops rendering
@@ -233,9 +233,9 @@ From **2026-12-01**, `main` takes fixes only. Each fix is a PR with a test that 
 | Webhook → hold visible | p99 < 120 s | `slo.hold_visible_p99` |
 | Approval → PayPal send | p99 < 300 s | `slo.approved_to_paypal_p99` |
 | Missed dispute deadlines | 0 | `slo.missed_deadlines` |
-| OpenAI spend | < `LLM_DAILY_CAP_USD` per UTC day; total within $80 | `docs/budget.md`, M4-05 worst-case reservation |
+| OpenAI spend | < `LLM_DAILY_CAP_USD` per UTC day; total within $80 | ADR 0010, M4-05 worst-case reservation |
 | Live demo workspaces | < `DEMO_WORKSPACES_GLOBAL_MAX` (200); 3 per IP per day | ADR 0007 |
-| Postgres storage | < 1 GB | `docs/budget.md` |
+| Postgres storage | < 1 GB | Render plan (`render.yaml`) |
 | Load (M4-06) | **Measured 2026-11-03:**<br>• Webhook ack p95 < 500 ms. Production server-side p95 is 1 ms at 5/s (n = 1,500, 0 × 5xx), and the local 100× burst p95 is 15.7 ms.<br>• Queue drains within 10 min of a burst: 35 s after 2,100 events.<br>• DLQ 0 and duplicates 0.<br>• Read routes p95 < 800 ms and errors < 0.5% at 20 concurrent sessions. **Production (2026-11-03, from India, network floor p95 337 ms): overall p95 949.4 ms, error rate 0.000%. The p95 target is missed on 7 of 13 routes (FAIL).** The local reference p95 is 38.9 ms with 0 errors.<br>• A `load:burst` against production trips the "verification failures" Sentry alert by design, so don't run it Dec 1–15 without the owner. | [`docs/evidence/load-report.md`](../evidence/load-report.md) |
 
 **Residual risks to keep in mind** (M4-05, `docs/security/threat-model.md`):

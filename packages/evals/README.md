@@ -27,7 +27,7 @@ pnpm --filter @cleared/evals test                    # trajectory, adversarial, 
   inputs are answered once per run, like the product's cache. At the end it writes
   `fixtures/openai/eval/RUN.json` (date, spend, cap, calls), the report and the README block.
 
-Run live locally through the `.env` launcher in WORKFLOW.md (never read the file):
+Run live locally through a local `.env` launcher (never read the file):
 
 ```bash
 node --env-file=<main checkout>/.env -e 'require("node:child_process").execFileSync("bash", process.argv.slice(1), {stdio:"inherit"})' lines.sh
@@ -37,7 +37,7 @@ node --env-file=<main checkout>/.env -e 'require("node:child_process").execFileS
 ## Branch rule
 
 A PR that changes a **prompt, an output schema, the harness or the model config** merges only with a
-green **live** eval (CLAUDE.md). `.github/workflows/eval.yml` runs it **only** on PRs labelled `eval` and
+green **live** eval (ADR 0010). `.github/workflows/eval.yml` runs it **only** on PRs labelled `eval` and
 on demand (`workflow_dispatch`); never automatically on push (owner 2026-11-04, #46: about $0.31 per run;
 no nightly run either: budget, BL-01 6624696324). A paths check on PRs only prints a reminder to add the
 label. The run uploads the report and recordings as an artefact and commits nothing. Commit the new
@@ -73,7 +73,7 @@ Raising the baseline, or removing the accepted miss once holds meets 95%, needs 
   (verdicts equal, scan flags the input, no off-policy action, plain-text output) and an instruction inside
   an image, on recordings; plus scripted attacks where the model obeys or forges a quote and the code must
   still hold (verbatim check, support kinds, injection scan, action policy, budget caps).
-- **Thresholds** (PROJECT.md §2): scope ≥ 90%, extraction ≥ 90%, explanations ≥ 95%, citations verbatim
+- **Thresholds** (fixed before the first run): scope ≥ 90%, extraction ≥ 90%, explanations ≥ 95%, citations verbatim
   100%, adversarial 100%. A miss exits 1 and is printed; nothing is hidden.
 
 ## Claims
