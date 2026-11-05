@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import en from "../../../messages/en.json" with { type: "json" };
 import hi from "../../../messages/hi.json" with { type: "json" };
+import type { DisputeSummary } from "../../lib/dispute-view.ts";
 import { PaymentRow } from "../PaymentRow.tsx";
 import { EstimatedDate } from "./EstimatedDate.tsx";
 import { AdviceLine } from "./HeldLines.tsx";
@@ -113,7 +114,7 @@ describe("EstimatedDate", () => {
     expect(names("hi")[0]).toBe("स्रोत: PayPal transaction event codes: T2105 Payment review hold");
     // the compact form keeps one short "Source"
     expect(html(<EstimatedDate e={REVIEW} timeZone="UTC" />)).toMatch(
-      /data-testid="source-toggle"[^>]*>Source<span class="sr-only">/,
+      /data-testid="source-toggle"[^>]*><svg[^]*?<\/svg>Source<span class="sr-only">/,
     );
   });
 
@@ -211,6 +212,54 @@ describe("dashboard held row", () => {
     );
     expect(plain).not.toContain('data-testid="held-lines"');
     expect(plain).toContain('data-testid="add-proof"');
+  });
+
+  // BL-01 6634658835 (ui-reviewer polish on #166): the dispute row's hold box carries the reply deadline
+  // with its calendar icon, then the Source chip on the same line (components.md `EstimatedDate`)
+  it("dispute row: 'Released when … · Dispute reply due 9 Nov · Source' chip (EN and HI)", () => {
+    const hold: PaymentHold = {
+      ...REVIEW,
+      type: "dispute",
+      reason: "BUYER_COMPLAINT",
+      ruleId: "dispute_hold",
+      estimatedReleaseAt: null,
+      estimateUpperBoundAt: null,
+    };
+    const dispute: DisputeSummary = {
+      id: "00000000-0000-4000-8000-000000000010",
+      disputeId: "PP-D-27153",
+      status: "WAITING_FOR_SELLER_RESPONSE",
+      stage: "INQUIRY",
+      reason: "MERCHANDISE_OR_SERVICE_NOT_AS_DESCRIBED",
+      amount: { value: "120.00", currency: "USD" },
+      dueDate: "2026-11-09T04:59:59.000Z",
+      deadlineState: "ok",
+      outcome: null,
+      payment: null,
+      draftReady: true,
+    };
+    const box = (l: "en" | "hi"): string => {
+      const out = html(
+        <ul>
+          <PaymentRow
+            p={{ ...row(hold), statusReason: "BUYER_COMPLAINT" }}
+            dispute={dispute}
+            timeZone="UTC"
+            flash={false}
+          />
+        </ul>,
+        l,
+      );
+      return /data-testid="estimated-date"[^]*?<\/button>/.exec(out)?.[0] ?? "";
+    };
+    const en = box("en");
+    expect(text(en)).toContain("Released when the dispute is resolved · Dispute reply due 9 Nov · Source");
+    expect(en).toMatch(/data-testid="estimate-dispute-due"><svg[^>]*lucide-calendar-clock/);
+    expect(en).toMatch(/data-testid="source-toggle" data-chip=""[^>]*><svg[^>]*lucide-quote/);
+    const hiBox = box("hi");
+    expect(text(hiBox)).toContain(hi.holds.est.dispute);
+    const [before = "", after = ""] = hi.holds.disputeDue.split("{date}");
+    expect(text(hiBox)).toMatch(new RegExp(`${before}\\S+ \\S+${after} · ${hi.holds.source}`));
   });
 });
 
