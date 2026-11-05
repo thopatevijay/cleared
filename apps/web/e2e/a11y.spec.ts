@@ -9,6 +9,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { WorkspaceIdSchema } from "@cleared/core";
 import { closeDb, createDb, databaseUrl, forWorkspace } from "@cleared/db";
 import { expect, test, type Page } from "@playwright/test";
+import en from "../messages/en.json" with { type: "json" };
+import hi from "../messages/hi.json" with { type: "json" };
 import { inFlight, seed as seedDispute } from "./support/disputes.ts";
 import {
   failRequests,
@@ -239,13 +241,23 @@ for (const locale of LOCALES) {
     await tz.getByTestId("tz-save").click();
     await expect(tz.getByTestId("tz-save")).toHaveAttribute("aria-busy", "true");
     await m.check(page, "settings", locale, "loading");
+    // a saved zone ends with router.refresh() (TimeZoneControl); Next 16 re-streams the page metadata, and
+    // <title> is out of the DOM until that chunk lands (~0.4 s on the CI runner). The save is over once the
+    // refresh has landed and the page has its title again; only then does the next state start.
+    const title = `${(locale === "en" ? en : hi).dashboard.title} · Cleared`;
+    const refreshed = page.waitForResponse(
+      (r) => r.request().headers()["rsc"] === "1" && new URL(r.url()).pathname === `/${locale}/payments`,
+    );
     await release();
     await expect(tz.getByTestId("tz-current")).toHaveText("Africa/Lagos");
+    await (await refreshed).finished();
+    await expect(page).toHaveTitle(title);
     await tz.getByTestId("tz-change").click();
     const restore = await failRequests(page, "**/api/workspace", "PATCH");
     await tz.getByTestId("tz-select").selectOption("Asia/Kolkata");
     await tz.getByTestId("tz-save").click();
     await expect(tz.getByTestId("tz-error")).toBeVisible();
+    await expect(page).toHaveTitle(title);
     await m.check(page, "settings", locale, "error");
     await restore();
     m.save();
@@ -320,7 +332,9 @@ for (const locale of LOCALES) {
     await page.goto(`/${locale}`);
     const restore = await failRequests(page, "**/api/demo", "POST");
     await page.getByTestId("demo-cta").click();
-    await expect(page.getByRole("alert")).toBeVisible();
+    // in <main>: Next's own route announcer (body > next-route-announcer, empty until a client navigation)
+    // is a second role=alert on every page
+    await expect(page.getByRole("main").getByRole("alert")).toBeVisible();
     await m.check(page, "landing", locale, "error");
     await restore();
 
